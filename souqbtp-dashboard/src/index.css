@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@media print {
+  .hide-on-print, nav, header {
+    display: none !important;
+  }
+  .receipt-print {
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+@media print {
+  /* إخفاء كل شيء في الصفحة افتراضياً */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* إظهار منطقة الفاتورة فقط وما بداخلها */
+  .print-area, .print-area * {
+    visibility: visible;
+  }
+  
+  /* وضع الفاتورة في أعلى الصفحة تماماً عند الطباعة */
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* إخفاء أي أزرار داخل الفاتورة أثناء الطباعة (مثل زر الطباعة نفسه) */
+  .no-print {
+    display: none !important;
+  }
+}
