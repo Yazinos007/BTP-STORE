@@ -18,7 +18,7 @@ const useOrderStore = create((set) => ({
       if (supplier) {
         targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       } else {
-        const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).single();
+        const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).maybeSingle();
         if (emp && emp.supplier_id) targetId = emp.supplier_id;
       }
 
@@ -50,7 +50,7 @@ const useOrderStore = create((set) => ({
     if (supplier) {
       targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
     } else {
-      const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).single();
+      const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).maybeSingle();
       if (emp && emp.supplier_id) targetId = emp.supplier_id;
     }
 

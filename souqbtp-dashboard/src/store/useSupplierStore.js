@@ -7,7 +7,7 @@ const useSupplierStore = create((set) => ({
   isLoading: true, 
   isAuthenticated: false,
 
-  // 🧠 الدالة الأساسية التي يبحث عنها النظام (لا تحذفها أبداً!)
+  // 🧠 الدالة الأساسية التي يبحث عنها النظام
   fetchSupplierProfile: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -19,12 +19,12 @@ const useSupplierStore = create((set) => ({
       const userId = session.user.id;
       const userEmail = session.user.email;
 
-      // الفحص 1: هل هو موظف؟
+      // الفحص 1: هل هو موظف؟ (تم إصلاحها باستخدام maybeSingle 🪄)
       const { data: employeeData } = await supabase
         .from('team_members')
         .select('*')
         .eq('email', userEmail)
-        .single();
+        .maybeSingle();
 
       if (employeeData) {
         if (employeeData.status !== 'active') {
@@ -40,12 +40,12 @@ const useSupplierStore = create((set) => ({
         return;
       }
 
-      // الفحص 2: إذن هو المدير
+      // الفحص 2: إذن هو المدير (تم إصلاحها باستخدام maybeSingle 🪄)
       const { data: adminData } = await supabase
         .from('suppliers')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (adminData) {
         set({ supplier: { ...adminData, role: 'admin' }, isAuthenticated: true, isLoading: false });
