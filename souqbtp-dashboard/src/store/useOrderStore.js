@@ -9,22 +9,29 @@ const useOrderStore = create((set) => ({
   fetchOrders: async () => {
     set({ isLoading: true });
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { set({ isLoading: false }); return; }
+
+      let targetId = session.user.id;
       const supplier = useSupplierStore.getState().supplier;
-      if (!supplier) { set({ isLoading: false }); return; }
-      
-      // 🧠 الذكاء: جلب معرف المدير
-      const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-      
+
+      if (supplier) {
+        targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+      } else {
+        const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).single();
+        if (emp && emp.supplier_id) targetId = emp.supplier_id;
+      }
+
       const { data, error } = await supabase.from('orders')
         .select('*')
         .eq('supplier_id', targetId)
         .order('created_at', { ascending: false });
-        
+
       if (error) {
         console.error("Error fetching orders:", error);
         return;
       }
-      
+
       set({ orders: data || [] });
     } catch (err) {
       console.error(err);
@@ -34,11 +41,18 @@ const useOrderStore = create((set) => ({
   },
 
   createOrder: async (cart, totalAmount, paymentType = 'cash', clientName = '') => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { success: false };
+
+    let targetId = session.user.id;
     const supplier = useSupplierStore.getState().supplier;
-    if (!supplier) return { success: false };
-    
-    // 🎯 استخدام targetId لكي تُسجل مبيعات الموظف باسم المحل
-    const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+
+    if (supplier) {
+      targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+    } else {
+      const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).single();
+      if (emp && emp.supplier_id) targetId = emp.supplier_id;
+    }
 
     const { data: orderData, error: orderError } = await supabase.from('orders').insert([{
       supplier_id: targetId,
@@ -49,15 +63,14 @@ const useOrderStore = create((set) => ({
     if (orderError) return { success: false, error: orderError.message };
 
     for (const item of cart) {
-      // انتبه: تأكد أن اسم الكمية في السلة هو qty أو quantity حسب برمجتك في POS
-      const qtyToDeduct = item.qty || item.quantity || 1; 
+      const qtyToDeduct = item.qty || item.quantity || 1;
       const newStock = item.stock_quantity - qtyToDeduct;
       await supabase.from('products').update({ stock_quantity: newStock }).eq('id', item.id);
     }
 
     if (paymentType === 'credit' && clientName) {
        await supabase.from('debts').insert([{
-          supplier_id: targetId, // 🛠️ تم تصحيح الخطأ هنا (كانت user.id فأصبحت targetId)
+          supplier_id: targetId,
           client_name: clientName,
           amount: totalAmount,
           paid_amount: 0

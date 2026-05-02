@@ -9,23 +9,30 @@ const useCaisseStore = create((set) => ({
   fetchTransactions: async () => {
     set({ isLoading: true });
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { set({ isLoading: false }); return; }
+
+      let targetId = session.user.id;
       const supplier = useSupplierStore.getState().supplier;
-      if (!supplier) { set({ isLoading: false }); return; }
-      
-      // 🧠 العقل الذكي: من هو صاحب هذا المحل؟
-      const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-      
+
+      if (supplier) {
+        targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+      } else {
+        const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).single();
+        if (emp && emp.supplier_id) targetId = emp.supplier_id;
+      }
+
       const { data, error } = await supabase.from('cash_transactions')
         .select('*')
-        .eq('supplier_id', targetId) // 🎯 نستخدم ID المدير دائماً
+        .eq('supplier_id', targetId)
         .order('date_transaction', { ascending: false })
         .order('created_at', { ascending: false });
-        
+
       if (error) {
         console.error("Erreur fetchTransactions:", error.message);
         return;
       }
-      
+
       set({ transactions: data || [] });
     } catch (err) {
       console.error(err);
@@ -35,14 +42,21 @@ const useCaisseStore = create((set) => ({
   },
 
   addTransaction: async (transactionData) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { success: false, error: "Non autorisé" };
+
+    let targetId = session.user.id;
     const supplier = useSupplierStore.getState().supplier;
-    if (!supplier) return { success: false, error: "Non autorisé" };
-    
-    // 🧠 العقل الذكي عند الإضافة أيضاً
-    const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+
+    if (supplier) {
+      targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+    } else {
+      const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).single();
+      if (emp && emp.supplier_id) targetId = emp.supplier_id;
+    }
 
     const { data, error } = await supabase.from('cash_transactions').insert([{
-      supplier_id: targetId, // 🎯 تسجل باسم المحل
+      supplier_id: targetId,
       ...transactionData
     }]).select().single();
 
@@ -50,7 +64,7 @@ const useCaisseStore = create((set) => ({
       console.error("Erreur addTransaction:", error.message);
       return { success: false, error };
     }
-    
+
     set((state) => ({ transactions: [data, ...state.transactions] }));
     return { success: true };
   },

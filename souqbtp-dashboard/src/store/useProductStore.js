@@ -8,33 +8,48 @@ const useProductStore = create((set) => ({
 
   fetchProducts: async () => {
     set({ isLoading: true });
-    
-    // 🧠 نستدعي بيانات المستخدم الحالي (سواء كان مديراً أو موظفاً)
-    const supplier = useSupplierStore.getState().supplier;
-    if (!supplier) {
-      set({ isLoading: false });
-      return;
-    }
+    try {
+      // 🛡️ الدرع الواقي: ننتظر التأكد من هوية المستخدم أولاً
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { set({ isLoading: false }); return; }
 
-    // 🎯 الضربة القاضية: إذا كان موظفاً، اجلب منتجات مديره (supplier.supplier_id)
-    // وإذا كان مديراً، اجلب منتجاته هو (supplier.id)
-    const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
-    
-    const { data, error } = await supabase.from('products')
-      .select('*')
-      .eq('supplier_id', targetId)
-      .order('created_at', { ascending: false });
-      
-    if (!error) set({ products: data || [], isLoading: false });
-    else set({ isLoading: false });
+      let targetId = session.user.id;
+      const supplier = useSupplierStore.getState().supplier;
+
+      // 🧠 العقل الذكي
+      if (supplier) {
+        targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+      } else {
+        const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).single();
+        if (emp && emp.supplier_id) targetId = emp.supplier_id;
+      }
+
+      const { data, error } = await supabase.from('products')
+        .select('*')
+        .eq('supplier_id', targetId)
+        .order('created_at', { ascending: false });
+
+      if (!error) set({ products: data || [] });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   addProduct: async (productData) => {
-    const supplier = useSupplierStore.getState().supplier;
-    if (!supplier) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
-    // 🎯 حتى لو أضاف أحمد منتجاً، سيُسجل باسم مديره لكي لا يضيع!
-    const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
+    let targetId = session.user.id;
+    const supplier = useSupplierStore.getState().supplier;
+
+    if (supplier) {
+      targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+    } else {
+      const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).single();
+      if (emp && emp.supplier_id) targetId = emp.supplier_id;
+    }
 
     const { data, error } = await supabase.from('products').insert([{
       supplier_id: targetId,

@@ -9,11 +9,20 @@ const useClientStore = create((set) => ({
   fetchClients: async () => {
     set({ isLoading: true });
     try {
+      // 🛡️ الدرع الواقي: انتظار جلسة المستخدم
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { set({ isLoading: false }); return; }
+
+      let targetId = session.user.id;
       const supplier = useSupplierStore.getState().supplier;
-      if (!supplier) { set({ isLoading: false }); return; }
-      
-      // 🧠 إذا كان لديه supplier_id (موظف) نأخذه، وإلا فهو المدير
-      const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+
+      // 🧠 العقل الذكي
+      if (supplier) {
+        targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+      } else {
+        const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).single();
+        if (emp && emp.supplier_id) targetId = emp.supplier_id;
+      }
       
       const { data, error } = await supabase.from('clients')
         .select('*')
@@ -29,9 +38,19 @@ const useClientStore = create((set) => ({
   },
 
   addClient: async (clientData) => {
+    // 🛡️ الدرع الواقي عند الإضافة
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    let targetId = session.user.id;
     const supplier = useSupplierStore.getState().supplier;
-    if (!supplier) return;
-    const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+
+    if (supplier) {
+      targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+    } else {
+      const { data: emp } = await supabase.from('team_members').select('supplier_id').eq('email', session.user.email).single();
+      if (emp && emp.supplier_id) targetId = emp.supplier_id;
+    }
 
     const { data, error } = await supabase.from('clients').insert([{
       supplier_id: targetId,
