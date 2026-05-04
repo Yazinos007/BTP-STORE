@@ -142,20 +142,55 @@ export default function Sidebar() {
 
   return (
     <div className={`w-[280px] h-screen bg-[#2d2252] text-gray-200 flex flex-col ${language === 'fr' ? 'border-r border-white/10' : 'border-l border-white/10'}`} dir={language === 'fr' ? 'ltr' : 'rtl'}>
-      <div className="p-6 border-b border-white/10 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-white">SouqBTP</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${isEnterprise ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'}`}>{tier}</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${role === 'admin' ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-300'}`}>
-              {role === 'admin' ? 'Propriétaire' : 'Employé'}
-            </span>
+      {/* 🚀 بداية رأس القائمة بعد الدمج (اللوجو، الاسم، الوسام، وزر اللغة) */}
+      <div className="p-5 border-b border-white/10 flex flex-col gap-4">
+        
+        {/* الجزء العلوي: اللوجو + الاسم + زر اللغة */}
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-3">
+            {/* اللوجو أو الحرف الأول */}
+            <div className="w-11 h-11 min-w-[44px] rounded-xl bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center text-white font-black text-xl shadow-lg border border-white/10 overflow-hidden">
+              {supplier?.logo_url ? (
+                <img src={supplier.logo_url} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                supplier?.store_name?.charAt(0)?.toUpperCase() || 'S'
+              )}
+            </div>
+            
+            {/* اسم المتجر والبطاقات العادية */}
+            <div className="flex flex-col overflow-hidden">
+              <h2 className="text-white font-black text-base leading-tight truncate w-[120px]" title={supplier?.store_name}>
+                {supplier?.store_name || 'SouqBTP'}
+              </h2>
+              
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-bold ${supplier?.tier === 'enterprise' || isEnterprise ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'}`}>
+                  {supplier?.tier || tier}
+                </span>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-bold ${supplier?.role === 'admin' || role === 'admin' ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-300'}`}>
+                  {supplier?.role === 'admin' || role === 'admin' ? 'Propriétaire' : 'Employé'}
+                </span>
+              </div>
+            </div>
           </div>
+
+          {/* زر تغيير اللغة الخاص بك (حافظنا عليه!) */}
+          <button onClick={toggleLanguage} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white flex flex-col items-center justify-center min-w-[44px]" title="تغيير لغة النظام">
+            <Globe size={18} />
+            <span className="text-[10px] font-bold mt-1">{language === 'fr' ? 'AR' : 'FR'}</span>
+          </button>
         </div>
-        <button onClick={toggleLanguage} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white flex flex-col items-center justify-center" title="تغيير لغة النظام">
-          <Globe size={18} />
-          <span className="text-[10px] font-bold mt-1">{language === 'fr' ? 'AR' : 'FR'}</span>
-        </button>
+
+        {/* 🏆 الجزء السفلي: الوسام الذهبي العظيم للشريك المؤسس */}
+        {supplier?.is_founding_partner && (
+          <div className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.15)] relative overflow-hidden group">
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"></div>
+            <span className="text-[11px] font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300 uppercase tracking-widest z-10">
+              شريك مؤسس
+            </span>
+            <span className="text-amber-400 text-xs z-10">🏆</span>
+          </div>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">

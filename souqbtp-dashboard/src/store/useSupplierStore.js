@@ -64,9 +64,9 @@ const useSupplierStore = create((set) => ({
             const { data: updatedData, error: updateError } = await supabase
               .from('suppliers')
               .update({
-                tier: 'pro',
-                is_founding_partner: true,
-                subscription_end: sixMonthsFromNow.toISOString()
+              tier: 'enterprise', 
+              is_founding_partner: true,
+              subscription_end: sixMonthsFromNow.toISOString()
               })
               .eq('id', userId)
               .select()
