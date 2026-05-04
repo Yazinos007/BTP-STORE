@@ -19,7 +19,7 @@ const useSupplierStore = create((set) => ({
       const userId = session.user.id;
       const userEmail = session.user.email;
 
-      // الفحص 1: هل هو موظف؟ (تم إصلاحها باستخدام maybeSingle 🪄)
+      // الفحص 1: هل هو موظف؟
       const { data: employeeData } = await supabase
         .from('team_members')
         .select('*')
@@ -40,20 +40,52 @@ const useSupplierStore = create((set) => ({
         return;
       }
 
-      // الفحص 2: إذن هو المدير (تم إصلاحها باستخدام maybeSingle 🪄)
-      const { data: adminData } = await supabase
+      // الفحص 2: إذن هو المدير 
+      let { data: adminData } = await supabase
         .from('suppliers')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
       if (adminData) {
+        
+        // 🚀 الكود السحري: عرض شركاء التأسيس (أول 100 مورد)
+        if (adminData.tier === 'free' && !adminData.is_founding_partner) {
+          // حساب عدد الموردين في المنصة
+          const { count } = await supabase
+            .from('suppliers')
+            .select('*', { count: 'exact', head: true });
+
+          // إذا كان العدد 100 أو أقل، قم بالترقية الفورية!
+          if (count !== null && count <= 100) {
+            const sixMonthsFromNow = new Date();
+            sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
+
+            const { data: updatedData, error: updateError } = await supabase
+              .from('suppliers')
+              .update({
+                tier: 'pro',
+                is_founding_partner: true,
+                subscription_end: sixMonthsFromNow.toISOString()
+              })
+              .eq('id', userId)
+              .select()
+              .single();
+            
+            if (!updateError && updatedData) {
+              adminData = updatedData; // تحديث بيانات الجلسة الحالية لتشمل الترقية
+              console.log("🎊 تم تفعيل اشتراك Pro لمدة 6 أشهر بنجاح!");
+            }
+          }
+        }
+
         set({ supplier: { ...adminData, role: 'admin' }, isAuthenticated: true, isLoading: false });
         return;
       }
 
       set({ supplier: null, isAuthenticated: false, isLoading: false });
     } catch (error) {
+      console.error("Error fetching profile:", error);
       set({ isLoading: false, isAuthenticated: false });
     }
   },
