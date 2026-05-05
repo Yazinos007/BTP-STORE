@@ -142,14 +142,14 @@ export default function Sidebar() {
 
   return (
     <div className={`w-[280px] h-screen bg-[#2d2252] text-gray-200 flex flex-col ${language === 'fr' ? 'border-r border-white/10' : 'border-l border-white/10'}`} dir={language === 'fr' ? 'ltr' : 'rtl'}>
-      {/* 🚀 بداية رأس القائمة بعد الدمج (اللوجو، الاسم، الوسام، وزر اللغة) */}
-      <div className="p-5 border-b border-white/10 flex flex-col gap-4">
+      {/* 🚀 بداية رأس القائمة (مكبر وفخم) */}
+      <div className="p-6 border-b border-white/10 flex flex-col gap-5">
         
         {/* الجزء العلوي: اللوجو + الاسم + زر اللغة */}
         <div className="flex justify-between items-start">
-          <div className="flex items-center gap-3">
-            {/* اللوجو أو الحرف الأول */}
-            <div className="w-11 h-11 min-w-[44px] rounded-xl bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center text-white font-black text-xl shadow-lg border border-white/10 overflow-hidden">
+          <div className="flex items-center gap-4">
+            {/* 🌟 اللوجو المكبر */}
+            <div className="w-16 h-16 min-w-[64px] rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center text-white font-black text-3xl shadow-xl border-2 border-white/10 overflow-hidden">
               {supplier?.logo_url ? (
                 <img src={supplier.logo_url} alt="Logo" className="w-full h-full object-cover" />
               ) : (
@@ -157,38 +157,38 @@ export default function Sidebar() {
               )}
             </div>
             
-            {/* اسم المتجر والبطاقات العادية */}
-            <div className="flex flex-col overflow-hidden">
-              <h2 className="text-white font-black text-base leading-tight truncate w-[120px]" title={supplier?.store_name}>
+            {/* اسم المتجر والبطاقات العادية مكبرة */}
+            <div className="flex flex-col overflow-hidden justify-center h-16">
+              <h2 className="text-white font-black text-xl leading-tight truncate w-[140px] mb-1.5" title={supplier?.store_name}>
                 {supplier?.store_name || 'SouqBTP'}
               </h2>
               
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-bold ${supplier?.tier === 'enterprise' || isEnterprise ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'}`}>
+              <div className="flex flex-wrap gap-2">
+                <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${supplier?.tier === 'enterprise' || isEnterprise ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-gray-600 text-white'}`}>
                   {supplier?.tier || tier}
                 </span>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-bold ${supplier?.role === 'admin' || role === 'admin' ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-300'}`}>
+                <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${supplier?.role === 'admin' || role === 'admin' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white/10 text-gray-300'}`}>
                   {supplier?.role === 'admin' || role === 'admin' ? 'Propriétaire' : 'Employé'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* زر تغيير اللغة الخاص بك (حافظنا عليه!) */}
-          <button onClick={toggleLanguage} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white flex flex-col items-center justify-center min-w-[44px]" title="تغيير لغة النظام">
-            <Globe size={18} />
-            <span className="text-[10px] font-bold mt-1">{language === 'fr' ? 'AR' : 'FR'}</span>
+          {/* زر تغيير اللغة */}
+          <button onClick={toggleLanguage} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white flex flex-col items-center justify-center min-w-[48px]" title="تغيير لغة النظام">
+            <Globe size={20} />
+            <span className="text-[11px] font-bold mt-1">{language === 'fr' ? 'AR' : 'FR'}</span>
           </button>
         </div>
 
-        {/* 🏆 الجزء السفلي: الوسام الذهبي العظيم للشريك المؤسس */}
+        {/* 🏆 الجزء السفلي: الوسام الذهبي العظيم (مكبر وبارز جداً) */}
         {supplier?.is_founding_partner && (
-          <div className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.15)] relative overflow-hidden group">
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"></div>
-            <span className="text-[11px] font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300 uppercase tracking-widest z-10">
+          <div className="flex items-center justify-center gap-3 px-4 py-3 mt-1 rounded-xl bg-gradient-to-r from-amber-500/10 via-yellow-500/15 to-orange-500/10 border border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)] relative overflow-hidden group w-full">
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"></div>
+            <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 uppercase tracking-widest z-10 drop-shadow-md">
               شريك مؤسس
             </span>
-            <span className="text-amber-400 text-xs z-10">🏆</span>
+            <span className="text-amber-400 text-lg z-10 drop-shadow-md">🏆</span>
           </div>
         )}
       </div>
