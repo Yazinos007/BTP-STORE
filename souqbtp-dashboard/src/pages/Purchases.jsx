@@ -94,8 +94,11 @@ export default function Purchases() {
     try {
       const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       const extSupplier = suppliers.find(s => s.id === selectedSupplierId);
+      
+      // توليد رقم فاتورة شراء فريد
+      const invNumber = `ACH-${Date.now().toString().slice(-6)}`;
 
-      // أ- تحديث المنتجات (الكمية + ثمن التكلفة)
+      // أ- تحديث المخزون وثمن التكلفة
       for (const item of cart) {
         await updateProduct(item.id, { 
           stock_quantity: Number(item.stock_quantity) + Number(item.quantity),
@@ -103,34 +106,40 @@ export default function Purchases() {
         });
       }
 
-      // ب- تسجيل الفاتورة
-      const { error: pError } = await supabase.from('purchases').insert([{
+      // ب- 🌟 تفعيل فاتورة الشراء (تسجيل في الجدول الجديد)
+      const { error: invError } = await supabase.from('purchase_invoices').insert([{
         supplier_id: targetId,
         external_supplier_id: selectedSupplierId,
+        invoice_number: invNumber,
         total_amount: total,
         items: cart,
         payment_method: method
       }]);
+      if (invError) throw invError;
 
-      if (pError) throw pError;
-
-      // ج- تسجيل المصروف تلقائياً (فقط في الكاش)
+      // ج- تسجيل المصروف (فقط في الكاش)
       if (method === 'cash') {
-        const { error: eError } = await supabase.from('expenses').insert([{
+        await supabase.from('expenses').insert([{
           supplier_id: targetId,
-          title: `شراء سلع: ${extSupplier?.name || 'مورد'}`,
+          title: `فاتورة شراء رقم: ${invNumber}`,
           amount: total,
           category: 'Achat de Marchandises',
           date_expense: new Date().toISOString()
         }]);
-        if (eError) console.error("Expense Log Error:", eError.message);
+      }
+
+      // د- إذا كان كريدي، تحديث ديون المورد
+      if (method === 'credit') {
+        const newDebt = Number(extSupplier?.total_debt || 0) + total;
+        await updateSupplier(selectedSupplierId, { total_debt: newDebt });
       }
 
       setCart([]);
       setSelectedSupplierId('');
-      alert(t.msgSuccess);
+      alert(`${t.msgSuccess} \n رقم الفاتورة: ${invNumber}`);
+      
     } catch (err) {
-      console.error("Critical Error:", err);
+      console.error(err);
       alert(t.msgError + " " + err.message);
     } finally {
       setIsProcessing(false);
@@ -214,15 +223,20 @@ export default function Purchases() {
                 <div className="py-10 text-center text-white/20 italic">{t.empty}</div>
               ) : (
                 cart.map(item => (
-                  <div key={item.id} className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-bold text-sm">{item.name}</p>
-                        {/* 🌟 حساب الربح المتوقع */}
-                        <p className="text-[10px] text-emerald-400 mt-1">{t.expectedProfit} <span className="font-black">{((item.price - item.purchase_price) * item.quantity).toLocaleString()} DH</span></p>
-                      </div>
-                      <button onClick={() => removeFromCart(item.id)} className="text-white/30 hover:text-red-400"><X size={16}/></button>
-                    </div>
+        <div key={item.id} className="bg-white/5 p-4 rounded-2xl border border-white/10 mb-3">
+        <div className="flex justify-between items-start mb-2">
+        <div>
+        <p className="font-bold text-sm text-white">{item.name}</p>
+        {/* 💰 حساب هامش الربح التلقائي */}
+        <p className="text-[10px] text-emerald-400 font-bold mt-1">
+          {t.expectedProfit} {((item.price - item.purchase_price) * item.quantity).toLocaleString()} DH
+          <span className="text-gray-500 ml-2">({item.price - item.purchase_price} DH/قطعة)</span>
+        </p>
+        </div>
+      <button onClick={() => removeFromCart(item.id)} className="text-white/30 hover:text-red-400">
+        <X size={16}/>
+          </button>
+        </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="text-[10px] text-white/50 uppercase font-black">{t.qty}</label>
