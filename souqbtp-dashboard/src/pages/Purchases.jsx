@@ -55,65 +55,61 @@ export default function Purchases() {
 
   const total = cart.reduce((sum, item) => sum + (Number(item.purchase_price) * Number(item.quantity)), 0);
 
-  // 🚀 العملية الكبرى: تأكيد الشراء (النسخة المتطورة)
   const handleCompletePurchase = async (method) => {
-    if (!selectedSupplierId || cart.length === 0) return alert(t.selectSupplier);
-    if (!supplier) return alert(t.error); // حماية إضافية
+    // 1. فحص الشروط
+    if (!selectedSupplierId) return alert("المرجو اختيار المورد أولاً!");
+    if (cart.length === 0) return alert("قائمة المشتريات فارغة!");
+    if (!supplier) return alert("لم يتم التعرف على بيانات حسابك!");
+    
     setIsProcessing(true);
 
     try {
-      // 🧠 تحديد لمن تعود هذه المشتريات
       const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       const extSupplier = suppliers.find(s => s.id === selectedSupplierId);
 
-      // 1. تحديث مخزون كل منتج
+      // 2. تحديث المخزون (تأكد أن updateProduct تعمل)
       for (const item of cart) {
         const newQty = Number(item.stock_quantity) + Number(item.quantity);
         await updateProduct(item.id, { stock_quantity: newQty });
       }
 
-      // 2. إذا كان الشراء بالآجل، نزيد ديون المورد
+      // 3. زيادة ديون المورد (إذا كان كريدي)
       if (method === 'credit') {
         const newDebt = Number(extSupplier?.total_debt || 0) + total;
         await updateSupplier(selectedSupplierId, { total_debt: newDebt });
       }
 
-      // 3. تسجيل العملية في جدول المشتريات (Purchases)
-      const { error: purchaseError } = await supabase.from('purchases').insert([{
-        supplier_id: targetId, 
+      // 4. تسجيل الفاتورة في جدول purchases
+      const { error: pError } = await supabase.from('purchases').insert([{
+        supplier_id: targetId,
         external_supplier_id: selectedSupplierId,
         total_amount: total,
         items: cart,
         payment_method: method
       }]);
 
-      if (purchaseError) {
-        console.error("❌ خطأ في تسجيل فاتورة الشراء:", purchaseError.message);
-        throw purchaseError; // إجبار النظام على إظهار الخطأ
-      }
+      if (pError) throw new Error("فشل تسجيل الفاتورة: " + pError.message);
 
-      // 4. 🌟 الإضافة الجديدة: تسجيل المصروف في جدول المصاريف (Expenses) إذا كان نقداً
+      // 5. تسجيل المصروف في جدول expenses (إذا كان كاش)
       if (method === 'cash') {
-        const { error: expenseError } = await supabase.from('expenses').insert([{
+        const { error: eError } = await supabase.from('expenses').insert([{
           supplier_id: targetId,
-          title: `شراء سلع للمخزون - ${extSupplier?.name || 'مورد'}`, // عنوان المصروف
+          title: `شراء سلع: ${extSupplier?.name || 'مورد'}`,
           amount: total,
-          category: 'Achat de Marchandises', // تصنيف المصروف
+          category: 'Achat de Marchandises',
           date_expense: new Date().toISOString()
         }]);
-
-        if (expenseError) {
-           console.error("❌ خطأ في تسجيل المصروف:", expenseError.message);
-        }
+        if (eError) console.error("فشل تسجيل المصروف:", eError.message);
       }
 
+      // 6. النجاح النهائي
       setCart([]);
       setSelectedSupplierId('');
-      setSearchTerm('');
       alert(t.success);
+      
     } catch (err) {
-      console.error("حدث خطأ عام:", err);
-      alert(t.error + " (راجع شاشة Console لمعرفة السبب)");
+      console.error("خطأ تقني:", err);
+      alert("عذراً، حدث خطأ: " + err.message);
     } finally {
       setIsProcessing(false);
     }
