@@ -8,20 +8,44 @@ import useSupplierStore from '../store/useSupplierStore'; // 🌟 جلبنا ا�
 
 const translations = {
   ar: {
-    title: 'مشتريات المخزون', subtitle: 'إدخال السلع الجديدة وتحديث ديون الموردين.',
-    selectSupplier: 'اختر المورد', searchProd: 'ابحث عن منتج لشرائه...',
-    cart: 'قائمة المشتريات', empty: 'القائمة فارغة', total: 'إجمالي الشراء',
-    payCash: 'دفع نقداً', payCredit: 'شراء بالآجل (كريدي)',
-    unit: 'الوحدة', qty: 'الكمية', price: 'ثمن الشراء',
-    success: '✅ تم تحديث المخزون بنجاح!', error: 'حدث خطأ أثناء العملية'
+    title: 'مشتريات المخزون', 
+    subtitle: 'إدخال السلع الجديدة وتحديث ديون الموردين.',
+    selectSupplier: 'اختر المورد', 
+    searchProd: 'ابحث عن منتج لشرائه...',
+    cart: 'قائمة المشتريات', 
+    empty: 'القائمة فارغة', 
+    total: 'إجمالي الشراء',
+    payCash: 'دفع نقداً', 
+    payCredit: 'شراء بالآجل (كريدي)',
+    unit: 'الوحدة', 
+    qty: 'الكمية', 
+    price: 'ثمن الشراء',
+    // رسائل التنبيه المحدثة
+    msgSelectSupplier: 'المرجو اختيار المورد أولاً!',
+    msgEmptyCart: 'قائمة المشتريات فارغة!',
+    msgAccountError: 'لم يتم التعرف على بيانات حسابك!',
+    msgSuccess: '✅ تم تحديث المخزون بنجاح!',
+    msgError: 'عذراً، حدث خطأ أثناء العملية:'
   },
   fr: {
-    title: 'Achats & Stock In', subtitle: 'Entrée de marchandises et dettes fournisseurs.',
-    selectSupplier: 'Choisir le Fournisseur', searchProd: 'Rechercher un produit...',
-    cart: 'Liste d\'Achat', empty: 'Liste vide', total: 'Total Achat',
-    payCash: 'Payer Cash', payCredit: 'Achat à Crédit',
-    unit: 'Unité', qty: 'Qté', price: 'Prix d\'achat',
-    success: '✅ Stock mis à jour avec succès !', error: 'Erreur lors de l\'opération'
+    title: 'Achats & Stock In', 
+    subtitle: 'Entrée de marchandises et dettes fournisseurs.',
+    selectSupplier: 'Choisir le Fournisseur', 
+    searchProd: 'Rechercher un produit...',
+    cart: 'Liste d\'Achat', 
+    empty: 'Liste vide', 
+    total: 'Total Achat',
+    payCash: 'Payer Cash', 
+    payCredit: 'Achat à Crédit',
+    unit: 'Unité', 
+    qty: 'Qté', 
+    price: 'Prix d\'achat',
+    // Messages d'alerte traduits
+    msgSelectSupplier: 'Veuillez choisir un fournisseur !',
+    msgEmptyCart: 'La liste d\'achat est vide !',
+    msgAccountError: 'Erreur d\'identification du compte !',
+    msgSuccess: '✅ Stock mis à jour avec succès !',
+    msgError: 'Désolé, une erreur est survenue :'
   }
 };
 
@@ -55,65 +79,59 @@ export default function Purchases() {
 
   const total = cart.reduce((sum, item) => sum + (Number(item.purchase_price) * Number(item.quantity)), 0);
 
-  const handleCompletePurchase = async (method) => {
-    // 1. فحص الشروط
-    if (!selectedSupplierId) return alert("المرجو اختيار المورد أولاً!");
-    if (cart.length === 0) return alert("قائمة المشتريات فارغة!");
-    if (!supplier) return alert("لم يتم التعرف على بيانات حسابك!");
-    
-    setIsProcessing(true);
+  // 2. تحديث الدالة لتستخدم هذه الترجمات
+const handleCompletePurchase = async (method) => {
+  if (!selectedSupplierId) return alert(t.msgSelectSupplier); // ترجمة فورية
+  if (cart.length === 0) return alert(t.msgEmptyCart);
+  if (!supplier) return alert(t.msgAccountError);
+  
+  setIsProcessing(true);
 
-    try {
-      const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-      const extSupplier = suppliers.find(s => s.id === selectedSupplierId);
+  try {
+    const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+    const extSupplier = suppliers.find(s => s.id === selectedSupplierId);
 
-      // 2. تحديث المخزون (تأكد أن updateProduct تعمل)
-      for (const item of cart) {
-        const newQty = Number(item.stock_quantity) + Number(item.quantity);
-        await updateProduct(item.id, { stock_quantity: newQty });
-      }
-
-      // 3. زيادة ديون المورد (إذا كان كريدي)
-      if (method === 'credit') {
-        const newDebt = Number(extSupplier?.total_debt || 0) + total;
-        await updateSupplier(selectedSupplierId, { total_debt: newDebt });
-      }
-
-      // 4. تسجيل الفاتورة في جدول purchases
-      const { error: pError } = await supabase.from('purchases').insert([{
-        supplier_id: targetId,
-        external_supplier_id: selectedSupplierId,
-        total_amount: total,
-        items: cart,
-        payment_method: method
-      }]);
-
-      if (pError) throw new Error("فشل تسجيل الفاتورة: " + pError.message);
-
-      // 5. تسجيل المصروف في جدول expenses (إذا كان كاش)
-      if (method === 'cash') {
-        const { error: eError } = await supabase.from('expenses').insert([{
-          supplier_id: targetId,
-          title: `شراء سلع: ${extSupplier?.name || 'مورد'}`,
-          amount: total,
-          category: 'Achat de Marchandises',
-          date_expense: new Date().toISOString()
-        }]);
-        if (eError) console.error("فشل تسجيل المصروف:", eError.message);
-      }
-
-      // 6. النجاح النهائي
-      setCart([]);
-      setSelectedSupplierId('');
-      alert(t.success);
-      
-    } catch (err) {
-      console.error("خطأ تقني:", err);
-      alert("عذراً، حدث خطأ: " + err.message);
-    } finally {
-      setIsProcessing(false);
+    for (const item of cart) {
+      const newQty = Number(item.stock_quantity) + Number(item.quantity);
+      await updateProduct(item.id, { stock_quantity: newQty });
     }
-  };
+
+    if (method === 'credit') {
+      const newDebt = Number(extSupplier?.total_debt || 0) + total;
+      await updateSupplier(selectedSupplierId, { total_debt: newDebt });
+    }
+
+    const { error: pError } = await supabase.from('purchases').insert([{
+      supplier_id: targetId,
+      external_supplier_id: selectedSupplierId,
+      total_amount: total,
+      items: cart,
+      payment_method: method
+    }]);
+
+    if (pError) throw pError;
+
+    if (method === 'cash') {
+      await supabase.from('expenses').insert([{
+        supplier_id: targetId,
+        title: `Achat: ${extSupplier?.name || 'Fournisseur'}`,
+        amount: total,
+        category: 'Achat de Marchandises',
+        date_expense: new Date().toISOString()
+      }]);
+    }
+
+    setCart([]);
+    setSelectedSupplierId('');
+    alert(t.msgSuccess);
+    
+  } catch (err) {
+    console.error(err);
+    alert(`${t.msgError} ${err.message}`);
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
