@@ -117,15 +117,20 @@ export default function Purchases() {
       }]);
       if (invError) throw invError;
 
-      // ج- تسجيل المصروف (فقط في الكاش)
+      // ج- تسجيل المصروف تلقائياً (فقط في الكاش)
       if (method === 'cash') {
-        await supabase.from('expenses').insert([{
+        const { error: eError } = await supabase.from('expenses').insert([{
           supplier_id: targetId,
-          title: `فاتورة شراء رقم: ${invNumber}`,
+          description: `فاتورة شراء رقم: ${invNumber}`, // 🌟 تعديل: description بدلاً من title
           amount: total,
-          category: 'Achat de Marchandises',
-          date_expense: new Date().toISOString()
+          category: 'Achat de marchandises', // 🌟 تطابق تام مع التصنيف في صفحتك
+          date: new Date().toISOString() // 🌟 تعديل: date بدلاً من date_expense
         }]);
+        
+        // 🌟 أضفنا هذا التنبيه لكي يخبرنا فوراً إذا كان هناك عمود ناقص في قاعدة البيانات
+        if (eError) {
+          alert("⚠️ تم تسجيل الفاتورة، لكن المصروف واجه هذا الخطأ: \n" + eError.message);
+        }
       }
 
       // د- إذا كان كريدي، تحديث ديون المورد
