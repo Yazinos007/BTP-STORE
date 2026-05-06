@@ -121,15 +121,14 @@ export default function Purchases() {
       if (method === 'cash') {
         const { error: eError } = await supabase.from('expenses').insert([{
           supplier_id: targetId,
-          description: `فاتورة شراء رقم: ${invNumber}`, // 🌟 تعديل: description بدلاً من title
+          title: `فاتورة شراء رقم: ${invNumber}`, // 🌟 أعدناها إلى title
           amount: total,
-          category: 'Achat de marchandises', // 🌟 تطابق تام مع التصنيف في صفحتك
-          date: new Date().toISOString() // 🌟 تعديل: date بدلاً من date_expense
+          category: 'Achat de marchandises', // 🌟 حروف صغيرة لكي يقبلها فلتر صفحة المصاريف
+          date_expense: new Date().toISOString() // 🌟 أعدناها إلى date_expense
         }]);
         
-        // 🌟 أضفنا هذا التنبيه لكي يخبرنا فوراً إذا كان هناك عمود ناقص في قاعدة البيانات
         if (eError) {
-          alert("⚠️ تم تسجيل الفاتورة، لكن المصروف واجه هذا الخطأ: \n" + eError.message);
+          alert("⚠️ تم تسجيل الفاتورة، لكن المصروف واجه خطأ: \n" + eError.message);
         }
       }
 
