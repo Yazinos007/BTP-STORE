@@ -67,71 +67,65 @@ export default function Purchases() {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      return [...prev, { ...product, quantity: 1, purchase_price: product.price }]; 
+      
+      // 🌟 التعديل هنا: نستخدم cost_price لثمن الشراء
+      return [...prev, { 
+        ...product, 
+        quantity: 1, 
+        purchase_price: product.cost_price || 0 // إذا كان فارغاً يضع 0
+      }]; 
     });
   };
 
-  const updateCartItem = (id, field, value) => {
-    setCart(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
-  };
+  const handleCompletePurchase = async (method) => {
+    if (!selectedSupplierId || cart.length === 0) return alert(t.msgSelectSupplier);
+    if (!supplier) return alert(t.msgAccountError);
+    setIsProcessing(true);
 
-  const removeFromCart = (id) => setCart(prev => prev.filter(item => item.id !== id));
+    try {
+      const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+      const extSupplier = suppliers.find(s => s.id === selectedSupplierId);
 
-  const total = cart.reduce((sum, item) => sum + (Number(item.purchase_price) * Number(item.quantity)), 0);
+      // 1. تحديث المخزون + تحديث ثمن التكلفة في القاعدة
+      for (const item of cart) {
+        const newQty = Number(item.stock_quantity) + Number(item.quantity);
+        await updateProduct(item.id, { 
+          stock_quantity: newQty,
+          cost_price: Number(item.purchase_price) // يحفظ آخر ثمن اشتريت به
+        });
+      }
 
-  // 2. تحديث الدالة لتستخدم هذه الترجمات
-const handleCompletePurchase = async (method) => {
-  if (!selectedSupplierId) return alert(t.msgSelectSupplier); // ترجمة فورية
-  if (cart.length === 0) return alert(t.msgEmptyCart);
-  if (!supplier) return alert(t.msgAccountError);
-  
-  setIsProcessing(true);
-
-  try {
-    const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-    const extSupplier = suppliers.find(s => s.id === selectedSupplierId);
-
-    for (const item of cart) {
-      const newQty = Number(item.stock_quantity) + Number(item.quantity);
-      await updateProduct(item.id, { stock_quantity: newQty });
-    }
-
-    if (method === 'credit') {
-      const newDebt = Number(extSupplier?.total_debt || 0) + total;
-      await updateSupplier(selectedSupplierId, { total_debt: newDebt });
-    }
-
-    const { error: pError } = await supabase.from('purchases').insert([{
-      supplier_id: targetId,
-      external_supplier_id: selectedSupplierId,
-      total_amount: total,
-      items: cart,
-      payment_method: method
-    }]);
-
-    if (pError) throw pError;
-
-    if (method === 'cash') {
-      await supabase.from('expenses').insert([{
+      // 2. تسجيل الفاتورة في جدول purchases
+      const { error: pError } = await supabase.from('purchases').insert([{
         supplier_id: targetId,
-        title: `Achat: ${extSupplier?.name || 'Fournisseur'}`,
-        amount: total,
-        category: 'Achat de Marchandises',
-        date_expense: new Date().toISOString()
+        external_supplier_id: selectedSupplierId,
+        total_amount: total,
+        items: cart,
+        payment_method: method
       }]);
-    }
+      if (pError) throw pError;
 
-    setCart([]);
-    setSelectedSupplierId('');
-    alert(t.msgSuccess);
-    
-  } catch (err) {
-    console.error(err);
-    alert(`${t.msgError} ${err.message}`);
-  } finally {
-    setIsProcessing(false);
-  }
-};
+      // 3. تسجيل المصروف في جدول expenses (إذا دفع كاش)
+      if (method === 'cash') {
+        await supabase.from('expenses').insert([{
+          supplier_id: targetId,
+          title: `شراء سلع: ${extSupplier?.name || 'مورد'}`,
+          amount: total,
+          category: 'Achat de Marchandises',
+          date_expense: new Date().toISOString()
+        }]);
+      }
+
+      setCart([]);
+      setSelectedSupplierId('');
+      alert(t.msgSuccess);
+      
+    } catch (err) {
+      alert(t.msgError + " " + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -173,10 +167,23 @@ const handleCompletePurchase = async (method) => {
             {/* قائمة المنتجات المتاحة */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map(p => (
-                <button key={p.id} onClick={() => addToCart(p)} className="p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-start group">
-                  <p className="font-bold text-gray-800 group-hover:text-blue-700">{p.name}</p>
-                  <p className="text-xs text-gray-500 mt-1">Stock: {p.stock_quantity} {p.unit}</p>
-                </button>
+                <button key={p.id} onClick={() => addToCart(p)} className="p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-start group relative overflow-hidden">
+  <p className="font-bold text-gray-800 group-hover:text-blue-700">{p.name}</p>
+  {/* إظهار السعرين بوضوح */}
+  <div className="flex flex-col mt-2 gap-1">
+    <div className="flex justify-between text-[10px]">
+      <span className="text-gray-400 uppercase font-bold">التكلفة:</span>
+      <span className="text-blue-600 font-black">{p.cost_price || 0} DH</span>
+    </div>
+    <div className="flex justify-between text-[10px]">
+      <span className="text-gray-400 uppercase font-bold">البيع:</span>
+      <span className="text-emerald-600 font-black">{p.price} DH</span>
+    </div>
+  </div>
+  <p className="text-[9px] text-gray-400 mt-2 bg-gray-100 w-fit px-1.5 py-0.5 rounded">
+    المخزن: {p.stock_quantity} {p.unit}
+  </p>
+</button>
               ))}
             </div>
           </div>
