@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Minus, Trash2, CheckCircle, Truck, ShoppingBag, Loader2, CreditCard, X } from 'lucide-react';
+import { Search, CheckCircle, ShoppingBag, Loader2, CreditCard, X, TrendingUp, BrainCircuit } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import useProductStore from '../store/useProductStore';
 import useExternalSupplierStore from '../store/useExternalSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
-import useSupplierStore from '../store/useSupplierStore'; // 🌟 جلبنا العقل المركزي
+import useSupplierStore from '../store/useSupplierStore';
 
 const translations = {
   ar: {
@@ -20,7 +20,6 @@ const translations = {
     unit: 'الوحدة', 
     qty: 'الكمية', 
     price: 'ثمن الشراء',
-    // رسائل التنبيه المحدثة
     msgSelectSupplier: 'المرجو اختيار المورد أولاً!',
     msgEmptyCart: 'قائمة المشتريات فارغة!',
     msgAccountError: 'لم يتم التعرف على بيانات حسابك!',
@@ -40,7 +39,6 @@ const translations = {
     unit: 'Unité', 
     qty: 'Qté', 
     price: 'Prix d\'achat',
-    // Messages d'alerte traduits
     msgSelectSupplier: 'Veuillez choisir un fournisseur !',
     msgEmptyCart: 'La liste d\'achat est vide !',
     msgAccountError: 'Erreur d\'identification du compte !',
@@ -53,7 +51,7 @@ export default function Purchases() {
   const { products, fetchProducts, updateProduct } = useProductStore();
   const { suppliers, fetchSuppliers, updateSupplier } = useExternalSupplierStore();
   const { language } = useSettingsStore();
-  const { supplier } = useSupplierStore(); // 🌟 استخراج بيانات المستخدم الحالي
+  const { supplier } = useSupplierStore();
   const t = translations[language];
 
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
@@ -63,19 +61,23 @@ export default function Purchases() {
 
   useEffect(() => { fetchProducts(); fetchSuppliers(); }, [fetchProducts, fetchSuppliers]);
 
+  // 🌟 دالة الإضافة للسلة (تستخدم ثمن التكلفة)
   const addToCart = (product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      
-      // 🌟 التعديل هنا: نستخدم cost_price لثمن الشراء
-      return [...prev, { 
-        ...product, 
-        quantity: 1, 
-        purchase_price: product.cost_price || 0 // إذا كان فارغاً يضع 0
-      }]; 
+      return [...prev, { ...product, quantity: 1, purchase_price: product.cost_price || 0 }]; 
     });
   };
+
+  // 🛠️ الدالة التي كانت مفقودة وتسببت في الصفحة البيضاء
+  const updateCartItem = (id, field, value) => {
+    setCart(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+  };
+
+  const removeFromCart = (id) => setCart(prev => prev.filter(item => item.id !== id));
+
+  const total = cart.reduce((sum, item) => sum + (Number(item.purchase_price) * Number(item.quantity)), 0);
 
   const handleCompletePurchase = async (method) => {
     if (!selectedSupplierId || cart.length === 0) return alert(t.msgSelectSupplier);
@@ -86,16 +88,19 @@ export default function Purchases() {
       const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       const extSupplier = suppliers.find(s => s.id === selectedSupplierId);
 
-      // 1. تحديث المخزون + تحديث ثمن التكلفة في القاعدة
       for (const item of cart) {
         const newQty = Number(item.stock_quantity) + Number(item.quantity);
         await updateProduct(item.id, { 
           stock_quantity: newQty,
-          cost_price: Number(item.purchase_price) // يحفظ آخر ثمن اشتريت به
+          cost_price: Number(item.purchase_price)
         });
       }
 
-      // 2. تسجيل الفاتورة في جدول purchases
+      if (method === 'credit') {
+        const newDebt = Number(extSupplier?.total_debt || 0) + total;
+        await updateSupplier(selectedSupplierId, { total_debt: newDebt });
+      }
+
       const { error: pError } = await supabase.from('purchases').insert([{
         supplier_id: targetId,
         external_supplier_id: selectedSupplierId,
@@ -105,11 +110,10 @@ export default function Purchases() {
       }]);
       if (pError) throw pError;
 
-      // 3. تسجيل المصروف في جدول expenses (إذا دفع كاش)
       if (method === 'cash') {
         await supabase.from('expenses').insert([{
           supplier_id: targetId,
-          title: `شراء سلع: ${extSupplier?.name || 'مورد'}`,
+          title: `Achat Stock: ${extSupplier?.name || 'Fournisseur'}`,
           amount: total,
           category: 'Achat de Marchandises',
           date_expense: new Date().toISOString()
@@ -137,8 +141,6 @@ export default function Purchases() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* اليسار: اختيار السلع */}
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -158,38 +160,35 @@ export default function Purchases() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input 
                     type="text" placeholder={t.searchProd} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 font-bold"
                   />
                 </div>
               </div>
             </div>
 
-            {/* قائمة المنتجات المتاحة */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map(p => (
                 <button key={p.id} onClick={() => addToCart(p)} className="p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-start group relative overflow-hidden">
-  <p className="font-bold text-gray-800 group-hover:text-blue-700">{p.name}</p>
-  {/* إظهار السعرين بوضوح */}
-  <div className="flex flex-col mt-2 gap-1">
-    <div className="flex justify-between text-[10px]">
-      <span className="text-gray-400 uppercase font-bold">التكلفة:</span>
-      <span className="text-blue-600 font-black">{p.cost_price || 0} DH</span>
-    </div>
-    <div className="flex justify-between text-[10px]">
-      <span className="text-gray-400 uppercase font-bold">البيع:</span>
-      <span className="text-emerald-600 font-black">{p.price} DH</span>
-    </div>
-  </div>
-  <p className="text-[9px] text-gray-400 mt-2 bg-gray-100 w-fit px-1.5 py-0.5 rounded">
-    المخزن: {p.stock_quantity} {p.unit}
-  </p>
-</button>
+                  <p className="font-bold text-gray-800 group-hover:text-blue-700">{p.name}</p>
+                  <div className="flex flex-col mt-2 gap-1">
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-gray-400 uppercase font-bold">التكلفة:</span>
+                      <span className="text-blue-600 font-black">{p.cost_price || 0} DH</span>
+                    </div>
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-gray-400 uppercase font-bold">البيع:</span>
+                      <span className="text-emerald-600 font-black">{p.price} DH</span>
+                    </div>
+                  </div>
+                  <p className="text-[9px] text-gray-400 mt-2 bg-gray-100 w-fit px-1.5 py-0.5 rounded">
+                    المخزن: {p.stock_quantity} {p.unit}
+                  </p>
+                </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* اليمين: السلة والملخص */}
         <div className="lg:col-span-1">
           <div className="bg-[#1e293b] text-white rounded-3xl shadow-xl overflow-hidden flex flex-col h-fit sticky top-6">
             <div className="p-6 bg-white/5 border-b border-white/10 flex items-center gap-3">
@@ -254,7 +253,6 @@ export default function Purchases() {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
