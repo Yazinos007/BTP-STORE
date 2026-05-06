@@ -13,6 +13,9 @@ const translations = {
     selectSupplier: 'اختر المورد', 
     searchProd: 'ابحث عن منتج لشرائه...',
     cart: 'قائمة المشتريات', 
+    costLabel: 'التكلفة:',
+    stockLabel: 'المخزن:',
+    saleLabel: 'البيع:',
     empty: 'القائمة فارغة', 
     total: 'إجمالي الشراء',
     payCash: 'دفع نقداً', 
@@ -25,6 +28,7 @@ const translations = {
     msgAccountError: 'لم يتم التعرف على بيانات حسابك!',
     msgSuccess: '✅ تم تحديث المخزون بنجاح!',
     msgError: 'عذراً، حدث خطأ أثناء العملية:'
+    
   },
   fr: {
     title: 'Achats & Stock In', 
@@ -32,6 +36,9 @@ const translations = {
     selectSupplier: 'Choisir le Fournisseur', 
     searchProd: 'Rechercher un produit...',
     cart: 'Liste d\'Achat', 
+    costLabel: 'Coût:',
+    stockLabel: 'Stock:',
+    saleLabel: 'Vente:',
     empty: 'Liste vide', 
     total: 'Total Achat',
     payCash: 'Payer Cash', 
