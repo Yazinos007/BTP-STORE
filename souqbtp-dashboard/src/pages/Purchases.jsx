@@ -175,23 +175,33 @@ export default function Purchases() {
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map(p => (
-                <button key={p.id} onClick={() => addToCart(p)} className="p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-start group relative overflow-hidden">
-                  <p className="font-bold text-gray-800 group-hover:text-blue-700">{p.name}</p>
-                  <div className="flex flex-col mt-2 gap-1">
-                    <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-400 uppercase font-bold">التكلفة:</span>
-                      <span className="text-blue-600 font-black">{p.cost_price || 0} DH</span>
-                    </div>
-                    <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-400 uppercase font-bold">البيع:</span>
-                      <span className="text-emerald-600 font-black">{p.price} DH</span>
-                    </div>
-                  </div>
-                  <p className="text-[9px] text-gray-400 mt-2 bg-gray-100 w-fit px-1.5 py-0.5 rounded">
-                    المخزن: {p.stock_quantity} {p.unit}
-                  </p>
-                </button>
-              ))}
+  <button 
+    key={p.id} 
+    onClick={() => addToCart(p)} 
+    className="p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-start group relative overflow-hidden"
+  >
+    <p className="font-bold text-gray-800 group-hover:text-blue-700">{p.name}</p>
+    
+    <div className="flex flex-col mt-2 gap-1">
+      <div className="flex justify-between text-[10px]">
+        {/* 🌟 تم الربط هنا */}
+        <span className="text-gray-400 uppercase font-bold">{t.costLabel}</span>
+        <span className="text-blue-600 font-black">{p.cost_price || 0} DH</span>
+      </div>
+      
+      <div className="flex justify-between text-[10px]">
+        {/* 🌟 تم الربط هنا */}
+        <span className="text-gray-400 uppercase font-bold">{t.saleLabel}</span>
+        <span className="text-emerald-600 font-black">{p.price} DH</span>
+      </div>
+    </div>
+    
+    <p className="text-[9px] text-gray-400 mt-2 bg-gray-100 w-fit px-1.5 py-0.5 rounded">
+      {/* 🌟 تم الربط هنا */}
+      {t.stockLabel} {p.stock_quantity} {p.unit}
+    </p>
+  </button>
+))}
             </div>
           </div>
         </div>
