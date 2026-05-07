@@ -8,52 +8,38 @@ import useSupplierStore from '../store/useSupplierStore';
 
 const translations = {
   ar: {
-    title: 'مشتريات المخزون', 
-    subtitle: 'إدخال السلع الجديدة وتحديث ديون الموردين.',
-    selectSupplier: 'اختر المورد', 
-    searchProd: 'ابحث عن منتج لشرائه...',
-    cart: 'قائمة المشتريات', 
-    costLabel: 'التكلفة:',
-    stockLabel: 'المخزن:',
-    saleLabel: 'البيع:',
-    empty: 'القائمة فارغة', 
-    total: 'إجمالي الشراء',
-    payCash: 'دفع نقداً', 
-    payCredit: 'شراء بالآجل (كريدي)',
-    unit: 'الوحدة', 
-    qty: 'الكمية', 
-    price: 'ثمن الشراء',
+    title: 'مشتريات المخزون', subtitle: 'إدخال السلع الجديدة وتحديث ديون الموردين.',
+    selectSupplier: 'اختر المورد', searchProd: 'ابحث عن منتج لشرائه...',
+    cart: 'قائمة المشتريات', costLabel: 'التكلفة:', stockLabel: 'المخزن:', saleLabel: 'البيع:',
+    empty: 'القائمة فارغة', total: 'إجمالي الشراء',
+    payCash: 'دفع نقداً', payCredit: 'شراء بالآجل (كريدي)',
+    unit: 'الوحدة', qty: 'الكمية', price: 'ثمن الشراء',
     msgSelectSupplier: 'المرجو اختيار المورد أولاً!',
     msgEmptyCart: 'قائمة المشتريات فارغة!',
     msgAccountError: 'لم يتم التعرف على بيانات حسابك!',
-    msgError: 'عذراً، حدث خطأ أثناء العملية:', // 🌟 الفاصلة المفقودة تم إضافتها هنا
-    profitMargin: 'هامش الربح:',
-    expectedProfit: 'الربح المتوقع:',
-    msgSuccess: '✅ تم تحديث المخزون، تسجيل الفاتورة والمصروف بنجاح!'
+    msgError: 'عذراً، حدث خطأ أثناء العملية:',
+    profitMargin: 'هامش الربح:', expectedProfit: 'الربح المتوقع:',
+    msgSuccess: '✅ تم تحديث المخزون، تسجيل الفاتورة والمصروف بنجاح!',
+    // 🌟 الإضافات الجديدة للترجمة
+    invoiceDesc: 'فاتورة شراء رقم:',
+    categoryName: 'Achat de marchandises' 
   },
   fr: {
-    title: 'Achats & Stock In', 
-    subtitle: 'Entrée de marchandises et dettes fournisseurs.',
-    selectSupplier: 'Choisir le Fournisseur', 
-    searchProd: 'Rechercher un produit...',
-    cart: 'Liste d\'Achat', 
-    costLabel: 'Coût:',
-    stockLabel: 'Stock:',
-    saleLabel: 'Vente:',
-    empty: 'Liste vide', 
-    total: 'Total Achat',
-    payCash: 'Payer Cash', 
-    payCredit: 'Achat à Crédit',
-    unit: 'Unité', 
-    qty: 'Qté', 
-    price: 'Prix d\'achat',
+    title: 'Achats & Stock In', subtitle: 'Entrée de marchandises et dettes fournisseurs.',
+    selectSupplier: 'Choisir le Fournisseur', searchProd: 'Rechercher un produit...',
+    cart: 'Liste d\'Achat', costLabel: 'Coût:', stockLabel: 'Stock:', saleLabel: 'Vente:',
+    empty: 'Liste vide', total: 'Total Achat',
+    payCash: 'Payer Cash', payCredit: 'Achat à Crédit',
+    unit: 'Unité', qty: 'Qté', price: 'Prix d\'achat',
     msgSelectSupplier: 'Veuillez choisir un fournisseur !',
     msgEmptyCart: 'La liste d\'achat est vide !',
     msgAccountError: 'Erreur d\'identification du compte !',
-    msgError: 'Désolé, une erreur est survenue :', // 🌟 الفاصلة المفقودة تم إضافتها هنا
-    profitMargin: 'Marge:',
-    expectedProfit: 'Profit Prévu:',
-    msgSuccess: '✅ Stock, Facture et Charge enregistrés avec succès !'
+    msgError: 'Désolé, une erreur est survenue :',
+    profitMargin: 'Marge:', expectedProfit: 'Profit Prévu:',
+    msgSuccess: '✅ Stock, Facture et Charge enregistrés avec succès !',
+    // 🌟 الإضافات الجديدة للترجمة
+    invoiceDesc: 'Facture d\'achat N° :',
+    categoryName: 'Achat de marchandises'
   }
 };
 
@@ -121,14 +107,14 @@ export default function Purchases() {
       if (method === 'cash') {
         const { error: eError } = await supabase.from('expenses').insert([{
           supplier_id: targetId,
-          title: `فاتورة شراء رقم: ${invNumber}`, // 🌟 أعدناها إلى title
+          title: `${t.invoiceDesc} ${invNumber}`, // 🌟 استخدام الترجمة الديناميكية
           amount: total,
-          category: 'Achat de marchandises', // 🌟 حروف صغيرة لكي يقبلها فلتر صفحة المصاريف
-          date_expense: new Date().toISOString() // 🌟 أعدناها إلى date_expense
+          category: 'Achat de marchandises', // 🌟 الكلمة الدقيقة التي يقبلها النظام
+          date_expense: new Date().toISOString()
         }]);
         
         if (eError) {
-          alert("⚠️ تم تسجيل الفاتورة، لكن المصروف واجه خطأ: \n" + eError.message);
+          console.error("Expense Log Error:", eError.message);
         }
       }
 
