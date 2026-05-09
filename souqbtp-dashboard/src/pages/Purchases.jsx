@@ -102,18 +102,17 @@ export default function Purchases() {
       }]);
       if (invError) throw invError;
 
-      // ج- تسجيل المصروف تلقائياً (فقط في الكاش)
       if (method === 'cash') {
         const { error: eError } = await supabase.from('expenses').insert([{
           supplier_id: targetId,
-          title: `${t.invoiceDesc} ${invNumber}`, // 🌟 استخدام الترجمة الديناميكية
+          title: `${t.invoiceDesc} ${invNumber}`, 
           amount: total,
-          category: 'Achat de marchandises', // 🌟 الكلمة الدقيقة التي يقبلها النظام
+          category: 'achats', // 🌟 السر هنا: استخدام الكلمة المختصرة فقط
           date_expense: new Date().toISOString()
         }]);
         
         if (eError) {
-          console.error("Expense Log Error:", eError.message);
+          console.error("خطأ في المصروف:", eError.message);
         }
       }
 
@@ -125,7 +124,7 @@ export default function Purchases() {
 
       setCart([]);
       setSelectedSupplierId('');
-      alert(`${t.msgSuccess} \n رقم الفاتورة: ${invNumber}`);
+      alert(`${t.msgSuccess} \n ${t.invoiceDesc} ${invNumber}`);
       
     } catch (err) {
       console.error(err);
