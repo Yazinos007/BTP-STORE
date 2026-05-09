@@ -106,14 +106,14 @@ export default function Purchases() {
       if (method === 'cash') {
         const { error: eError } = await supabase.from('expenses').insert([{
           supplier_id: targetId,
-          title: `${t.invoiceDesc} ${invNumber}`, // 🌟 (1) الترجمة الصحيحة للوصف
+          title: `${t.invoiceDesc} ${invNumber}`, 
           amount: total,
-          category: 'achats', // 🌟 (2) الكلمة السرية الصحيحة 100% ليقرأها النظام
-          date_expense: new Date().toISOString()
+          category: 'achats'
+          // 🌟 قمنا بحذف سطر التاريخ تماماً، قاعدة البيانات ستسجله بنفسها تلقائياً!
         }]);
         
         if (eError) {
-          console.error("Expense Log Error:", eError.message);
+          console.error("خطأ في المصروف:", eError.message);
         }
       }
 
