@@ -79,7 +79,7 @@ const useSupplierStore = create((set) => ({
           }
         }
 
-        set({ supplier: { ...adminData, role: 'admin' }, isAuthenticated: true, isLoading: false });
+        set({ supplier: adminData, isAuthenticated: true, isLoading: false });
         return;
       }
 
