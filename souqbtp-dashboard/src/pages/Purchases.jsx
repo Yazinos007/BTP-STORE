@@ -91,7 +91,7 @@ export default function Purchases() {
         });
       }
 
-      // ب- 🌟 تفعيل فاتورة الشراء (تسجيل في الجدول الجديد)
+      // ب- تسجيل فاتورة الشراء
       const { error: invError } = await supabase.from('purchase_invoices').insert([{
         supplier_id: targetId,
         external_supplier_id: selectedSupplierId,
@@ -102,17 +102,18 @@ export default function Purchases() {
       }]);
       if (invError) throw invError;
 
+      // ج- تسجيل المصروف تلقائياً (فقط في الكاش)
       if (method === 'cash') {
         const { error: eError } = await supabase.from('expenses').insert([{
           supplier_id: targetId,
-          title: `${t.invoiceDesc} ${invNumber}`, 
+          title: `${t.invoiceDesc} ${invNumber}`, // 🌟 (1) الترجمة الصحيحة للوصف
           amount: total,
-          category: 'achats', // 🌟 السر هنا: استخدام الكلمة المختصرة فقط
+          category: 'achats', // 🌟 (2) الكلمة السرية الصحيحة 100% ليقرأها النظام
           date_expense: new Date().toISOString()
         }]);
         
         if (eError) {
-          console.error("خطأ في المصروف:", eError.message);
+          console.error("Expense Log Error:", eError.message);
         }
       }
 
@@ -124,7 +125,9 @@ export default function Purchases() {
 
       setCart([]);
       setSelectedSupplierId('');
-      alert(`${t.msgSuccess} \n ${t.invoiceDesc} ${invNumber}`);
+      
+      // 🌟 (3) التنبيه النهائي مربوط بقاموس الترجمة
+      alert(`${t.msgSuccess} \n${t.invoiceDesc} ${invNumber}`);
       
     } catch (err) {
       console.error(err);
