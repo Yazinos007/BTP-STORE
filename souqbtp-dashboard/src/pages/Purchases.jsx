@@ -20,7 +20,6 @@ const translations = {
     msgError: 'عذراً، حدث خطأ أثناء العملية:',
     profitMargin: 'هامش الربح:', expectedProfit: 'الربح المتوقع:',
     msgSuccess: '✅ تم تحديث المخزون، تسجيل الفاتورة والمصروف بنجاح!',
-    // 🌟 الإضافات الجديدة للترجمة
     invoiceDesc: 'فاتورة شراء رقم:',
     categoryName: 'Achat de marchandises' 
   },
