@@ -93,7 +93,7 @@ const useSupplierStore = create((set) => ({
   updateProfile: async (updates) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false };
-    const { data, error } = await supabase.from('suppliers').update(updates).eq('id', user.id).select().single();
+    const { data, error } = await supabase.from('suppliers').select('*').eq('id', id).single();
     if (!error) set({ supplier: data });
     return { success: !error, error };
   },
