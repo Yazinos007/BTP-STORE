@@ -48,7 +48,6 @@ const translations = {
   }
 };
 
-// 🌟 مصفوفة الألوان الاحترافية المعتمدة للمبيان والجدول
 const COLORS = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', 
   '#14B8A6', '#F97316', '#6366F1', '#84CC16', '#EAB308', '#D946EF'
@@ -94,31 +93,24 @@ export default function Expenses() {
   const totalRevenue = safeOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + Number(o.total_amount), 0);
   const netProfit = totalRevenue - totalExpenses;
 
-  // --- 🌟 منطق حساب الألوان الديناميكي الموحد ---
-  
-  // 1. تجميع المصاريف حسب المفتاح البرمجي للتصنيف
+  // خريطة الألوان الديناميكية
   const expensesByCategoryKey = safeExpenses.reduce((acc, exp) => {
     acc[exp.category] = (acc[exp.category] || 0) + Number(exp.amount);
     return acc;
   }, {});
 
-  // 2. ترتيب التصنيفات حسب القيمة (الأعلى أولاً) تماماً كترتيب المبيان
   const sortedCategoryKeys = Object.keys(expensesByCategoryKey).sort((a, b) => expensesByCategoryKey[b] - expensesByCategoryKey[a]);
 
-  // 3. إنشاء خريطة الألوان: ربط كل مفتاح تصنيف بلونه المقابل في COLORS
   const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => {
     map[key] = COLORS[index % COLORS.length];
     return map;
   }, {});
 
-  // 4. تجهيز بيانات المبيان الدائري باستخدام الخريطة
   const chartData = sortedCategoryKeys.map(key => ({
     name: t.categories[key] || t.categories.other,
     value: expensesByCategoryKey[key],
-    fill: categoryColorMap[key] // إسناد اللون مباشرة للبيانات
+    fill: categoryColorMap[key]
   }));
-
-  // --- نهاية منطق الألوان ---
 
   const filteredExpenses = safeExpenses.filter(exp => {
     const term = searchTerm.toLowerCase();
@@ -198,7 +190,7 @@ export default function Expenses() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={chartData} cx="50%" cy="50%" innerRadius={70} outerRadius={90} paddingAngle={5} dataKey="value" stroke="none">
-                      {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)} {/* 🌟 استخدام اللون المحدد في البيانات */}
+                      {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                     </Pie>
                     <Tooltip formatter={(value) => `${Number(value).toLocaleString()} ${t.currency}`} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}/>
                     <Legend verticalAlign="middle" align={language === 'ar' ? 'left' : 'right'} layout="vertical" iconType="circle" wrapperStyle={{ fontSize: '13px', fontWeight: 600, color: '#4B5563' }} />
@@ -231,14 +223,12 @@ export default function Expenses() {
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {filteredExpenses.map((exp) => {
-                      // --- تطبيق اللون الديناميكي على سطر الجدول ---
                       const currentCategoryColor = categoryColorMap[exp.category] || COLORS[COLORS.length - 1];
                       
                       return (
                         <tr key={exp.id} className={`hover:bg-blue-50/30 transition-colors group ${editingId === exp.id ? 'bg-blue-50' : ''}`}>
                           <td className="px-6 py-4 text-gray-800 font-bold">{exp.title}</td>
                           <td className="px-6 py-4">
-                            {/* شارة التصنيف بنفس لون المبيان */}
                             <span 
                               className="px-3 py-1.5 rounded-lg text-xs font-black inline-flex items-center gap-1.5 border"
                               style={{ 
@@ -247,10 +237,9 @@ export default function Expenses() {
                                 color: currentCategoryColor
                               }}
                             >
-                              {/* نقطة ملونة صغيرة للتأكيد البصري */}
                               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentCategoryColor }}></span>
                               {t.categories[exp.category] || t.categories.other}
-                            </span> {/* 🌟 الإصلاح هنا: تم تغيير </td بالخطأ إلى </span الصحيحة */}
+                            </span>
                           </td>
                           <td className="px-6 py-4 text-gray-500 font-medium text-xs">
                             {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at))}
