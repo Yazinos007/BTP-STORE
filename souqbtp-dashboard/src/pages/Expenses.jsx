@@ -13,7 +13,6 @@ const translations = {
     category: 'التصنيف', paymentMethod: 'طريقة الدفع', save: 'إضافة المصروف', saving: 'جاري التسجيل...',
     cancel: 'إلغاء', actions: 'إجراءات', confirmDelete: 'هل أنت متأكد من حذف هذا المصروف؟',
     history: 'سجل المصاريف', date: 'التاريخ', empty: 'لا توجد مصاريف مسجلة.', currency: 'درهم',
-    // القائمة المحاسبية الشاملة (عربي)
     categories: { 
       achats: 'شراء السلع/المواد', carburant: 'المحروقات والطريق السيار',
       transport: 'النقل واللوجستيك', loyer: 'الكراء / الإيجار', 
@@ -34,7 +33,6 @@ const translations = {
     category: 'Catégorie', paymentMethod: 'Mode de Paiement', save: 'Ajouter la charge', saving: 'Enregistrement...',
     cancel: 'Annuler', actions: 'Actions', confirmDelete: 'Voulez-vous vraiment supprimer cette charge ?',
     history: 'Historique des charges', date: 'Date', empty: 'Aucune charge enregistrée.', currency: 'MAD',
-    // القائمة المحاسبية الشاملة (فرنسي)
     categories: { 
       achats: 'Achat de marchandises', carburant: 'Carburant & Péage',
       transport: 'Transport & Logistique', loyer: 'Loyer & Charges locatives', 
@@ -50,6 +48,7 @@ const translations = {
   }
 };
 
+// 🌟 مصفوفة الألوان الاحترافية المعتمدة للمبيان والجدول
 const COLORS = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', 
   '#14B8A6', '#F97316', '#6366F1', '#84CC16', '#EAB308', '#D946EF'
@@ -71,17 +70,9 @@ export default function Expenses() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    const payload = { 
-      title: formData.title, 
-      amount: parseFloat(formData.amount),
-      category: formData.category,
-      payment_method: formData.payment_method
-    };
-
+    const payload = { title: formData.title, amount: parseFloat(formData.amount), category: formData.category, payment_method: formData.payment_method };
     if (editingId) await updateExpense(editingId, payload);
     else await addExpense(payload);
-
     setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
     setEditingId(null);
     setIsSubmitting(false);
@@ -92,44 +83,48 @@ export default function Expenses() {
     setEditingId(exp.id);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm(t.confirmDelete)) await deleteExpense(id);
-  };
-
-  const cancelEdit = () => {
-    setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
-    setEditingId(null);
-  };
+  const handleDelete = async (id) => { if (window.confirm(t.confirmDelete)) await deleteExpense(id); };
+  const cancelEdit = () => { setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' }); setEditingId(null); };
 
   const safeExpenses = Array.isArray(expenses) ? expenses : [];
   const safeOrders = Array.isArray(orders) ? orders : [];
-
   const titleSuggestions = [...new Set(safeExpenses.map(exp => exp?.title).filter(Boolean))];
-
-  const filteredExpenses = safeExpenses.filter(exp => {
-    const term = searchTerm.toLowerCase();
-    const catLabel = t.categories[exp.category] || '';
-    return (
-      exp.title?.toLowerCase().includes(term) ||
-      catLabel.toLowerCase().includes(term) ||
-      exp.amount?.toString().includes(term)
-    );
-  }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   const totalExpenses = safeExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
   const totalRevenue = safeOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + Number(o.total_amount), 0);
   const netProfit = totalRevenue - totalExpenses;
 
-  const expensesByCategory = safeExpenses.reduce((acc, exp) => {
-    const cat = t.categories[exp.category] || t.categories.other;
-    acc[cat] = (acc[cat] || 0) + Number(exp.amount);
+  // --- 🌟 منطق حساب الألوان الديناميكي الموحد ---
+  
+  // 1. تجميع المصاريف حسب المفتاح البرمجي للتصنيف
+  const expensesByCategoryKey = safeExpenses.reduce((acc, exp) => {
+    acc[exp.category] = (acc[exp.category] || 0) + Number(exp.amount);
     return acc;
   }, {});
 
-  const chartData = Object.keys(expensesByCategory).map(key => ({
-    name: key,
-    value: expensesByCategory[key]
-  })).sort((a, b) => b.value - a.value);
+  // 2. ترتيب التصنيفات حسب القيمة (الأعلى أولاً) تماماً كترتيب المبيان
+  const sortedCategoryKeys = Object.keys(expensesByCategoryKey).sort((a, b) => expensesByCategoryKey[b] - expensesByCategoryKey[a]);
+
+  // 3. إنشاء خريطة الألوان: ربط كل مفتاح تصنيف بلونه المقابل في COLORS
+  const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => {
+    map[key] = COLORS[index % COLORS.length];
+    return map;
+  }, {});
+
+  // 4. تجهيز بيانات المبيان الدائري باستخدام الخريطة
+  const chartData = sortedCategoryKeys.map(key => ({
+    name: t.categories[key] || t.categories.other,
+    value: expensesByCategoryKey[key],
+    fill: categoryColorMap[key] // إسناد اللون مباشرة للبيانات
+  }));
+
+  // --- نهاية منطق الألوان ---
+
+  const filteredExpenses = safeExpenses.filter(exp => {
+    const term = searchTerm.toLowerCase();
+    const catLabel = t.categories[exp.category] || '';
+    return ( exp.title?.toLowerCase().includes(term) || catLabel.toLowerCase().includes(term) || exp.amount?.toString().includes(term) );
+  }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
     <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300`}>
@@ -161,20 +156,14 @@ export default function Expenses() {
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm h-fit relative">
           {editingId && <div className="absolute top-4 right-4 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md animate-pulse">Mode Édition</div>}
           <h3 className="text-lg font-bold mb-6 text-gray-800 flex items-center gap-2 border-b border-gray-100 pb-4">
-            {editingId ? <Edit size={18} className="text-blue-600" /> : <Plus size={18} className="text-blue-600" />} 
-            {editingId ? t.editExpense : t.addExpense}
+            {editingId ? <Edit size={18} className="text-blue-600" /> : <Plus size={18} className="text-blue-600" />} {editingId ? t.editExpense : t.addExpense}
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">{t.desc}</label>
-              <input 
-                type="text" list="titles-list" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} 
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 font-medium transition-all" 
-                placeholder="Ex: Achat fournitures..." autoComplete="off"
-              />
+              <input type="text" list="titles-list" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 font-medium transition-all" placeholder="Ex: Achat fournitures..." autoComplete="off" />
               <datalist id="titles-list">{titleSuggestions.map((title, i) => <option key={i} value={title} />)}</datalist>
             </div>
-            
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">{t.amount}</label>
               <div className="relative">
@@ -182,30 +171,21 @@ export default function Expenses() {
                 <span className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'left-4' : 'right-4'} text-xs font-bold text-gray-400`}>{t.currency}</span>
               </div>
             </div>
-            
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1"><Tag size={16} className="text-gray-400"/> {t.category}</label>
               <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-white font-medium text-gray-700 transition-all shadow-sm">
                 {Object.entries(t.categories).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1"><CreditCard size={16} className="text-gray-400"/> {t.paymentMethod}</label>
               <select value={formData.payment_method} onChange={(e) => setFormData({...formData, payment_method: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-white font-medium text-gray-700 transition-all shadow-sm">
                 {Object.entries(t.methods).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
               </select>
             </div>
-
             <div className="flex gap-2 pt-2 mt-4 border-t border-gray-100">
-              {editingId && (
-                <button type="button" onClick={cancelEdit} className="w-1/3 bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 font-bold transition-all flex items-center justify-center gap-1">
-                  <X size={16}/> {t.cancel}
-                </button>
-              )}
-              <button type="submit" disabled={isSubmitting} className={`${editingId ? 'w-2/3' : 'w-full'} bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30`}>
-                {isSubmitting ? t.saving : (editingId ? t.editExpense : t.save)}
-              </button>
+              {editingId && ( <button type="button" onClick={cancelEdit} className="w-1/3 bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 font-bold transition-all flex items-center justify-center gap-1"><X size={16}/> {t.cancel}</button> )}
+              <button type="submit" disabled={isSubmitting} className={`${editingId ? 'w-2/3' : 'w-full'} bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30`}>{isSubmitting ? t.saving : (editingId ? t.editExpense : t.save)}</button>
             </div>
           </form>
         </div>
@@ -218,7 +198,7 @@ export default function Expenses() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={chartData} cx="50%" cy="50%" innerRadius={70} outerRadius={90} paddingAngle={5} dataKey="value" stroke="none">
-                      {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                      {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)} {/* 🌟 استخدام اللون المحدد في البيانات */}
                     </Pie>
                     <Tooltip formatter={(value) => `${Number(value).toLocaleString()} ${t.currency}`} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}/>
                     <Legend verticalAlign="middle" align={language === 'ar' ? 'left' : 'right'} layout="vertical" iconType="circle" wrapperStyle={{ fontSize: '13px', fontWeight: 600, color: '#4B5563' }} />
@@ -230,10 +210,7 @@ export default function Expenses() {
 
           <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
             <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Receipt size={20} className="text-gray-400" />
-                <h3 className="font-black text-gray-800">{t.history}</h3>
-              </div>
+              <div className="flex items-center gap-2"> <Receipt size={20} className="text-gray-400" /> <h3 className="font-black text-gray-800">{t.history}</h3> </div>
               <div className="relative w-full sm:w-72">
                 <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'right-3' : 'left-3'} text-gray-400`} />
                 <input type="text" placeholder={t.searchPlaceholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full ${language === 'ar' ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm font-medium bg-white transition-all`} />
@@ -253,28 +230,43 @@ export default function Expenses() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {filteredExpenses.map((exp) => (
-                      <tr key={exp.id} className={`hover:bg-blue-50/30 transition-colors group ${editingId === exp.id ? 'bg-blue-50' : ''}`}>
-                        <td className="px-6 py-4 text-gray-800 font-bold">{exp.title}</td>
-                        <td className="px-6 py-4">
-                          <span className="bg-gray-100 border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-xs font-bold inline-block">
-                            {t.categories[exp.category] || t.categories.other}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-500 font-medium text-xs">
-                          {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at))}
-                        </td>
-                        <td className="px-6 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">
-                          -{Number(exp.amount).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleEdit(exp)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title={t.editExpense}><Edit size={16}/></button>
-                            <button onClick={() => handleDelete(exp.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Supprimer"><Trash2 size={16}/></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredExpenses.map((exp) => {
+                      // --- تطبيق اللون الديناميكي على سطر الجدول ---
+                      const currentCategoryColor = categoryColorMap[exp.category] || COLORS[COLORS.length - 1];
+                      
+                      return (
+                        <tr key={exp.id} className={`hover:bg-blue-50/30 transition-colors group ${editingId === exp.id ? 'bg-blue-50' : ''}`}>
+                          <td className="px-6 py-4 text-gray-800 font-bold">{exp.title}</td>
+                          <td className="px-6 py-4">
+                            {/* شارة التصنيف بنفس لون المبيان */}
+                            <span 
+                              className="px-3 py-1.5 rounded-lg text-xs font-black inline-flex items-center gap-1.5 border"
+                              style={{ 
+                                backgroundColor: `${currentCategoryColor}10`,
+                                borderColor: `${currentCategoryColor}40`,
+                                color: currentCategoryColor
+                              }}
+                            >
+                              {/* نقطة ملونة صغيرة للتأكيد البصري */}
+                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentCategoryColor }}></span>
+                              {t.categories[exp.category] || t.categories.other}
+                            </span> {/* 🌟 الإصلاح هنا: تم تغيير </td بالخطأ إلى </span الصحيحة */}
+                          </td>
+                          <td className="px-6 py-4 text-gray-500 font-medium text-xs">
+                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at))}
+                          </td>
+                          <td className="px-6 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">
+                            -{Number(exp.amount).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => handleEdit(exp)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title={t.editExpense}><Edit size={16}/></button>
+                              <button onClick={() => handleDelete(exp.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Supprimer"><Trash2 size={16}/></button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
