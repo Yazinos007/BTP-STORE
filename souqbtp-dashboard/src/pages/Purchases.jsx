@@ -258,18 +258,30 @@ export default function Purchases() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {/* زر الكاش القديم */}
                 <button 
                   disabled={isProcessing || cart.length === 0} onClick={() => handleCompletePurchase('cash')}
                   className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black flex justify-center items-center gap-2 transition-all shadow-lg"
                 >
                   {isProcessing ? <Loader2 className="animate-spin" /> : <><CheckCircle size={20}/> {t.payCash}</>}
                 </button>
+                
+                {/* زر الكريدي القديم */}
                 <button 
                    disabled={isProcessing || cart.length === 0} onClick={() => handleCompletePurchase('credit')}
                    className="w-full py-4 bg-orange-600 hover:bg-orange-500 rounded-2xl font-black flex justify-center items-center gap-2 transition-all shadow-lg"
                 >
                   <CreditCard size={20}/> {t.payCredit}
+                </button>
+
+                {/* 🌟 الزر الجديد: طلب تزويد من المورد الكبير (PO) */}
+                <button 
+                   disabled={isProcessing || cart.length === 0} 
+                   onClick={() => alert("سيتم إرسال هذا الطلب للمورد الكبير في الخطوة القادمة! 🚀")}
+                   className="w-full md:col-span-2 py-4 bg-gradient-to-r from-slate-800 to-black hover:from-black hover:to-slate-900 rounded-2xl font-black flex justify-center items-center gap-2 transition-all shadow-lg text-white mt-2"
+                >
+                  <Truck size={20}/> إرسال طلب تزويد (Purchase Order)
                 </button>
               </div>
             </div>

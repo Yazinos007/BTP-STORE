@@ -79,13 +79,13 @@ export default function Login() {
 
         if (data?.user) {
           // تسجيل الملف الشخصي في قاعدة البيانات مع الصلاحية
-          const { error: profileError } = await supabase.from('suppliers').insert([{
+          const { error: profileError } = await supabase.from('suppliers').upsert([{
             id: data.user.id,
             store_name: storeName,
             phone: phone,
             role: role,
-            referral_code: data.user.id.substring(0, 8) // توليد كود دعوة تلقائي
-          }]);
+            referral_code: data.user.id.substring(0, 8)
+          }], { onConflict: 'id' }); 
           if (profileError) throw profileError;
           
           alert(t.regSuccess);
