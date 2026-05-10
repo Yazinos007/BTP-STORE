@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
-import { Package, MapPin, CheckCircle, Clock, Phone, AlertCircle, Loader2, Navigation } from 'lucide-react';
 import { Package, MapPin, CheckCircle, Clock, Phone, AlertCircle, Loader2, Navigation, XCircle } from 'lucide-react';
 
 export default function LiveOrders() {
@@ -99,8 +98,10 @@ export default function LiveOrders() {
     if (!location || !location.lat || !location.lng) {
       return alert(language === 'fr' ? "Position GPS non disponible" : "موقع الـ GPS غير متوفر لهذا الطلب");
     }
-    // 🌟 الرابط العالمي الدقيق للخرائط (يستخدم Latitude و Longitude بشكل مباشر)
-    const url = `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`;
+    
+    // 🌟 الرابط الرسمي المباشر (سيأخذك للمغرب فوراً!)
+    const url = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+    
     window.open(url, '_blank');
   };
 

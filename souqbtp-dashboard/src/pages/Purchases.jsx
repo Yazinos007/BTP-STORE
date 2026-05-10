@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Search, CheckCircle, ShoppingBag, Loader2, CreditCard, X, TrendingUp, BrainCircuit, Truck } from 'lucide-react';
+import { Search, CheckCircle, ShoppingBag, Loader2, CreditCard, X, TrendingUp, BrainCircuit, Truck, Trash2, Edit2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import useProductStore from '../store/useProductStore';
 import useExternalSupplierStore from '../store/useExternalSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-import { Search, CheckCircle, ShoppingBag, Loader2, CreditCard, X, TrendingUp, BrainCircuit, Truck, Trash2, Edit2 } from 'lucide-react';
 
 const translations = {
   ar: {
