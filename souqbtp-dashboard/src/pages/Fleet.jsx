@@ -50,13 +50,16 @@ export default function Fleet() {
   const handleDispatch = async (id) => {
     const driverName = window.prompt(language === 'fr' ? "Nom du chauffeur :" : "اسم السائق (المُوصِّل):");
     if (!driverName) return;
+    const driverPhone = window.prompt(language === 'fr' ? "Téléphone du chauffeur :" : "رقم هاتف السائق:");
+    if (!driverPhone) return;
     const vehiclePlate = window.prompt(language === 'fr' ? "Matricule du véhicule :" : "رقم لوحة الشاحنة (Matricule):");
     if (!vehiclePlate) return;
 
     try {
       const { error } = await supabase
         .from('supply_requests')
-        .update({ status: 'shipped', driver_name: driverName, vehicle_plate: vehiclePlate })
+        // 🌟 إضافة الهاتف هنا
+        .update({ status: 'shipped', driver_name: driverName, vehicle_plate: vehiclePlate, driver_phone: driverPhone })
         .eq('id', id);
       if (error) throw error;
       fetchDeliveries();

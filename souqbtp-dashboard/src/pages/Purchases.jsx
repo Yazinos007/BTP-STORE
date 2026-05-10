@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Search, CheckCircle, ShoppingBag, Loader2, CreditCard, X, TrendingUp, BrainCircuit, Truck, Trash2, Edit2 } from 'lucide-react';
+import { Search, CheckCircle, ShoppingBag, Loader2, CreditCard, X, TrendingUp, BrainCircuit, Truck, Trash2, Edit2, PhoneCall } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import useProductStore from '../store/useProductStore';
 import useExternalSupplierStore from '../store/useExternalSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
+import confetti from 'canvas-confetti';
 
 const translations = {
   ar: {
@@ -159,6 +160,55 @@ export default function Purchases() {
     await supabase.from('supply_requests').delete().eq('id', req.id); // مسح الطلب القديم
     fetchB2BRequests();
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
+  };
+
+  // 🌟 دالة استلام البضاعة (أتمتة المخزون والفاتورة والاحتفال)
+  const handleReceiveOrder = async (req) => {
+    if (!window.confirm(language === 'fr' ? "Confirmez-vous la réception de la marchandise ?" : "هل تؤكد استلامك لهذه البضاعة؟")) return;
+
+    setIsProcessing(true);
+    try {
+      // 1. تغيير الحالة إلى تم التوصيل
+      await supabase.from('supply_requests').update({ status: 'delivered' }).eq('id', req.id);
+
+      // 2. تحديث المخزون للتاجر
+      const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+      for (const item of req.items) {
+        // جلب المخزون الحالي لتفادي الأخطاء
+        const { data: prod } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
+        await updateProduct(item.id, { 
+          stock_quantity: Number(prod?.stock_quantity || 0) + Number(item.quantity),
+          cost_price: Number(item.purchase_price) 
+        });
+      }
+
+      // 3. إنشاء فاتورة الشراء التلقائية
+      const invNumber = `B2B-${Date.now().toString().slice(-6)}`;
+      await supabase.from('purchase_invoices').insert([{
+        supplier_id: targetId,
+        invoice_number: invNumber,
+        total_amount: req.total_amount,
+        items: req.items,
+        payment_method: 'credit' // فواتير B2B غالباً تسجل كآجل حتى يتم سدادها للمورد
+      }]);
+
+      // 4. إطلاق الاحتفال 🎊
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#3b82f6', '#10b981', '#f59e0b']
+      });
+
+      fetchB2BRequests();
+      alert(language === 'fr' ? "✅ Stock mis à jour et facture générée !" : `✅ تم إدخال السلع للمخزون وإنشاء فاتورة رقم: ${invNumber}`);
+      
+    } catch (err) {
+      console.error(err);
+      alert("Erreur: " + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // 🌟 دالة إرسال طلب التزويد للمورد الكبير (المصافحة الرقمية 🤝)
@@ -494,7 +544,43 @@ export default function Purchases() {
                   </div>
                 </div>
 
-                {/* زر المصافحة الرقمية يظهر فقط عندما يوافق المورد */}
+                {/* 🌟 بيانات السائق والشاحنة تظهر للتاجر هنا */}
+                {(req.status === 'shipped' || req.status === 'delivered') && (
+                  <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">{language === 'fr' ? 'Détails de Livraison' : 'تفاصيل التوصيل'}</span>
+                      <span className="text-xs font-black text-gray-500 bg-white px-2 py-1 rounded shadow-sm">{req.vehicle_plate}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-bold text-gray-800">🚚 {req.driver_name}</span>
+                      {req.driver_phone && (
+                        <a href={`tel:${req.driver_phone}`} className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-bold text-sm bg-blue-100/50 px-3 py-1.5 rounded-lg transition-all">
+                          <PhoneCall size={14}/> {req.driver_phone}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 🌟 أنيميشن الشاحنة المتحركة مع بخار البنزين */}
+                {req.status === 'shipped' && (
+                  <div className="mb-4">
+                    <style>{`
+                      @keyframes drive { 0% { transform: translateX(-10%); } 100% { transform: translateX(110%); } }
+                      @keyframes bounce-truck { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+                    `}</style>
+                    <div className="relative w-full h-8 overflow-hidden bg-gray-100 rounded-full border-b-2 border-gray-300 shadow-inner">
+                      <div className="absolute top-0.5 animate-[drive_3s_linear_infinite]" style={{ width: '100%' }}>
+                        <div className="animate-[bounce-truck_0.5s_ease-in-out_infinite] flex items-center w-fit">
+                          <span className="text-lg opacity-70">💨</span>
+                          <Truck className="text-blue-600 drop-shadow-md" size={20} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* الأزرار النهائية (المصافحة، الاستلام، والتأكيد) */}
                 {req.status === 'confirmed' && (
                   <button 
                     onClick={() => handleSignContract(req.id)}
@@ -503,9 +589,26 @@ export default function Purchases() {
                     <CheckCircle size={18} /> {language === 'fr' ? 'Signer le Contrat' : 'توقيع العقد (مصافحة)'}
                   </button>
                 )}
+                
                 {req.status === 'signed' && (
                   <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-bold flex justify-center items-center gap-2 border border-emerald-200 text-sm">
                      ✍️ {language === 'fr' ? `Signé par: ${req.digital_signature}` : `موقّع باسم: ${req.digital_signature}`}
+                  </div>
+                )}
+
+                {req.status === 'shipped' && (
+                  <button 
+                    onClick={() => handleReceiveOrder(req)} 
+                    disabled={isProcessing} 
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg shadow-emerald-600/30 animate-pulse"
+                  >
+                    {isProcessing ? <Loader2 size={18} className="animate-spin"/> : <><Package size={18} /> {language === 'fr' ? 'Confirmer la Réception' : 'تأكيد استلام البضاعة'}</>}
+                  </button>
+                )}
+
+                {req.status === 'delivered' && (
+                  <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-bold flex justify-center items-center gap-2 border border-emerald-200 text-sm">
+                     🎉 {language === 'fr' ? `Livré & Intégré au Stock` : `تم التسليم وإضافة السلع للمخزن`}
                   </div>
                 )}
               </div>

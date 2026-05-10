@@ -35,6 +35,7 @@ export default function LiveOrders() {
       const { data, error } = await supabase
         .from('supply_requests')
         .select('*')
+        .in('status', ['pending', 'confirmed', 'signed'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
