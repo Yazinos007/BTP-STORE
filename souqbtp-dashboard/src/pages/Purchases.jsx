@@ -432,8 +432,20 @@ export default function Purchases() {
                   {req.status === 'signed' && <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Signé & Confirmé' : 'تم التوقيع بنجاح'}</span>}
                 </div>
 
-                <div className="text-sm text-gray-500 mb-4 font-medium">
-                  {req.items?.length} {language === 'fr' ? 'Articles demandés' : 'منتجات مطلوبة'}
+                <div className="mb-4">
+                  <p className="text-xs font-bold text-gray-400 mb-2">
+                    {req.items?.length} {language === 'fr' ? 'Articles demandés :' : 'منتجات مطلوبة :'}
+                  </p>
+                  <div className="bg-gray-100/50 rounded-lg p-3 space-y-1.5 border border-gray-100">
+                    {req.items?.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-sm">
+                        <span className="font-bold text-gray-700">{item.name}</span>
+                        <span className="text-gray-500 font-medium px-2 py-0.5 bg-white rounded-md border shadow-sm">
+                          {item.quantity} {language === 'fr' ? 'Unités' : 'وحدة'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* زر المصافحة الرقمية يظهر فقط عندما يوافق المورد */}
