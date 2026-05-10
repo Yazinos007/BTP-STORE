@@ -162,19 +162,19 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 دالة استلام البضاعة (أتمتة المخزون والفاتورة والاحتفال)
+  // 🌟 دالة استلام البضاعة (أتمتة المخزون والفاتورة والمصروف والاحتفال)
   const handleReceiveOrder = async (req) => {
-    if (!window.confirm(language === 'fr' ? "Confirmez-vous la réception de la marchandise ?" : "هل تؤكد استلامك لهذه البضاعة؟")) return;
+    if (!window.confirm(language === 'fr' ? "Confirmez-vous la réception et la conformité ?" : "هل تؤكد استلامك للبضاعة ومطابقتها؟")) return;
 
     setIsProcessing(true);
     try {
-      // 1. تغيير الحالة إلى تم التوصيل
-      await supabase.from('supply_requests').update({ status: 'delivered' }).eq('id', req.id);
+      // 1. تغيير الحالة إلى (مكتمل)
+      await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
+
+      const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
       // 2. تحديث المخزون للتاجر
-      const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       for (const item of req.items) {
-        // جلب المخزون الحالي لتفادي الأخطاء
         const { data: prod } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
         await updateProduct(item.id, { 
           stock_quantity: Number(prod?.stock_quantity || 0) + Number(item.quantity),
@@ -189,19 +189,22 @@ export default function Purchases() {
         invoice_number: invNumber,
         total_amount: req.total_amount,
         items: req.items,
-        payment_method: 'credit' // فواتير B2B غالباً تسجل كآجل حتى يتم سدادها للمورد
+        payment_method: 'credit' // نعتبرها ديناً حتى يتم سدادها
       }]);
 
-      // 4. إطلاق الاحتفال 🎊
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#3b82f6', '#10b981', '#f59e0b']
-      });
+      // 4. 🌟 تسجيل المصروف (هذا ما كان ينقصنا في الكود السابق)
+      await supabase.from('expenses').insert([{
+        supplier_id: targetId,
+        title: language === 'fr' ? `Achat B2B Inv: ${invNumber}` : `فاتورة تزويد B2B: ${invNumber}`,
+        amount: req.total_amount,
+        category: 'achats' // للتصنيف مع المشتريات
+      }]);
+
+      // 5. إطلاق الاحتفال 🎊
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#10b981', '#f59e0b'] });
 
       fetchB2BRequests();
-      alert(language === 'fr' ? "✅ Stock mis à jour et facture générée !" : `✅ تم إدخال السلع للمخزون وإنشاء فاتورة رقم: ${invNumber}`);
+      alert(language === 'fr' ? "✅ Stock, Facture et Charge mis à jour !" : `✅ تم الإدخال للمخزون، وتوليد الفاتورة والمصروف بنجاح!`);
       
     } catch (err) {
       console.error(err);
@@ -596,19 +599,21 @@ export default function Purchases() {
                   </div>
                 )}
 
-                {req.status === 'shipped' && (
+                {/* زر الاستلام يظهر للتاجر سواء كانت الشاحنة في الطريق أو أخبره المورد أنها وصلت */}
+                {(req.status === 'shipped' || req.status === 'delivered') && (
                   <button 
                     onClick={() => handleReceiveOrder(req)} 
                     disabled={isProcessing} 
                     className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg shadow-emerald-600/30 animate-pulse"
                   >
-                    {isProcessing ? <Loader2 size={18} className="animate-spin"/> : <><Package size={18} /> {language === 'fr' ? 'Confirmer la Réception' : 'تأكيد استلام البضاعة'}</>}
+                    {isProcessing ? <Loader2 size={18} className="animate-spin"/> : <><Package size={18} /> {language === 'fr' ? 'Confirmer la Réception' : 'تأكيد استلام البضاعة (إدخال للمخزن)'}</>}
                   </button>
                 )}
 
-                {req.status === 'delivered' && (
-                  <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-bold flex justify-center items-center gap-2 border border-emerald-200 text-sm">
-                     🎉 {language === 'fr' ? `Livré & Intégré au Stock` : `تم التسليم وإضافة السلع للمخزن`}
+                {/* رسالة النجاح النهائية تظهر عندما تصبح الحالة completed */}
+                {req.status === 'completed' && (
+                  <div className="w-full py-3 bg-emerald-50 text-emerald-600 rounded-xl font-black flex justify-center items-center gap-2 border border-emerald-200 text-sm">
+                     🎉 {language === 'fr' ? `Livré, Facturé & Intégré au Stock !` : `تم التسليم، وجرد المخزون، وتوليد الفاتورة بنجاح!`}
                   </div>
                 )}
               </div>

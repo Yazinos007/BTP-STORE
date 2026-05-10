@@ -16,7 +16,7 @@ export default function Fleet() {
       const { data, error } = await supabase
         .from('supply_requests')
         .select('*')
-        .in('status', ['signed', 'shipped', 'delivered'])
+        .in('status', ['signed', 'shipped', 'delivered', 'completed'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -124,7 +124,8 @@ export default function Fleet() {
                   
                   {isSigned && <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Prêt à expédier' : 'جاهز للشحن'}</span>}
                   {isShipped && <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'En Route 🚚' : 'في الطريق 🚚'}</span>}
-                  {isDelivered && <span className="bg-slate-700 text-slate-300 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Livré ✅' : 'تم التوصيل ✅'}</span>}
+                  {isDelivered && <span className="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'Attente Client ⏳' : 'بانتظار تأكيد التاجر ⏳'}</span>}
+                  {req.status === 'completed' && <span className="bg-slate-700 text-slate-300 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Clôturé ✅' : 'مكتمل ✅'}</span>}
                 </div>
 
                 <div className="p-6">
