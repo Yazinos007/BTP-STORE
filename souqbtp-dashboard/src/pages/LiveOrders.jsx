@@ -81,7 +81,10 @@ export default function LiveOrders() {
   };
 
   const openGoogleMaps = (location) => {
-    if (!location || !location.lat) return alert("الموقع غير متوفر");
+    if (!location || !location.lat || !location.lng) {
+      return alert(language === 'fr' ? "Position GPS non disponible" : "موقع الـ GPS غير متوفر لهذا الطلب");
+    }
+    // 🌟 الرابط العالمي الدقيق للخرائط (يستخدم Latitude و Longitude بشكل مباشر)
     const url = `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`;
     window.open(url, '_blank');
   };
