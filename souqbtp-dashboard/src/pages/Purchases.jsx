@@ -127,15 +127,27 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 دالة حذف الطلب للتاجر
   const handleDeleteB2B = async (id) => {
     const confirmMsg = language === 'fr' ? 'Annuler cette commande ?' : 'هل أنت متأكد من إلغاء هذا الطلب؟';
     if (!window.confirm(confirmMsg)) return;
+
     try {
       const { error } = await supabase.from('supply_requests').delete().eq('id', id);
-      if (error) throw error;
+      
+      if (error) {
+        console.error("فشل الحذف:", error.message);
+        alert("خطأ في الحذف: " + error.message);
+        return;
+      }
+
+      // تحديث القائمة فوراً بعد النجاح
       fetchB2BRequests();
-    } catch (err) { console.error(err); }
+      alert(language === 'fr' ? "✅ Commande annulée." : "✅ تم إلغاء الطلب بنجاح.");
+      
+    } catch (err) { 
+      console.error(err);
+      alert("حدث خطأ غير متوقع.");
+    }
   };
 
   // 🌟 دالة تعديل الطلب للتاجر (استرجاع للسلة)
