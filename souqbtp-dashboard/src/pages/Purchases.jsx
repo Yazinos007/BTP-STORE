@@ -465,6 +465,8 @@ export default function Purchases() {
                     {req.status === 'pending' && <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'En attente' : 'بانتظار المورد'}</span>}
                     {req.status === 'confirmed' && <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'Signature Requise' : 'يتطلب توقيعك'}</span>}
                     {req.status === 'signed' && <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Signé & Confirmé' : 'تم التوقيع بنجاح'}</span>}
+                    {req.status === 'shipped' && <span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'En Route 🚚' : 'الشاحنة في الطريق 🚚'}</span>}
+                    {req.status === 'delivered' && <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Livré ✅' : 'تم التسليم ✅'}</span>}
 
                     {/* 🌟 أزرار التعديل والحذف (تظهر فقط إذا كان الطلب قيد الانتظار) */}
                     {req.status === 'pending' && (
