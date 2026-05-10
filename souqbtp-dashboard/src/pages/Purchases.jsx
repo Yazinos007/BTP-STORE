@@ -69,8 +69,63 @@ export default function Purchases() {
   };
 
   const removeFromCart = (id) => setCart(prev => prev.filter(item => item.id !== id));
-
   const total = cart.reduce((sum, item) => sum + (Number(item.purchase_price) * Number(item.quantity)), 0);
+
+// 🌟 حالات تتبع طلبات B2B
+  const [b2bRequests, setB2bRequests] = useState([]);
+  
+  // 🌟 دالة جلب طلبات التاجر
+  const fetchB2BRequests = async () => {
+    const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+    const { data } = await supabase
+      .from('supply_requests')
+      .select('*')
+      .eq('merchant_id', targetId)
+      .order('created_at', { ascending: false });
+    
+    if (data) setB2bRequests(data);
+  };
+
+  // 🌟 جلب الطلبات وتشغيل التحديث اللحظي
+  useEffect(() => {
+    fetchB2BRequests();
+    
+    // رادار يستمع لتغييرات المورد (مثلاً عندما يوافق المورد، تتغير الحالة فوراً عند التاجر)
+    const channel = supabase.channel('b2b-tracking')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'supply_requests' }, () => {
+        fetchB2BRequests();
+      }).subscribe();
+      
+    return () => { supabase.removeChannel(channel); };
+  }, [supplier]);
+
+  // 🌟 دالة المصافحة الرقمية (التوقيع)
+  const handleSignContract = async (id) => {
+    const signatureName = window.prompt(
+      language === 'fr' 
+      ? "Pour signer ce bon de commande, tapez votre nom complet :" 
+      : "لتوقيع هذا العقد والموافقة عليه، اكتب اسمك الكامل هنا:"
+    );
+    
+    if (!signatureName) return; // إذا ألغى العملية
+
+    try {
+      const { error } = await supabase
+        .from('supply_requests')
+        .update({ 
+          status: 'signed', 
+          digital_signature: signatureName 
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      alert(language === 'fr' ? "✅ Contrat signé avec succès !" : "✅ تم توقيع العقد بنجاح!");
+      fetchB2BRequests();
+    } catch (err) {
+      console.error(err);
+      alert("Erreur: " + err.message);
+    }
+  };
 
   // 🌟 دالة إرسال طلب التزويد للمورد الكبير (المصافحة الرقمية 🤝)
   const handleSendPO = async () => {
@@ -349,6 +404,56 @@ export default function Purchases() {
             </div>
           </div>
         </div>
+      </div>
+      {/* 🌟 رادار تتبع الطلبات (B2B Tracking) */}
+      <div className="mt-12 bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+        <h3 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2">
+          <Truck className="text-blue-600" />
+          {language === 'fr' ? 'Suivi des Commandes B2B' : 'سجل طلبات التزويد (B2B)'}
+        </h3>
+        
+        {b2bRequests.length === 0 ? (
+          <div className="text-center text-gray-400 py-10 font-medium">
+            {language === 'fr' ? "Vous n'avez envoyé aucune commande B2B." : "لم تقم بإرسال أي طلبات تزويد بعد."}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {b2bRequests.map(req => (
+              <div key={req.id} className="border border-gray-200 rounded-2xl p-5 bg-gray-50/50 hover:bg-white hover:shadow-md transition-all">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="text-xs font-bold text-gray-400">PO #{req.id.split('-')[0].toUpperCase()}</p>
+                    <p className="text-lg font-black text-gray-800">{Number(req.total_amount).toLocaleString()} DH</p>
+                  </div>
+                  
+                  {/* شارة الحالة اللحظية */}
+                  {req.status === 'pending' && <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'En attente' : 'بانتظار المورد'}</span>}
+                  {req.status === 'confirmed' && <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'Signature Requise' : 'يتطلب توقيعك'}</span>}
+                  {req.status === 'signed' && <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Signé & Confirmé' : 'تم التوقيع بنجاح'}</span>}
+                </div>
+
+                <div className="text-sm text-gray-500 mb-4 font-medium">
+                  {req.items?.length} {language === 'fr' ? 'Articles demandés' : 'منتجات مطلوبة'}
+                </div>
+
+                {/* زر المصافحة الرقمية يظهر فقط عندما يوافق المورد */}
+                {req.status === 'confirmed' && (
+                  <button 
+                    onClick={() => handleSignContract(req.id)}
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-600/30"
+                  >
+                    <CheckCircle size={18} /> {language === 'fr' ? 'Signer le Contrat' : 'توقيع العقد (مصافحة)'}
+                  </button>
+                )}
+                {req.status === 'signed' && (
+                  <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-bold flex justify-center items-center gap-2 border border-emerald-200 text-sm">
+                     ✍️ {language === 'fr' ? `Signé par: ${req.digital_signature}` : `موقّع باسم: ${req.digital_signature}`}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
