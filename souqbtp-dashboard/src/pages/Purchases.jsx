@@ -72,6 +72,68 @@ export default function Purchases() {
 
   const total = cart.reduce((sum, item) => sum + (Number(item.purchase_price) * Number(item.quantity)), 0);
 
+  // 🌟 دالة إرسال طلب التزويد للمورد الكبير (المصافحة الرقمية 🤝)
+  const handleSendPO = async () => {
+    if (!selectedSupplierId || cart.length === 0) {
+      return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur et ajouter des articles." : "الرجاء اختيار المورد وإضافة منتجات للسلة.");
+    }
+
+    setIsProcessing(true);
+    try {
+      // 1. التقاط الموقع الجغرافي (GPS) بدقة
+      let locationData = null;
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000 });
+        });
+        locationData = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        };
+      } catch (geoError) {
+        console.warn("GPS Error:", geoError);
+        const proceedMsg = language === 'fr' 
+          ? "Nous n'avons pas pu obtenir votre position GPS. Envoyer quand même ?" 
+          : "لم نتمكن من التقاط موقعك (GPS). هل تريد إرسال الطلب بدون خريطة؟";
+        const proceed = window.confirm(proceedMsg);
+        if (!proceed) {
+          setIsProcessing(false);
+          return;
+        }
+      }
+
+      // 2. إرسال الطلب لقاعدة البيانات
+      const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+      
+      const { error: poError } = await supabase.from('supply_requests').insert([{
+        merchant_id: merchantId,
+        // supplier_id: نتركه حالياً لكي تلتقطه لوحة الموردين
+        items: cart,
+        total_amount: total,
+        location_data: locationData,
+        status: 'pending'
+      }]);
+
+      if (poError) throw poError;
+
+      // 3. رسالة النجاح وتفريغ السلة
+      setCart([]);
+      setSelectedSupplierId('');
+      
+      const successMsg = language === 'fr'
+        ? "✅ Bon de commande envoyé avec succès ! Le grossiste va le traiter."
+        : "✅ تم إرسال طلب التزويد بنجاح! المورد سيقوم بالرد عليك قريباً.";
+      alert(successMsg);
+
+    } catch (err) {
+      console.error("PO Error:", err);
+      alert("Erreur / خطأ: " + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleCompletePurchase = async (method) => {
     if (!selectedSupplierId || cart.length === 0) return alert(t.msgSelectSupplier);
     setIsProcessing(true);
@@ -278,10 +340,10 @@ export default function Purchases() {
                 {/* 🌟 الزر الجديد: طلب تزويد من المورد الكبير (PO) */}
                 <button 
                    disabled={isProcessing || cart.length === 0} 
-                   onClick={() => alert("سيتم إرسال هذا الطلب للمورد الكبير في الخطوة القادمة! 🚀")}
+                   onClick={handleSendPO}
                    className="w-full md:col-span-2 py-4 bg-gradient-to-r from-slate-800 to-black hover:from-black hover:to-slate-900 rounded-2xl font-black flex justify-center items-center gap-2 transition-all shadow-lg text-white mt-2"
                 >
-                  <Truck size={20}/> إرسال طلب تزويد (Purchase Order)
+                  <Truck size={20}/> {language === 'fr' ? 'Envoyer Bon de Commande (B2B)' : 'إرسال طلب تزويد (Purchase Order)'}
                 </button>
               </div>
             </div>
