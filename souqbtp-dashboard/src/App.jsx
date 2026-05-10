@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { Package, Truck, FileSignature, BarChart3, LogOut, Bell } from 'lucide-react';
-
-// --- استيراد صفحات التاجر (القديمة) ---
 import Overview from './pages/Overview';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
@@ -27,9 +25,9 @@ import Clients from './pages/Clients';
 import Accounting from './pages/Accounting';
 import ExternalSuppliers from './pages/ExternalSuppliers';
 import Purchases from './pages/Purchases';
-
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
+import LiveOrders from './pages/LiveOrders';
 
 // --- 1. مكون ذكي للصفحات قيد الإنشاء (يستخدم للطرفين) ---
 const PlaceholderPage = ({ title, isDark = false }) => {
@@ -116,7 +114,7 @@ const WholesalerDashboard = ({ supplier }) => {
 
         <div className="flex-1 overflow-auto p-10 custom-scrollbar z-10">
           <Routes>
-            <Route path="/" element={<PlaceholderPage title={language === 'fr' ? 'Commandes en Temps Réel' : 'الطلبات اللحظية'} isDark={true} />} />
+            <Route path="/" element={<LiveOrders />} />
             <Route path="/fleet" element={<PlaceholderPage title={language === 'fr' ? 'Gestion de la Flotte' : 'إدارة الأسطول'} isDark={true} />} />
             <Route path="/contracts" element={<PlaceholderPage title={language === 'fr' ? 'Contrats Intelligents' : 'العقود الذكية'} isDark={true} />} />
             <Route path="/analytics" element={<PlaceholderPage title={language === 'fr' ? 'Analytiques Globales' : 'تحليلات شاملة'} isDark={true} />} />
