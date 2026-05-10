@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import { Package, MapPin, CheckCircle, Clock, Phone, AlertCircle, Loader2, Navigation } from 'lucide-react';
+import { Package, MapPin, CheckCircle, Clock, Phone, AlertCircle, Loader2, Navigation, XCircle } from 'lucide-react';
 
 export default function LiveOrders() {
   const [requests, setRequests] = useState([]);
@@ -77,6 +78,20 @@ export default function LiveOrders() {
       alert('Erreur: ' + err.message);
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const handleRejectOrder = async (id) => {
+    const confirmMsg = language === 'fr' ? 'Refuser et supprimer cette commande ?' : 'هل أنت متأكد من رفض وحذف هذا الطلب؟';
+    if (!window.confirm(confirmMsg)) return;
+    
+    try {
+      const { error } = await supabase.from('supply_requests').delete().eq('id', id);
+      if (error) throw error;
+      setRequests(requests.filter(req => req.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert('Erreur: ' + err.message);
     }
   };
 
@@ -167,26 +182,36 @@ export default function LiveOrders() {
                     </ul>
                   </div>
 
-                  {/* الأزرار (المصافحة والخريطة) */}
-                  <div className="flex gap-3">
+                  {/* الأزرار (المصافحة والخريطة والرفض) */}
+                  <div className="flex gap-3 mt-4">
                     {/* زر الخريطة */}
                     <button 
                       onClick={() => openGoogleMaps(req.location_data)}
                       disabled={!req.location_data}
                       className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition-all"
                     >
-                      <Navigation size={18}/> {language === 'fr' ? 'GPS' : 'تحديد الموقع'}
+                      <Navigation size={18}/> {language === 'fr' ? 'GPS' : 'الموقع'}
                     </button>
                     
-                    {/* زر المصافحة والتأكيد */}
+                    {/* أزرار القبول والرفض */}
                     {isPending && (
-                      <button 
-                        onClick={() => handleAcceptOrder(req.id)}
-                        disabled={processingId === req.id}
-                        className="flex-[2] py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-70 text-white rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
-                      >
-                        {processingId === req.id ? <Loader2 size={18} className="animate-spin"/> : <><CheckCircle size={18}/> {language === 'fr' ? 'Accepter la commande' : 'قبول الطلب وتأكيده'}</>}
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => handleRejectOrder(req.id)}
+                          className="px-4 py-3 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 border border-red-500/20 rounded-xl font-bold flex justify-center items-center transition-all"
+                          title="رفض الطلب"
+                        >
+                          <XCircle size={20}/>
+                        </button>
+                        
+                        <button 
+                          onClick={() => handleAcceptOrder(req.id)}
+                          disabled={processingId === req.id}
+                          className="flex-[2] py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-70 text-white rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
+                        >
+                          {processingId === req.id ? <Loader2 size={18} className="animate-spin"/> : <><CheckCircle size={18}/> {language === 'fr' ? 'Accepter' : 'قبول الطلب'}</>}
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>

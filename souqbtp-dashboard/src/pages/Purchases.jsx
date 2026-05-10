@@ -5,6 +5,7 @@ import useProductStore from '../store/useProductStore';
 import useExternalSupplierStore from '../store/useExternalSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
+import { Search, CheckCircle, ShoppingBag, Loader2, CreditCard, X, TrendingUp, BrainCircuit, Truck, Trash2, Edit2 } from 'lucide-react';
 
 const translations = {
   ar: {
@@ -125,6 +126,28 @@ export default function Purchases() {
       console.error(err);
       alert("Erreur: " + err.message);
     }
+  };
+
+  // 🌟 دالة حذف الطلب للتاجر
+  const handleDeleteB2B = async (id) => {
+    const confirmMsg = language === 'fr' ? 'Annuler cette commande ?' : 'هل أنت متأكد من إلغاء هذا الطلب؟';
+    if (!window.confirm(confirmMsg)) return;
+    try {
+      const { error } = await supabase.from('supply_requests').delete().eq('id', id);
+      if (error) throw error;
+      fetchB2BRequests();
+    } catch (err) { console.error(err); }
+  };
+
+  // 🌟 دالة تعديل الطلب للتاجر (استرجاع للسلة)
+  const handleEditB2B = async (req) => {
+    const confirmMsg = language === 'fr' ? 'Modifier cette commande ?' : 'هل تريد استرجاع الطلب للسلة لتعديله؟';
+    if (!window.confirm(confirmMsg)) return;
+    
+    setCart(req.items); // إرجاع السلع للسلة
+    await supabase.from('supply_requests').delete().eq('id', req.id); // مسح الطلب القديم
+    fetchB2BRequests();
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
   // 🌟 دالة إرسال طلب التزويد للمورد الكبير (المصافحة الرقمية 🤝)
@@ -426,10 +449,20 @@ export default function Purchases() {
                     <p className="text-lg font-black text-gray-800">{Number(req.total_amount).toLocaleString()} DH</p>
                   </div>
                   
-                  {/* شارة الحالة اللحظية */}
-                  {req.status === 'pending' && <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'En attente' : 'بانتظار المورد'}</span>}
-                  {req.status === 'confirmed' && <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'Signature Requise' : 'يتطلب توقيعك'}</span>}
-                  {req.status === 'signed' && <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Signé & Confirmé' : 'تم التوقيع بنجاح'}</span>}
+                  <div className="flex flex-col items-end gap-2">
+                    {/* شارة الحالة اللحظية */}
+                    {req.status === 'pending' && <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'En attente' : 'بانتظار المورد'}</span>}
+                    {req.status === 'confirmed' && <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'Signature Requise' : 'يتطلب توقيعك'}</span>}
+                    {req.status === 'signed' && <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Signé & Confirmé' : 'تم التوقيع بنجاح'}</span>}
+
+                    {/* 🌟 أزرار التعديل والحذف (تظهر فقط إذا كان الطلب قيد الانتظار) */}
+                    {req.status === 'pending' && (
+                      <div className="flex gap-2 mt-1">
+                        <button onClick={() => handleEditB2B(req)} className="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-all" title="تعديل"><Edit2 size={16}/></button>
+                        <button onClick={() => handleDeleteB2B(req.id)} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-all" title="إلغاء الطلب"><Trash2 size={16}/></button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mb-4">
