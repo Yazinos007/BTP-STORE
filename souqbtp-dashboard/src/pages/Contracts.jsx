@@ -45,7 +45,7 @@ export default function Contracts() {
     const { data } = await supabase.from('suppliers').select('store_name').eq('id', id).single();
     if (data) setMerchants(prev => ({ ...prev, [id]: data }));
   };
-
+  
   // 🌟 دالة توليد وتحميل العقد كملف PDF
   const handleDownloadPDF = async (contract) => {
     setIsLoading(true);
