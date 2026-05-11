@@ -30,6 +30,7 @@ import useSettingsStore from './store/useSettingsStore';
 import LiveOrders from './pages/LiveOrders';
 import Fleet from './pages/Fleet';
 import Contracts from './pages/Contracts';
+import AnalyticsB2B from './pages/AnalyticsB2B';
 
 // --- 1. مكون ذكي للصفحات قيد الإنشاء (يستخدم للطرفين) ---
 const PlaceholderPage = ({ title, isDark = false }) => {
@@ -119,7 +120,7 @@ const WholesalerDashboard = ({ supplier }) => {
             <Route path="/" element={<LiveOrders />} />
             <Route path="/fleet" element={<Fleet />} />
             <Route path="/contracts" element={<Contracts />} />
-            <Route path="/analytics" element={<PlaceholderPage title={language === 'fr' ? 'Analytiques Globales' : 'تحليلات شاملة'} isDark={true} />} />
+            <Route path="/analytics" element={<AnalyticsB2B />} />
           </Routes>
         </div>
       </main>
