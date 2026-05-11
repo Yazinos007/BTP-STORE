@@ -5,6 +5,7 @@ import useProductStore from '../store/useProductStore';
 import useSupplierStore from '../store/useSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
 import useClientStore from '../store/useClientStore';
+import confetti from 'canvas-confetti'; // 🌟 أضفنا مكتبة الاحتفال
 
 const translations = {
   ar: {
@@ -77,6 +78,7 @@ export default function POS() {
   
   const total = cart.reduce((sum, item) => sum + (Number(item.price) * (Number(item.quantity) || 0)), 0);
 
+  // 🌟 نظام الطباعة الصامتة (من كودك الأصلي)
   const handlePrintTicket = () => {
     if (cart.length === 0) return;
     const storeName = supplier?.store_name || 'SouqBTP';
@@ -94,7 +96,6 @@ export default function POS() {
     const iframe = document.createElement('iframe'); iframe.style.display = 'none'; document.body.appendChild(iframe); iframe.contentDocument.write(docHtml); iframe.contentDocument.close(); setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => document.body.removeChild(iframe), 1000); }, 500);
   };
 
-  // إصدار Devis أو BC (تعديل owner_id)
   const generateDocument = async (e) => {
     e.preventDefault();
     if (!selectedClientId) return alert(t.selectClient);
@@ -104,13 +105,11 @@ export default function POS() {
       const refNumber = `${prefix}-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       const client = clients.find(c => c.id === selectedClientId);
 
-      // هنا كان الخطأ: تم تغيير supplier_id إلى owner_id لتطابق قاعدة البيانات
       await supabase.from('documents').insert([{
         owner_id: supplier.id, client_id: selectedClientId, type: docType, ref_number: refNumber, chantier: chantier || null, total_amount: total, items: cart
       }]);
 
       printA4Document(refNumber, client.full_name);
-      
       setShowDocModal(false);
       alert(t.successDoc);
     } catch (error) { 
@@ -121,7 +120,6 @@ export default function POS() {
     }
   };
 
-  // البيع الفعلي (تعديل owner_id لكي يحفظ الفاتورة وتكتمل العملية)
   const processOrder = async (paymentMethod, clientId = null) => {
     if (cart.length === 0) return;
     const validCart = cart.map(item => ({...item, quantity: Number(item.quantity) || 1}));
@@ -151,13 +149,14 @@ export default function POS() {
       const prefix = paymentMethod === 'Espèces' ? 'FAC' : 'BL';
       const refNumber = `${prefix}-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       
-      // هنا كان الخطأ أيضاً: تم التغيير إلى owner_id
       const { error: docError } = await supabase.from('documents').insert([{
         owner_id: supplier.id, client_id: clientId || null, type: autoDocType, ref_number: refNumber, chantier: chantier || null, total_amount: total, items: validCart
       }]);
       if (docError) throw docError;
 
-      // إذا وصلنا هنا، فهذا يعني أن كل شيء تم بنجاح! السلة ستُمسح والمخزون سيتحدث أمامك.
+      // 🌟 5. الاحتفال المبهج عند إتمام البيع بنجاح
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#10b981', '#3b82f6', '#f59e0b'] });
+
       setCart([]); setChantier(''); fetchProducts(); if (clientId) fetchClients();
       setShowCreditModal(false); setSelectedClientId('');
       alert(paymentMethod === 'Espèces' ? t.successCash : t.successCredit);
@@ -181,14 +180,29 @@ export default function POS() {
         </div>
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredProducts.map(product => (
-              <button key={product.id} onClick={() => addToCart(product)} disabled={product.stock_quantity <= 0} className="text-start bg-white border border-gray-200 rounded-2xl p-5 hover:border-blue-400 hover:shadow-lg transition-all group disabled:opacity-50 relative overflow-hidden">
-                {product.stock_quantity <= 0 && <div className="absolute inset-0 bg-gray-50/80 flex items-center justify-center z-10"><span className="bg-red-500 text-white text-xs font-black px-3 py-1 rounded-full uppercase">{t.outOfStock}</span></div>}
-                <h3 className="font-bold text-gray-800 mb-1 truncate">{product.name}</h3>
-                <div className="flex items-baseline gap-1 mb-4" dir="ltr"><span className="text-2xl font-black text-blue-600">{product.price}</span><span className="text-xs font-bold text-blue-400 uppercase">{t.currency}</span></div>
-                <div className="flex justify-between items-center pt-3 border-t border-gray-100"><span className="text-xs font-medium text-gray-500">{t.stock}</span><span className={`text-sm font-bold ${product.stock_quantity > 10 ? 'text-emerald-500' : 'text-orange-500'}`}>{product.stock_quantity}</span></div>
-              </button>
-            ))}
+            {filteredProducts.map(product => {
+              const isOutOfStock = product.stock_quantity <= 0;
+              return (
+                <button 
+                  key={product.id} 
+                  onClick={() => addToCart(product)} 
+                  disabled={isOutOfStock} 
+                  className={`text-start bg-white border rounded-2xl p-5 transition-all group relative overflow-hidden flex flex-col justify-between h-40
+                    ${isOutOfStock ? 'border-red-200 opacity-60 cursor-not-allowed bg-red-50/20' : 'border-gray-200 hover:border-blue-400 hover:shadow-lg hover:-translate-y-1'}`}
+                >
+                  {isOutOfStock && <div className="absolute inset-0 bg-gray-50/80 flex items-center justify-center z-10"><span className="bg-red-500 text-white text-xs font-black px-3 py-1 rounded-full uppercase">{t.outOfStock}</span></div>}
+                  <h3 className="font-bold text-gray-800 mb-1 truncate group-hover:text-blue-600 transition-colors">{product.name}</h3>
+                  <div className="flex items-baseline gap-1 mt-auto mb-2" dir="ltr">
+                    <span className={`text-2xl font-black ${isOutOfStock ? 'text-gray-400' : 'text-blue-600'}`}>{product.price}</span>
+                    <span className="text-xs font-bold text-gray-400 uppercase">{t.currency}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                    <span className="text-xs font-medium text-gray-500">{t.stock}</span>
+                    <span className={`text-sm font-bold ${isOutOfStock ? 'text-red-500' : product.stock_quantity > 10 ? 'text-emerald-500' : 'text-orange-500'}`}>{product.stock_quantity}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -200,12 +214,15 @@ export default function POS() {
         </div>
         <div className="overflow-y-auto p-4 space-y-3 custom-scrollbar" dir="ltr">
           {cart.length === 0 ? <div className="py-8 flex flex-col items-center text-white/30 space-y-4"><ShoppingCart size={40} className="opacity-20" /><p className="font-medium text-sm">{t.emptyCart}</p></div> : cart.map(item => (
-            <div key={item.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3">
-              <div className="flex justify-between items-start"><div><h4 className="font-bold text-white text-sm">{item.name}</h4><p className="text-xs font-medium text-blue-300 mt-0.5">{item.price} MAD</p></div><button onClick={() => removeFromCart(item.id)} className="text-white/40 hover:text-red-400"><Trash2 size={16} /></button></div>
+            <div key={item.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3 group relative">
+              <div className="flex justify-between items-start">
+                <div className="pr-6"><h4 className="font-bold text-white text-sm">{item.name}</h4><p className="text-xs font-medium text-blue-300 mt-0.5">{item.price} MAD</p></div>
+                <button onClick={() => removeFromCart(item.id)} className="absolute top-3 right-3 text-white/30 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+              </div>
               <div className="flex items-center justify-between bg-black/20 rounded-lg p-1">
-                <button onClick={() => updateQuantity(item.id, (Number(item.quantity) || 1) - 1)} className="p-1.5 hover:bg-white/10 rounded-md"><Minus size={14} /></button>
+                <button onClick={() => updateQuantity(item.id, (Number(item.quantity) || 1) - 1)} className="p-1.5 hover:bg-white/10 rounded-md transition-colors"><Minus size={14} /></button>
                 <input type="text" value={item.quantity} onChange={(e) => updateQuantity(item.id, e.target.value)} onBlur={() => handleBlur(item.id, item.quantity)} className="w-16 text-center bg-transparent border-none text-white font-bold focus:ring-0 outline-none" />
-                <button onClick={() => updateQuantity(item.id, (Number(item.quantity) || 0) + 1)} className="p-1.5 hover:bg-white/10 rounded-md"><Plus size={14} /></button>
+                <button onClick={() => updateQuantity(item.id, (Number(item.quantity) || 0) + 1)} className="p-1.5 hover:bg-white/10 rounded-md transition-colors"><Plus size={14} /></button>
               </div>
             </div>
           ))}
@@ -229,6 +246,7 @@ export default function POS() {
         </div>
       </div>
 
+      {/* نوافذ Devis والديون (بدون تغيير للحفاظ على قوة كودك) */}
       {showDocModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl p-6 w-[450px] animate-slide-up border-t-8 border-blue-600">
@@ -244,7 +262,6 @@ export default function POS() {
                   <option value="Bon de Commande">Bon de Commande (أمر شراء)</option>
                 </select>
               </div>
-
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">{t.selectClient}</label>
                 <select required value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700">
@@ -252,12 +269,10 @@ export default function POS() {
                   {clients.map(client => (<option key={client.id} value={client.id}>{client.full_name}</option>))}
                 </select>
               </div>
-
               <div>
                 <label className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><HardHat size={16} className="text-orange-500"/> {t.chantier}</label>
                 <input type="text" value={chantier} onChange={(e) => setChantier(e.target.value)} placeholder="مثال: فيلا طريق إيموزار" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 font-medium" />
               </div>
-
               <div className="flex gap-3 pt-4 border-t border-gray-100">
                 <button type="button" onClick={() => setShowDocModal(false)} className="w-1/3 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl">{t.cancel}</button>
                 <button type="submit" disabled={isProcessing} className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex justify-center items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/30">
