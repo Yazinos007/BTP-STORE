@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import { FileSignature, Search, Download, CheckCircle, FileText, Loader2, Calendar } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function Contracts() {
   const [contracts, setContracts] = useState([]);
@@ -44,9 +46,100 @@ export default function Contracts() {
     if (data) setMerchants(prev => ({ ...prev, [id]: data }));
   };
 
-  const handleDownloadPDF = (id) => {
-    // 🌟 ميزة قادمة: تحويل العقد إلى PDF
-    alert(language === 'fr' ? "Génération du PDF en cours de développement..." : "جاري تطوير ميزة تحميل العقد كملف PDF...");
+  // 🌟 دالة توليد وتحميل العقد كملف PDF
+  const handleDownloadPDF = async (contract) => {
+    setIsLoading(true);
+    try {
+      const merchantName = merchants[contract.merchant_id]?.store_name || 'Client Inconnu';
+      const poNumber = contract.id.split('-')[0].toUpperCase();
+      const date = new Date(contract.created_at).toLocaleDateString();
+
+      // إنشاء عنصر HTML مخفي يمثل شكل الورقة A4
+      const printElement = document.createElement('div');
+      printElement.style.position = 'absolute';
+      printElement.style.left = '-9999px';
+      printElement.style.top = '0';
+      printElement.style.width = '800px';
+      printElement.style.padding = '40px';
+      printElement.style.backgroundColor = 'white';
+      printElement.style.color = 'black';
+      printElement.style.fontFamily = 'Arial, sans-serif';
+      
+      // تصميم العقد من الداخل
+      printElement.innerHTML = `
+        <div style="border-bottom: 2px solid #3b82f6; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+          <h1 style="color: #3b82f6; font-size: 28px; margin: 0;">CONTRAT DE FOURNITURE B2B</h1>
+          <h2 style="color: #64748b; font-size: 20px; margin: 0;">SOUQ BTP</h2>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 40px; font-size: 14px;">
+          <div>
+            <p style="margin: 5px 0;"><strong>N° de Commande (PO) :</strong> #${poNumber}</p>
+            <p style="margin: 5px 0;"><strong>Date de création :</strong> ${date}</p>
+            <p style="margin: 5px 0;"><strong>Statut :</strong> Approuvé & Signé</p>
+          </div>
+          <div style="text-align: right;">
+            <p style="margin: 5px 0;"><strong>Fournisseur (Grossiste) :</strong> BOSS / SOUQ BTP</p>
+            <p style="margin: 5px 0;"><strong>Client (Détaillant) :</strong> ${merchantName}</p>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+          <thead>
+            <tr style="background-color: #f1f5f9;">
+              <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: left;">Article</th>
+              <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Quantité</th>
+              <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: right;">Prix Unitaire</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${contract.items.map(item => `
+              <tr>
+                <td style="padding: 12px; border: 1px solid #cbd5e1;">${item.name}</td>
+                <td style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">${item.quantity}</td>
+                <td style="padding: 12px; border: 1px solid #cbd5e1; text-align: right;">${item.purchase_price} DH</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="text-align: right; margin-bottom: 50px;">
+          <h2 style="font-size: 24px; color: #0f172a; margin: 0;">MONTANT TOTAL : <span style="color: #10b981;">${Number(contract.total_amount).toLocaleString()} DH</span></h2>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+          <div style="text-align: center;">
+            <p style="font-weight: bold; margin-bottom: 10px; color: #64748b;">Signature Fournisseur (BOSS)</p>
+            <p style="font-size: 20px; color: #3b82f6; font-family: 'Courier New', monospace; font-weight: bold;">Approuvé B2B</p>
+          </div>
+          <div style="text-align: center;">
+            <p style="font-weight: bold; margin-bottom: 10px; color: #64748b;">Signature Client (${merchantName})</p>
+            <p style="font-size: 20px; color: #10b981; font-weight: bold;">✍️ ${contract.digital_signature}</p>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(printElement);
+
+      // تحويل الـ HTML إلى صورة ثم إلى PDF
+      const canvas = await html2canvas(printElement, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Contrat_B2B_${poNumber}.pdf`);
+
+      // تنظيف الواجهة
+      document.body.removeChild(printElement);
+      
+    } catch (error) {
+      console.error("PDF Error:", error);
+      alert(language === 'fr' ? "Erreur lors de la génération du PDF" : "حدث خطأ أثناء تحميل الملف");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filteredContracts = contracts.filter(c => {
@@ -128,7 +221,7 @@ export default function Contracts() {
                 </div>
 
                 <button 
-                  onClick={() => handleDownloadPDF(contract.id)}
+                  onClick={() => handleDownloadPDF(contract)}
                   className="w-full p-4 bg-slate-700/30 hover:bg-purple-600 text-slate-300 hover:text-white font-bold flex justify-center items-center gap-2 transition-all opacity-0 group-hover:opacity-100"
                 >
                   <Download size={18}/> {language === 'fr' ? 'Télécharger PDF' : 'تحميل كملف PDF'}
