@@ -65,7 +65,7 @@ export default function Contracts() {
       printElement.style.color = 'black';
       printElement.style.fontFamily = 'Arial, sans-serif';
       
-      // تصميم العقد من الداخل
+      // 🌟 هنا كان الخطأ! يجب أن نضع الكود داخل `printElement.innerHTML`
       printElement.innerHTML = `
         <div style="border-bottom: 2px solid #3b82f6; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
           <h1 style="color: #3b82f6; font-size: 28px; margin: 0;">CONTRAT DE FOURNITURE B2B</h1>
@@ -107,15 +107,34 @@ export default function Contracts() {
           <h2 style="font-size: 24px; color: #0f172a; margin: 0;">MONTANT TOTAL : <span style="color: #10b981;">${Number(contract.total_amount).toLocaleString()} DH</span></h2>
         </div>
 
-        <div style="display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
-          <div style="text-align: center;">
-            <p style="font-weight: bold; margin-bottom: 10px; color: #64748b;">Signature Fournisseur (BOSS)</p>
-            <p style="font-size: 20px; color: #3b82f6; font-family: 'Courier New', monospace; font-weight: bold;">Approuvé B2B</p>
+        <div style="display: flex; justify-content: space-between; margin-top: 60px; padding-top: 30px; border-top: 2px dashed #cbd5e1;">
+          
+          <div style="text-align: center; position: relative; width: 45%;">
+            <p style="font-weight: 900; margin-bottom: 10px; color: #475569; text-transform: uppercase; letter-spacing: 1px;">Le Fournisseur (Grossiste)</p>
+            
+            <div style="position: absolute; top: 35px; left: 50%; transform: translateX(-50%) rotate(-10deg); border: 4px solid #ef4444; color: #ef4444; padding: 8px 20px; border-radius: 8px; font-weight: 900; font-size: 22px; letter-spacing: 3px; opacity: 0.6; text-transform: uppercase; z-index: 1;">
+              APPROUVÉ
+            </div>
+            
+            <p style="font-size: 38px; color: #1e3a8a; font-family: 'Brush Script MT', 'Lucida Handwriting', cursive; margin-top: 30px; position: relative; z-index: 2;">
+              SOUQ BTP
+            </p>
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 5px; font-style: italic;">Certifié numériquement</p>
           </div>
-          <div style="text-align: center;">
-            <p style="font-weight: bold; margin-bottom: 10px; color: #64748b;">Signature Client (${merchantName})</p>
-            <p style="font-size: 20px; color: #10b981; font-weight: bold;">✍️ ${contract.digital_signature}</p>
+
+          <div style="text-align: center; width: 45%;">
+            <p style="font-weight: 900; margin-bottom: 10px; color: #475569; text-transform: uppercase; letter-spacing: 1px;">Le Client (Détaillant)</p>
+            
+            <p style="font-size: 38px; color: #047857; font-family: 'Brush Script MT', 'Lucida Handwriting', cursive; margin-top: 45px;">
+              ${contract.digital_signature}
+            </p>
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 5px; font-style: italic;">Signé le ${date}</p>
           </div>
+        </div>
+
+        <div style="margin-top: 60px; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+           <p style="font-size: 14px; color: #cbd5e1; font-family: monospace; letter-spacing: 2px;">|| ||| | || |||| | ||| | || |||| B2B SECURE DOCUMENT || ||| | || ||||</p>
+           <p style="font-size: 10px; color: #94a3b8; margin-top: 5px;">ID de Transaction : ${contract.id}</p>
         </div>
       `;
 
