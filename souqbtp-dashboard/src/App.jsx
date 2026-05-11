@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { Package, Truck, FileSignature, BarChart3, LogOut, Bell } from 'lucide-react';
+
+// === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
@@ -25,15 +27,18 @@ import Clients from './pages/Clients';
 import Accounting from './pages/Accounting';
 import ExternalSuppliers from './pages/ExternalSuppliers';
 import Purchases from './pages/Purchases';
-import useSupplierStore from './store/useSupplierStore';
-import useSettingsStore from './store/useSettingsStore';
-import LiveOrders from './pages/LiveOrders';
+
+// === صفحات المورد الكبير (Wholesaler) ===
+import SupplierOrders from './pages/SupplierOrders';
 import Fleet from './pages/Fleet';
 import Contracts from './pages/Contracts';
 import AnalyticsB2B from './pages/AnalyticsB2B';
-import SupplierOrders from './pages/SupplierOrders';
 
-// --- 1. مكون ذكي للصفحات قيد الإنشاء (يستخدم للطرفين) ---
+// === إدارة الحالة (Stores) ===
+import useSupplierStore from './store/useSupplierStore';
+import useSettingsStore from './store/useSettingsStore';
+
+// --- 1. مكون ذكي للصفحات قيد الإنشاء ---
 const PlaceholderPage = ({ title, isDark = false }) => {
   const { language } = useSettingsStore();
   return (
@@ -85,7 +90,6 @@ const WholesalerDashboard = ({ supplier }) => {
 
       {/* منطقة المحتوى للمورد */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        {/* تأثيرات إضاءة في الخلفية */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
         
         <header className="h-20 border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-10 sticky top-0 z-10">
@@ -158,7 +162,6 @@ function App() {
     return () => subscription.unsubscribe();
   }, [fetchSupplierProfile]);
 
-  // شاشة التحميل (تأمين ظهور واجهة خاطئة)
   if (loading || (session && !supplier)) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
@@ -168,7 +171,6 @@ function App() {
     );
   }
 
-  // شاشة الدخول والتسجيل
   if (!session) {
     return <Login />;
   }
@@ -186,7 +188,7 @@ function App() {
     );
   }
 
-  // 🌟 مسار التاجر الصغير (Retailer - القديم)
+  // 🌟 مسار التاجر الصغير (Retailer)
   return (
     <BrowserRouter>
       <div className="flex h-screen bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
