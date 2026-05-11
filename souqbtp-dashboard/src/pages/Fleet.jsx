@@ -118,7 +118,14 @@ export default function Fleet() {
                     <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400"><ShieldCheck size={20} /></div>
                     <div>
                       <h4 className="text-white font-bold text-lg">PO #{req.id.split('-')[0].toUpperCase()}</h4>
-                      <p className="text-xs text-emerald-400 font-bold">✍️ {req.digital_signature}</p>
+                      {req.digital_signature && req.digital_signature.startsWith('data:image') ? (
+                    <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs">✍️</span>
+                    <img src={req.digital_signature} alt="Signature" className="h-6 object-contain bg-white/10 rounded px-1" />
+                  </div>
+                ) : (
+                <p className="text-xs text-emerald-400 font-bold">✍️ {req.digital_signature}</p>
+                )}
                     </div>
                   </div>
                   

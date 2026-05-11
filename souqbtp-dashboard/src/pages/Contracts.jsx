@@ -125,9 +125,11 @@ export default function Contracts() {
           <div style="text-align: center; width: 45%;">
             <p style="font-weight: 900; margin-bottom: 10px; color: #475569; text-transform: uppercase; letter-spacing: 1px;">Le Client (Détaillant)</p>
             
-            <p style="font-size: 38px; color: #047857; font-family: 'Brush Script MT', 'Lucida Handwriting', cursive; margin-top: 45px;">
-              ${contract.digital_signature}
-            </p>
+            ${contract.digital_signature && contract.digital_signature.startsWith('data:image') 
+              ? `<img src="${contract.digital_signature}" style="height: 60px; object-fit: contain; margin-top: 25px;" />` 
+              : `<p style="font-size: 38px; color: #047857; font-family: 'Brush Script MT', 'Lucida Handwriting', cursive; margin-top: 45px;">${contract.digital_signature}</p>`
+            }
+
             <p style="font-size: 11px; color: #94a3b8; margin-top: 5px; font-style: italic;">Signé le ${date}</p>
           </div>
         </div>
@@ -233,9 +235,14 @@ export default function Contracts() {
 
                   <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-700/50">
                     <p className="text-xs font-bold text-slate-500 mb-1">{language === 'fr' ? 'Signature Numérique' : 'التوقيع الرقمي'}</p>
-                    <p className="text-emerald-300 font-black flex items-center gap-2">
-                      <CheckCircle size={16}/> {contract.digital_signature}
-                    </p>
+                    <div className="text-emerald-300 font-black flex items-center gap-2 mt-1">
+                      <CheckCircle size={16}/> 
+                      {contract.digital_signature?.startsWith('data:image') ? (
+                        <img src={contract.digital_signature} alt="Signature" className="h-8 object-contain bg-white/10 rounded px-2 py-1" />
+                      ) : (
+                        <span>{contract.digital_signature}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
