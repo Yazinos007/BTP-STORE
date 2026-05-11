@@ -31,6 +31,7 @@ import LiveOrders from './pages/LiveOrders';
 import Fleet from './pages/Fleet';
 import Contracts from './pages/Contracts';
 import AnalyticsB2B from './pages/AnalyticsB2B';
+import SupplierOrders from './pages/SupplierOrders';
 
 // --- 1. مكون ذكي للصفحات قيد الإنشاء (يستخدم للطرفين) ---
 const PlaceholderPage = ({ title, isDark = false }) => {
@@ -207,7 +208,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Overview />} />
                 <Route path="/products" element={<Products />} />
-                <Route path="/orders" element={<Orders />} />
+                <Route path="/orders" element={<SupplierOrders />} />
                 <Route path="/wallet" element={<Wallet />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/pos" element={<POS />} />
