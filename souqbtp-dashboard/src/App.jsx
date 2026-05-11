@@ -208,7 +208,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Overview />} />
                 <Route path="/products" element={<Products />} />
-                <Route path="/orders" element={<SupplierOrders />} />
+                <Route path="/orders" element={<Orders />} />
                 <Route path="/wallet" element={<Wallet />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/pos" element={<POS />} />
@@ -227,6 +227,7 @@ function App() {
                 <Route path="/accounting" element={<Accounting />} />
                 <Route path="/suppliers" element={<ExternalSuppliers />} />
                 <Route path="/purchases" element={<Purchases />} />
+                <Route path="/received-orders" element={<SupplierOrders />} />
               </Routes>
             </div>
           </div>
