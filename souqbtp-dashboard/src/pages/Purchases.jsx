@@ -74,33 +74,42 @@ export default function Purchases() {
     if (sigCanvas.current) sigCanvas.current.clear();
   };
 
-  // 🌟 دالة حفظ التوقيع كصورة وإرساله لقاعدة البيانات
+  // 🌟 دالة حفظ التوقيع كصورة وإرساله لقاعدة البيانات (محدثة ومحصنة)
   const handleSaveSignature = async () => {
-    if (sigCanvas.current.isEmpty()) {
-      return alert(language === 'fr' ? 'Veuillez dessiner votre signature.' : 'المرجو رسم توقيعك أولاً.');
-    }
-
-    // تحويل الرسمة إلى صورة Base64
-    const signatureImageBase64 = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
-
-    setIsProcessing(true);
     try {
+      // 1. التأكد من وجود الرسمة
+      if (!sigCanvas.current || sigCanvas.current.isEmpty()) {
+        return alert(language === 'fr' ? 'Veuillez dessiner votre signature.' : 'المرجو رسم توقيعك أولاً.');
+      }
+
+      // 2. تفعيل وضع التحميل
+      setIsProcessing(true);
+
+      // 3. تحويل الرسمة إلى صورة (Base64)
+      const signatureImageBase64 = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+
+      // 4. الإرسال لقاعدة البيانات
       const { error } = await supabase
         .from('supply_requests')
         .update({ 
           status: 'signed', 
-          digital_signature: signatureImageBase64 // الآن نحفظ الصورة بدلاً من النص!
+          digital_signature: signatureImageBase64 
         })
         .eq('id', contractToSign);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database Error:", error);
+        throw error;
+      }
       
+      // 5. النجاح
       alert(language === 'fr' ? "✅ Contrat signé avec succès !" : "✅ تم توقيع العقد بنجاح!");
       fetchB2BRequests();
       closeSignModal();
+
     } catch (err) {
-      console.error(err);
-      alert("Erreur: " + err.message);
+      console.error("Signature Error:", err);
+      alert("Erreur / خطأ في الحفظ: " + (err.message || "حدث خطأ غير متوقع"));
     } finally {
       setIsProcessing(false);
     }
