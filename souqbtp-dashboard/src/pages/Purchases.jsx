@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, CheckCircle, ShoppingBag, Loader2, CreditCard, X, TrendingUp, BrainCircuit, Truck, Trash2, Edit2, PhoneCall, Package } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import useProductStore from '../store/useProductStore';
@@ -6,6 +6,7 @@ import useExternalSupplierStore from '../store/useExternalSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import confetti from 'canvas-confetti';
+import SignatureCanvas from 'react-signature-canvas';
 
 const translations = {
   ar: {
@@ -54,6 +55,56 @@ export default function Purchases() {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // 🌟 حالات التوقيع اليدوي
+  const [isSignModalOpen, setIsSignModalOpen] = useState(false);
+  const [contractToSign, setContractToSign] = useState(null);
+  const sigCanvas = useRef({});
+
+  // فتح نافذة التوقيع
+  const openSignModal = (id) => {
+    setContractToSign(id);
+    setIsSignModalOpen(true);
+  };
+
+  // إغلاق وتنظيف النافذة
+  const closeSignModal = () => {
+    setIsSignModalOpen(false);
+    setContractToSign(null);
+    if (sigCanvas.current) sigCanvas.current.clear();
+  };
+
+  // 🌟 دالة حفظ التوقيع كصورة وإرساله لقاعدة البيانات
+  const handleSaveSignature = async () => {
+    if (sigCanvas.current.isEmpty()) {
+      return alert(language === 'fr' ? 'Veuillez dessiner votre signature.' : 'المرجو رسم توقيعك أولاً.');
+    }
+
+    // تحويل الرسمة إلى صورة Base64
+    const signatureImageBase64 = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from('supply_requests')
+        .update({ 
+          status: 'signed', 
+          digital_signature: signatureImageBase64 // الآن نحفظ الصورة بدلاً من النص!
+        })
+        .eq('id', contractToSign);
+
+      if (error) throw error;
+      
+      alert(language === 'fr' ? "✅ Contrat signé avec succès !" : "✅ تم توقيع العقد بنجاح!");
+      fetchB2BRequests();
+      closeSignModal();
+    } catch (err) {
+      console.error(err);
+      alert("Erreur: " + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   useEffect(() => { fetchProducts(); fetchSuppliers(); }, [fetchProducts, fetchSuppliers]);
 
@@ -586,17 +637,18 @@ export default function Purchases() {
                 {/* الأزرار النهائية (المصافحة، الاستلام، والتأكيد) */}
                 {req.status === 'confirmed' && (
                   <button 
-                    onClick={() => handleSignContract(req.id)}
+                    onClick={() => openSignModal(req.id)}
                     className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-600/30"
                   >
                     <CheckCircle size={18} /> {language === 'fr' ? 'Signer le Contrat' : 'توقيع العقد (مصافحة)'}
                   </button>
                 )}
                 
-                {req.status === 'signed' && (
-                  <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-bold flex justify-center items-center gap-2 border border-emerald-200 text-sm">
-                     ✍️ {language === 'fr' ? `Signé par: ${req.digital_signature}` : `موقّع باسم: ${req.digital_signature}`}
-                  </div>
+                {req.status !== 'pending' && req.status !== 'confirmed' && req.digital_signature && req.digital_signature.startsWith('data:image') && (
+                <div className="w-full p-2 bg-emerald-50 rounded-xl border border-emerald-200 flex flex-col items-center justify-center">
+                <p className="text-xs font-bold text-emerald-600 mb-1">{language === 'fr' ? 'Signé numériquement :' : 'موقع رقمياً:'}</p>
+                <img src={req.digital_signature} alt="Signature" className="h-12 object-contain" />
+                </div>
                 )}
 
                 {/* زر الاستلام يظهر للتاجر سواء كانت الشاحنة في الطريق أو أخبره المورد أنها وصلت */}
@@ -621,6 +673,52 @@ export default function Purchases() {
           </div>
         )}
       </div>
+
+      {/* 🌟🌟🌟 هنا يوضع كود النافذة المنبثقة (خارج البطاقات وقبل نهاية الصفحة) 🌟🌟🌟 */}
+      {isSignModalOpen && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative animate-fade-in text-center">
+            <h3 className="text-xl font-black text-gray-800 mb-2">
+              {language === 'fr' ? 'Signature Légale' : 'التوقيع القانوني'}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {language === 'fr' ? 'Veuillez dessiner votre signature dans le cadre ci-dessous.' : 'المرجو رسم توقيعك بوضوح داخل الإطار بالأسفل.'}
+            </p>
+            
+            {/* مساحة الرسم */}
+            <div className="border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 mb-4 overflow-hidden" dir="ltr">
+              <SignatureCanvas 
+                ref={sigCanvas}
+                penColor="black"
+                canvasProps={{ width: 350, height: 150, className: 'sigCanvas w-full cursor-crosshair' }}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => sigCanvas.current.clear()} 
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+              >
+                {language === 'fr' ? 'Effacer' : 'مسح'}
+              </button>
+              <button 
+                onClick={closeSignModal} 
+                className="flex-1 py-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl transition-all"
+              >
+                {language === 'fr' ? 'Annuler' : 'إلغاء'}
+              </button>
+            </div>
+            
+            <button 
+              onClick={handleSaveSignature}
+              disabled={isProcessing}
+              className="w-full mt-3 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg shadow-blue-500/30 transition-all flex justify-center items-center gap-2"
+            >
+               {isProcessing ? <Loader2 className="animate-spin" size={20}/> : (language === 'fr' ? 'Confirmer & Signer' : 'تأكيد وحفظ التوقيع')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
