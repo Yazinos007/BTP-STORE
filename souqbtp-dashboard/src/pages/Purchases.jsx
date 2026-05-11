@@ -74,21 +74,18 @@ export default function Purchases() {
     if (sigCanvas.current) sigCanvas.current.clear();
   };
 
-  // 🌟 دالة حفظ التوقيع كصورة وإرساله لقاعدة البيانات (محدثة ومحصنة)
+  // 🌟 دالة حفظ التوقيع كصورة (محدثة لتجاوز خطأ التجميع)
   const handleSaveSignature = async () => {
     try {
-      // 1. التأكد من وجود الرسمة
       if (!sigCanvas.current || sigCanvas.current.isEmpty()) {
         return alert(language === 'fr' ? 'Veuillez dessiner votre signature.' : 'المرجو رسم توقيعك أولاً.');
       }
 
-      // 2. تفعيل وضع التحميل
       setIsProcessing(true);
 
-      // 3. تحويل الرسمة إلى صورة (Base64)
-      const signatureImageBase64 = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+      // 🌟 التعديل هنا: استخدمنا getCanvas() بدلاً من getTrimmedCanvas() لتجنب خطأ q.default
+      const signatureImageBase64 = sigCanvas.current.getCanvas().toDataURL('image/png');
 
-      // 4. الإرسال لقاعدة البيانات
       const { error } = await supabase
         .from('supply_requests')
         .update({ 
@@ -97,19 +94,15 @@ export default function Purchases() {
         })
         .eq('id', contractToSign);
 
-      if (error) {
-        console.error("Database Error:", error);
-        throw error;
-      }
+      if (error) throw error;
       
-      // 5. النجاح
       alert(language === 'fr' ? "✅ Contrat signé avec succès !" : "✅ تم توقيع العقد بنجاح!");
       fetchB2BRequests();
       closeSignModal();
 
     } catch (err) {
       console.error("Signature Error:", err);
-      alert("Erreur / خطأ في الحفظ: " + (err.message || "حدث خطأ غير متوقع"));
+      alert("Erreur / خطأ: " + (err.message || "فشل في حفظ التوقيع"));
     } finally {
       setIsProcessing(false);
     }
