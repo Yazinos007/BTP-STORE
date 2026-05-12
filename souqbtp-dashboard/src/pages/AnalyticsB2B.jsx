@@ -1,187 +1,161 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
-import { BarChart3, TrendingUp, Users, Package, ArrowUpRight, ArrowDownRight, Loader2, DollarSign } from 'lucide-react';
+import useSupplierStore from '../store/useSupplierStore';
+import { DollarSign, Package, Users, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
 
 export default function AnalyticsB2B() {
-  const [stats, setStats] = useState({
-    totalSales: 0,
-    ordersCount: 0,
-    merchantsCount: 0,
-    topProducts: []
-  });
-  const [isLoading, setIsLoading] = useState(true);
   const { language } = useSettingsStore();
+  const { supplier } = useSupplierStore();
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({ revenue: 0, ordersCount: 0, clientsCount: 0 });
+  const [topProducts, setTopProducts] = useState([]);
 
   useEffect(() => {
-    fetchAnalytics();
-  }, []);
+    if (supplier?.id) fetchAnalytics();
+  }, [supplier]);
 
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      // 1. جلب كل الطلبات المكتملة والموقعة للتحليل
-      const { data: orders, error: ordersError } = await supabase
+      // 1. حساب المداخيل الإجمالية (من الفواتير)
+      const { data: invoices } = await supabase
+        .from('documents')
+        .select('total_amount')
+        .eq('owner_id', supplier.id)
+        .eq('type', 'Facture');
+      
+      const revenue = invoices?.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+
+      // 2. حساب عدد الطلبات وعدد العملاء المميزين (من طلبات B2B)
+      const { data: requests } = await supabase
         .from('supply_requests')
-        .select('*')
-        .in('status', ['signed', 'shipped', 'delivered', 'completed']);
+        .select('merchant_id, items')
+        .eq('supplier_id', supplier.id);
 
-      if (ordersError) throw ordersError;
+      const ordersCount = requests?.length || 0;
+      
+      const uniqueClients = new Set(requests?.map(req => req.merchant_id).filter(id => id));
+      const clientsCount = uniqueClients.size;
 
-      // 2. جلب عدد التجار النشطين
-      const { count: merchantsCount } = await supabase
-        .from('suppliers')
-        .select('*', { count: 'exact', head: true });
-
-      // 3. تحليل البيانات
-      let total = 0;
-      const productMap = {};
-
-      orders?.forEach(order => {
-        total += Number(order.total_amount || 0);
-        
-        // تحليل المنتجات الأكثر طلباً من داخل الـ JSON
-        order.items?.forEach(item => {
-          productMap[item.name] = (productMap[item.name] || 0) + Number(item.quantity);
+      // 3. استخراج أكثر المنتجات مبيعاً من سلة الطلبات
+      const productCounter = {};
+      requests?.forEach(req => {
+        req.items?.forEach(item => {
+          productCounter[item.name] = (productCounter[item.name] || 0) + Number(item.quantity);
         });
       });
 
-      // ترتيب أفضل 5 منتجات
-      const sortedProducts = Object.entries(productMap)
-        .map(([name, qty]) => ({ name, qty }))
-        .sort((a, b) => b.qty - a.qty)
-        .slice(0, 5);
+      const sortedProducts = Object.entries(productCounter)
+        .map(([name, qty]) => ({ name, quantity: qty }))
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5); // أخذ أعلى 5 منتجات فقط
 
-      setStats({
-        totalSales: total,
-        ordersCount: orders?.length || 0,
-        merchantsCount: merchantsCount || 0,
-        topProducts: sortedProducts
-      });
+      setStats({ revenue, ordersCount, clientsCount });
+      setTopProducts(sortedProducts);
 
-    } catch (err) {
-      console.error('Analytics Error:', err);
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const cards = [
-    { 
-      title: language === 'fr' ? 'Chiffre d\'Affaires' : 'إجمالي المبيعات', 
-      value: `${stats.totalSales.toLocaleString()} DH`, 
-      icon: <DollarSign size={24}/>, 
-      color: 'bg-emerald-500',
-      trend: '+12%' 
-    },
-    { 
-      title: language === 'fr' ? 'Commandes B2B' : 'عدد الطلبات', 
-      value: stats.ordersCount, 
-      icon: <Package size={24}/>, 
-      color: 'bg-blue-500',
-      trend: '+5%' 
-    },
-    { 
-      title: language === 'fr' ? 'Clients Actifs' : 'التجار النشطون', 
-      value: stats.merchantsCount, 
-      icon: <Users size={24}/>, 
-      color: 'bg-purple-500',
-      trend: 'Stable' 
-    },
-  ];
+  if (isLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 size={40} className="animate-spin text-blue-500" /></div>;
+  }
+
+  // تحديد القيمة القصوى لحساب عرض الخط الملون في المنتجات
+  const maxProductQty = topProducts.length > 0 ? topProducts[0].quantity : 1;
 
   return (
-    <div className="space-y-8 animate-fade-in text-white" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="space-y-6 animate-fade-in text-white" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div>
         <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
-          <BarChart3 className="text-blue-500" size={32} />
-          {language === 'fr' ? 'Analytiques B2B' : 'التحليلات والذكاء التجاري'}
+          <TrendingUp className="text-blue-500" size={32} />
+          {language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى B2B'}
         </h2>
         <p className="text-slate-400 mt-1 font-medium">
-          {language === 'fr' ? 'Suivez vos performances و vos ventes en temps réel.' : 'تتبع أداء مبيعاتك ونمو نشاطك التجاري لحظة بلحظة.'}
+          {language === 'fr' ? 'Suivez vos performances et vos ventes en temps réel.' : 'تتبع أداءك ومبيعاتك في الوقت الفعلي بناءً على بياناتك الحقيقية.'}
         </p>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-20"><Loader2 size={40} className="animate-spin text-blue-500" /></div>
-      ) : (
-        <>
-          {/* بطاقات الإحصائيات العلوية */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {cards.map((card, idx) => (
-              <div key={idx} className="bg-slate-800 border border-slate-700 p-6 rounded-3xl relative overflow-hidden group hover:border-slate-500 transition-all">
-                <div className="flex justify-between items-start relative z-10">
-                  <div>
-                    <p className="text-slate-400 font-bold text-sm mb-1">{card.title}</p>
-                    <h3 className="text-3xl font-black">{card.value}</h3>
-                  </div>
-                  <div className={`${card.color} p-3 rounded-2xl shadow-lg shadow-black/20`}>
-                    {card.icon}
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2 relative z-10">
-                  <span className="text-emerald-400 text-xs font-black flex items-center gap-0.5 bg-emerald-400/10 px-2 py-1 rounded-full">
-                    <ArrowUpRight size={14}/> {card.trend}
-                  </span>
-                  <span className="text-slate-500 text-xs font-bold">{language === 'fr' ? 'vs mois dernier' : 'مقارنة بالشهر الماضي'}</span>
-                </div>
-                {/* تأثير خلفية خفيف */}
-                <div className={`absolute -right-4 -bottom-4 w-24 h-24 ${card.color} opacity-5 blur-3xl rounded-full`}></div>
-              </div>
-            ))}
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-slate-800 border border-slate-700 p-6 rounded-3xl relative overflow-hidden shadow-lg">
+          <div className="absolute right-6 top-6 bg-emerald-500/20 p-3 rounded-full"><DollarSign className="text-emerald-400"/></div>
+          <p className="text-slate-400 font-bold text-sm mb-1">{language === 'fr' ? "Chiffre d'Affaires" : 'رقم المعاملات'}</p>
+          <h3 className="text-3xl font-black text-white mb-3">{stats.revenue.toLocaleString()} <span className="text-sm">DH</span></h3>
+          <span className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded text-xs font-bold">En direct 🟢</span>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* المنتجات الأكثر طلباً */}
-            <div className="bg-slate-800 border border-slate-700 rounded-3xl p-8">
-              <h3 className="text-xl font-black mb-6 flex items-center gap-2">
-                <TrendingUp className="text-emerald-400" size={24}/>
-                {language === 'fr' ? 'Produits les Plus Demandés' : 'المنتجات الأكثر طلباً'}
-              </h3>
-              <div className="space-y-6">
-                {stats.topProducts.map((prod, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <div className="flex justify-between text-sm font-bold">
-                      <span className="text-slate-300">{prod.name}</span>
-                      <span className="text-white">{prod.qty} {language === 'fr' ? 'Unités' : 'وحدة'}</span>
-                    </div>
-                    <div className="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full transition-all duration-1000"
-                        style={{ width: `${(prod.qty / stats.topProducts[0].qty) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <div className="bg-slate-800 border border-slate-700 p-6 rounded-3xl relative overflow-hidden shadow-lg">
+          <div className="absolute right-6 top-6 bg-blue-500/20 p-3 rounded-full"><Package className="text-blue-400"/></div>
+          <p className="text-slate-400 font-bold text-sm mb-1">{language === 'fr' ? 'Commandes B2B' : 'طلبات التزويد'}</p>
+          <h3 className="text-3xl font-black text-white mb-3">{stats.ordersCount}</h3>
+          <span className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded text-xs font-bold">Total traité</span>
+        </div>
 
-            {/* نصيحة الذكاء الاصطناعي (AI Insight) */}
-            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-8 shadow-xl shadow-indigo-500/10 relative overflow-hidden group">
-              <div className="relative z-10">
-                <div className="bg-white/20 w-fit p-3 rounded-2xl mb-6 backdrop-blur-md">
-                  <TrendingUp className="text-white" size={28}/>
+        <div className="bg-slate-800 border border-slate-700 p-6 rounded-3xl relative overflow-hidden shadow-lg">
+          <div className="absolute right-6 top-6 bg-purple-500/20 p-3 rounded-full"><Users className="text-purple-400"/></div>
+          <p className="text-slate-400 font-bold text-sm mb-1">{language === 'fr' ? 'Clients Actifs' : 'العملاء النشطون'}</p>
+          <h3 className="text-3xl font-black text-white mb-3">{stats.clientsCount}</h3>
+          <span className="bg-purple-500/10 text-purple-400 px-2 py-1 rounded text-xs font-bold">Commerçants</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-slate-800 border border-slate-700 p-6 rounded-3xl shadow-lg">
+          <h3 className="text-lg font-black text-white mb-6 flex items-center gap-2">
+            <TrendingUp className="text-emerald-500" size={20}/> 
+            {language === 'fr' ? 'Produits les Plus Demandés' : 'المنتجات الأكثر طلباً'}
+          </h3>
+          <div className="space-y-5">
+            {topProducts.length === 0 ? (
+              <p className="text-slate-500 italic text-center py-10">{language === 'fr' ? 'Pas assez de données' : 'لا توجد بيانات كافية بعد'}</p>
+            ) : (
+              topProducts.map((prod, index) => (
+                <div key={index}>
+                  <div className="flex justify-between text-sm font-bold mb-2">
+                    <span className="text-slate-200">{prod.name}</span>
+                    <span className="text-slate-400">{prod.quantity} {language === 'fr' ? 'Unités' : 'وحدة'}</span>
+                  </div>
+                  <div className="w-full bg-slate-900 rounded-full h-2.5">
+                    <div 
+                      className={`h-2.5 rounded-full ${index === 0 ? 'bg-emerald-500' : index === 1 ? 'bg-blue-500' : 'bg-slate-500'}`} 
+                      style={{ width: `${(prod.quantity / maxProductQty) * 100}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <h3 className="text-2xl font-black text-white mb-4">
-                  {language === 'fr' ? 'Conseil Stratégique (IA)' : 'نصيحة استراتيجية (ذكاء اصطناعي)'}
-                </h3>
-                <p className="text-indigo-100 font-medium leading-relaxed mb-6">
-                  {language === 'fr' 
-                    ? `Basé sur vos ${stats.ordersCount} dernières commandes, nous remarquons une forte demande sur "${stats.topProducts[0]?.name || '...' }". Prévoyez une augmentation de stock de 15% pour la semaine prochaine.` 
-                    : `بناءً على آخر ${stats.ordersCount} طلبية، نلاحظ طلباً متزايداً على "${stats.topProducts[0]?.name || '...' }". ننصح بزيادة المخزون بنسبة 15% لتلبية احتياجات السوق الأسبوع القادم.`}
-                </p>
-                <button className="bg-white text-indigo-600 px-6 py-3 rounded-xl font-black hover:bg-indigo-50 transition-all">
-                  {language === 'fr' ? 'Voir le rapport complet' : 'عرض التقرير الكامل'}
-                </button>
-              </div>
-              {/* أيقونات ديكورية في الخلفية */}
-              <div className="absolute top-10 right-10 opacity-10 transform rotate-12 group-hover:scale-110 transition-transform">
-                <BarChart3 size={150} />
-              </div>
-            </div>
+              ))
+            )}
           </div>
-        </>
-      )}
+        </div>
+
+        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 rounded-3xl shadow-xl relative overflow-hidden flex flex-col justify-center">
+          <div className="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-1/4 -translate-y-1/4">
+            <TrendingUp size={200} />
+          </div>
+          <div className="bg-white/20 w-fit p-3 rounded-xl mb-6 backdrop-blur-md">
+            <Sparkles className="text-white" size={24} />
+          </div>
+          <h3 className="text-2xl font-black text-white mb-4">
+            {language === 'fr' ? 'Conseil Stratégique (IA)' : 'نصيحة استراتيجية (الذكاء الاصطناعي)'}
+          </h3>
+          <p className="text-indigo-100 font-medium leading-relaxed mb-8 text-sm">
+            {language === 'fr' 
+              ? topProducts.length > 0 
+                ? `Basé sur vos ${stats.ordersCount} dernières commandes, nous remarquons une forte demande sur "${topProducts[0].name}". Prévoyez une augmentation de stock pour ce produit.` 
+                : "Commencez à recevoir des commandes pour obtenir des conseils de l'IA."
+              : topProducts.length > 0
+                ? `بناءً على طلباتك الأخيرة (${stats.ordersCount})، نلاحظ إقبالاً كبيراً على "${topProducts[0].name}". ننصحك بزيادة مخزون هذا المنتج للأسبوع القادم.`
+                : "ابدأ في استقبال الطلبات لكي يحلل الذكاء الاصطناعي أداءك."}
+          </p>
+          <button className="bg-white text-indigo-700 font-black py-3 px-6 rounded-xl hover:bg-indigo-50 transition-colors w-fit shadow-lg">
+            {language === 'fr' ? 'Voir le rapport complet' : 'عرض التقرير المفصل'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

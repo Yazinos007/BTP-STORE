@@ -14,12 +14,27 @@ export default function SupplierOrders() {
 
   useEffect(() => {
     fetchOrders();
+
+    const ordersSubscription = supabase
+      .channel('live-b2b-orders')
+      .on(
+        'postgres_changes', 
+        { event: '*', schema: 'public', table: 'supply_requests' }, 
+        (payload) => {
+          console.log('تحديث لحظي جديد!', payload);
+          fetchOrders(); 
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersSubscription);
+    };
   }, []);
 
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      // جلب الطلبات النشطة فقط (التي لم تكتمل بعد)
       const { data, error } = await supabase
         .from('supply_requests')
         .select('*')
@@ -29,7 +44,6 @@ export default function SupplierOrders() {
       if (error) throw error;
       if (data) {
         setOrders(data);
-        // جلب أسماء التجار
         const merchantIds = [...new Set(data.map(req => req.merchant_id))];
         merchantIds.forEach(id => fetchMerchantData(id));
       }

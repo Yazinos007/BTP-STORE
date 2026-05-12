@@ -215,7 +215,7 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 دالة استلام البضاعة (أتمتة المخزون والفاتورة والمصروف والاحتفال)
+  // 🌟 دالة استلام البضاعة (أتمتة المخزون والفاتورة للتاجر وللمورد معاً)
   const handleReceiveOrder = async (req) => {
     if (!window.confirm(language === 'fr' ? "Confirmez-vous la réception et la conformité ?" : "هل تؤكد استلامك للبضاعة ومطابقتها؟")) return;
 
@@ -235,8 +235,9 @@ export default function Purchases() {
         });
       }
 
-      // 3. إنشاء فاتورة الشراء التلقائية
       const invNumber = `B2B-${Date.now().toString().slice(-6)}`;
+
+      // 3. إنشاء فاتورة الشراء للتاجر (Retailer)
       await supabase.from('purchase_invoices').insert([{
         supplier_id: targetId,
         invoice_number: invNumber,
@@ -245,19 +246,31 @@ export default function Purchases() {
         payment_method: 'credit' // نعتبرها ديناً حتى يتم سدادها
       }]);
 
-      // 4. 🌟 تسجيل المصروف (هذا ما كان ينقصنا في الكود السابق)
+      // 4. تسجيل المصروف للتاجر (Retailer)
       await supabase.from('expenses').insert([{
         supplier_id: targetId,
         title: language === 'fr' ? `Achat B2B Inv: ${invNumber}` : `فاتورة تزويد B2B: ${invNumber}`,
         amount: req.total_amount,
-        category: 'achats' // للتصنيف مع المشتريات
+        category: 'achats'
       }]);
 
-      // 5. إطلاق الاحتفال 🎊
+      // 🌟🌟 5. السر هنا: توليد فاتورة البيع الرسمية للمورد (الـ Boss) 🌟🌟
+      if (req.supplier_id) {
+        await supabase.from('documents').insert([{
+          owner_id: req.supplier_id, // هذه الفاتورة تذهب لحساب المورد الكبير
+          client_id: targetId,       // اسم التاجر كزبون
+          type: 'Facture',
+          ref_number: `FAC-${invNumber}`, // رقم الفاتورة
+          total_amount: req.total_amount,
+          items: req.items
+        }]);
+      }
+
+      // 6. إطلاق الاحتفال 🎊
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#10b981', '#f59e0b'] });
 
       fetchB2BRequests();
-      alert(language === 'fr' ? "✅ Stock, Facture et Charge mis à jour !" : `✅ تم الإدخال للمخزون، وتوليد الفاتورة والمصروف بنجاح!`);
+      alert(language === 'fr' ? "✅ Opération complète ! Factures générées pour les deux parties." : `✅ تمت العملية! تم توليد الفواتير للتاجر وللمورد بنجاح.`);
       
     } catch (err) {
       console.error(err);
@@ -267,7 +280,7 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 دالة إرسال طلب التزويد للمورد الكبير (المصافحة الرقمية 🤝)
+  // 🌟 دالة إرسال طلب التزويد للمورد الكبير (مع التحقق من المخزون المركزي)
   const handleSendPO = async () => {
     if (!selectedSupplierId || cart.length === 0) {
       return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur et ajouter des articles." : "الرجاء اختيار المورد وإضافة منتجات للسلة.");
@@ -275,7 +288,38 @@ export default function Purchases() {
 
     setIsProcessing(true);
     try {
-      // 1. التقاط الموقع الجغرافي (GPS) بدقة
+      // 🌟 1. رادار المخزون: التحقق من الكميات المتوفرة عند المورد (الـ Boss)
+      const itemNames = cart.map(item => item.name);
+      const { data: centralStock, error: stockError } = await supabase
+        .from('products')
+        .select('name, stock_quantity')
+        .eq('supplier_id', selectedSupplierId) // نبحث في مخزن المورد المختار
+        .in('name', itemNames);
+
+      if (stockError) throw stockError;
+
+      let outOfStockItems = [];
+      
+      // مقارنة ما في السلة مع ما يوجد عند المورد
+      for (const cartItem of cart) {
+        // نبحث عن المنتج بالاسم (تجنباً لاختلاف الـ IDs بين التاجر والمورد)
+        const bossProduct = centralStock?.find(p => p.name.toLowerCase() === cartItem.name.toLowerCase());
+        
+        if (!bossProduct) {
+          outOfStockItems.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Non vendu par ce fournisseur' : 'غير متوفر عند هذا المورد إطلاقاً'})`);
+        } else if (bossProduct.stock_quantity < cartItem.quantity) {
+          outOfStockItems.push(`⚠️ ${cartItem.name} (${language === 'fr' ? 'Demandé:' : 'المطلوب:'} ${cartItem.quantity}, ${language === 'fr' ? 'Dispo:' : 'المتوفر عنده:'} ${bossProduct.stock_quantity})`);
+        }
+      }
+
+      // إذا كانت هناك نواقص، أوقف العملية وأطلق الإنذار! 🚨
+      if (outOfStockItems.length > 0) {
+        alert((language === 'fr' ? "🚫 Envoi impossible ! Le stock du fournisseur est insuffisant pour :\n\n" : "🚫 لا يمكن إرسال الطلب! مخزون المورد لا يكفي للمنتجات التالية:\n\n") + outOfStockItems.join('\n'));
+        setIsProcessing(false);
+        return; // إيقاف العملية هنا ولا نرسل الطلب
+      }
+
+      // 2. التقاط الموقع الجغرافي (GPS) بدقة
       let locationData = null;
       try {
         const position = await new Promise((resolve, reject) => {
@@ -298,12 +342,12 @@ export default function Purchases() {
         }
       }
 
-      // 2. إرسال الطلب لقاعدة البيانات
+      // 3. إرسال الطلب لقاعدة البيانات
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        // supplier_id: نتركه حالياً لكي تلتقطه لوحة الموردين
+        supplier_id: selectedSupplierId, // 🌟 حفظنا ID المورد لكي تكتمل الدورة
         items: cart,
         total_amount: total,
         location_data: locationData,
@@ -312,7 +356,7 @@ export default function Purchases() {
 
       if (poError) throw poError;
 
-      // 3. رسالة النجاح وتفريغ السلة
+      // 4. رسالة النجاح وتفريغ السلة
       setCart([]);
       setSelectedSupplierId('');
       
