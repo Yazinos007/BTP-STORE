@@ -251,64 +251,91 @@ export default function Purchases() {
   }
 };
 
+  // 🌟 دالة إرسال طلب التزويد للمورد الكبير (مع التحقق الذكي من المخزون)
   const handleSendPO = async () => {
-    if (!selectedSupplierId || cart.length === 0) {
-      return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur et ajouter des articles." : "الرجاء اختيار المورد وإضافة منتجات للسلة.");
+    if (cart.length === 0) {
+      return alert(language === 'fr' ? "Veuillez ajouter des articles au panier." : "الرجاء إضافة منتجات للسلة أولاً.");
     }
 
     setIsProcessing(true);
     try {
-      // 🌟 الحل الجذري: البحث عن السلعة في المخزن المركزي (الذي لا يملكه التاجر الحالي)
+      // 1. 🌟 رادار المخزون: البحث عن السلعة في المخزن المركزي للـ Boss
+      // نستخدم neq (Not Equal) لنجلب المنتجات التي "لا يملكها" التاجر الحالي
       const itemNames = cart.map(item => item.name);
       const { data: centralStock, error: stockError } = await supabase
         .from('products')
         .select('name, stock_quantity, supplier_id')
         .in('name', itemNames)
-        .neq('supplier_id', supplier.id); // 👈 هذه هي التعويذة السحرية: تجلب مخزون الـ Boss بدقة
+        .neq('supplier_id', supplier.id); // 👈 هنا التصحيح: استخدمنا supplier_id
 
       if (stockError) throw stockError;
 
       let outOfStockItems = [];
-      let bossId = null; // سنلتقط الـ ID الحقيقي للمورد من منتجاته
+      let bossId = null; // سنلتقط الـ ID الحقيقي للمورد الكبير من منتجاته
       
       for (const cartItem of cart) {
+        // نبحث عن المنتج بالاسم لنتفادى اختلاف الـ IDs
         const bossProduct = centralStock?.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
         
         if (!bossProduct) {
-          outOfStockItems.push(`❌ ${cartItem.name} (Non vendu par ce fournisseur)`);
+          outOfStockItems.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Non vendu par le grossiste' : 'غير متوفر عند المورد الكبير'})`);
         } else if (bossProduct.stock_quantity < cartItem.quantity) {
-          outOfStockItems.push(`⚠️ ${cartItem.name} (Demandé: ${cartItem.quantity}, Dispo: ${bossProduct.stock_quantity})`);
+          outOfStockItems.push(`⚠️ ${cartItem.name} (${language === 'fr' ? 'Demandé:' : 'المطلوب:'} ${cartItem.quantity}, ${language === 'fr' ? 'Dispo:' : 'المتوفر عنده:'} ${bossProduct.stock_quantity})`);
         } else {
-          bossId = bossProduct.supplier_id; // حفظ الـ ID الحقيقي
+          bossId = bossProduct.supplier_id; // حفظ الـ ID الحقيقي للمورد
         }
       }
 
+      // إذا كانت هناك نواقص، نوقف العملية فوراً! 🚨
       if (outOfStockItems.length > 0) {
-        alert("🚫 Envoi impossible ! Le stock du fournisseur est insuffisant pour :\n\n" + outOfStockItems.join('\n'));
+        alert((language === 'fr' ? "🚫 Envoi impossible ! Le stock du grossiste est insuffisant pour :\n\n" : "🚫 لا يمكن إرسال الطلب! مخزون المورد لا يكفي للمنتجات التالية:\n\n") + outOfStockItems.join('\n'));
         setIsProcessing(false);
         return; 
       }
 
-    // 3. إرسال الطلب لقاعدة البيانات
+      // 2. التقاط الموقع الجغرافي (GPS)
+      let locationData = null;
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000 });
+        });
+        locationData = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        };
+      } catch (geoError) {
+        console.warn("GPS Error:", geoError);
+        const proceed = window.confirm(language === 'fr' ? "Position GPS introuvable. Envoyer quand même ?" : "لم نتمكن من التقاط موقعك. إرسال الطلب على أي حال؟");
+        if (!proceed) { setIsProcessing(false); return; }
+      }
+
+      // 3. إرسال الطلب لقاعدة البيانات
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: bossId, // 👈 استخدمنا الـ ID الحقيقي الذي التقطناه من المخزون
+        supplier_id: bossId, // 🌟 استخدمنا ID المورد الكبير الذي استخرجناه للتو
         items: cart,
         total_amount: total,
-        location_data: locationData, // تأكد أن متغير locationData موجود في الكود عندك
+        location_data: locationData,
         status: 'pending'
       }]);
 
-    setCart([]);
-    alert("✅ تم إرسال الطلب بنجاح.");
-  } catch (err) {
-    alert("خطأ: " + err.message);
-  } finally {
-    setIsProcessing(false);
-  }
-};
+      if (poError) throw poError;
+
+      // 4. رسالة النجاح
+      setCart([]);
+      alert(language === 'fr' ? "✅ Bon de commande envoyé avec succès au grossiste !" : "✅ تم إرسال طلب التزويد للمورد بنجاح!");
+      fetchB2BRequests(); // تحديث قائمة الطلبات
+
+    } catch (err) {
+      console.error("PO Error:", err);
+      alert("Erreur: " + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleCompletePurchase = async (method) => {
     if (!selectedSupplierId || cart.length === 0) return alert(t.msgSelectSupplier);
