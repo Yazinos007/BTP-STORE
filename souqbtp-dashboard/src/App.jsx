@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText } from 'lucide-react';
+import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator } from 'lucide-react';
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
+import SupplierAccounting from './pages/SupplierAccounting';
 
 // === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
@@ -63,6 +64,7 @@ const WholesalerDashboard = ({ supplier }) => {
     { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل' },
     { path: '/contracts', icon: FileSignature, label: language === 'fr' ? 'Contrats & Signatures' : 'المصافحة الرقمية' },
     { path: '/invoices', icon: FileText, label: language === 'fr' ? 'Factures B2B' : 'الفواتير الكبرى' },
+    { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
   ];
 
@@ -131,6 +133,7 @@ const WholesalerDashboard = ({ supplier }) => {
             <Route path="/fleet" element={<Fleet />} />
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/invoices" element={<SupplierInvoices />} />
+            <Route path="/accounting" element={<SupplierAccounting />} />
             <Route path="/analytics" element={<AnalyticsB2B />} />
           </Routes>
         </div>
