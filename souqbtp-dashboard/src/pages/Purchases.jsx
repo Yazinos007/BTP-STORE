@@ -215,163 +215,89 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 دالة استلام البضاعة (أتمتة المخزون والفاتورة للتاجر وللمورد معاً)
   const handleReceiveOrder = async (req) => {
-    if (!window.confirm(language === 'fr' ? "Confirmez-vous la réception et la conformité ?" : "هل تؤكد استلامك للبضاعة ومطابقتها؟")) return;
+  setIsProcessing(true);
+  try {
+    // 1. تحديث حالة الطلب
+    await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-    setIsProcessing(true);
-    try {
-      // 1. تغيير الحالة إلى (مكتمل)
-      await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
+    // 2. تحديث مخزون التاجر
+    for (const item of req.items) {
+      const { data: p } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
+      await supabase.from('products').update({ 
+        stock_quantity: Number(p?.stock_quantity || 0) + Number(item.quantity) 
+      }).eq('id', item.id);
+    }
 
-      const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-
-      // 2. تحديث المخزون للتاجر
-      for (const item of req.items) {
-        const { data: prod } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
-        await updateProduct(item.id, { 
-          stock_quantity: Number(prod?.stock_quantity || 0) + Number(item.quantity),
-          cost_price: Number(item.purchase_price) 
-        });
-      }
-
-      const invNumber = `B2B-${Date.now().toString().slice(-6)}`;
-
-      // 3. إنشاء فاتورة الشراء للتاجر (Retailer)
-      await supabase.from('purchase_invoices').insert([{
-        supplier_id: targetId,
-        invoice_number: invNumber,
+    // 3. 🌟 الأهم: إرسال الفاتورة للمورد (هذا ما سيحيي أرقام المحاسبة)
+    if (req.supplier_id) {
+      const invRef = `FAC-B2B-${Date.now().toString().slice(-4)}`;
+      await supabase.from('documents').insert([{
+        owner_id: req.supplier_id, // فاتورة المورد
+        client_id: req.merchant_id, // التاجر هو الزبون هنا
+        type: 'Facture',
+        ref_number: invRef,
         total_amount: req.total_amount,
-        items: req.items,
-        payment_method: 'credit' // نعتبرها ديناً حتى يتم سدادها
+        items: req.items
       }]);
-
-      // 4. تسجيل المصروف للتاجر (Retailer)
-      await supabase.from('expenses').insert([{
-        supplier_id: targetId,
-        title: language === 'fr' ? `Achat B2B Inv: ${invNumber}` : `فاتورة تزويد B2B: ${invNumber}`,
-        amount: req.total_amount,
-        category: 'achats'
-      }]);
-
-      // 🌟🌟 5. السر هنا: توليد فاتورة البيع الرسمية للمورد (الـ Boss) 🌟🌟
-      if (req.supplier_id) {
-        await supabase.from('documents').insert([{
-          owner_id: req.supplier_id, // هذه الفاتورة تذهب لحساب المورد الكبير
-          client_id: targetId,       // اسم التاجر كزبون
-          type: 'Facture',
-          ref_number: `FAC-${invNumber}`, // رقم الفاتورة
-          total_amount: req.total_amount,
-          items: req.items
-        }]);
-      }
-
-      // 6. إطلاق الاحتفال 🎊
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#10b981', '#f59e0b'] });
-
-      fetchB2BRequests();
-      alert(language === 'fr' ? "✅ Opération complète ! Factures générées pour les deux parties." : `✅ تمت العملية! تم توليد الفواتير للتاجر وللمورد بنجاح.`);
-      
-    } catch (err) {
-      console.error(err);
-      alert("Erreur: " + err.message);
-    } finally {
-      setIsProcessing(false);
     }
-  };
 
-  // 🌟 دالة إرسال طلب التزويد للمورد الكبير (مع التحقق من المخزون المركزي)
+    alert("✅ تم استلام البضاعة وتوليد فاتورة المورد بنجاح!");
+    fetchB2BRequests();
+  } catch (err) {
+    alert("فشل في إتمام العملية: " + err.message);
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
   const handleSendPO = async () => {
-    if (!selectedSupplierId || cart.length === 0) {
-      return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur et ajouter des articles." : "الرجاء اختيار المورد وإضافة منتجات للسلة.");
+  if (!selectedSupplierId || cart.length === 0) return;
+
+  setIsProcessing(true);
+  try {
+    // التأكد من جلب المنتجات التي يملكها "المورد المختار" فقط
+    const { data: centralStock, error: stockError } = await supabase
+      .from('products')
+      .select('name, stock_quantity')
+      .eq('owner_id', selectedSupplierId); // التأكد من استخدام owner_id للمورد
+
+    if (stockError) throw stockError;
+
+    let outOfStockItems = [];
+    for (const cartItem of cart) {
+      const bossProduct = centralStock?.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
+      
+      // إذا لم يجد المنتج أو كانت الكمية أقل من المطلوب
+      if (!bossProduct || bossProduct.stock_quantity < cartItem.quantity) {
+        outOfStockItems.push(`${cartItem.name} (المتوفر: ${bossProduct?.stock_quantity || 0})`);
+      }
     }
 
-    setIsProcessing(true);
-    try {
-      // 🌟 1. رادار المخزون: التحقق من الكميات المتوفرة عند المورد (الـ Boss)
-      const itemNames = cart.map(item => item.name);
-      const { data: centralStock, error: stockError } = await supabase
-        .from('products')
-        .select('name, stock_quantity')
-        .eq('supplier_id', selectedSupplierId) // نبحث في مخزن المورد المختار
-        .in('name', itemNames);
-
-      if (stockError) throw stockError;
-
-      let outOfStockItems = [];
-      
-      // مقارنة ما في السلة مع ما يوجد عند المورد
-      for (const cartItem of cart) {
-        // نبحث عن المنتج بالاسم (تجنباً لاختلاف الـ IDs بين التاجر والمورد)
-        const bossProduct = centralStock?.find(p => p.name.toLowerCase() === cartItem.name.toLowerCase());
-        
-        if (!bossProduct) {
-          outOfStockItems.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Non vendu par ce fournisseur' : 'غير متوفر عند هذا المورد إطلاقاً'})`);
-        } else if (bossProduct.stock_quantity < cartItem.quantity) {
-          outOfStockItems.push(`⚠️ ${cartItem.name} (${language === 'fr' ? 'Demandé:' : 'المطلوب:'} ${cartItem.quantity}, ${language === 'fr' ? 'Dispo:' : 'المتوفر عنده:'} ${bossProduct.stock_quantity})`);
-        }
-      }
-
-      // إذا كانت هناك نواقص، أوقف العملية وأطلق الإنذار! 🚨
-      if (outOfStockItems.length > 0) {
-        alert((language === 'fr' ? "🚫 Envoi impossible ! Le stock du fournisseur est insuffisant pour :\n\n" : "🚫 لا يمكن إرسال الطلب! مخزون المورد لا يكفي للمنتجات التالية:\n\n") + outOfStockItems.join('\n'));
-        setIsProcessing(false);
-        return; // إيقاف العملية هنا ولا نرسل الطلب
-      }
-
-      // 2. التقاط الموقع الجغرافي (GPS) بدقة
-      let locationData = null;
-      try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000 });
-        });
-        locationData = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: position.coords.accuracy
-        };
-      } catch (geoError) {
-        console.warn("GPS Error:", geoError);
-        const proceedMsg = language === 'fr' 
-          ? "Nous n'avons pas pu obtenir votre position GPS. Envoyer quand même ?" 
-          : "لم نتمكن من التقاط موقعك (GPS). هل تريد إرسال الطلب بدون خريطة؟";
-        const proceed = window.confirm(proceedMsg);
-        if (!proceed) {
-          setIsProcessing(false);
-          return;
-        }
-      }
-
-      // 3. إرسال الطلب لقاعدة البيانات
-      const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-      
-      const { error: poError } = await supabase.from('supply_requests').insert([{
-        merchant_id: merchantId,
-        supplier_id: selectedSupplierId, // 🌟 حفظنا ID المورد لكي تكتمل الدورة
-        items: cart,
-        total_amount: total,
-        location_data: locationData,
-        status: 'pending'
-      }]);
-
-      if (poError) throw poError;
-
-      // 4. رسالة النجاح وتفريغ السلة
-      setCart([]);
-      setSelectedSupplierId('');
-      
-      const successMsg = language === 'fr'
-        ? "✅ Bon de commande envoyé avec succès ! Le grossiste va le traiter."
-        : "✅ تم إرسال طلب التزويد بنجاح! المورد سيقوم بالرد عليك قريباً.";
-      alert(successMsg);
-
-    } catch (err) {
-      console.error("PO Error:", err);
-      alert("Erreur / خطأ: " + err.message);
-    } finally {
+    if (outOfStockItems.length > 0) {
+      alert("🚫 لا يمكن إرسال الطلب! الكمية غير كافية في مخزن المورد لـ:\n" + outOfStockItems.join('\n'));
       setIsProcessing(false);
+      return; 
     }
-  };
+
+    // إذا مر الفحص، نرسل الطلب مع التأكد من إرفاق معرف المورد
+    const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+    await supabase.from('supply_requests').insert([{
+      merchant_id: merchantId,
+      supplier_id: selectedSupplierId, // مهم جداً لربط الفواتير لاحقاً
+      items: cart,
+      total_amount: total,
+      status: 'pending'
+    }]);
+
+    setCart([]);
+    alert("✅ تم إرسال الطلب بنجاح.");
+  } catch (err) {
+    alert("خطأ: " + err.message);
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   const handleCompletePurchase = async (method) => {
     if (!selectedSupplierId || cart.length === 0) return alert(t.msgSelectSupplier);
