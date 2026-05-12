@@ -252,43 +252,54 @@ export default function Purchases() {
 };
 
   const handleSendPO = async () => {
-  if (!selectedSupplierId || cart.length === 0) return;
+    if (!selectedSupplierId || cart.length === 0) {
+      return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur et ajouter des articles." : "الرجاء اختيار المورد وإضافة منتجات للسلة.");
+    }
 
-  setIsProcessing(true);
-  try {
-    // التأكد من جلب المنتجات التي يملكها "المورد المختار" فقط
-    const { data: centralStock, error: stockError } = await supabase
-      .from('products')
-      .select('name, stock_quantity')
-      .eq('owner_id', selectedSupplierId); // التأكد من استخدام owner_id للمورد
+    setIsProcessing(true);
+    try {
+      // 🌟 الحل الجذري: البحث عن السلعة في المخزن المركزي (الذي لا يملكه التاجر الحالي)
+      const itemNames = cart.map(item => item.name);
+      const { data: centralStock, error: stockError } = await supabase
+        .from('products')
+        .select('name, stock_quantity, supplier_id')
+        .in('name', itemNames)
+        .neq('supplier_id', supplier.id); // 👈 هذه هي التعويذة السحرية: تجلب مخزون الـ Boss بدقة
 
-    if (stockError) throw stockError;
+      if (stockError) throw stockError;
 
-    let outOfStockItems = [];
-    for (const cartItem of cart) {
-      const bossProduct = centralStock?.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
+      let outOfStockItems = [];
+      let bossId = null; // سنلتقط الـ ID الحقيقي للمورد من منتجاته
       
-      // إذا لم يجد المنتج أو كانت الكمية أقل من المطلوب
-      if (!bossProduct || bossProduct.stock_quantity < cartItem.quantity) {
-        outOfStockItems.push(`${cartItem.name} (المتوفر: ${bossProduct?.stock_quantity || 0})`);
+      for (const cartItem of cart) {
+        const bossProduct = centralStock?.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
+        
+        if (!bossProduct) {
+          outOfStockItems.push(`❌ ${cartItem.name} (Non vendu par ce fournisseur)`);
+        } else if (bossProduct.stock_quantity < cartItem.quantity) {
+          outOfStockItems.push(`⚠️ ${cartItem.name} (Demandé: ${cartItem.quantity}, Dispo: ${bossProduct.stock_quantity})`);
+        } else {
+          bossId = bossProduct.supplier_id; // حفظ الـ ID الحقيقي
+        }
       }
-    }
 
-    if (outOfStockItems.length > 0) {
-      alert("🚫 لا يمكن إرسال الطلب! الكمية غير كافية في مخزن المورد لـ:\n" + outOfStockItems.join('\n'));
-      setIsProcessing(false);
-      return; 
-    }
+      if (outOfStockItems.length > 0) {
+        alert("🚫 Envoi impossible ! Le stock du fournisseur est insuffisant pour :\n\n" + outOfStockItems.join('\n'));
+        setIsProcessing(false);
+        return; 
+      }
 
-    // إذا مر الفحص، نرسل الطلب مع التأكد من إرفاق معرف المورد
-    const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-    await supabase.from('supply_requests').insert([{
-      merchant_id: merchantId,
-      supplier_id: selectedSupplierId, // مهم جداً لربط الفواتير لاحقاً
-      items: cart,
-      total_amount: total,
-      status: 'pending'
-    }]);
+    // 3. إرسال الطلب لقاعدة البيانات
+      const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+      
+      const { error: poError } = await supabase.from('supply_requests').insert([{
+        merchant_id: merchantId,
+        supplier_id: bossId, // 👈 استخدمنا الـ ID الحقيقي الذي التقطناه من المخزون
+        items: cart,
+        total_amount: total,
+        location_data: locationData, // تأكد أن متغير locationData موجود في الكود عندك
+        status: 'pending'
+      }]);
 
     setCart([]);
     alert("✅ تم إرسال الطلب بنجاح.");
