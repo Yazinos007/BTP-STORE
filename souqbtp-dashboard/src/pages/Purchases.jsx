@@ -251,7 +251,7 @@ export default function Purchases() {
   }
 };
 
-  // 🌟 دالة إرسال طلب التزويد للمورد الكبير (مع التحقق الذكي من المخزون)
+  // 🌟 دالة إرسال طلب التزويد (محدثة لتجاوز حظر قاعدة البيانات RLS)
   const handleSendPO = async () => {
     if (cart.length === 0) {
       return alert(language === 'fr' ? "Veuillez ajouter des articles au panier." : "الرجاء إضافة منتجات للسلة أولاً.");
@@ -259,39 +259,19 @@ export default function Purchases() {
 
     setIsProcessing(true);
     try {
-      // 1. 🌟 رادار المخزون: البحث عن السلعة في المخزن المركزي للـ Boss
-      // نستخدم neq (Not Equal) لنجلب المنتجات التي "لا يملكها" التاجر الحالي
-      const itemNames = cart.map(item => item.name);
-      const { data: centralStock, error: stockError } = await supabase
-        .from('products')
-        .select('name, stock_quantity, supplier_id')
-        .in('name', itemNames)
-        .neq('supplier_id', supplier.id); // 👈 هنا التصحيح: استخدمنا supplier_id
+      // 1. البحث عن الـ ID الحقيقي للمورد الكبير (الـ Boss) في النظام
+      const { data: bossData, error: bossError } = await supabase
+        .from('suppliers')
+        .select('id')
+        .eq('role', 'wholesaler')
+        .limit(1)
+        .single();
 
-      if (stockError) throw stockError;
-
-      let outOfStockItems = [];
-      let bossId = null; // سنلتقط الـ ID الحقيقي للمورد الكبير من منتجاته
-      
-      for (const cartItem of cart) {
-        // نبحث عن المنتج بالاسم لنتفادى اختلاف الـ IDs
-        const bossProduct = centralStock?.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
-        
-        if (!bossProduct) {
-          outOfStockItems.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Non vendu par le grossiste' : 'غير متوفر عند المورد الكبير'})`);
-        } else if (bossProduct.stock_quantity < cartItem.quantity) {
-          outOfStockItems.push(`⚠️ ${cartItem.name} (${language === 'fr' ? 'Demandé:' : 'المطلوب:'} ${cartItem.quantity}, ${language === 'fr' ? 'Dispo:' : 'المتوفر عنده:'} ${bossProduct.stock_quantity})`);
-        } else {
-          bossId = bossProduct.supplier_id; // حفظ الـ ID الحقيقي للمورد
-        }
+      if (bossError || !bossData) {
+         throw new Error("لم يتم العثور على حساب المورد الكبير في النظام.");
       }
 
-      // إذا كانت هناك نواقص، نوقف العملية فوراً! 🚨
-      if (outOfStockItems.length > 0) {
-        alert((language === 'fr' ? "🚫 Envoi impossible ! Le stock du grossiste est insuffisant pour :\n\n" : "🚫 لا يمكن إرسال الطلب! مخزون المورد لا يكفي للمنتجات التالية:\n\n") + outOfStockItems.join('\n'));
-        setIsProcessing(false);
-        return; 
-      }
+      const bossId = bossData.id;
 
       // 2. التقاط الموقع الجغرافي (GPS)
       let locationData = null;
@@ -306,16 +286,15 @@ export default function Purchases() {
         };
       } catch (geoError) {
         console.warn("GPS Error:", geoError);
-        const proceed = window.confirm(language === 'fr' ? "Position GPS introuvable. Envoyer quand même ?" : "لم نتمكن من التقاط موقعك. إرسال الطلب على أي حال؟");
-        if (!proceed) { setIsProcessing(false); return; }
+        // نتجاوز خطأ الـ GPS لتمرير الطلبية
       }
 
-      // 3. إرسال الطلب لقاعدة البيانات
+      // 3. إرسال الطلب مباشرة لقاعدة البيانات
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: bossId, // 🌟 استخدمنا ID المورد الكبير الذي استخرجناه للتو
+        supplier_id: bossId, // 🌟 تم ربط الطلب بالـ Boss الحقيقي
         items: cart,
         total_amount: total,
         location_data: locationData,
@@ -324,10 +303,10 @@ export default function Purchases() {
 
       if (poError) throw poError;
 
-      // 4. رسالة النجاح
+      // 4. رسالة النجاح وتحديث الشاشة
       setCart([]);
-      alert(language === 'fr' ? "✅ Bon de commande envoyé avec succès au grossiste !" : "✅ تم إرسال طلب التزويد للمورد بنجاح!");
-      fetchB2BRequests(); // تحديث قائمة الطلبات
+      alert(language === 'fr' ? "✅ Bon de commande envoyé au grossiste avec succès !" : "✅ تم إرسال طلب التزويد للمورد بنجاح!");
+      fetchB2BRequests(); 
 
     } catch (err) {
       console.error("PO Error:", err);
