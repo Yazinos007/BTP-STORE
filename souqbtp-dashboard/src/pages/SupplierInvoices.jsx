@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-import { FileText, Search, Download, Printer, Loader2, Filter, CheckCircle2, Clock } from 'lucide-react';
+import { FileText, Search, Download, Loader2 } from 'lucide-react'; // تم التأكد من الأيقونات هنا
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -23,7 +23,6 @@ export default function SupplierInvoices() {
   const fetchInvoices = async () => {
     setIsLoading(true);
     try {
-      // جلب المستندات من نوع فاتورة أو وصل تسليم الخاصة بالمورد
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -34,8 +33,7 @@ export default function SupplierInvoices() {
       if (error) throw error;
       setInvoices(data || []);
 
-      // جلب بيانات التجار (الزبائن)
-      const clientIds = [...new Set(data.map(d => d.client_id))].filter(id => id);
+      const clientIds = [...new Set(data?.map(d => d.client_id))].filter(id => id);
       clientIds.forEach(id => fetchMerchantData(id));
     } catch (err) {
       console.error('Error fetching invoices:', err);
@@ -50,7 +48,6 @@ export default function SupplierInvoices() {
     if (data) setMerchants(prev => ({ ...prev, [id]: data }));
   };
 
-  // 🌟 دالة تحميل الفاتورة كملف PDF فخم
   const handleDownloadPDF = async (invoice) => {
     const merchantName = merchants[invoice.client_id]?.store_name || 'Client B2B';
     const date = new Date(invoice.created_at).toLocaleDateString();
@@ -71,16 +68,14 @@ export default function SupplierInvoices() {
           <p style="margin: 5px 0; color: #64748b;">Réf: ${invoice.ref_number}</p>
         </div>
         <div style="text-align: right;">
-          <h2 style="margin: 0; color: #1e293b;">${supplier.store_name}</h2>
+          <h2 style="margin: 0; color: #1e293b;">${supplier?.store_name || 'SOUQ BTP'}</h2>
           <p style="margin: 5px 0; color: #64748b;">Date: ${date}</p>
         </div>
       </div>
-
       <div style="margin-bottom: 40px; padding: 20px; background: #f8fafc; border-radius: 10px;">
         <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: bold;">Facturé à :</p>
         <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #1e293b;">${merchantName}</p>
       </div>
-
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
         <thead>
           <tr style="background: #1e293b; color: white;">
@@ -90,7 +85,7 @@ export default function SupplierInvoices() {
           </tr>
         </thead>
         <tbody>
-          ${invoice.items.map(item => `
+          ${(invoice.items || []).map(item => `
             <tr style="border-bottom: 1px solid #f1f5f9;">
               <td style="padding: 15px; font-weight: bold;">${item.name}</td>
               <td style="padding: 15px; text-align: center;">${item.quantity}</td>
@@ -99,26 +94,29 @@ export default function SupplierInvoices() {
           `).join('')}
         </tbody>
       </table>
-
       <div style="text-align: right; border-top: 2px solid #1e293b; padding-top: 20px;">
         <p style="font-size: 14px; color: #64748b; margin: 0;">Total Net à Payer</p>
         <p style="font-size: 36px; font-weight: 900; color: #059669; margin: 5px 0;">${Number(invoice.total_amount).toLocaleString()} DH</p>
       </div>
-
       <div style="margin-top: 100px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 20px;">
         <p style="font-size: 10px; color: #94a3b8;">Document certifié par SouqBTP Cloud ERP</p>
       </div>
     `;
 
     document.body.appendChild(printElement);
-    const canvas = await html2canvas(printElement, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`${invoice.type}_${invoice.ref_number}.pdf`);
-    document.body.removeChild(printElement);
+    try {
+      const canvas = await html2canvas(printElement, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${invoice.type}_${invoice.ref_number}.pdf`);
+    } catch(err) {
+      console.error("PDF Error:", err);
+    } finally {
+      document.body.removeChild(printElement);
+    }
   };
 
   const filteredInvoices = invoices.filter(inv => {
