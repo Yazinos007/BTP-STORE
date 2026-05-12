@@ -124,8 +124,8 @@ const WholesalerDashboard = ({ supplier }) => {
 
         <div className="flex-1 overflow-auto p-10 custom-scrollbar z-10">
           <Routes>
-            <Route path="/" element={<SupplierOrders />} />
             <Route path="/stock" element={<SupplierStock />} />
+            <Route path="/" element={<SupplierOrders />} />
             <Route path="/fleet" element={<Fleet />} />
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/analytics" element={<AnalyticsB2B />} />
