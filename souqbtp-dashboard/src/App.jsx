@@ -136,7 +136,6 @@ const WholesalerDashboard = ({ supplier }) => {
   );
 };
 
-
 // --- 3. الدماغ الرئيسي للتطبيق (App) ---
 function App() {
   const [session, setSession] = useState(null);
