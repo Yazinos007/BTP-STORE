@@ -215,7 +215,7 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 1. دالة الإرسال (تتجاوز غباء قاعدة البيانات في المسافات + تدعم اختيار المورد)
+  // 🌟 1. دالة الإرسال (الذكية التي تتجاوز المسافات وتكشف المورد الحقيقي)
   const handleSendPO = async () => {
     if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur." : "الرجاء اختيار المورد أولاً.");
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
@@ -224,7 +224,7 @@ export default function Purchases() {
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // 🌟 الحل الجذري: جلب "كل" منتجات المخزن المركزي وترك الفلترة لـ JavaScript
+      // جلب مخزون المورد الكبير فقط
       const { data: allRealStock, error: stockErr } = await supabase
         .from('products')
         .select('name, stock_quantity, supplier_id')
@@ -235,16 +235,14 @@ export default function Purchases() {
       let realWholesalerId = null;
       let errors = [];
 
-      // الفحص الخارق (يمسح كل المسافات والأحرف الكبيرة)
       cart.forEach(cartItem => {
         const cleanCartName = cartItem.name.replace(/\s+/g, '').toLowerCase();
-        // نبحث في كل المخزن المركزي
         const p = allRealStock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanCartName);
 
         if (!p) {
            errors.push(`❌ ${cartItem.name} (غير مسجل في المخزن المركزي)`);
         } else {
-           realWholesalerId = p.supplier_id; // التقطنا الـ ID الحقيقي للمورد!
+           realWholesalerId = p.supplier_id; 
            if (p.stock_quantity < cartItem.quantity) {
               errors.push(`⚠️ ${cartItem.name} (المتوفر: ${p.stock_quantity})`);
            }
@@ -256,9 +254,8 @@ export default function Purchases() {
           if (!proceed) { setIsProcessing(false); return; }
       }
 
-      if (!realWholesalerId) throw new Error("لا يمكن الإرسال، لم نتمكن من تحديد المورد مالك البضاعة.");
+      if (!realWholesalerId) throw new Error("لم نتمكن من تحديد المورد مالك البضاعة.");
 
-      // إرسال الطلبية باستخدام الـ ID الحقيقي المستخرج من البضاعة!
       await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
         supplier_id: realWholesalerId, 
@@ -268,7 +265,7 @@ export default function Purchases() {
       }]);
 
       setCart([]);
-      alert("✅ تم إرسال الطلب بنجاح للمورد!");
+      alert("✅ تم إرسال الطلب بنجاح!");
       fetchB2BRequests();
     } catch (err) {
       alert("Erreur: " + err.message);
@@ -277,20 +274,18 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 2. دالة الاستلام (مزودة بكاشف أخطاء الفواتير)
+  // 🌟 2. دالة الاستلام (التي تولد الفاتورة)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
       for (const item of req.items) {
-        // زيادة التاجر
         const { data: merchantProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
         if (merchantProd) {
           await supabase.from('products').update({ stock_quantity: Number(merchantProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', item.id);
         }
 
-        // نقصان المورد
         if (req.supplier_id) {
            const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
            const { data: bossProducts } = await supabase.from('products').select('id, stock_quantity, name').eq('supplier_id', req.supplier_id);
@@ -302,7 +297,6 @@ export default function Purchases() {
         }
       }
 
-      // 🌟 توليد الفاتورة
       if (req.supplier_id) {
         const { error: docError } = await supabase.from('documents').insert([{
           owner_id: req.supplier_id, 
@@ -313,61 +307,12 @@ export default function Purchases() {
           items: req.items
         }]);
 
-        // 🚨 هذا التنبيه سيخبرك لماذا الفواتير أصفار إذا كان هناك قفل!
         if (docError) {
-           alert(`⚠️ المخزون تحدث بنجاح، لكن الفاتورة فشلت بسبب RLS في جدول documents:\n${docError.message}`);
+           alert(`⚠️ الفاتورة فشلت بسبب إعدادات RLS في قاعدة البيانات:\n${docError.message}`);
         } else {
-           alert("✅ اكتمل السحر! تم الاستلام وتوليد الفاتورة والمحاسبة!");
+           alert("✅ اكتمل الاستلام وتم توليد الفاتورة بنجاح!");
         }
       }
-      fetchB2BRequests();
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // 🌟 2. دالة الاستلام (التي ستُشغل المحاسبة والفواتير رغماً عن الجميع)
-  const handleReceiveOrder = async (req) => {
-    setIsProcessing(true);
-    try {
-      await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
-
-      // تحديث المخزون
-      for (const item of req.items) {
-        const { data: merchantProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
-        if (merchantProd) {
-          await supabase.from('products').update({ stock_quantity: Number(merchantProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', item.id);
-        }
-
-        if (req.supplier_id) {
-           const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
-           const { data: bossProducts } = await supabase.from('products').select('id, stock_quantity, name').eq('supplier_id', req.supplier_id);
-           const bossProd = bossProducts?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-           if (bossProd) {
-              const newQty = Math.max(0, Number(bossProd.stock_quantity || 0) - Number(item.quantity));
-              await supabase.from('products').update({ stock_quantity: newQty }).eq('id', bossProd.id);
-           }
-        }
-      }
-
-      // 🌟 توليد الفاتورة (هنا يكمن سر الأصفار)
-      if (req.supplier_id) {
-        const { error: docError } = await supabase.from('documents').insert([{
-          owner_id: req.supplier_id, 
-          client_id: req.merchant_id, 
-          type: 'Facture',
-          ref_number: `FAC-B2B-${Date.now().toString().slice(-4)}`,
-          total_amount: req.total_amount,
-          items: req.items
-        }]);
-
-        // إذا كان هناك خطأ في الفاتورة، سيظهره لك الآن بدلاً من الصمت!
-        if (docError) throw new Error("تم الاستلام، لكن فشل توليد الفاتورة بسبب RLS: " + docError.message);
-      }
-
-      alert("✅ اكتمل السحر! تم الاستلام وتوليد الفاتورة!");
       fetchB2BRequests();
     } catch (err) {
       alert(err.message);
