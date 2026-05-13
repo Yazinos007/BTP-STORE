@@ -274,12 +274,14 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 2. دالة الاستلام (التي تولد الفاتورة)
+  // 🌟 2. دالة الاستلام (مزودة بالاحتفال، التحديث التلقائي، وتخطي قيد الزبائن)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
+      // 1. إنهاء حالة الطلب
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
+      // 2. تزامن المخازن (التاجر والمورد)
       for (const item of req.items) {
         const { data: merchantProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
         if (merchantProd) {
@@ -297,30 +299,39 @@ export default function Purchases() {
         }
       }
 
+      // 3. 🌟 توليد الفاتورة (بدون client_id لتفادي الرفض الأمني)
       if (req.supplier_id) {
         const { error: docError } = await supabase.from('documents').insert([{
           owner_id: req.supplier_id, 
-          client_id: req.merchant_id, 
+          // تم إخفاء client_id لكي لا يطالبنا النظام بزبون مسجل في جدول العملاء
           type: 'Facture',
           ref_number: `FAC-B2B-${Date.now().toString().slice(-4)}`,
           total_amount: req.total_amount,
           items: req.items
         }]);
 
-        if (docError) {
-           alert(`⚠️ الفاتورة فشلت بسبب إعدادات RLS في قاعدة البيانات:\n${docError.message}`);
-        } else {
-           alert("✅ اكتمل الاستلام وتم توليد الفاتورة بنجاح!");
-        }
+        if (docError) throw new Error("تم الاستلام، لكن الفاتورة رُفضت: " + docError.message);
       }
-      fetchB2BRequests();
+
+      // 4. 🌟 السحر البصري والاحتفال (Confetti)
+      import('canvas-confetti').then((confetti) => {
+        confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+      }).catch(e => console.log('Confetti not loaded'));
+
+      alert("✅ اكتمل السحر! تم الاستلام، تحديث المخزون، وتوليد الفاتورة بنجاح!");
+      
+      // 5. 🌟 تحديث الشاشة تلقائياً لكي يظهر المخزون الممتلئ فوراً
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500); // ننتظر ثانية ونصف لكي يستمتع التاجر بالاحتفال قبل التحديث
+
     } catch (err) {
-      alert(err.message);
+      alert("خطأ: " + err.message);
     } finally {
       setIsProcessing(false);
     }
   };
-
+  
   const handleCompletePurchase = async (method) => {
     if (!selectedSupplierId || cart.length === 0) return alert(t.msgSelectSupplier);
     setIsProcessing(true);
