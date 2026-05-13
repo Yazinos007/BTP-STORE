@@ -215,25 +215,41 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
+  // 🌟 2. دالة الاستلام (التحديث المزدوج للمخزون + الفواتير)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
-      // 1. تحديث الحالة
+      // أ- تحديث حالة الطلب
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-      // 2. تحديث مخزون التاجر (الزيادة)
+      // ب- التحديث المزدوج للمخزون (السحر الحقيقي 🪄)
       for (const item of req.items) {
-        const { data: p } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
-        await supabase.from('products').update({ 
-          stock_quantity: Number(p?.stock_quantity || 0) + Number(item.quantity) 
-        }).eq('id', item.id);
+        // 1. زيادة مخزون التاجر (الاستلام)
+        const { data: merchantProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
+        if (merchantProd) {
+          await supabase.from('products').update({ 
+            stock_quantity: Number(merchantProd.stock_quantity || 0) + Number(item.quantity) 
+          }).eq('id', item.id);
+        }
+
+        // 2. نقصان مخزون المورد (التسليم)
+        if (req.supplier_id) {
+           const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
+           const { data: bossProducts } = await supabase.from('products').select('id, stock_quantity, name').eq('supplier_id', req.supplier_id);
+           
+           const bossProd = bossProducts?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
+           if (bossProd) {
+              const newQty = Math.max(0, Number(bossProd.stock_quantity || 0) - Number(item.quantity));
+              await supabase.from('products').update({ stock_quantity: newQty }).eq('id', bossProd.id);
+           }
+        }
       }
 
-      // 3. 🌟 تفعيل المحاسبة: إرسال فاتورة بيع للمورد الكبير
+      // ج- إنشاء فاتورة المورد (لإضاءة لوحة الـ Boss بالأرباح)
       if (req.supplier_id) {
         await supabase.from('documents').insert([{
-          owner_id: req.supplier_id, // تذهب للمورد
-          client_id: req.merchant_id, // التاجر هو الزبون
+          owner_id: req.supplier_id,
+          client_id: req.merchant_id,
           type: 'Facture',
           ref_number: `FAC-B2B-${Date.now().toString().slice(-5)}`,
           total_amount: req.total_amount,
@@ -241,7 +257,7 @@ export default function Purchases() {
         }]);
       }
 
-      alert("✅ تم الاستلام وتحديث ميزانية المورد!");
+      alert("✅ اكتمل السحر! تم استلام البضاعة، تحديث المخزنين، وتسجيل الأرباح.");
       fetchB2BRequests();
     } catch (err) {
       alert(err.message);
@@ -250,63 +266,40 @@ export default function Purchases() {
     }
   };
 
-// 🌟 دالة إرسال طلب التزويد (مع ميزة تخطي أخطاء المسافات + خيار الطلب المتأخر)
+// 🌟 1. دالة الإرسال (حماية المخزون الصارمة)
   const handleSendPO = async () => {
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
-
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // 1. تحديد المورد الكبير (الـ Boss)
-      const { data: boss } = await supabase
-        .from('suppliers')
-        .select('id, store_name')
-        .eq('role', 'wholesaler')
-        .limit(1)
-        .single();
+      // أ- جلب المورد الكبير ومخزونه
+      const { data: boss } = await supabase.from('suppliers').select('id, store_name').eq('role', 'wholesaler').single();
+      if (!boss) throw new Error("Grossiste introuvable.");
 
-      if (!boss) throw new Error("لم أتمكن من العثور على المورد الكبير.");
+      const { data: bossProducts } = await supabase.from('products').select('name, stock_quantity').eq('supplier_id', boss.id);
 
-      // 2. جلب مخزون المورد الكبير بالكامل
-      const { data: bossProducts } = await supabase
-        .from('products')
-        .select('name, stock_quantity')
-        .eq('supplier_id', boss.id);
-
-      // 3. الفحص المرن جداً (يتجاهل كل المسافات وحالة الأحرف)
+      // ب- الفحص الصارم (بمطابقة ذكية للأسماء لتفادي المسافات)
       let errors = [];
       cart.forEach(cartItem => {
-        // تنظيف الاسم من المسافات للمقارنة (مثال: "Ciment CPJ" تصبح "cimentcpj")
-        const cleanCartName = cartItem.name.replace(/\s+/g, '').toLowerCase();
-        
-        const productInStock = bossProducts?.find(
-          p => p.name.replace(/\s+/g, '').toLowerCase() === cleanCartName
-        );
+        const cleanName = cartItem.name.replace(/\s+/g, '').toLowerCase();
+        const productInStock = bossProducts?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
 
         if (!productInStock) {
-          errors.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Introuvable' : 'غير متوفر عند المورد'})`);
+          errors.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Non vendu' : 'غير متوفر عند المورد'})`);
         } else if (productInStock.stock_quantity < cartItem.quantity) {
           errors.push(`⚠️ ${cartItem.name} (${language === 'fr' ? 'Dispo:' : 'المتوفر فقط:'} ${productInStock.stock_quantity})`);
         }
       });
 
-      // 🚨 الحل السحري لكسر الدوامة: نافذة التخيير (Backorder)
+      // ج- المنع البات في حالة النقص
       if (errors.length > 0) {
-        const confirmMsg = language === 'fr' 
-          ? `Attention, le stock de ${boss.store_name} est insuffisant pour :\n\n${errors.join('\n')}\n\nVoulez-vous envoyer la commande quand même pour qu'il la prépare ?`
-          : `تنبيه! مخزون "${boss.store_name}" غير كافٍ:\n\n${errors.join('\n')}\n\nهل تريد إرسال الطلب على أي حال ليقوم المورد بتدبير السلع؟`;
-          
-        const proceed = window.confirm(confirmMsg);
-        
-        // إذا ضغط Cancel (إلغاء)، تتوقف العملية كما طلبت في P1
-        if (!proceed) {
-          setIsProcessing(false);
-          return; 
-        }
+        alert("🚫 لا يمكن إرسال الطلب، المخزون غير كافٍ:\n\n" + errors.join('\n'));
+        setIsProcessing(false);
+        return; 
       }
 
-      // 4. إرسال الطلب للـ Boss (إذا كان كل شيء متوفراً أو إذا وافق التاجر على التجاوز)
+      // د- الإرسال
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
         supplier_id: boss.id,
@@ -318,11 +311,9 @@ export default function Purchases() {
       if (poError) throw poError;
 
       setCart([]);
-      alert(language === 'fr' ? "✅ Commande envoyée !" : "✅ تم إرسال الطلب بنجاح!");
+      alert(`✅ تم إرسال الطلب بنجاح للمورد ${boss.store_name}`);
       fetchB2BRequests();
-
     } catch (err) {
-      console.error(err);
       alert("Erreur: " + err.message);
     } finally {
       setIsProcessing(false);
