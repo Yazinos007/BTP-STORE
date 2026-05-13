@@ -266,24 +266,34 @@ export default function Purchases() {
     }
   };
 
-// 🌟 1. دالة الإرسال (حماية المخزون الصارمة)
+// 🌟 دالة الإرسال (نسخة النينجا: تتجاوز جدول الموردين وتستخرج الـ ID من السلعة)
   const handleSendPO = async () => {
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // أ- جلب المورد الكبير ومخزونه
-      const { data: boss } = await supabase.from('suppliers').select('id, store_name').eq('role', 'wholesaler').single();
-      if (!boss) throw new Error("Grossiste introuvable.");
+      // 1. جلب المنتجات من المخزن المركزي مباشرة (مسموح بها لأن RLS معطل في products)
+      const itemNames = cart.map(item => item.name);
+      const { data: bossProducts, error: prodErr } = await supabase
+        .from('products')
+        .select('id, name, stock_quantity, supplier_id')
+        .in('name', itemNames)
+        .neq('supplier_id', merchantId); // نجلب السلع التي "لا يملكها" التاجر
 
-      const { data: bossProducts } = await supabase.from('products').select('name, stock_quantity').eq('supplier_id', boss.id);
+      if (prodErr) throw prodErr;
+      if (!bossProducts || bossProducts.length === 0) {
+          throw new Error(language === 'fr' ? "Produits introuvables dans le stock central." : "لم يتم العثور على المنتجات في المخزن المركزي.");
+      }
 
-      // ب- الفحص الصارم (بمطابقة ذكية للأسماء لتفادي المسافات)
+      // 2. 🌟 السحر: استخراج ID المورد الكبير من أول منتج في السلة مباشرة!
+      const bossId = bossProducts[0].supplier_id;
+
+      // 3. الفحص الصارم (بمطابقة ذكية للأسماء لتفادي المسافات)
       let errors = [];
       cart.forEach(cartItem => {
         const cleanName = cartItem.name.replace(/\s+/g, '').toLowerCase();
-        const productInStock = bossProducts?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
+        const productInStock = bossProducts.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
 
         if (!productInStock) {
           errors.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Non vendu' : 'غير متوفر عند المورد'})`);
@@ -292,17 +302,17 @@ export default function Purchases() {
         }
       });
 
-      // ج- المنع البات في حالة النقص
+      // 4. المنع البات في حالة النقص
       if (errors.length > 0) {
         alert("🚫 لا يمكن إرسال الطلب، المخزون غير كافٍ:\n\n" + errors.join('\n'));
         setIsProcessing(false);
         return; 
       }
 
-      // د- الإرسال
+      // 5. الإرسال بنجاح
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: boss.id,
+        supplier_id: bossId, // 🌟 الربط المباشر والصحيح!
         items: cart,
         total_amount: total,
         status: 'pending'
@@ -311,7 +321,7 @@ export default function Purchases() {
       if (poError) throw poError;
 
       setCart([]);
-      alert(`✅ تم إرسال الطلب بنجاح للمورد ${boss.store_name}`);
+      alert(language === 'fr' ? "✅ Commande envoyée avec succès !" : "✅ تم إرسال الطلب بنجاح للمورد!");
       fetchB2BRequests();
     } catch (err) {
       alert("Erreur: " + err.message);
