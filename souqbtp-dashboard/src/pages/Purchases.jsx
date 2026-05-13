@@ -216,117 +216,95 @@ export default function Purchases() {
   };
 
   const handleReceiveOrder = async (req) => {
-  setIsProcessing(true);
-  try {
-    // 1. تحديث حالة الطلب
-    await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
+    setIsProcessing(true);
+    try {
+      // 1. تحديث الحالة
+      await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-    // 2. تحديث مخزون التاجر
-    for (const item of req.items) {
-      const { data: p } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
-      await supabase.from('products').update({ 
-        stock_quantity: Number(p?.stock_quantity || 0) + Number(item.quantity) 
-      }).eq('id', item.id);
+      // 2. تحديث مخزون التاجر (الزيادة)
+      for (const item of req.items) {
+        const { data: p } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
+        await supabase.from('products').update({ 
+          stock_quantity: Number(p?.stock_quantity || 0) + Number(item.quantity) 
+        }).eq('id', item.id);
+      }
+
+      // 3. 🌟 تفعيل المحاسبة: إرسال فاتورة بيع للمورد الكبير
+      if (req.supplier_id) {
+        await supabase.from('documents').insert([{
+          owner_id: req.supplier_id, // تذهب للمورد
+          client_id: req.merchant_id, // التاجر هو الزبون
+          type: 'Facture',
+          ref_number: `FAC-B2B-${Date.now().toString().slice(-5)}`,
+          total_amount: req.total_amount,
+          items: req.items
+        }]);
+      }
+
+      alert("✅ تم الاستلام وتحديث ميزانية المورد!");
+      fetchB2BRequests();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setIsProcessing(false);
     }
+  };
 
-    // 3. 🌟 الأهم: إرسال الفاتورة للمورد (هذا ما سيحيي أرقام المحاسبة)
-    if (req.supplier_id) {
-      const invRef = `FAC-B2B-${Date.now().toString().slice(-4)}`;
-      await supabase.from('documents').insert([{
-        owner_id: req.supplier_id, // فاتورة المورد
-        client_id: req.merchant_id, // التاجر هو الزبون هنا
-        type: 'Facture',
-        ref_number: invRef,
-        total_amount: req.total_amount,
-        items: req.items
-      }]);
-    }
-
-    alert("✅ تم استلام البضاعة وتوليد فاتورة المورد بنجاح!");
-    fetchB2BRequests();
-  } catch (err) {
-    alert("فشل في إتمام العملية: " + err.message);
-  } finally {
-    setIsProcessing(false);
-  }
-};
-
-// 🌟 دالة إرسال طلب التزويد (مربوطة حصرياً بالمورد الكبير Boss)
-  const handleSendPO = async () => {
-    if (cart.length === 0) {
-      return alert(language === 'fr' ? "Veuillez ajouter des articles." : "الرجاء إضافة منتجات للسلة.");
-    }
+const handleSendPO = async () => {
+    if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
 
     setIsProcessing(true);
     try {
-      // 1. 🌟 تحديد الـ Boss الحقيقي في النظام (الرابط السري)
-      const { data: bossData, error: bossError } = await supabase
+      // 1. تحديد المورد الكبير (الرابط الأساسي)
+      const { data: boss } = await supabase
         .from('suppliers')
         .select('id')
         .eq('role', 'wholesaler')
-        .limit(1)
         .single();
 
-      if (bossError || !bossData) throw new Error("لم يتم العثور على حساب المورد الكبير في النظام.");
-      const realBossId = bossData.id;
+      if (!boss) throw new Error(language === 'fr' ? "Grossiste introuvable" : "لم يتم العثور على المورد الكبير");
 
-      // 2. 🌟 فحص المخزن المركزي للـ Boss حصرياً
+      // 2. فحص المخزون الفعلي للمورد الكبير بالاسم
       const itemNames = cart.map(item => item.name);
-      const { data: centralStock, error: stockError } = await supabase
+      const { data: stock } = await supabase
         .from('products')
         .select('name, stock_quantity')
-        .eq('supplier_id', realBossId) // نبحث في مخزن الـ Boss فقط
+        .eq('supplier_id', boss.id)
         .in('name', itemNames);
 
-      if (stockError) throw stockError;
+      // 🚨 التحقق الصارم: إذا لم يجد المنتجات عند المورد أو الكمية ناقصة
+      let errors = [];
+      cart.forEach(cartItem => {
+        const productInStock = stock?.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
+        if (!productInStock) {
+          errors.push(`❌ ${cartItem.name}: غير متوفر عند المورد`);
+        } else if (productInStock.stock_quantity < cartItem.quantity) {
+          errors.push(`⚠️ ${cartItem.name}: المخزن لا يكفي (المتوفر: ${productInStock.stock_quantity})`);
+        }
+      });
 
-      // 🚨 جدار الحماية (RLS) في Supabase:
-      // إذا رجع المخزون فارغاً (0) رغم تأكدك من وجود سلع عند المورد، فهذا يعني أن Supabase تمنع التاجر من قراءة بيانات المورد!
-      if (!centralStock || centralStock.length === 0) {
-        alert("⚠️ تنبيه: نظام الحماية (RLS) في قاعدة البيانات يمنع التاجر من فحص مخزون المورد. يرجى إيقاف RLS عن جدول 'products' من لوحة Supabase.");
+      if (errors.length > 0) {
+        alert(errors.join('\n'));
         setIsProcessing(false);
         return;
       }
 
-      let outOfStockItems = [];
-      for (const cartItem of cart) {
-        const bossProduct = centralStock.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
-        
-        if (!bossProduct) {
-          outOfStockItems.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Introuvable chez le Boss' : 'غير موجود في مخزن المورد'})`);
-        } else if (bossProduct.stock_quantity < cartItem.quantity) {
-          outOfStockItems.push(`⚠️ ${cartItem.name} (المطلوب: ${cartItem.quantity}, المتوفر: ${bossProduct.stock_quantity})`);
-        }
-      }
-
-      // إذا كان هناك نقص، نوقف الطلب
-      if (outOfStockItems.length > 0) {
-        alert("🚫 لا يمكن إرسال الطلب! مخزون المورد لا يكفي:\n\n" + outOfStockItems.join('\n'));
-        setIsProcessing(false);
-        return; 
-      }
-
-      // 3. إرسال الطلب (بدون موقع جغرافي لتسريع وتفادي أخطاء المتصفح)
+      // 3. إرسال الطلب مع ربطه بالـ Boss
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-      
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: realBossId, // 🌟 الطلب يذهب للـ Boss مباشرة
+        supplier_id: boss.id, // الربط الإجباري هنا
         items: cart,
         total_amount: total,
         status: 'pending'
       }]);
 
       if (poError) throw poError;
-
-      // 4. نجاح العملية
       setCart([]);
-      alert(language === 'fr' ? "✅ Commande B2B envoyée au Grossiste !" : "✅ تم إرسال الطلب للمورد الكبير بنجاح!");
-      fetchB2BRequests(); 
-
+      alert(language === 'fr' ? "Commande envoyée !" : "تم إرسال الطلب!");
+      fetchB2BRequests();
     } catch (err) {
-      console.error("PO Error:", err);
-      alert("Erreur: " + err.message);
+      alert(err.message);
     } finally {
       setIsProcessing(false);
     }
