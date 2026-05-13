@@ -215,28 +215,22 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 2. دالة الاستلام (التحديث المزدوج للمخزون + الفواتير)
+  // 🌟 2. دالة الاستلام وتوليد الفواتير (لتشغيل المحاسبة)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
-      // أ- تحديث حالة الطلب
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-      // ب- التحديث المزدوج للمخزون (السحر الحقيقي 🪄)
+      // تحديث المخزون (زيادة للتاجر ونقصان للمورد)
       for (const item of req.items) {
-        // 1. زيادة مخزون التاجر (الاستلام)
         const { data: merchantProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
         if (merchantProd) {
-          await supabase.from('products').update({ 
-            stock_quantity: Number(merchantProd.stock_quantity || 0) + Number(item.quantity) 
-          }).eq('id', item.id);
+          await supabase.from('products').update({ stock_quantity: Number(merchantProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', item.id);
         }
 
-        // 2. نقصان مخزون المورد (التسليم)
         if (req.supplier_id) {
            const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
            const { data: bossProducts } = await supabase.from('products').select('id, stock_quantity, name').eq('supplier_id', req.supplier_id);
-           
            const bossProd = bossProducts?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
            if (bossProd) {
               const newQty = Math.max(0, Number(bossProd.stock_quantity || 0) - Number(item.quantity));
@@ -245,19 +239,24 @@ export default function Purchases() {
         }
       }
 
-      // ج- إنشاء فاتورة المورد (لإضاءة لوحة الـ Boss بالأرباح)
+      // 🌟 توليد الفاتورة (هذا ما سيضيء الأصفار في لوحة المحاسبة)
       if (req.supplier_id) {
-        await supabase.from('documents').insert([{
-          owner_id: req.supplier_id,
-          client_id: req.merchant_id,
+        const { error: docError } = await supabase.from('documents').insert([{
+          owner_id: req.supplier_id, // الفاتورة تُسجل في حساب المورد
+          client_id: req.merchant_id, // اسم التاجر كعميل
           type: 'Facture',
-          ref_number: `FAC-B2B-${Date.now().toString().slice(-5)}`,
+          ref_number: `FAC-B2B-${Date.now().toString().slice(-4)}`,
           total_amount: req.total_amount,
           items: req.items
         }]);
+
+        if (docError) {
+            console.error("Invoice Error:", docError);
+            alert("⚠️ تم تحديث المخزون، لكن قاعدة البيانات (RLS) منعت توليد الفاتورة.");
+        }
       }
 
-      alert("✅ اكتمل السحر! تم استلام البضاعة، تحديث المخزنين، وتسجيل الأرباح.");
+      alert("✅ تم استلام البضاعة وتحديث المخزنين وتوليد الفاتورة!");
       fetchB2BRequests();
     } catch (err) {
       alert(err.message);
@@ -266,57 +265,52 @@ export default function Purchases() {
     }
   };
 
-const handleSendPO = async () => {
-    if (cart.length === 0) return;
+// 🌟 1. دالة الإرسال (إجبار اختيار المورد لدعم تعدد الموردين)
+  const handleSendPO = async () => {
+    // 🚨 الحل للمفارقة: نمنع الطلب تماماً إذا لم يتم اختيار المورد من القائمة المنسدلة!
+    if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez d'abord sélectionner un fournisseur." : "الرجاء اختيار المورد أولاً من القائمة.");
+    if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
+    
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // 1. جلب كل المنتجات التي لا يملكها التاجر (أي منتجات المخزن المركزي)
+      // نجلب المخزون الخاص بـ "المورد الذي تم اختياره" فقط!
       const { data: stock, error: stockErr } = await supabase
         .from('products')
         .select('name, stock_quantity, supplier_id')
-        .neq('supplier_id', merchantId);
+        .eq('supplier_id', selectedSupplierId);
 
       if (stockErr) throw stockErr;
 
-      let bossId = null;
       let errors = [];
-
-      // 2. فحص السلة بذكاء (تجاهل المسافات والأحرف الكبيرة)
       cart.forEach(cartItem => {
         const cleanName = cartItem.name.replace(/\s+/g, '').toLowerCase();
         const p = stock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
 
         if (!p) {
-           errors.push(`❌ ${cartItem.name} (غير مسجل في النظام المركزي)`);
-        } else {
-           bossId = p.supplier_id; // 🌟 التقطنا ID المورد الحقيقي من سلعته مباشرة!
-           if (p.stock_quantity < cartItem.quantity) {
-               errors.push(`⚠️ ${cartItem.name} (المتوفر: ${p.stock_quantity})`);
-           }
+           errors.push(`❌ ${cartItem.name} (غير مسجل عند هذا المورد)`);
+        } else if (p.stock_quantity < cartItem.quantity) {
+           errors.push(`⚠️ ${cartItem.name} (المتوفر: ${p.stock_quantity})`);
         }
       });
 
-      // 3. التخيير في حال وجود نقص (لكي تمر الطلبية رغماً عن أي مشكلة)
       if (errors.length > 0) {
           const proceed = window.confirm(`تنبيه:\n${errors.join('\n')}\n\nهل تريد إرسال الطلب ليقوم المورد بتدبيره؟`);
           if (!proceed) { setIsProcessing(false); return; }
       }
 
-      if (!bossId) throw new Error("خطأ: لم نتمكن من تحديد المورد من المنتجات.");
-
-      // 4. إرسال الطلبية بأمان تام
+      // إرسال الطلب للمورد المختار تحديداً
       await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: bossId,
+        supplier_id: selectedSupplierId, // 🌟 تم ربط الطلب بالمورد المختار!
         items: cart,
         total_amount: total,
         status: 'pending'
       }]);
 
       setCart([]);
-      alert("✅ تم إرسال الطلب بنجاح للمورد!");
+      alert("✅ تم إرسال الطلب بنجاح للمورد المحدد!");
       fetchB2BRequests();
     } catch (err) {
       alert("Erreur: " + err.message);
