@@ -250,52 +250,58 @@ export default function Purchases() {
     }
   };
 
-// 🌟 دالة إرسال طلب التزويد (النسخة الذكية لتخطي حواجز RLS)
+// 🌟 دالة إرسال طلب التزويد (النسخة الخارقة - المضادة لأخطاء الحروف والمسافات)
   const handleSendPO = async () => {
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
 
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-      const itemNames = cart.map(item => item.name);
 
-      // 1. 🌟 الرادار المباشر: نجلب السلع من المخزن المركزي مباشرة
-      const { data: centralStock, error: stockError } = await supabase
+      // 1. 🌟 إيجاد المورد الكبير (الـ Boss) في النظام
+      const { data: boss, error: bossErr } = await supabase
+        .from('suppliers')
+        .select('id, store_name')
+        .eq('role', 'wholesaler')
+        .limit(1)
+        .single();
+
+      if (bossErr || !boss) {
+        throw new Error(language === 'fr' ? "Grossiste introuvable dans le système." : "لم أتمكن من العثور على حساب المورد الكبير (wholesaler) في النظام.");
+      }
+
+      // 2. 🌟 جلب **كل** منتجات المورد الكبير لتفادي أخطاء الحروف والمسافات الصارمة
+      const { data: bossProducts, error: stockError } = await supabase
         .from('products')
-        .select('name, stock_quantity, supplier_id')
-        .in('name', itemNames)
-        .neq('supplier_id', merchantId); // نجلب السلع التي "لا يملكها التاجر" (إذن هي للـ Boss)
+        .select('name, stock_quantity')
+        .eq('supplier_id', boss.id);
 
       if (stockError) throw stockError;
 
-      if (!centralStock || centralStock.length === 0) {
-        throw new Error(language === 'fr' ? "Erreur de lecture du stock. RLS toujours actif sur 'products'?" : "خطأ في قراءة المخزون، هل عطلت RLS لجدول المنتجات؟");
-      }
-
-      // 2. 🌟 السحر هنا: نستخرج ID المورد من السلعة نفسها دون الحاجة لجدول الموردين!
-      const realBossId = centralStock[0].supplier_id;
-
-      // 3. التحقق الصارم من الكميات
+      // 3. 🌟 الفحص الذكي (يتجاهل المسافات الزائدة وحالة الأحرف تماماً)
       let errors = [];
       cart.forEach(cartItem => {
-        const productInStock = centralStock.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
+        const productInStock = bossProducts?.find(
+          p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase()
+        );
+
         if (!productInStock) {
-          errors.push(`❌ ${cartItem.name}: ${language === 'fr' ? 'Introuvable' : 'غير متوفر عند المورد'}`);
+          errors.push(`❌ ${cartItem.name}: ${language === 'fr' ? "Non vendu par le grossiste" : "غير موجود إطلاقاً في مخزن المورد (" + boss.store_name + ")"}`);
         } else if (productInStock.stock_quantity < cartItem.quantity) {
-          errors.push(`⚠️ ${cartItem.name}: ${language === 'fr' ? 'Stock insuffisant (Dispo:' : 'المخزن لا يكفي (المتوفر:'} ${productInStock.stock_quantity})`);
+          errors.push(`⚠️ ${cartItem.name}: ${language === 'fr' ? "Stock insuffisant (Dispo:" : "المخزن لا يكفي (المتوفر:"} ${productInStock.stock_quantity})`);
         }
       });
 
       if (errors.length > 0) {
-        alert(errors.join('\n'));
+        alert((language === 'fr' ? "🚫 Commande refusée :\n\n" : "🚫 تم رفض الطلب للأسباب التالية:\n\n") + errors.join('\n'));
         setIsProcessing(false);
         return;
       }
 
-      // 4. إرسال الطلب بسلاسة
+      // 4. 🌟 إرسال الطلب للـ Boss بأمان تام (الرابط الدائم)
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: realBossId, // استخدمنا الـ ID الذي استخرجناه من السلعة!
+        supplier_id: boss.id, // تم الربط بنجاح!
         items: cart,
         total_amount: total,
         status: 'pending'
@@ -304,12 +310,12 @@ export default function Purchases() {
       if (poError) throw poError;
 
       setCart([]);
-      alert(language === 'fr' ? "✅ Commande envoyée au grossiste !" : "✅ تم إرسال الطلب للمورد بنجاح!");
+      alert(language === 'fr' ? `✅ Commande envoyée à ${boss.store_name} !` : `✅ تم إرسال الطلب لـ ${boss.store_name} بنجاح!`);
       fetchB2BRequests();
 
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      alert("Erreur: " + err.message);
     } finally {
       setIsProcessing(false);
     }
