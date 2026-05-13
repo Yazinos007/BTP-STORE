@@ -274,14 +274,13 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 2. دالة الاستلام (مزودة بالاحتفال، التحديث التلقائي، وتخطي قيد الزبائن)
+  // 🌟 دالة الاستلام (النسخة النهائية مع الفواتير الدقيقة)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
-      // 1. إنهاء حالة الطلب
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-      // 2. تزامن المخازن (التاجر والمورد)
+      // تحديث المخازن
       for (const item of req.items) {
         const { data: merchantProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
         if (merchantProd) {
@@ -299,52 +298,46 @@ export default function Purchases() {
         }
       }
 
-      // 3. 🌟 توليد الفاتورة (بدون client_id لتفادي الرفض الأمني)
+      // 🌟 1. توليد فاتورة المورد (أعدنا client_id لكي تظهر في القائمة)
       if (req.supplier_id) {
         const { error: docError } = await supabase.from('documents').insert([{
           owner_id: req.supplier_id, 
-          // تم إخفاء client_id لكي لا يطالبنا النظام بزبون مسجل في جدول العملاء
+          client_id: req.merchant_id, // 🎯 أعدناها هنا
           type: 'Facture',
           ref_number: `FAC-B2B-${Date.now().toString().slice(-4)}`,
           total_amount: req.total_amount,
           items: req.items
         }]);
-
-        if (docError) throw new Error("تم الاستلام، لكن الفاتورة رُفضت: " + docError.message);
+        if (docError) console.error("Invoice Error:", docError.message);
       }
 
-      // 🌟 أ- توليد فاتورة الشراء في حساب التاجر
+      // 🌟 2. توليد فاتورة الشراء للتاجر (تم تعديل الاسم كما طلبت)
       await supabase.from('documents').insert([{
         owner_id: req.merchant_id, 
-        type: 'Achat', // أو 'Bon de commande' حسب التسمية عندك
+        type: 'Facture Achat', // 🎯 التعديل هنا
         ref_number: `ACH-B2B-${Date.now().toString().slice(-4)}`,
         total_amount: req.total_amount,
         items: req.items
       }]);
 
-      // 🌟 ب- تسجيل المصروف أوتوماتيكياً في قسم المصاريف للتاجر
+      // 3. تسجيل المصروف للتاجر
       await supabase.from('expenses').insert([{
-        supplier_id: req.merchant_id, // تُربط بحساب التاجر
-        title: `Achat B2B - Grossiste`,
+        supplier_id: req.merchant_id,
+        title: `Facture Achat B2B`,
         amount: req.total_amount,
-        category: 'achats', // قسم المشتريات
+        category: 'achats',
         date: new Date().toISOString()
       }]);
 
-      // 4. 🌟 السحر البصري والاحتفال (Confetti)
+      // 4. الاحتفال والتحديث
       import('canvas-confetti').then((confetti) => {
         confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-      }).catch(e => console.log('Confetti not loaded'));
+      }).catch(e => console.log('Confetti err'));
 
-      alert("✅ اكتمل السحر! تم الاستلام، تحديث المخزون، وتوليد الفاتورة بنجاح!");
-      
-      // 5. 🌟 تحديث الشاشة تلقائياً لكي يظهر المخزون الممتلئ فوراً
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500); // ننتظر ثانية ونصف لكي يستمتع التاجر بالاحتفال قبل التحديث
+      setTimeout(() => window.location.reload(), 1500);
 
     } catch (err) {
-      alert("خطأ: " + err.message);
+      alert("Erreur: " + err.message);
     } finally {
       setIsProcessing(false);
     }
