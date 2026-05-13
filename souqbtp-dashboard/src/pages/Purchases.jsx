@@ -215,19 +215,82 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 2. دالة الاستلام وتوليد الفواتير (لتشغيل المحاسبة)
+  // 🌟 1. دالة الإرسال (تتجاوز غباء قاعدة البيانات في المسافات + تدعم اختيار المورد)
+  const handleSendPO = async () => {
+    if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur." : "الرجاء اختيار المورد أولاً.");
+    if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
+    
+    setIsProcessing(true);
+    try {
+      const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+
+      // 🌟 الحل الجذري: جلب "كل" منتجات المخزن المركزي وترك الفلترة لـ JavaScript
+      const { data: allRealStock, error: stockErr } = await supabase
+        .from('products')
+        .select('name, stock_quantity, supplier_id')
+        .neq('supplier_id', merchantId);
+
+      if (stockErr) throw stockErr;
+
+      let realWholesalerId = null;
+      let errors = [];
+
+      // الفحص الخارق (يمسح كل المسافات والأحرف الكبيرة)
+      cart.forEach(cartItem => {
+        const cleanCartName = cartItem.name.replace(/\s+/g, '').toLowerCase();
+        // نبحث في كل المخزن المركزي
+        const p = allRealStock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanCartName);
+
+        if (!p) {
+           errors.push(`❌ ${cartItem.name} (غير مسجل في المخزن المركزي)`);
+        } else {
+           realWholesalerId = p.supplier_id; // التقطنا الـ ID الحقيقي للمورد!
+           if (p.stock_quantity < cartItem.quantity) {
+              errors.push(`⚠️ ${cartItem.name} (المتوفر: ${p.stock_quantity})`);
+           }
+        }
+      });
+
+      if (errors.length > 0) {
+          const proceed = window.confirm(`تنبيه:\n${errors.join('\n')}\n\nهل تريد إرسال الطلب ليقوم المورد بتدبيره؟`);
+          if (!proceed) { setIsProcessing(false); return; }
+      }
+
+      if (!realWholesalerId) throw new Error("لا يمكن الإرسال، لم نتمكن من تحديد المورد مالك البضاعة.");
+
+      // إرسال الطلبية باستخدام الـ ID الحقيقي المستخرج من البضاعة!
+      await supabase.from('supply_requests').insert([{
+        merchant_id: merchantId,
+        supplier_id: realWholesalerId, 
+        items: cart,
+        total_amount: total,
+        status: 'pending'
+      }]);
+
+      setCart([]);
+      alert("✅ تم إرسال الطلب بنجاح للمورد!");
+      fetchB2BRequests();
+    } catch (err) {
+      alert("Erreur: " + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 🌟 2. دالة الاستلام (مزودة بكاشف أخطاء الفواتير)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-      // تحديث المخزون (زيادة للتاجر ونقصان للمورد)
       for (const item of req.items) {
+        // زيادة التاجر
         const { data: merchantProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
         if (merchantProd) {
           await supabase.from('products').update({ stock_quantity: Number(merchantProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', item.id);
         }
 
+        // نقصان المورد
         if (req.supplier_id) {
            const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
            const { data: bossProducts } = await supabase.from('products').select('id, stock_quantity, name').eq('supplier_id', req.supplier_id);
@@ -239,87 +302,27 @@ export default function Purchases() {
         }
       }
 
-      // 🌟 توليد الفاتورة (هذا ما سيضيء الأصفار في لوحة المحاسبة)
+      // 🌟 توليد الفاتورة
       if (req.supplier_id) {
         const { error: docError } = await supabase.from('documents').insert([{
-          owner_id: req.supplier_id, // الفاتورة تُسجل في حساب المورد
-          client_id: req.merchant_id, // اسم التاجر كعميل
+          owner_id: req.supplier_id, 
+          client_id: req.merchant_id, 
           type: 'Facture',
           ref_number: `FAC-B2B-${Date.now().toString().slice(-4)}`,
           total_amount: req.total_amount,
           items: req.items
         }]);
 
+        // 🚨 هذا التنبيه سيخبرك لماذا الفواتير أصفار إذا كان هناك قفل!
         if (docError) {
-            console.error("Invoice Error:", docError);
-            alert("⚠️ تم تحديث المخزون، لكن قاعدة البيانات (RLS) منعت توليد الفاتورة.");
+           alert(`⚠️ المخزون تحدث بنجاح، لكن الفاتورة فشلت بسبب RLS في جدول documents:\n${docError.message}`);
+        } else {
+           alert("✅ اكتمل السحر! تم الاستلام وتوليد الفاتورة والمحاسبة!");
         }
       }
-
-      alert("✅ تم استلام البضاعة وتحديث المخزنين وتوليد الفاتورة!");
       fetchB2BRequests();
     } catch (err) {
       alert(err.message);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-// 🌟 1. دالة الإرسال (تجمع بين إجبار التاجر على الاختيار + دقة استخراج ID المورد الحقيقي)
-  const handleSendPO = async () => {
-    // 🚨 تلبية لطلبك: إجبار التاجر على اختيار المورد (يدعم تعدد الموردين مستقبلاً)
-    if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur." : "الرجاء اختيار المورد أولاً.");
-    if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
-    
-    setIsProcessing(true);
-    try {
-      const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-
-      // 🌟 السحر هنا: نجلب المخزون المركزي الحقيقي متجاهلين الـ ID المحلي الضعيف
-      const itemNames = cart.map(item => item.name);
-      const { data: realStock, error: stockErr } = await supabase
-        .from('products')
-        .select('name, stock_quantity, supplier_id')
-        .in('name', itemNames)
-        .neq('supplier_id', merchantId); // نجلب السلع التي تعود للموردين الكبار
-
-      if (stockErr) throw stockErr;
-      if (!realStock || realStock.length === 0) throw new Error("المنتجات غير موجودة في أي مخزن مركزي!");
-
-      // نستخرج الـ ID العالمي الحقيقي للمورد صاحب هذه البضاعة!
-      const realWholesalerId = realStock[0].supplier_id;
-
-      let errors = [];
-      cart.forEach(cartItem => {
-        const cleanName = cartItem.name.replace(/\s+/g, '').toLowerCase();
-        const p = realStock.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-
-        if (!p) {
-           errors.push(`❌ ${cartItem.name} (غير مسجل في المخزن المركزي)`);
-        } else if (p.stock_quantity < cartItem.quantity) {
-           errors.push(`⚠️ ${cartItem.name} (المتوفر: ${p.stock_quantity})`);
-        }
-      });
-
-      if (errors.length > 0) {
-          const proceed = window.confirm(`تنبيه:\n${errors.join('\n')}\n\nهل تريد إرسال الطلب ليقوم المورد بتدبيره؟`);
-          if (!proceed) { setIsProcessing(false); return; }
-      }
-
-      // إرسال الطلب باستخدام الـ ID الحقيقي (ليصل لحساب الـ Boss مباشرة)
-      await supabase.from('supply_requests').insert([{
-        merchant_id: merchantId,
-        supplier_id: realWholesalerId, // 🎯 الهدف الدقيق!
-        items: cart,
-        total_amount: total,
-        status: 'pending'
-      }]);
-
-      setCart([]);
-      alert("✅ تم إرسال الطلب بنجاح للمورد المعني!");
-      fetchB2BRequests();
-    } catch (err) {
-      alert("Erreur: " + err.message);
     } finally {
       setIsProcessing(false);
     }
