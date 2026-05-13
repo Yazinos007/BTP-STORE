@@ -250,7 +250,7 @@ export default function Purchases() {
     }
   };
 
-// 🌟 دالة إرسال طلب التزويد (النسخة الخارقة - المضادة لأخطاء الحروف والمسافات)
+// 🌟 دالة إرسال طلب التزويد (مع ميزة تخطي أخطاء المسافات + خيار الطلب المتأخر)
   const handleSendPO = async () => {
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
 
@@ -258,50 +258,58 @@ export default function Purchases() {
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // 1. 🌟 إيجاد المورد الكبير (الـ Boss) في النظام
-      const { data: boss, error: bossErr } = await supabase
+      // 1. تحديد المورد الكبير (الـ Boss)
+      const { data: boss } = await supabase
         .from('suppliers')
         .select('id, store_name')
         .eq('role', 'wholesaler')
         .limit(1)
         .single();
 
-      if (bossErr || !boss) {
-        throw new Error(language === 'fr' ? "Grossiste introuvable dans le système." : "لم أتمكن من العثور على حساب المورد الكبير (wholesaler) في النظام.");
-      }
+      if (!boss) throw new Error("لم أتمكن من العثور على المورد الكبير.");
 
-      // 2. 🌟 جلب **كل** منتجات المورد الكبير لتفادي أخطاء الحروف والمسافات الصارمة
-      const { data: bossProducts, error: stockError } = await supabase
+      // 2. جلب مخزون المورد الكبير بالكامل
+      const { data: bossProducts } = await supabase
         .from('products')
         .select('name, stock_quantity')
         .eq('supplier_id', boss.id);
 
-      if (stockError) throw stockError;
-
-      // 3. 🌟 الفحص الذكي (يتجاهل المسافات الزائدة وحالة الأحرف تماماً)
+      // 3. الفحص المرن جداً (يتجاهل كل المسافات وحالة الأحرف)
       let errors = [];
       cart.forEach(cartItem => {
+        // تنظيف الاسم من المسافات للمقارنة (مثال: "Ciment CPJ" تصبح "cimentcpj")
+        const cleanCartName = cartItem.name.replace(/\s+/g, '').toLowerCase();
+        
         const productInStock = bossProducts?.find(
-          p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase()
+          p => p.name.replace(/\s+/g, '').toLowerCase() === cleanCartName
         );
 
         if (!productInStock) {
-          errors.push(`❌ ${cartItem.name}: ${language === 'fr' ? "Non vendu par le grossiste" : "غير موجود إطلاقاً في مخزن المورد (" + boss.store_name + ")"}`);
+          errors.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Introuvable' : 'غير متوفر عند المورد'})`);
         } else if (productInStock.stock_quantity < cartItem.quantity) {
-          errors.push(`⚠️ ${cartItem.name}: ${language === 'fr' ? "Stock insuffisant (Dispo:" : "المخزن لا يكفي (المتوفر:"} ${productInStock.stock_quantity})`);
+          errors.push(`⚠️ ${cartItem.name} (${language === 'fr' ? 'Dispo:' : 'المتوفر فقط:'} ${productInStock.stock_quantity})`);
         }
       });
 
+      // 🚨 الحل السحري لكسر الدوامة: نافذة التخيير (Backorder)
       if (errors.length > 0) {
-        alert((language === 'fr' ? "🚫 Commande refusée :\n\n" : "🚫 تم رفض الطلب للأسباب التالية:\n\n") + errors.join('\n'));
-        setIsProcessing(false);
-        return;
+        const confirmMsg = language === 'fr' 
+          ? `Attention, le stock de ${boss.store_name} est insuffisant pour :\n\n${errors.join('\n')}\n\nVoulez-vous envoyer la commande quand même pour qu'il la prépare ?`
+          : `تنبيه! مخزون "${boss.store_name}" غير كافٍ:\n\n${errors.join('\n')}\n\nهل تريد إرسال الطلب على أي حال ليقوم المورد بتدبير السلع؟`;
+          
+        const proceed = window.confirm(confirmMsg);
+        
+        // إذا ضغط Cancel (إلغاء)، تتوقف العملية كما طلبت في P1
+        if (!proceed) {
+          setIsProcessing(false);
+          return; 
+        }
       }
 
-      // 4. 🌟 إرسال الطلب للـ Boss بأمان تام (الرابط الدائم)
+      // 4. إرسال الطلب للـ Boss (إذا كان كل شيء متوفراً أو إذا وافق التاجر على التجاوز)
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: boss.id, // تم الربط بنجاح!
+        supplier_id: boss.id,
         items: cart,
         total_amount: total,
         status: 'pending'
@@ -310,7 +318,7 @@ export default function Purchases() {
       if (poError) throw poError;
 
       setCart([]);
-      alert(language === 'fr' ? `✅ Commande envoyée à ${boss.store_name} !` : `✅ تم إرسال الطلب لـ ${boss.store_name} بنجاح!`);
+      alert(language === 'fr' ? "✅ Commande envoyée !" : "✅ تم إرسال الطلب بنجاح!");
       fetchB2BRequests();
 
     } catch (err) {
