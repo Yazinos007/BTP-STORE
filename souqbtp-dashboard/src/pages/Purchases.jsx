@@ -266,65 +266,90 @@ export default function Purchases() {
     }
   };
 
-// 🌟 دالة الإرسال (نسخة النينجا: تتجاوز جدول الموردين وتستخرج الـ ID من السلعة)
+// 🌟 دالة الإرسال (النسخة المدرعة 🛡️ - ضد أخطاء قاعدة البيانات والـ RLS)
   const handleSendPO = async () => {
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+      let bossId = null;
+      let bossName = "Grossiste";
 
-      // 1. جلب المنتجات من المخزن المركزي مباشرة (مسموح بها لأن RLS معطل في products)
-      const itemNames = cart.map(item => item.name);
-      const { data: bossProducts, error: prodErr } = await supabase
-        .from('products')
-        .select('id, name, stock_quantity, supplier_id')
-        .in('name', itemNames)
-        .neq('supplier_id', merchantId); // نجلب السلع التي "لا يملكها" التاجر
+      // 1. الخطة (أ): البحث عن المورد (بدون استخدام single لتجنب خطأ التعدد)
+      const { data: bosses, error: bossErr } = await supabase
+        .from('suppliers')
+        .select('id, store_name')
+        .eq('role', 'wholesaler');
 
-      if (prodErr) throw prodErr;
-      if (!bossProducts || bossProducts.length === 0) {
-          throw new Error(language === 'fr' ? "Produits introuvables dans le stock central." : "لم يتم العثور على المنتجات في المخزن المركزي.");
+      if (bosses && bosses.length > 0) {
+        bossId = bosses[0].id;
+        bossName = bosses[0].store_name;
+      } else {
+        // 2. الخطة (ب): إذا فشل البحث، نستخرج ID المورد من أي منتج في السوق!
+        const { data: bossProds } = await supabase
+          .from('products')
+          .select('supplier_id')
+          .neq('supplier_id', merchantId)
+          .limit(1);
+          
+        if (bossProds && bossProds.length > 0) {
+          bossId = bossProds[0].supplier_id;
+        } else {
+          throw new Error("CRITIQUE: النظام مغلق تماماً! لم نتمكن من إيجاد المورد لا في الحسابات ولا في المنتجات.");
+        }
       }
 
-      // 2. 🌟 السحر: استخراج ID المورد الكبير من أول منتج في السلة مباشرة!
-      const bossId = bossProducts[0].supplier_id;
+      // 3. جلب المخزون الحقيقي للـ Boss الذي وجدناه
+      const { data: stock, error: stockErr } = await supabase
+        .from('products')
+        .select('name, stock_quantity')
+        .eq('supplier_id', bossId);
 
-      // 3. الفحص الصارم (بمطابقة ذكية للأسماء لتفادي المسافات)
+      if (stockErr) throw new Error("خطأ في قراءة المخزون: " + stockErr.message);
+
+      // 4. الفحص المرن لتجنب أخطاء المسافات في الأسماء
       let errors = [];
       cart.forEach(cartItem => {
         const cleanName = cartItem.name.replace(/\s+/g, '').toLowerCase();
-        const productInStock = bossProducts.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
+        const productInStock = stock?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
 
         if (!productInStock) {
-          errors.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Non vendu' : 'غير متوفر عند المورد'})`);
+          errors.push(`❌ ${cartItem.name} (غير موجود عند ${bossName})`);
         } else if (productInStock.stock_quantity < cartItem.quantity) {
-          errors.push(`⚠️ ${cartItem.name} (${language === 'fr' ? 'Dispo:' : 'المتوفر فقط:'} ${productInStock.stock_quantity})`);
+          errors.push(`⚠️ ${cartItem.name} (المتوفر عند ${bossName}: ${productInStock.stock_quantity})`);
         }
       });
 
-      // 4. المنع البات في حالة النقص
+      // 5. 🚨 خيار إجبار النظام (Backorder) لكي لا تتعطل أبداً
       if (errors.length > 0) {
-        alert("🚫 لا يمكن إرسال الطلب، المخزون غير كافٍ:\n\n" + errors.join('\n'));
-        setIsProcessing(false);
-        return; 
+        const confirmMsg = language === 'fr' 
+          ? `Stock insuffisant chez ${bossName} :\n\n${errors.join('\n')}\n\nVoulez-vous forcer l'envoi quand même ?`
+          : `تنبيه! مخزون (${bossName}) غير كافٍ:\n\n${errors.join('\n')}\n\nهل تريد إرسال الطلب على أي حال؟`;
+          
+        if (!window.confirm(confirmMsg)) {
+          setIsProcessing(false);
+          return;
+        }
       }
 
-      // 5. الإرسال بنجاح
+      // 6. الإرسال النهائي المضمون
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: bossId, // 🌟 الربط المباشر والصحيح!
+        supplier_id: bossId,
         items: cart,
         total_amount: total,
         status: 'pending'
       }]);
 
-      if (poError) throw poError;
+      if (poError) throw new Error("خطأ في تسجيل الطلبية: " + poError.message);
 
       setCart([]);
-      alert(language === 'fr' ? "✅ Commande envoyée avec succès !" : "✅ تم إرسال الطلب بنجاح للمورد!");
+      alert(`✅ تم إرسال الطلب بنجاح إلى ${bossName} !`);
       fetchB2BRequests();
+
     } catch (err) {
-      alert("Erreur: " + err.message);
+      console.error(err);
+      alert("ERREUR SYSTEME:\n" + err.message);
     } finally {
       setIsProcessing(false);
     }
