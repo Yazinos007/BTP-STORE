@@ -250,36 +250,39 @@ export default function Purchases() {
     }
   };
 
-const handleSendPO = async () => {
+// 🌟 دالة إرسال طلب التزويد (النسخة الذكية لتخطي حواجز RLS)
+  const handleSendPO = async () => {
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
 
     setIsProcessing(true);
     try {
-      // 1. تحديد المورد الكبير (الرابط الأساسي)
-      const { data: boss } = await supabase
-        .from('suppliers')
-        .select('id')
-        .eq('role', 'wholesaler')
-        .single();
-
-      if (!boss) throw new Error(language === 'fr' ? "Grossiste introuvable" : "لم يتم العثور على المورد الكبير");
-
-      // 2. فحص المخزون الفعلي للمورد الكبير بالاسم
+      const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       const itemNames = cart.map(item => item.name);
-      const { data: stock } = await supabase
-        .from('products')
-        .select('name, stock_quantity')
-        .eq('supplier_id', boss.id)
-        .in('name', itemNames);
 
-      // 🚨 التحقق الصارم: إذا لم يجد المنتجات عند المورد أو الكمية ناقصة
+      // 1. 🌟 الرادار المباشر: نجلب السلع من المخزن المركزي مباشرة
+      const { data: centralStock, error: stockError } = await supabase
+        .from('products')
+        .select('name, stock_quantity, supplier_id')
+        .in('name', itemNames)
+        .neq('supplier_id', merchantId); // نجلب السلع التي "لا يملكها التاجر" (إذن هي للـ Boss)
+
+      if (stockError) throw stockError;
+
+      if (!centralStock || centralStock.length === 0) {
+        throw new Error(language === 'fr' ? "Erreur de lecture du stock. RLS toujours actif sur 'products'?" : "خطأ في قراءة المخزون، هل عطلت RLS لجدول المنتجات؟");
+      }
+
+      // 2. 🌟 السحر هنا: نستخرج ID المورد من السلعة نفسها دون الحاجة لجدول الموردين!
+      const realBossId = centralStock[0].supplier_id;
+
+      // 3. التحقق الصارم من الكميات
       let errors = [];
       cart.forEach(cartItem => {
-        const productInStock = stock?.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
+        const productInStock = centralStock.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
         if (!productInStock) {
-          errors.push(`❌ ${cartItem.name}: غير متوفر عند المورد`);
+          errors.push(`❌ ${cartItem.name}: ${language === 'fr' ? 'Introuvable' : 'غير متوفر عند المورد'}`);
         } else if (productInStock.stock_quantity < cartItem.quantity) {
-          errors.push(`⚠️ ${cartItem.name}: المخزن لا يكفي (المتوفر: ${productInStock.stock_quantity})`);
+          errors.push(`⚠️ ${cartItem.name}: ${language === 'fr' ? 'Stock insuffisant (Dispo:' : 'المخزن لا يكفي (المتوفر:'} ${productInStock.stock_quantity})`);
         }
       });
 
@@ -289,21 +292,23 @@ const handleSendPO = async () => {
         return;
       }
 
-      // 3. إرسال الطلب مع ربطه بالـ Boss
-      const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
+      // 4. إرسال الطلب بسلاسة
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: boss.id, // الربط الإجباري هنا
+        supplier_id: realBossId, // استخدمنا الـ ID الذي استخرجناه من السلعة!
         items: cart,
         total_amount: total,
         status: 'pending'
       }]);
 
       if (poError) throw poError;
+
       setCart([]);
-      alert(language === 'fr' ? "Commande envoyée !" : "تم إرسال الطلب!");
+      alert(language === 'fr' ? "✅ Commande envoyée au grossiste !" : "✅ تم إرسال الطلب للمورد بنجاح!");
       fetchB2BRequests();
+
     } catch (err) {
+      console.error(err);
       alert(err.message);
     } finally {
       setIsProcessing(false);
