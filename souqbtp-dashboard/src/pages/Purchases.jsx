@@ -313,6 +313,24 @@ export default function Purchases() {
         if (docError) throw new Error("تم الاستلام، لكن الفاتورة رُفضت: " + docError.message);
       }
 
+      // 🌟 أ- توليد فاتورة الشراء في حساب التاجر
+      await supabase.from('documents').insert([{
+        owner_id: req.merchant_id, 
+        type: 'Achat', // أو 'Bon de commande' حسب التسمية عندك
+        ref_number: `ACH-B2B-${Date.now().toString().slice(-4)}`,
+        total_amount: req.total_amount,
+        items: req.items
+      }]);
+
+      // 🌟 ب- تسجيل المصروف أوتوماتيكياً في قسم المصاريف للتاجر
+      await supabase.from('expenses').insert([{
+        supplier_id: req.merchant_id, // تُربط بحساب التاجر
+        title: `Achat B2B - Grossiste`,
+        amount: req.total_amount,
+        category: 'achats', // قسم المشتريات
+        date: new Date().toISOString()
+      }]);
+
       // 4. 🌟 السحر البصري والاحتفال (Confetti)
       import('canvas-confetti').then((confetti) => {
         confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 } });

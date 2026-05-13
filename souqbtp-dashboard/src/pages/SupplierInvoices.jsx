@@ -25,10 +25,8 @@ export default function SupplierInvoices() {
     try {
       const { data, error } = await supabase
         .from('documents')
-        .select('*')
-        .eq('owner_id', supplier.id)
-        .in('type', ['Facture', 'Bon de Livraison'])
-        .order('created_at', { ascending: false });
+        .select(`*, merchant:suppliers!client_id(store_name)`)
+        .eq('owner_id', supplier.id);
 
       if (error) throw error;
       setInvoices(data || []);
@@ -125,6 +123,18 @@ export default function SupplierInvoices() {
     const matchesType = filterType === 'All' || inv.type === filterType;
     return matchesSearch && matchesType;
   });
+
+  const handleDeleteInvoice = async (id) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette facture ?")) return;
+    try {
+      await supabase.from('documents').delete().eq('id', id);
+      // قم بتحديث القائمة بعد الحذف
+      setDocuments(documents.filter(doc => doc.id !== id));
+      alert("✅تم حذف الفاتورة");
+    } catch (err) {
+      alert("Erreur de suppression");
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in text-white" dir={language === 'ar' ? 'rtl' : 'ltr'}>

@@ -233,6 +233,31 @@ export default function SupplierStock() {
           </div>
         </div>
       )}
+              {/* 🌟 قسم تنبيهات مخزون المورد */}
+              <div className="bg-white dark:bg-slate-800 border border-red-100 dark:border-red-900/30 p-6 rounded-3xl shadow-lg relative overflow-hidden mt-6">
+              <div className="absolute right-0 top-0 w-24 h-24 bg-red-500/10 rounded-bl-full pointer-events-none"></div>
+              <h3 className="text-lg font-black text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+              <span className="text-red-500">⚠️</span> Alertes de Stock (Grossiste)
+              </h3>
+  
+              <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+              {/* افترض أن bossProducts هي قائمة المنتجات التي جلبتها من قاعدة البيانات */}
+              {bossProducts?.filter(p => p.stock_quantity < 1000).length === 0 ? (
+              <p className="text-sm text-slate-500 font-medium">✅ Tout le stock est à un niveau optimal.</p>
+              ) : (
+              bossProducts?.filter(p => p.stock_quantity < 1000).map((product, idx) => (
+              <div key={idx} className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/20">
+              <span className="font-bold text-slate-700 dark:text-slate-200">{product.name}</span>
+              <div className="flex items-center gap-3">
+              <span className="text-xs font-black bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 px-2 py-1 rounded-md">
+              {product.stock_quantity === 0 ? 'RUPTURE' : `Reste: ${product.stock_quantity}`}
+              </span>
+            </div>
+          </div>
+          )) 
+        )}
+       </div>
+      </div>
     </div>
   );
 }
