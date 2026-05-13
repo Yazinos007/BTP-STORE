@@ -251,15 +251,15 @@ export default function Purchases() {
   }
 };
 
-  // 🌟 دالة إرسال طلب التزويد (محدثة لتجاوز حظر قاعدة البيانات RLS)
+// 🌟 دالة إرسال طلب التزويد (مربوطة حصرياً بالمورد الكبير Boss)
   const handleSendPO = async () => {
     if (cart.length === 0) {
-      return alert(language === 'fr' ? "Veuillez ajouter des articles au panier." : "الرجاء إضافة منتجات للسلة أولاً.");
+      return alert(language === 'fr' ? "Veuillez ajouter des articles." : "الرجاء إضافة منتجات للسلة.");
     }
 
     setIsProcessing(true);
     try {
-      // 1. البحث عن الـ ID الحقيقي للمورد الكبير (الـ Boss) في النظام
+      // 1. 🌟 تحديد الـ Boss الحقيقي في النظام (الرابط السري)
       const { data: bossData, error: bossError } = await supabase
         .from('suppliers')
         .select('id')
@@ -267,45 +267,61 @@ export default function Purchases() {
         .limit(1)
         .single();
 
-      if (bossError || !bossData) {
-         throw new Error("لم يتم العثور على حساب المورد الكبير في النظام.");
+      if (bossError || !bossData) throw new Error("لم يتم العثور على حساب المورد الكبير في النظام.");
+      const realBossId = bossData.id;
+
+      // 2. 🌟 فحص المخزن المركزي للـ Boss حصرياً
+      const itemNames = cart.map(item => item.name);
+      const { data: centralStock, error: stockError } = await supabase
+        .from('products')
+        .select('name, stock_quantity')
+        .eq('supplier_id', realBossId) // نبحث في مخزن الـ Boss فقط
+        .in('name', itemNames);
+
+      if (stockError) throw stockError;
+
+      // 🚨 جدار الحماية (RLS) في Supabase:
+      // إذا رجع المخزون فارغاً (0) رغم تأكدك من وجود سلع عند المورد، فهذا يعني أن Supabase تمنع التاجر من قراءة بيانات المورد!
+      if (!centralStock || centralStock.length === 0) {
+        alert("⚠️ تنبيه: نظام الحماية (RLS) في قاعدة البيانات يمنع التاجر من فحص مخزون المورد. يرجى إيقاف RLS عن جدول 'products' من لوحة Supabase.");
+        setIsProcessing(false);
+        return;
       }
 
-      const bossId = bossData.id;
-
-      // 2. التقاط الموقع الجغرافي (GPS)
-      let locationData = null;
-      try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000 });
-        });
-        locationData = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: position.coords.accuracy
-        };
-      } catch (geoError) {
-        console.warn("GPS Error:", geoError);
-        // نتجاوز خطأ الـ GPS لتمرير الطلبية
+      let outOfStockItems = [];
+      for (const cartItem of cart) {
+        const bossProduct = centralStock.find(p => p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase());
+        
+        if (!bossProduct) {
+          outOfStockItems.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Introuvable chez le Boss' : 'غير موجود في مخزن المورد'})`);
+        } else if (bossProduct.stock_quantity < cartItem.quantity) {
+          outOfStockItems.push(`⚠️ ${cartItem.name} (المطلوب: ${cartItem.quantity}, المتوفر: ${bossProduct.stock_quantity})`);
+        }
       }
 
-      // 3. إرسال الطلب مباشرة لقاعدة البيانات
+      // إذا كان هناك نقص، نوقف الطلب
+      if (outOfStockItems.length > 0) {
+        alert("🚫 لا يمكن إرسال الطلب! مخزون المورد لا يكفي:\n\n" + outOfStockItems.join('\n'));
+        setIsProcessing(false);
+        return; 
+      }
+
+      // 3. إرسال الطلب (بدون موقع جغرافي لتسريع وتفادي أخطاء المتصفح)
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: bossId, // 🌟 تم ربط الطلب بالـ Boss الحقيقي
+        supplier_id: realBossId, // 🌟 الطلب يذهب للـ Boss مباشرة
         items: cart,
         total_amount: total,
-        location_data: locationData,
         status: 'pending'
       }]);
 
       if (poError) throw poError;
 
-      // 4. رسالة النجاح وتحديث الشاشة
+      // 4. نجاح العملية
       setCart([]);
-      alert(language === 'fr' ? "✅ Bon de commande envoyé au grossiste avec succès !" : "✅ تم إرسال طلب التزويد للمورد بنجاح!");
+      alert(language === 'fr' ? "✅ Commande B2B envoyée au Grossiste !" : "✅ تم إرسال الطلب للمورد الكبير بنجاح!");
       fetchB2BRequests(); 
 
     } catch (err) {
