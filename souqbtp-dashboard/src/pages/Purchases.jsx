@@ -266,74 +266,48 @@ export default function Purchases() {
     }
   };
 
-// 🌟 دالة الإرسال (النسخة المدرعة 🛡️ - ضد أخطاء قاعدة البيانات والـ RLS)
-  const handleSendPO = async () => {
-    if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
+const handleSendPO = async () => {
+    if (cart.length === 0) return;
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-      let bossId = null;
-      let bossName = "Grossiste";
 
-      // 1. الخطة (أ): البحث عن المورد (بدون استخدام single لتجنب خطأ التعدد)
-      const { data: bosses, error: bossErr } = await supabase
-        .from('suppliers')
-        .select('id, store_name')
-        .eq('role', 'wholesaler');
-
-      if (bosses && bosses.length > 0) {
-        bossId = bosses[0].id;
-        bossName = bosses[0].store_name;
-      } else {
-        // 2. الخطة (ب): إذا فشل البحث، نستخرج ID المورد من أي منتج في السوق!
-        const { data: bossProds } = await supabase
-          .from('products')
-          .select('supplier_id')
-          .neq('supplier_id', merchantId)
-          .limit(1);
-          
-        if (bossProds && bossProds.length > 0) {
-          bossId = bossProds[0].supplier_id;
-        } else {
-          throw new Error("CRITIQUE: النظام مغلق تماماً! لم نتمكن من إيجاد المورد لا في الحسابات ولا في المنتجات.");
-        }
-      }
-
-      // 3. جلب المخزون الحقيقي للـ Boss الذي وجدناه
+      // 1. جلب كل المنتجات التي لا يملكها التاجر (أي منتجات المخزن المركزي)
       const { data: stock, error: stockErr } = await supabase
         .from('products')
-        .select('name, stock_quantity')
-        .eq('supplier_id', bossId);
+        .select('name, stock_quantity, supplier_id')
+        .neq('supplier_id', merchantId);
 
-      if (stockErr) throw new Error("خطأ في قراءة المخزون: " + stockErr.message);
+      if (stockErr) throw stockErr;
 
-      // 4. الفحص المرن لتجنب أخطاء المسافات في الأسماء
+      let bossId = null;
       let errors = [];
+
+      // 2. فحص السلة بذكاء (تجاهل المسافات والأحرف الكبيرة)
       cart.forEach(cartItem => {
         const cleanName = cartItem.name.replace(/\s+/g, '').toLowerCase();
-        const productInStock = stock?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
+        const p = stock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
 
-        if (!productInStock) {
-          errors.push(`❌ ${cartItem.name} (غير موجود عند ${bossName})`);
-        } else if (productInStock.stock_quantity < cartItem.quantity) {
-          errors.push(`⚠️ ${cartItem.name} (المتوفر عند ${bossName}: ${productInStock.stock_quantity})`);
+        if (!p) {
+           errors.push(`❌ ${cartItem.name} (غير مسجل في النظام المركزي)`);
+        } else {
+           bossId = p.supplier_id; // 🌟 التقطنا ID المورد الحقيقي من سلعته مباشرة!
+           if (p.stock_quantity < cartItem.quantity) {
+               errors.push(`⚠️ ${cartItem.name} (المتوفر: ${p.stock_quantity})`);
+           }
         }
       });
 
-      // 5. 🚨 خيار إجبار النظام (Backorder) لكي لا تتعطل أبداً
+      // 3. التخيير في حال وجود نقص (لكي تمر الطلبية رغماً عن أي مشكلة)
       if (errors.length > 0) {
-        const confirmMsg = language === 'fr' 
-          ? `Stock insuffisant chez ${bossName} :\n\n${errors.join('\n')}\n\nVoulez-vous forcer l'envoi quand même ?`
-          : `تنبيه! مخزون (${bossName}) غير كافٍ:\n\n${errors.join('\n')}\n\nهل تريد إرسال الطلب على أي حال؟`;
-          
-        if (!window.confirm(confirmMsg)) {
-          setIsProcessing(false);
-          return;
-        }
+          const proceed = window.confirm(`تنبيه:\n${errors.join('\n')}\n\nهل تريد إرسال الطلب ليقوم المورد بتدبيره؟`);
+          if (!proceed) { setIsProcessing(false); return; }
       }
 
-      // 6. الإرسال النهائي المضمون
-      const { error: poError } = await supabase.from('supply_requests').insert([{
+      if (!bossId) throw new Error("خطأ: لم نتمكن من تحديد المورد من المنتجات.");
+
+      // 4. إرسال الطلبية بأمان تام
+      await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
         supplier_id: bossId,
         items: cart,
@@ -341,15 +315,11 @@ export default function Purchases() {
         status: 'pending'
       }]);
 
-      if (poError) throw new Error("خطأ في تسجيل الطلبية: " + poError.message);
-
       setCart([]);
-      alert(`✅ تم إرسال الطلب بنجاح إلى ${bossName} !`);
+      alert("✅ تم إرسال الطلب بنجاح للمورد!");
       fetchB2BRequests();
-
     } catch (err) {
-      console.error(err);
-      alert("ERREUR SYSTEME:\n" + err.message);
+      alert("Erreur: " + err.message);
     } finally {
       setIsProcessing(false);
     }
