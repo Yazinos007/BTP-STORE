@@ -215,14 +215,14 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 1. دالة الإرسال (تستخرج المورد الحقيقي من البضاعة وتتجاهل القائمة المنسدلة)
+  // 🌟 دالة الإرسال (المدرعة: تتجاهل القائمة المنسدلة وتستخرج الـ ID من البضاعة مباشرة)
   const handleSendPO = async () => {
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // نجلب كل بضاعة المخزن المركزي (التي لا يملكها التاجر)
+      // 1. نجلب كل بضاعة المخزن المركزي (متجاهلين القائمة المنسدلة تماماً)
       const { data: centralStock, error: stockErr } = await supabase
         .from('products')
         .select('id, name, stock_quantity, supplier_id')
@@ -233,6 +233,7 @@ export default function Purchases() {
       let realBossId = null;
       let errors = [];
 
+      // 2. فحص البضاعة واستخراج الـ ID الحقيقي للمورد المركزي (الـ Boss)
       cart.forEach(item => {
         const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
         const p = centralStock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
@@ -240,7 +241,7 @@ export default function Purchases() {
         if (!p) {
            errors.push(`❌ ${item.name}`);
         } else {
-           realBossId = p.supplier_id; // 🎯 التقطنا الـ ID الحقيقي من البضاعة!
+           realBossId = p.supplier_id; // 🎯 التقطنا الـ ID الحقيقي بنجاح!
            if (Number(p.stock_quantity) < Number(item.quantity)) {
               errors.push(`⚠️ ${item.name} (${language === 'fr' ? 'Dispo:' : 'المتوفر:'} ${p.stock_quantity})`);
            }
@@ -254,10 +255,14 @@ export default function Purchases() {
         if (!window.confirm(msg)) { setIsProcessing(false); return; }
       }
 
-      // إرسال الطلب للمورد الحقيقي (مالك البضاعة)
+      if (!realBossId) {
+         throw new Error("Impossible de trouver le propriétaire de ces produits.");
+      }
+
+      // 3. إرسال الطلب للمورد الحقيقي مباشرة
       const { error: poError } = await supabase.from('supply_requests').insert({
         merchant_id: merchantId,
-        supplier_id: realBossId || selectedSupplierId, 
+        supplier_id: realBossId, // استخدام الـ ID الحقيقي المضمون
         items: cart,
         total_amount: total,
         status: 'pending'
@@ -269,7 +274,7 @@ export default function Purchases() {
       alert(language === 'fr' ? `✅ Commande envoyée avec succès !` : `✅ تم إرسال الطلب بنجاح!`);
       if (typeof fetchB2BRequests === 'function') fetchB2BRequests();
     } catch (err) {
-      alert("Erreur: " + err.message);
+      alert("Erreur Critique: " + err.message);
     } finally {
       setIsProcessing(false);
     }
