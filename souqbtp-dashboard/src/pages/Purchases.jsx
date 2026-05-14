@@ -252,12 +252,14 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 2. دالة الاستلام (تحديث الأرقام برمجياً لقتل الصفحة البيضاء)
+  // 🌟 دالة الاستلام (النسخة المالية: تسجيل الفواتير والمصاريف بشكل آمن ومكشوف)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
+      // 1. إنهاء الطلب وتحديث حالة العملية
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
+      // 2. تحديث المخازن (نفس الكود الناجح والمستقر)
       const { data: allProds } = await supabase.from('products').select('id, name, stock_quantity, supplier_id');
       
       for (const item of req.items) {
@@ -270,32 +272,62 @@ export default function Purchases() {
         if (bProd) await supabase.from('products').update({ stock_quantity: Math.max(0, Number(bProd.stock_quantity || 0) - Number(item.quantity)) }).eq('id', bProd.id);
       }
 
+      // 3. 🚨 القسم المالي: تسجيل الفواتير والمصاريف مع التقاط الأخطاء
       const refNumber = Date.now().toString().slice(-4);
-      
+      let financialErrors = [];
+
+      // أ- فاتورة البيع للمورد (الـ Boss)
       if (req.supplier_id) {
-          await supabase.from('documents').insert({ owner_id: req.supplier_id, client_id: req.merchant_id, type: 'Facture', ref_number: `FAC-B2B-${refNumber}`, total_amount: req.total_amount, items: req.items });
+          const { error: err1 } = await supabase.from('documents').insert({ 
+             owner_id: req.supplier_id, 
+             client_id: null, // وضعناها null لتفادي خطأ الربط (Foreign Key)
+             type: 'Facture', 
+             ref_number: `FAC-B2B-${refNumber}`, 
+             total_amount: req.total_amount, 
+             items: req.items 
+          });
+          if (err1) financialErrors.push("Facture Boss: " + err1.message);
       }
 
-      await supabase.from('documents').insert({ owner_id: req.merchant_id, type: 'Facture Achat', ref_number: `ACH-B2B-${refNumber}`, total_amount: req.total_amount, items: req.items });
-      await supabase.from('expenses').insert({ supplier_id: req.merchant_id, title: `Achat Stock B2B`, amount: req.total_amount, category: 'achats', date: new Date().toISOString() });
+      // ب- فاتورة الشراء للتاجر
+      const { error: err2 } = await supabase.from('documents').insert({ 
+         owner_id: req.merchant_id, 
+         type: 'Facture Achat', 
+         ref_number: `ACH-B2B-${refNumber}`, 
+         total_amount: req.total_amount, 
+         items: req.items 
+      });
+      if (err2) financialErrors.push("Facture Achat: " + err2.message);
 
-      alert(language === 'fr' ? "✅ Réception validée et factures générées !" : "✅ تم الاستلام بنجاح وتوليد الفواتير!");
+      // ج- المصروف المحاسبي
+      const { error: err3 } = await supabase.from('expenses').insert({ 
+         supplier_id: req.merchant_id, 
+         title: `Achat Stock B2B`, 
+         amount: req.total_amount, 
+         category: 'achats', 
+         date: new Date().toISOString() 
+      });
+      if (err3) financialErrors.push("Dépenses: " + err3.message);
 
-      // 🎯 التحديث الناعم: تحديث الطلبات والمخزون بدون Reload
+      // 4. تقييم العملية (هل تم الحفظ المالي أم لا؟)
+      if (financialErrors.length > 0) {
+          alert(`⚠️ تم الاستلام وتحديث المخزون بنجاح، لكن قاعدة البيانات رفضت تسجيل الفواتير:\n\n${financialErrors.join('\n')}`);
+      } else {
+          alert(language === 'fr' ? "✅ Réception validée et factures générées !" : "✅ تم الاستلام بنجاح وتوليد الفواتير والمصاريف!");
+      }
+
+      // 5. التحديث الناعم والمستقر (بدون صفحة بيضاء)
       if (typeof fetchB2BRequests === 'function') fetchB2BRequests();
       
-      // جلب المخزون الجديد برمجياً لكي تتحدث الأرقام في الشاشة
       try {
          const useProductStore = await import('../store/useProductStore');
          if (useProductStore && useProductStore.default) {
              useProductStore.default.getState().fetchProducts();
          }
-      } catch(e) {
-         console.log("تحديث المخزون الناعم لم يعمل، سيتحدث عند فتح صفحة المنتجات");
-      }
+      } catch(e) { console.log("Silent refresh skipped"); }
 
     } catch (err) {
-      alert("Erreur:\n" + err.message);
+      alert("Erreur Critique:\n" + err.message);
     } finally {
       setIsProcessing(false);
     }
