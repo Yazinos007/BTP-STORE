@@ -215,60 +215,58 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 1. دالة الإرسال (تتجاوز خطأ المسافات + تدعم الفرنسية)
+  // 🌟 1. دالة الإرسال (تستخرج المورد الحقيقي من البضاعة وتتجاهل القائمة المنسدلة)
   const handleSendPO = async () => {
-    if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur" : "الرجاء اختيار المورد من القائمة أولاً");
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
-
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      const { data: chosenSup } = await supabase.from('suppliers').select('id, store_name').eq('id', selectedSupplierId).single();
-      if (!chosenSup) throw new Error("Fournisseur introuvable.");
-
-      // السّر هنا: نجلب كل سلع المورد بدون الفلترة المعقدة لكي نتفادى خطأ المسافات 100%
+      // نجلب كل بضاعة المخزن المركزي (التي لا يملكها التاجر)
       const { data: centralStock, error: stockErr } = await supabase
         .from('products')
-        .select('name, stock_quantity, supplier_id')
-        .eq('supplier_id', chosenSup.id);
+        .select('id, name, stock_quantity, supplier_id')
+        .neq('supplier_id', merchantId);
 
       if (stockErr) throw stockErr;
 
+      let realBossId = null;
       let errors = [];
+
       cart.forEach(item => {
-        // فحص ذكي يتجاهل أي مسافات زائدة
         const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
         const p = centralStock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
 
         if (!p) {
            errors.push(`❌ ${item.name}`);
-        } else if (Number(p.stock_quantity) < Number(item.quantity)) {
-           // التأكد من تحويل الكميات إلى أرقام لتجنب الأخطاء الرياضية
-           errors.push(`⚠️ ${item.name} (${language === 'fr' ? 'Dispo:' : 'المتوفر:'} ${p.stock_quantity})`);
+        } else {
+           realBossId = p.supplier_id; // 🎯 التقطنا الـ ID الحقيقي من البضاعة!
+           if (Number(p.stock_quantity) < Number(item.quantity)) {
+              errors.push(`⚠️ ${item.name} (${language === 'fr' ? 'Dispo:' : 'المتوفر:'} ${p.stock_quantity})`);
+           }
         }
       });
 
       if (errors.length > 0) {
         const msg = language === 'fr' 
-          ? `Attention (${chosenSup.store_name}):\n\n${errors.join('\n')}\n\nForcer l'envoi ?`
-          : `تنبيه (${chosenSup.store_name}):\n\n${errors.join('\n')}\n\nهل تريد الإرسال على أي حال؟`;
+          ? `Attention:\n\n${errors.join('\n')}\n\nForcer l'envoi ?`
+          : `تنبيه:\n\n${errors.join('\n')}\n\nهل تريد الإرسال على أي حال؟`;
         if (!window.confirm(msg)) { setIsProcessing(false); return; }
       }
 
+      // إرسال الطلب للمورد الحقيقي (مالك البضاعة)
       const { error: poError } = await supabase.from('supply_requests').insert({
         merchant_id: merchantId,
-        supplier_id: chosenSup.id,
+        supplier_id: realBossId || selectedSupplierId, 
         items: cart,
         total_amount: total,
         status: 'pending'
       });
+      
       if (poError) throw poError;
 
       setCart([]);
-      // 🎯 رسالة النجاح أصبحت تدعم اللغتين (حل الصورة 2)
-      alert(language === 'fr' ? `✅ Commande envoyée avec succès à ${chosenSup.store_name} !` : `✅ تم إرسال الطلب بنجاح إلى ${chosenSup.store_name}!`);
-      
+      alert(language === 'fr' ? `✅ Commande envoyée avec succès !` : `✅ تم إرسال الطلب بنجاح!`);
       if (typeof fetchB2BRequests === 'function') fetchB2BRequests();
     } catch (err) {
       alert("Erreur: " + err.message);
@@ -277,13 +275,13 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 2. دالة الاستلام (التحديث الناعم لأرقام المخزون)
+  // 🌟 2. دالة الاستلام (تفضح أخطاء الفواتير + تحديث آمن بعد ثانيتين)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-      // تحديث المخازن
+      // 1. تزامن المخزون
       for (const item of req.items) {
         const { data: mProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
         if (mProd) await supabase.from('products').update({ stock_quantity: Number(mProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', item.id);
@@ -298,36 +296,35 @@ export default function Purchases() {
 
       const refNumber = Date.now().toString().slice(-4);
 
+      // 2. 🚨 تسجيل الفواتير مع فضح الأخطاء إذا منعتها قاعدة البيانات
       if (req.supplier_id) {
-          await supabase.from('documents').insert({
+          const { error: err1 } = await supabase.from('documents').insert({
             owner_id: req.supplier_id, client_id: req.merchant_id, type: 'Facture', ref_number: `FAC-B2B-${refNumber}`, total_amount: req.total_amount, items: req.items
           });
+          if (err1) alert("⚠️ منع Supabase فاتورة المورد: " + err1.message); // سيفضح المشكلة!
       }
 
-      await supabase.from('documents').insert({
+      const { error: err2 } = await supabase.from('documents').insert({
         owner_id: req.merchant_id, type: 'Facture Achat', ref_number: `ACH-B2B-${refNumber}`, total_amount: req.total_amount, items: req.items
       });
+      if (err2) alert("⚠️ منع Supabase فاتورة الشراء: " + err2.message); // سيفضح المشكلة!
 
-      await supabase.from('expenses').insert({
+      const { error: err3 } = await supabase.from('expenses').insert({
         supplier_id: req.merchant_id, title: `Achat Stock B2B`, amount: req.total_amount, category: 'achats', date: new Date().toISOString()
       });
+      if (err3) alert("⚠️ منع Supabase المصروف: " + err3.message);
 
-      // الاحتفال
+      // 3. الاحتفال والتحديث الآمن
       import('canvas-confetti').then((conf) => conf.default({ particleCount: 150, spread: 70, origin: { y: 0.6 } }));
-      alert(language === 'fr' ? "✅ Réception validée et stock mis à jour !" : "✅ تم الاستلام وتحديث المخزون بنجاح!");
+      alert(language === 'fr' ? "✅ Réception validée !" : "✅ تم الاستلام بنجاح!");
 
-      // 🚨 التحديث البرمجي الناعم
-      if (typeof fetchB2BRequests === 'function') fetchB2BRequests();
-      
-      // 🚨 السطر الأهم: إجبار واجهة المستخدم على عرض أرقام المخزون الجديدة فوراً (حل الصورة 3)
-      if (typeof fetchProducts === 'function') {
-         fetchProducts();
-      } else {
-         useProductStore.getState().fetchProducts();
-      }
+      // تحديث بعد ثانيتين لتجنب الصفحة البيضاء والسماح للمستخدم بقراءة التنبيهات ورؤية الاحتفال
+      setTimeout(() => {
+         window.location.reload();
+      }, 2000);
 
     } catch (err) {
-      alert("Erreur:\n" + err.message);
+      alert("Erreur Critique:\n" + err.message);
     } finally {
       setIsProcessing(false);
     }
