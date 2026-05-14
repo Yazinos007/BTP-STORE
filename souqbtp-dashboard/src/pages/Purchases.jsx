@@ -215,7 +215,7 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 1. دالة الإرسال (تطيع اختيارك 100% وبدون تعقيدات)
+  // 🌟 1. دالة الإرسال (ترجمة صحيحة وبدون صفحة بيضاء)
   const handleSendPO = async () => {
     if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur" : "الرجاء اختيار المورد من القائمة أولاً");
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
@@ -224,19 +224,15 @@ export default function Purchases() {
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // 1. جلب اسم المورد الذي اخترته أنت بدقة
-      const { data: chosenSup } = await supabase
-         .from('suppliers')
-         .select('store_name')
-         .eq('id', selectedSupplierId)
-         .single();
+      const { data: chosenSup } = await supabase.from('suppliers').select('store_name').eq('id', selectedSupplierId).single();
 
-      const supplierName = chosenSup ? chosenSup.store_name : "المورد";
+      // 🎯 حل مشكلة الصورة 1: الترجمة الصحيحة إذا لم نجد اسم المورد
+      const fallbackName = language === 'fr' ? "le fournisseur" : "المورد";
+      const supplierName = chosenSup?.store_name || fallbackName;
 
-      // 2. إرسال الطلبية للمورد الذي اخترته مباشرة (بدون فحص معقد يعرقل العملية)
       const { error: poError } = await supabase.from('supply_requests').insert({
         merchant_id: merchantId,
-        supplier_id: selectedSupplierId, // 🎯 المورد المختار مسجل الآن بشكل إجباري
+        supplier_id: selectedSupplierId,
         items: cart,
         total_amount: total,
         status: 'pending'
@@ -247,8 +243,8 @@ export default function Purchases() {
       setCart([]);
       alert(language === 'fr' ? `✅ Commande envoyée à ${supplierName}` : `✅ تم إرسال الطلب إلى ${supplierName}`);
       
-      // 3. التحديث الآمن الذي يقتل الشاشة البيضاء
-      setTimeout(() => { window.location.reload(); }, 1000);
+      // 🎯 التحديث الناعم: نجلب الطلبات الجديدة فوراً بدون Reload للمتصفح
+      if (typeof fetchB2BRequests === 'function') fetchB2BRequests();
     } catch (err) {
       alert("Erreur: " + err.message);
     } finally {
@@ -256,68 +252,48 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 2. دالة الاستلام (تسجل الفواتير وتحدث المخزون بأمان تام)
+  // 🌟 2. دالة الاستلام (تحديث الأرقام برمجياً لقتل الصفحة البيضاء)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
-      // 1. إنهاء الطلب
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-      // 2. تحديث المخازن
       const { data: allProds } = await supabase.from('products').select('id, name, stock_quantity, supplier_id');
       
       for (const item of req.items) {
         const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
         
-        // زيادة مخزون التاجر
         const mProd = allProds?.find(p => p.supplier_id === req.merchant_id && p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-        if (mProd) {
-           await supabase.from('products').update({ stock_quantity: Number(mProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', mProd.id);
-        }
+        if (mProd) await supabase.from('products').update({ stock_quantity: Number(mProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', mProd.id);
 
-        // خصم من المخزن المركزي
         const bProd = allProds?.find(p => p.supplier_id !== req.merchant_id && p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-        if (bProd) {
-           await supabase.from('products').update({ stock_quantity: Math.max(0, Number(bProd.stock_quantity || 0) - Number(item.quantity)) }).eq('id', bProd.id);
-        }
+        if (bProd) await supabase.from('products').update({ stock_quantity: Math.max(0, Number(bProd.stock_quantity || 0) - Number(item.quantity)) }).eq('id', bProd.id);
       }
 
-      // 3. تسجيل الفواتير والمصاريف
       const refNumber = Date.now().toString().slice(-4);
       
-      // فاتورة المورد
       if (req.supplier_id) {
-          await supabase.from('documents').insert({ 
-             owner_id: req.supplier_id, 
-             client_id: req.merchant_id, 
-             type: 'Facture', 
-             ref_number: `FAC-B2B-${refNumber}`, 
-             total_amount: req.total_amount, 
-             items: req.items 
-          });
+          await supabase.from('documents').insert({ owner_id: req.supplier_id, client_id: req.merchant_id, type: 'Facture', ref_number: `FAC-B2B-${refNumber}`, total_amount: req.total_amount, items: req.items });
       }
 
-      // فاتورة التاجر ومصروفه
-      await supabase.from('documents').insert({ 
-         owner_id: req.merchant_id, 
-         type: 'Facture Achat', 
-         ref_number: `ACH-B2B-${refNumber}`, 
-         total_amount: req.total_amount, 
-         items: req.items 
-      });
-      
-      await supabase.from('expenses').insert({ 
-         supplier_id: req.merchant_id, 
-         title: `Achat Stock B2B`, 
-         amount: req.total_amount, 
-         category: 'achats', 
-         date: new Date().toISOString() 
-      });
+      await supabase.from('documents').insert({ owner_id: req.merchant_id, type: 'Facture Achat', ref_number: `ACH-B2B-${refNumber}`, total_amount: req.total_amount, items: req.items });
+      await supabase.from('expenses').insert({ supplier_id: req.merchant_id, title: `Achat Stock B2B`, amount: req.total_amount, category: 'achats', date: new Date().toISOString() });
 
       alert(language === 'fr' ? "✅ Réception validée et factures générées !" : "✅ تم الاستلام بنجاح وتوليد الفواتير!");
 
-      // 4. التحديث الآمن الذي يضمن ظهور الأرقام الجديدة
-      setTimeout(() => { window.location.reload(); }, 1000);
+      // 🎯 التحديث الناعم: تحديث الطلبات والمخزون بدون Reload
+      if (typeof fetchB2BRequests === 'function') fetchB2BRequests();
+      
+      // جلب المخزون الجديد برمجياً لكي تتحدث الأرقام في الشاشة
+      try {
+         const useProductStore = await import('../store/useProductStore');
+         if (useProductStore && useProductStore.default) {
+             useProductStore.default.getState().fetchProducts();
+         }
+      } catch(e) {
+         console.log("تحديث المخزون الناعم لم يعمل، سيتحدث عند فتح صفحة المنتجات");
+      }
+
     } catch (err) {
       alert("Erreur:\n" + err.message);
     } finally {
