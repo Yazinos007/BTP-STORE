@@ -215,53 +215,40 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 1. دالة الإرسال (تحترم المورد المختار 100% وتتجاهل المسافات)
+  // 🌟 1. دالة الإرسال (تطيع اختيارك 100% وبدون تعقيدات)
   const handleSendPO = async () => {
-    if (!selectedSupplierId) return alert(language === 'fr' ? "Sélectionnez un fournisseur" : "الرجاء اختيار المورد من القائمة");
+    if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur" : "الرجاء اختيار المورد من القائمة أولاً");
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
 
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // 1. جلب اسم المورد الذي اخترته أنت بالضبط
-      const { data: chosenSup } = await supabase.from('suppliers').select('store_name').eq('id', selectedSupplierId).single();
+      // 1. جلب اسم المورد الذي اخترته أنت بدقة
+      const { data: chosenSup } = await supabase
+         .from('suppliers')
+         .select('store_name')
+         .eq('id', selectedSupplierId)
+         .single();
 
-      // 2. جلب مخزون "هذا المورد المختار فقط" لكي نتأكد من بضاعته
-      const { data: supplierStock } = await supabase.from('products').select('name, stock_quantity').eq('supplier_id', selectedSupplierId);
+      const supplierName = chosenSup ? chosenSup.store_name : "المورد";
 
-      let errors = [];
-      cart.forEach(item => {
-        const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
-        const p = supplierStock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-
-        if (!p) {
-            errors.push(`❌ ${item.name} (Non disponible)`);
-        } else if (Number(p.stock_quantity) < Number(item.quantity)) {
-            errors.push(`⚠️ ${item.name} (Dispo: ${p.stock_quantity})`);
-        }
-      });
-
-      if (errors.length > 0) {
-        const msg = `Attention:\n${errors.join('\n')}\n\nForcer l'envoi ? / هل تريد الإرسال على أي حال؟`;
-        if (!window.confirm(msg)) { setIsProcessing(false); return; }
-      }
-
-      // 3. إرسال الطلب مع ربطه بقوة بالـ ID الخاص بالمورد المختار
+      // 2. إرسال الطلبية للمورد الذي اخترته مباشرة (بدون فحص معقد يعرقل العملية)
       const { error: poError } = await supabase.from('supply_requests').insert({
         merchant_id: merchantId,
-        supplier_id: selectedSupplierId, // 🎯 تم ربط الطلبية باسم المورد بنجاح
+        supplier_id: selectedSupplierId, // 🎯 المورد المختار مسجل الآن بشكل إجباري
         items: cart,
         total_amount: total,
         status: 'pending'
       });
+
       if (poError) throw poError;
 
       setCart([]);
-      alert(`✅ Commande envoyée à / تم الإرسال إلى : ${chosenSup?.store_name || 'Fournisseur'}`);
+      alert(language === 'fr' ? `✅ Commande envoyée à ${supplierName}` : `✅ تم إرسال الطلب إلى ${supplierName}`);
       
-      // التحديث البرمجي الآمن
-      if (typeof fetchB2BRequests === 'function') fetchB2BRequests();
+      // 3. التحديث الآمن الذي يقتل الشاشة البيضاء
+      setTimeout(() => { window.location.reload(); }, 1000);
     } catch (err) {
       alert("Erreur: " + err.message);
     } finally {
@@ -269,50 +256,68 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 2. دالة الاستلام (آمنة جداً ومستحيل أن تسبب صفحة بيضاء)
+  // 🌟 2. دالة الاستلام (تسجل الفواتير وتحدث المخزون بأمان تام)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
+      // 1. إنهاء الطلب
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-      // 1. تزامن المخازن
+      // 2. تحديث المخازن
+      const { data: allProds } = await supabase.from('products').select('id, name, stock_quantity, supplier_id');
+      
       for (const item of req.items) {
-        // زيادة التاجر
-        const { data: mProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
-        if (mProd) await supabase.from('products').update({ stock_quantity: Number(mProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', item.id);
+        const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
+        
+        // زيادة مخزون التاجر
+        const mProd = allProds?.find(p => p.supplier_id === req.merchant_id && p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
+        if (mProd) {
+           await supabase.from('products').update({ stock_quantity: Number(mProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', mProd.id);
+        }
 
-        // نقصان المورد
-        if (req.supplier_id) {
-           const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
-           const { data: bProds } = await supabase.from('products').select('id, stock_quantity, name').eq('supplier_id', req.supplier_id);
-           const bProd = bProds?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-           if (bProd) {
-               const newQty = Math.max(0, Number(bProd.stock_quantity || 0) - Number(item.quantity));
-               await supabase.from('products').update({ stock_quantity: newQty }).eq('id', bProd.id);
-           }
+        // خصم من المخزن المركزي
+        const bProd = allProds?.find(p => p.supplier_id !== req.merchant_id && p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
+        if (bProd) {
+           await supabase.from('products').update({ stock_quantity: Math.max(0, Number(bProd.stock_quantity || 0) - Number(item.quantity)) }).eq('id', bProd.id);
         }
       }
 
-      // 2. الفواتير
+      // 3. تسجيل الفواتير والمصاريف
       const refNumber = Date.now().toString().slice(-4);
       
+      // فاتورة المورد
       if (req.supplier_id) {
-          await supabase.from('documents').insert({ owner_id: req.supplier_id, client_id: req.merchant_id, type: 'Facture', ref_number: `FAC-B2B-${refNumber}`, total_amount: req.total_amount, items: req.items });
+          await supabase.from('documents').insert({ 
+             owner_id: req.supplier_id, 
+             client_id: req.merchant_id, 
+             type: 'Facture', 
+             ref_number: `FAC-B2B-${refNumber}`, 
+             total_amount: req.total_amount, 
+             items: req.items 
+          });
       }
 
-      await supabase.from('documents').insert({ owner_id: req.merchant_id, type: 'Facture Achat', ref_number: `ACH-B2B-${refNumber}`, total_amount: req.total_amount, items: req.items });
-      await supabase.from('expenses').insert({ supplier_id: req.merchant_id, title: `Achat Stock B2B`, amount: req.total_amount, category: 'achats', date: new Date().toISOString() });
-
-      alert("✅ Réception validée et factures générées ! / تم الاستلام بنجاح!");
-
-      // 3. التحديث الآمن فقط (تم حذف الاحتفال والريلود الديناميكي الذي كان يسبب الانهيار)
-      if (typeof fetchB2BRequests === 'function') fetchB2BRequests();
+      // فاتورة التاجر ومصروفه
+      await supabase.from('documents').insert({ 
+         owner_id: req.merchant_id, 
+         type: 'Facture Achat', 
+         ref_number: `ACH-B2B-${refNumber}`, 
+         total_amount: req.total_amount, 
+         items: req.items 
+      });
       
-      try {
-         // تحديث المنتجات إذا كانت الدالة موجودة في الصفحة فقط
-         if (typeof fetchProducts === 'function') fetchProducts();
-      } catch (e) {}
+      await supabase.from('expenses').insert({ 
+         supplier_id: req.merchant_id, 
+         title: `Achat Stock B2B`, 
+         amount: req.total_amount, 
+         category: 'achats', 
+         date: new Date().toISOString() 
+      });
 
+      alert(language === 'fr' ? "✅ Réception validée et factures générées !" : "✅ تم الاستلام بنجاح وتوليد الفواتير!");
+
+      // 4. التحديث الآمن الذي يضمن ظهور الأرقام الجديدة
+      setTimeout(() => { window.location.reload(); }, 1000);
     } catch (err) {
       alert("Erreur:\n" + err.message);
     } finally {
