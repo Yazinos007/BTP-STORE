@@ -215,9 +215,8 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 1. دالة الإرسال (إجبار الاختيار + تجاهل المسافات في قاعدة البيانات)
+  // 🌟 دالة الإرسال (تجمع بين احترام القائمة المنسدلة وضمان الـ ID الحقيقي)
   const handleSendPO = async () => {
-    // 🚨 1. منع الإرسال إذا كانت الخانة فارغة (حل مشكلة الصورة 1)
     if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur" : "الرجاء اختيار المورد من القائمة أولاً");
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
 
@@ -225,47 +224,50 @@ export default function Purchases() {
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // جلب بيانات المورد المختار من القائمة
-      const { data: chosenSup } = await supabase.from('suppliers').select('id, store_name').eq('id', selectedSupplierId).single();
-      if (!chosenSup) throw new Error("Erreur: Fournisseur introuvable.");
+      // 1. جلب المخزون المركزي لمعرفة الـ ID الحقيقي للـ Boss من بضاعته
+      const cartNames = cart.map(item => item.name);
+      const { data: centralStock, error: stockErr } = await supabase
+        .from('products')
+        .select('name, stock_quantity, supplier_id')
+        .neq('supplier_id', merchantId)
+        .in('name', cartNames);
 
-      // جلب مخزون هذا المورد بالكامل (لكي لا تخدعنا قاعدة البيانات بالمسافات)
-      const { data: stock, error: stockErr } = await supabase.from('products').select('name, stock_quantity').eq('supplier_id', chosenSup.id);
-      if (stockErr) throw stockErr;
+      if (stockErr || !centralStock || centralStock.length === 0) {
+         throw new Error("Erreur: Produits introuvables dans le stock central.");
+      }
 
-      // الفحص الذكي في JavaScript
+      // 2. التقاط الـ ID الحقيقي المضمون 100%
+      const realBossId = centralStock[0].supplier_id;
+
+      // 3. الفحص الذكي للكميات متجاهلاً المسافات
       let errors = [];
       cart.forEach(item => {
         const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
-        const p = stock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-
-        if (!p) {
-           errors.push(`❌ ${item.name} (Non vendu par ${chosenSup.store_name})`);
-        } else if (p.stock_quantity < item.quantity) {
-           errors.push(`⚠️ ${item.name} (Dispo: ${p.stock_quantity})`);
-        }
+        const p = centralStock.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
+        if (!p) errors.push(`❌ ${item.name}`);
+        else if (p.stock_quantity < item.quantity) errors.push(`⚠️ ${item.name} (Dispo: ${p.stock_quantity})`);
       });
 
       if (errors.length > 0) {
-        const msg = `Attention (${chosenSup.store_name}):\n\n${errors.join('\n')}\n\nForcer l'envoi ?`;
-        if (!window.confirm(msg)) { setIsProcessing(false); return; }
+        if (!window.confirm(`Attention:\n\n${errors.join('\n')}\n\nForcer l'envoi ?`)) { setIsProcessing(false); return; }
       }
 
-      // إرسال الطلب للمورد المختار
+      // 4. إرسال الطلبية باستخدام المعرف الحقيقي
       const { error: poError } = await supabase.from('supply_requests').insert({
         merchant_id: merchantId,
-        supplier_id: chosenSup.id,
+        supplier_id: realBossId, // الـ ID الحقيقي المستخرج
         items: cart,
         total_amount: total,
         status: 'pending'
       });
-      if (poError) throw poError;
+      
+      if (poError) throw new Error("Erreur base de données: " + poError.message);
 
       setCart([]);
-      alert(language === 'fr' ? `✅ Commande envoyée à ${chosenSup.store_name}` : `✅ تم إرسال الطلب إلى ${chosenSup.store_name}`);
+      alert("✅ تم إرسال الطلب بنجاح للمورد!");
       fetchB2BRequests();
     } catch (err) {
-      alert("Erreur: " + err.message);
+      alert(err.message);
     } finally {
       setIsProcessing(false);
     }

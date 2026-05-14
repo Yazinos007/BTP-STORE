@@ -129,7 +129,7 @@ export default function POS() {
       const { error: orderError } = await supabase.from('orders').insert([{
         supplier_id: supplier.id, client_id: clientId, chantier: chantier || null, total_amount: total, status: 'pending', payment_status: paymentMethod === 'Espèces' ? 'paid' : 'unpaid', payment_method: paymentMethod, items: validCart
       }]);
-      if (orderError) throw orderError;
+      if (orderError) throw new Error("Erreur Order: " + orderError.message); // 🚨 تحديث
 
       // 2. إنقاص المخزون
       for (const item of validCart) {
@@ -152,7 +152,7 @@ export default function POS() {
       const { error: docError } = await supabase.from('documents').insert([{
         owner_id: supplier.id, client_id: clientId || null, type: autoDocType, ref_number: refNumber, chantier: chantier || null, total_amount: total, items: validCart
       }]);
-      if (docError) throw docError;
+      if (docError) throw new Error("Erreur Document: " + docError.message); // 🚨 تحديث
 
       // 🌟 5. الاحتفال المبهج عند إتمام البيع بنجاح
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#10b981', '#3b82f6', '#f59e0b'] });
@@ -161,8 +161,9 @@ export default function POS() {
       setShowCreditModal(false); setSelectedClientId('');
       alert(paymentMethod === 'Espèces' ? t.successCash : t.successCredit);
     } catch (error) { 
-      console.error(error);
-      alert(t.error); 
+      // 🚨 هذا هو التعديل الذهبي: طباعة الخطأ الحقيقي بدلاً من t.error
+      console.error("Erreur POS Détaillée:", error);
+      alert(`Erreur détaillée:\n${error.message || error}`); 
     } finally { 
       setIsProcessing(false); 
     }
