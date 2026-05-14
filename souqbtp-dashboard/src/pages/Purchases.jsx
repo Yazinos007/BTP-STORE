@@ -215,7 +215,7 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 1. دالة الإرسال (الذكية التي تتجاوز المسافات وتكشف المورد الحقيقي)
+  // 🌟 1. دالة الإرسال (مع دعم اللغتين الفرنسية والعربية)
   const handleSendPO = async () => {
     if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur." : "الرجاء اختيار المورد أولاً.");
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
@@ -224,7 +224,6 @@ export default function Purchases() {
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // جلب مخزون المورد الكبير فقط
       const { data: allRealStock, error: stockErr } = await supabase
         .from('products')
         .select('name, stock_quantity, supplier_id')
@@ -240,21 +239,21 @@ export default function Purchases() {
         const p = allRealStock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanCartName);
 
         if (!p) {
-           errors.push(`❌ ${cartItem.name} (غير مسجل في المخزن المركزي)`);
+           errors.push(`❌ ${cartItem.name} (${language === 'fr' ? 'Introuvable chez le grossiste' : 'غير مسجل في المخزن المركزي'})`);
         } else {
            realWholesalerId = p.supplier_id; 
            if (p.stock_quantity < cartItem.quantity) {
-              errors.push(`⚠️ ${cartItem.name} (المتوفر: ${p.stock_quantity})`);
+              errors.push(`⚠️ ${cartItem.name} (${language === 'fr' ? 'Dispo:' : 'المتوفر:'} ${p.stock_quantity})`);
            }
         }
       });
 
       if (errors.length > 0) {
-          const proceed = window.confirm(`تنبيه:\n${errors.join('\n')}\n\nهل تريد إرسال الطلب ليقوم المورد بتدبيره؟`);
+          const proceed = window.confirm(language === 'fr' ? `Attention:\n${errors.join('\n')}\n\nVoulez-vous forcer l'envoi ?` : `تنبيه:\n${errors.join('\n')}\n\nهل تريد إرسال الطلب ليقوم المورد بتدبيره؟`);
           if (!proceed) { setIsProcessing(false); return; }
       }
 
-      if (!realWholesalerId) throw new Error("لم نتمكن من تحديد المورد مالك البضاعة.");
+      if (!realWholesalerId) throw new Error(language === 'fr' ? "Impossible de déterminer le grossiste." : "لم نتمكن من تحديد المورد مالك البضاعة.");
 
       await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
@@ -265,7 +264,8 @@ export default function Purchases() {
       }]);
 
       setCart([]);
-      alert("✅ تم إرسال الطلب بنجاح!");
+      // 🎯 التنبيه الآن يظهر حسب اللغة
+      alert(language === 'fr' ? "✅ Commande envoyée avec succès !" : "✅ تم إرسال الطلب بنجاح!");
       fetchB2BRequests();
     } catch (err) {
       alert("Erreur: " + err.message);
@@ -274,13 +274,12 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 دالة الاستلام (النسخة النهائية مع الفواتير الدقيقة)
+  // 🌟 2. دالة الاستلام (مع كاشف الأخطاء الصارم ودعم اللغات)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-      // تحديث المخازن
       for (const item of req.items) {
         const { data: merchantProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
         if (merchantProd) {
@@ -298,46 +297,52 @@ export default function Purchases() {
         }
       }
 
-      // 🌟 1. توليد فاتورة المورد (أعدنا client_id لكي تظهر في القائمة)
+      // 🚨 هنا السحر: إذا رفضت قاعدة البيانات الفاتورة، سيتوقف الكود ويخبرك بالسبب!
       if (req.supplier_id) {
-        const { error: docError } = await supabase.from('documents').insert([{
+        const { error: docError1 } = await supabase.from('documents').insert([{
           owner_id: req.supplier_id, 
-          client_id: req.merchant_id, // 🎯 أعدناها هنا
+          client_id: req.merchant_id, 
           type: 'Facture',
           ref_number: `FAC-B2B-${Date.now().toString().slice(-4)}`,
           total_amount: req.total_amount,
           items: req.items
         }]);
-        if (docError) console.error("Invoice Error:", docError.message);
+        // إجبار الكود على التوقف وإظهار الخطأ إذا فشلت فاتورة المورد
+        if (docError1) throw new Error(`Erreur Facture Fournisseur (RLS/FK): ${docError1.message}`);
       }
 
-      // 🌟 2. توليد فاتورة الشراء للتاجر (تم تعديل الاسم كما طلبت)
-      await supabase.from('documents').insert([{
+      const { error: docError2 } = await supabase.from('documents').insert([{
         owner_id: req.merchant_id, 
-        type: 'Facture Achat', // 🎯 التعديل هنا
+        type: 'Facture Achat', 
         ref_number: `ACH-B2B-${Date.now().toString().slice(-4)}`,
         total_amount: req.total_amount,
         items: req.items
       }]);
+      // إجبار الكود على التوقف وإظهار الخطأ إذا فشلت فاتورة التاجر
+      if (docError2) throw new Error(`Erreur Facture Achat (RLS/FK): ${docError2.message}`);
 
-      // 3. تسجيل المصروف للتاجر
-      await supabase.from('expenses').insert([{
+      const { error: expError } = await supabase.from('expenses').insert([{
         supplier_id: req.merchant_id,
         title: `Facture Achat B2B`,
         amount: req.total_amount,
         category: 'achats',
         date: new Date().toISOString()
       }]);
+      if (expError) throw new Error(`Erreur Dépenses: ${expError.message}`);
 
-      // 4. الاحتفال والتحديث
+
       import('canvas-confetti').then((confetti) => {
         confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       }).catch(e => console.log('Confetti err'));
 
+      // 🎯 رسالة النجاح باللغة الصحيحة ولن تظهر إلا إذا تم حفظ الفواتير بنجاح!
+      alert(language === 'fr' ? "✅ Magie accomplie ! Réception validée, stock mis à jour et factures générées !" : "✅ اكتمل السحر! تم الاستلام وتحديث المخزون وتوليد الفواتير بنجاح!");
+      
       setTimeout(() => window.location.reload(), 1500);
 
     } catch (err) {
-      alert("Erreur: " + err.message);
+      // 🚨 سيظهر لك الخطأ الحقيقي هنا إذا رفضت قاعدة البيانات الفواتير
+      alert("Erreur Critique: \n" + err.message);
     } finally {
       setIsProcessing(false);
     }
