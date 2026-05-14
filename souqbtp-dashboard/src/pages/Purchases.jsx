@@ -215,62 +215,57 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 1. دالة الإرسال (مزودة بنظام التوجيه الذكي للمورد الحقيقي)
+  // 🌟 1. دالة الإرسال (المصححة: تحترم المورد المختار + تتجاهل أخطاء المسافات)
   const handleSendPO = async () => {
-    if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
+    if (!selectedSupplierId) return alert(language === 'fr' ? "Sélectionnez un fournisseur" : "اختر المورد أولاً");
+    if (cart.length === 0) return;
+
     setIsProcessing(true);
-    
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // أ- جلب المخزون المركزي لمعرفة من هو المورد المالك لهذه البضاعة
-      const itemNames = cart.map(item => item.name);
-      const { data: centralStock, error: stockErr } = await supabase
+      // أ- جلب بيانات المورد المختار
+      const { data: chosenSup, error: supErr } = await supabase
+        .from('suppliers')
+        .select('id, store_name')
+        .eq('id', selectedSupplierId)
+        .single();
+
+      if (supErr || !chosenSup) throw new Error("المورد المختار غير موجود.");
+
+      // ب- 🌟 هنا كان الخطأ: جلب "كل" مخزون المورد المختار لكي نفلتره بذكاء دون تدخل قاعدة البيانات الغبية
+      const { data: stock, error: stockErr } = await supabase
         .from('products')
-        .select('name, stock_quantity, supplier_id')
-        .neq('supplier_id', merchantId)
-        .in('name', itemNames);
+        .select('name, stock_quantity')
+        .eq('supplier_id', chosenSup.id);
 
       if (stockErr) throw stockErr;
-      if (!centralStock || centralStock.length === 0) {
-         throw new Error(language === 'fr' ? "Produits B2B introuvables." : "هذه المنتجات غير متوفرة في المخزن المركزي.");
-      }
 
-      // ب- استخراج الـ ID الحقيقي للمورد المركزي (مالك البضاعة)
-      const realWholesalerId = centralStock[0].supplier_id;
-      
-      // ج- جلب اسم المورد المركزي الحقيقي لإخبار التاجر
-      let realWholesalerName = "Grossiste Central";
-      const { data: bossData } = await supabase.from('suppliers').select('store_name').eq('id', realWholesalerId).single();
-      if (bossData) realWholesalerName = bossData.store_name;
-
-      // د- فحص الكميات
+      // ج- الفحص الذكي (يتجاهل المسافات تماماً)
       let errors = [];
       cart.forEach(item => {
         const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
-        const p = centralStock.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-        if (!p) errors.push(`❌ ${item.name}`);
-        else if (p.stock_quantity < item.quantity) errors.push(`⚠️ ${item.name} (Max: ${p.stock_quantity})`);
+        const p = stock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
+        
+        if (!p) {
+           errors.push(`❌ ${item.name} (غير موجود عند ${chosenSup.store_name})`);
+        } else if (p.stock_quantity < item.quantity) {
+           errors.push(`⚠️ ${item.name} (المتوفر: ${p.stock_quantity})`);
+        }
       });
 
+      // د- التخيير
       if (errors.length > 0) {
         const msg = language === 'fr' 
-          ? `Stock insuffisant chez ${realWholesalerName}:\n${errors.join('\n')}\nForcer l'envoi ?`
-          : `نقص في مخزن ${realWholesalerName}:\n${errors.join('\n')}\nإرسال على أي حال؟`;
+          ? `Stock insuffisant chez ${chosenSup.store_name}:\n\n${errors.join('\n')}\n\nForcer l'envoi quand même ?`
+          : `تنبيه من مخزن ${chosenSup.store_name}:\n\n${errors.join('\n')}\n\nهل تريد إرسال الطلب على أي حال؟`;
         if (!window.confirm(msg)) { setIsProcessing(false); return; }
       }
 
-      // 🚨 الحل للمفارقة المنطقية: إخبار التاجر بوجهة الطلب بدلاً من الاعتماد على القائمة المنسدلة
-      const routeMsg = language === 'fr'
-        ? `Routage intelligent: Cette commande sera envoyée directement au propriétaire de la marchandise (${realWholesalerName}).\nConfirmer ?`
-        : `توجيه ذكي: سيتم توجيه هذا الطلب مباشرة للمورد المركزي مالك البضاعة (${realWholesalerName}).\nهل تؤكد الإرسال؟`;
-        
-      if (!window.confirm(routeMsg)) { setIsProcessing(false); return; }
-
-      // إرسال الطلبية
+      // هـ- إرسال الطلبية
       const { error: poError } = await supabase.from('supply_requests').insert([{
         merchant_id: merchantId,
-        supplier_id: realWholesalerId,
+        supplier_id: chosenSup.id, // تم الربط بالمورد المختار بدقة
         items: cart,
         total_amount: total,
         status: 'pending'
@@ -279,7 +274,7 @@ export default function Purchases() {
       if (poError) throw poError;
 
       setCart([]);
-      alert(language === 'fr' ? `✅ Envoyé !` : `✅ تم الإرسال بنجاح!`);
+      alert(language === 'fr' ? `✅ Commande envoyée à ${chosenSup.store_name}` : `✅ تم إرسال الطلب إلى ${chosenSup.store_name} بنجاح!`);
       fetchB2BRequests();
     } catch (err) {
       alert("Erreur: " + err.message);
