@@ -215,66 +215,54 @@ export default function Purchases() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
   };
 
-  // 🌟 1. دالة الإرسال (المصححة: تحترم المورد المختار + تتجاهل أخطاء المسافات)
+  // 🌟 1. دالة الإرسال (إجبار الاختيار + تجاهل المسافات في قاعدة البيانات)
   const handleSendPO = async () => {
-    if (!selectedSupplierId) return alert(language === 'fr' ? "Sélectionnez un fournisseur" : "اختر المورد أولاً");
-    if (cart.length === 0) return;
+    // 🚨 1. منع الإرسال إذا كانت الخانة فارغة (حل مشكلة الصورة 1)
+    if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur" : "الرجاء اختيار المورد من القائمة أولاً");
+    if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
 
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
 
-      // أ- جلب بيانات المورد المختار
-      const { data: chosenSup, error: supErr } = await supabase
-        .from('suppliers')
-        .select('id, store_name')
-        .eq('id', selectedSupplierId)
-        .single();
+      // جلب بيانات المورد المختار من القائمة
+      const { data: chosenSup } = await supabase.from('suppliers').select('id, store_name').eq('id', selectedSupplierId).single();
+      if (!chosenSup) throw new Error("Erreur: Fournisseur introuvable.");
 
-      if (supErr || !chosenSup) throw new Error("المورد المختار غير موجود.");
-
-      // ب- 🌟 هنا كان الخطأ: جلب "كل" مخزون المورد المختار لكي نفلتره بذكاء دون تدخل قاعدة البيانات الغبية
-      const { data: stock, error: stockErr } = await supabase
-        .from('products')
-        .select('name, stock_quantity')
-        .eq('supplier_id', chosenSup.id);
-
+      // جلب مخزون هذا المورد بالكامل (لكي لا تخدعنا قاعدة البيانات بالمسافات)
+      const { data: stock, error: stockErr } = await supabase.from('products').select('name, stock_quantity').eq('supplier_id', chosenSup.id);
       if (stockErr) throw stockErr;
 
-      // ج- الفحص الذكي (يتجاهل المسافات تماماً)
+      // الفحص الذكي في JavaScript
       let errors = [];
       cart.forEach(item => {
         const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
         const p = stock?.find(x => x.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-        
+
         if (!p) {
-           errors.push(`❌ ${item.name} (غير موجود عند ${chosenSup.store_name})`);
+           errors.push(`❌ ${item.name} (Non vendu par ${chosenSup.store_name})`);
         } else if (p.stock_quantity < item.quantity) {
-           errors.push(`⚠️ ${item.name} (المتوفر: ${p.stock_quantity})`);
+           errors.push(`⚠️ ${item.name} (Dispo: ${p.stock_quantity})`);
         }
       });
 
-      // د- التخيير
       if (errors.length > 0) {
-        const msg = language === 'fr' 
-          ? `Stock insuffisant chez ${chosenSup.store_name}:\n\n${errors.join('\n')}\n\nForcer l'envoi quand même ?`
-          : `تنبيه من مخزن ${chosenSup.store_name}:\n\n${errors.join('\n')}\n\nهل تريد إرسال الطلب على أي حال؟`;
+        const msg = `Attention (${chosenSup.store_name}):\n\n${errors.join('\n')}\n\nForcer l'envoi ?`;
         if (!window.confirm(msg)) { setIsProcessing(false); return; }
       }
 
-      // هـ- إرسال الطلبية
-      const { error: poError } = await supabase.from('supply_requests').insert([{
+      // إرسال الطلب للمورد المختار
+      const { error: poError } = await supabase.from('supply_requests').insert({
         merchant_id: merchantId,
-        supplier_id: chosenSup.id, // تم الربط بالمورد المختار بدقة
+        supplier_id: chosenSup.id,
         items: cart,
         total_amount: total,
         status: 'pending'
-      }]);
-
+      });
       if (poError) throw poError;
 
       setCart([]);
-      alert(language === 'fr' ? `✅ Commande envoyée à ${chosenSup.store_name}` : `✅ تم إرسال الطلب إلى ${chosenSup.store_name} بنجاح!`);
+      alert(language === 'fr' ? `✅ Commande envoyée à ${chosenSup.store_name}` : `✅ تم إرسال الطلب إلى ${chosenSup.store_name}`);
       fetchB2BRequests();
     } catch (err) {
       alert("Erreur: " + err.message);
@@ -283,7 +271,7 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 2. دالة الاستلام (التحديث الناعم بدون صفحة بيضاء + فواتير دقيقة)
+  // 🌟 2. دالة الاستلام (بدون صفحة بيضاء + فصل الفواتير لضمان تسجيلها)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
@@ -292,62 +280,58 @@ export default function Purchases() {
       // تحديث المخازن
       for (const item of req.items) {
         const { data: mProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
-        if (mProd) {
-          await supabase.from('products').update({ stock_quantity: Number(mProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', item.id);
-        }
+        if (mProd) await supabase.from('products').update({ stock_quantity: Number(mProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', item.id);
 
         if (req.supplier_id) {
            const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
            const { data: bossProducts } = await supabase.from('products').select('id, stock_quantity, name').eq('supplier_id', req.supplier_id);
            const bossProd = bossProducts?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-           if (bossProd) {
-              const newQty = Math.max(0, Number(bossProd.stock_quantity || 0) - Number(item.quantity));
-              await supabase.from('products').update({ stock_quantity: newQty }).eq('id', bossProd.id);
-           }
+           if (bossProd) await supabase.from('products').update({ stock_quantity: Math.max(0, Number(bossProd.stock_quantity || 0) - Number(item.quantity)) }).eq('id', bossProd.id);
         }
       }
 
-      // 🌟 تجميع الفواتير والمصاريف في دفعة واحدة لضمان ظهورها
-      const invoices = [
-        {
-          owner_id: req.supplier_id, // فاتورة المورد
-          client_id: req.merchant_id,
-          type: 'Facture',
-          ref_number: `FAC-B2B-${Date.now().toString().slice(-4)}`,
-          total_amount: req.total_amount,
-          items: req.items
-        },
-        {
-          owner_id: req.merchant_id, // فاتورة التاجر
-          type: 'Facture Achat',
-          ref_number: `ACH-B2B-${Date.now().toString().slice(-4)}`,
-          total_amount: req.total_amount,
-          items: req.items
-        }
-      ];
+      const refNumber = Date.now().toString().slice(-4);
 
-      const { error: invErr } = await supabase.from('documents').insert(invoices);
-      if (invErr) throw new Error("Erreur factures: " + invErr.message);
+      // 🚨 الحل السحري للفواتير: تسجيل كل فاتورة على حدة لكي لا يرفضها Supabase
+      if (req.supplier_id) {
+          const { error: err1 } = await supabase.from('documents').insert({
+            owner_id: req.supplier_id,
+            client_id: req.merchant_id,
+            type: 'Facture',
+            ref_number: `FAC-B2B-${refNumber}`,
+            total_amount: req.total_amount,
+            items: req.items
+          });
+          if (err1) throw new Error("Erreur Facture Fournisseur: " + err1.message);
+      }
 
-      await supabase.from('expenses').insert([{
+      const { error: err2 } = await supabase.from('documents').insert({
+        owner_id: req.merchant_id,
+        type: 'Facture Achat',
+        ref_number: `ACH-B2B-${refNumber}`,
+        total_amount: req.total_amount,
+        items: req.items
+      });
+      if (err2) throw new Error("Erreur Facture Achat: " + err2.message);
+
+      const { error: err3 } = await supabase.from('expenses').insert({
         supplier_id: req.merchant_id,
         title: `Achat Stock B2B`,
         amount: req.total_amount,
         category: 'achats',
         date: new Date().toISOString()
-      }]);
+      });
+      if (err3) throw new Error("Erreur Dépense: " + err3.message);
 
       // الاحتفال
       import('canvas-confetti').then((conf) => conf.default({ particleCount: 150, spread: 70, origin: { y: 0.6 } }));
-      alert(language === 'fr' ? "✅ Stock synchronisé, factures créées !" : "✅ تم استلام المخزون وتوليد الفواتير بنجاح!");
+      alert(language === 'fr' ? "✅ Opération réussie ! Factures générées." : "✅ تمت العملية بنجاح وتوليد الفواتير!");
 
-      // 🌟 التحديث البرمجي الناعم (يمنع الصفحة البيضاء)
-      await fetchB2BRequests();
-      // تأخير بسيط لإعادة تحميل واجهة المنتجات في الخلفية
-      setTimeout(() => window.location.reload(), 1500);
+      // 🚨 تم حذف window.location.reload() نهائياً للقضاء على الصفحة البيضاء
+      fetchB2BRequests();
 
     } catch (err) {
-      alert("Erreur: " + err.message);
+      alert("Erreur Critique:\n" + err.message);
     } finally {
       setIsProcessing(false);
     }
