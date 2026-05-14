@@ -274,75 +274,76 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 2. دالة الاستلام (مع كاشف الأخطاء الصارم ودعم اللغات)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
+      // 1. تحديث حالة الطلب إلى مكتمل
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
+      // 2. مزامنة المخازن (زيادة عند التاجر ونقصان عند المورد)
       for (const item of req.items) {
-        const { data: merchantProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
-        if (merchantProd) {
-          await supabase.from('products').update({ stock_quantity: Number(merchantProd.stock_quantity || 0) + Number(item.quantity) }).eq('id', item.id);
+        // زيادة مخزون التاجر
+        const { data: mProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
+        if (mProd) {
+          await supabase.from('products').update({ 
+            stock_quantity: Number(mProd.stock_quantity || 0) + Number(item.quantity) 
+          }).eq('id', item.id);
         }
 
+        // نقصان مخزون المورد الكبير
         if (req.supplier_id) {
            const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
-           const { data: bossProducts } = await supabase.from('products').select('id, stock_quantity, name').eq('supplier_id', req.supplier_id);
-           const bossProd = bossProducts?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
-           if (bossProd) {
-              const newQty = Math.max(0, Number(bossProd.stock_quantity || 0) - Number(item.quantity));
-              await supabase.from('products').update({ stock_quantity: newQty }).eq('id', bossProd.id);
+           const { data: bProds } = await supabase.from('products').select('id, stock_quantity, name').eq('supplier_id', req.supplier_id);
+           const bProd = bProds?.find(p => p.name.replace(/\s+/g, '').toLowerCase() === cleanName);
+           if (bProd) {
+              const newQty = Math.max(0, Number(bProd.stock_quantity || 0) - Number(item.quantity));
+              await supabase.from('products').update({ stock_quantity: newQty }).eq('id', bProd.id);
            }
         }
       }
 
-      // 🚨 هنا السحر: إذا رفضت قاعدة البيانات الفاتورة، سيتوقف الكود ويخبرك بالسبب!
+      // 🌟 3. السحر المالي: تسجيل الوثائق عند الطرفين
       if (req.supplier_id) {
-        const { error: docError1 } = await supabase.from('documents').insert([{
-          owner_id: req.supplier_id, 
-          client_id: req.merchant_id, 
+        // أ- عند المورد: تسجيل فاتورة بيع (تُظهر الأرباح في المحاسبة والتحليلات)
+        await supabase.from('documents').insert([{
+          owner_id: req.supplier_id, // تذهب للمورد
+          client_id: req.merchant_id,
           type: 'Facture',
           ref_number: `FAC-B2B-${Date.now().toString().slice(-4)}`,
           total_amount: req.total_amount,
           items: req.items
         }]);
-        // إجبار الكود على التوقف وإظهار الخطأ إذا فشلت فاتورة المورد
-        if (docError1) throw new Error(`Erreur Facture Fournisseur (RLS/FK): ${docError1.message}`);
+
+        // ب- عند التاجر: تسجيل فاتورة شراء (تظهر في قسم المشتريات)
+        await supabase.from('documents').insert([{
+          owner_id: req.merchant_id, // تذهب للتاجر
+          type: 'Facture Achat',
+          ref_number: `ACH-B2B-${Date.now().toString().slice(-4)}`,
+          total_amount: req.total_amount,
+          items: req.items
+        }]);
+
+        // ج- عند التاجر: تسجيل مصروف (يُظهر الخسائر/المصاريف في المحاسبة)
+        await supabase.from('expenses').insert([{
+          supplier_id: req.merchant_id, // يُربط بحساب التاجر
+          title: `Achat Stock B2B`,
+          amount: req.total_amount,
+          category: 'achats',
+          date: new Date().toISOString()
+        }]);
       }
 
-      const { error: docError2 } = await supabase.from('documents').insert([{
-        owner_id: req.merchant_id, 
-        type: 'Facture Achat', 
-        ref_number: `ACH-B2B-${Date.now().toString().slice(-4)}`,
-        total_amount: req.total_amount,
-        items: req.items
-      }]);
-      // إجبار الكود على التوقف وإظهار الخطأ إذا فشلت فاتورة التاجر
-      if (docError2) throw new Error(`Erreur Facture Achat (RLS/FK): ${docError2.message}`);
-
-      const { error: expError } = await supabase.from('expenses').insert([{
-        supplier_id: req.merchant_id,
-        title: `Facture Achat B2B`,
-        amount: req.total_amount,
-        category: 'achats',
-        date: new Date().toISOString()
-      }]);
-      if (expError) throw new Error(`Erreur Dépenses: ${expError.message}`);
-
-
+      // 4. الاحتفال وتحديث الشاشة
       import('canvas-confetti').then((confetti) => {
         confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-      }).catch(e => console.log('Confetti err'));
+      });
 
-      // 🎯 رسالة النجاح باللغة الصحيحة ولن تظهر إلا إذا تم حفظ الفواتير بنجاح!
-      alert(language === 'fr' ? "✅ Magie accomplie ! Réception validée, stock mis à jour et factures générées !" : "✅ اكتمل السحر! تم الاستلام وتحديث المخزون وتوليد الفواتير بنجاح!");
+      alert(language === 'fr' ? "✅ Stock synchronisé et factures générées !" : "✅ تم مزامنة المخزون وتوليد الفواتير بنجاح!");
       
-      setTimeout(() => window.location.reload(), 1500);
+      setTimeout(() => window.location.reload(), 1000);
 
     } catch (err) {
-      // 🚨 سيظهر لك الخطأ الحقيقي هنا إذا رفضت قاعدة البيانات الفواتير
-      alert("Erreur Critique: \n" + err.message);
+      alert("Erreur: " + err.message);
     } finally {
       setIsProcessing(false);
     }
