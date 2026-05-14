@@ -227,7 +227,7 @@ export default function Purchases() {
       const { data: chosenSup } = await supabase.from('suppliers').select('store_name').eq('id', selectedSupplierId).single();
 
       // 🎯 حل مشكلة الصورة 1: الترجمة الصحيحة إذا لم نجد اسم المورد
-      const fallbackName = language === 'fr' ? "le fournisseur" : "المورد";
+      const fallbackName = language === 'fr' ? "fournisseur" : "المورد";
       const supplierName = chosenSup?.store_name || fallbackName;
 
       const { error: poError } = await supabase.from('supply_requests').insert({
