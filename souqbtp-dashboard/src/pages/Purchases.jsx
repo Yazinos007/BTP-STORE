@@ -277,12 +277,12 @@ export default function Purchases() {
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
-      // 1. تحديث حالة الطلب إلى مكتمل
+      // 1. تحديث حالة الطلب
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-      // 2. مزامنة المخازن (زيادة عند التاجر ونقصان عند المورد)
+      // 2. تحديث المخازن (التاجر والمورد)
       for (const item of req.items) {
-        // زيادة مخزون التاجر
+        // تحديث مخزن التاجر
         const { data: mProd } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single();
         if (mProd) {
           await supabase.from('products').update({ 
@@ -290,7 +290,7 @@ export default function Purchases() {
           }).eq('id', item.id);
         }
 
-        // نقصان مخزون المورد الكبير
+        // تحديث مخزن المورد
         if (req.supplier_id) {
            const cleanName = item.name.replace(/\s+/g, '').toLowerCase();
            const { data: bProds } = await supabase.from('products').select('id, stock_quantity, name').eq('supplier_id', req.supplier_id);
@@ -302,50 +302,53 @@ export default function Purchases() {
         }
       }
 
-      // 🌟 3. السحر المالي: تسجيل الوثائق عند الطرفين
-      if (req.supplier_id) {
-        // أ- عند المورد: تسجيل فاتورة بيع (تُظهر الأرباح في المحاسبة والتحليلات)
-        await supabase.from('documents').insert([{
-          owner_id: req.supplier_id, // تذهب للمورد
+      // 🌟 3. تسجيل الفواتير والمصاريف (بأمر واحد لضمان السرعة)
+      const invoices = [
+        {
+          owner_id: req.supplier_id, // فاتورة بيع للمورد
           client_id: req.merchant_id,
           type: 'Facture',
           ref_number: `FAC-B2B-${Date.now().toString().slice(-4)}`,
           total_amount: req.total_amount,
           items: req.items
-        }]);
-
-        // ب- عند التاجر: تسجيل فاتورة شراء (تظهر في قسم المشتريات)
-        await supabase.from('documents').insert([{
-          owner_id: req.merchant_id, // تذهب للتاجر
+        },
+        {
+          owner_id: req.merchant_id, // فاتورة شراء للتاجر
           type: 'Facture Achat',
           ref_number: `ACH-B2B-${Date.now().toString().slice(-4)}`,
           total_amount: req.total_amount,
           items: req.items
-        }]);
+        }
+      ];
 
-        // ج- عند التاجر: تسجيل مصروف (يُظهر الخسائر/المصاريف في المحاسبة)
-        await supabase.from('expenses').insert([{
-          supplier_id: req.merchant_id, // يُربط بحساب التاجر
-          title: `Achat Stock B2B`,
-          amount: req.total_amount,
-          category: 'achats',
-          date: new Date().toISOString()
-        }]);
-      }
+      const { error: invError } = await supabase.from('documents').insert(invoices);
+      if (invError) throw new Error("Erreur Facturation: " + invError.message);
 
-      // 4. الاحتفال وتحديث الشاشة
-      import('canvas-confetti').then((confetti) => {
-        confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+      // تسجيل المصروف للتاجر
+      await supabase.from('expenses').insert([{
+        supplier_id: req.merchant_id,
+        title: `Achat Stock B2B`,
+        amount: req.total_amount,
+        category: 'achats',
+        date: new Date().toISOString()
+      }]);
+
+      // 🌟 4. الحل السحري لمشكلة الصفحة البيضاء: تحديث الحالة برمجياً
+      // بدلاً من window.location.reload()، نقوم باستدعاء دوال جلب البيانات مرة أخرى
+      await fetchB2BRequests(); // تحديث قائمة الطلبات في الصفحة
+      // إذا كان لديك دالة لجلب المنتجات في هذه الصفحة، استدعها هنا أيضاً مثل fetchProducts()
+      
+      // 5. الاحتفال
+      import('canvas-confetti').then((conf) => {
+        conf.default({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       });
 
-      alert(language === 'fr' ? "✅ Stock synchronisé et factures générées !" : "✅ تم مزامنة المخزون وتوليد الفواتير بنجاح!");
-      
-      setTimeout(() => window.location.reload(), 1000);
+      alert(language === 'fr' ? "✅ Opération réussie ! Stock و Factures à jour." : "✅ تمت العملية بنجاح! تم تحديث المخزون والفواتير.");
 
     } catch (err) {
       alert("Erreur: " + err.message);
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false); // سيختفي اللودر وتظهر البيانات الجديدة فوراً دون بياض
     }
   };
   
