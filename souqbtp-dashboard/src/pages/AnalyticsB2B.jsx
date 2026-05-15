@@ -19,20 +19,17 @@ export default function AnalyticsB2B() {
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      // 🎯 المعرف الذكي: يأخذ رقم الشركة الأم إذا كان المستخدم موظفاً
-      const targetId = supplier.supplier_id || supplier.id;
+      // 🎯 الشرط الذكي الصحيح 100% (نفس الذي استخدمناه عند التاجر ونجح)
+      const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
 
-      // 1. حساب المداخيل الإجمالية (من الفواتير)
       const { data: invoices } = await supabase
         .from('documents')
         .select('total_amount')
         .eq('owner_id', targetId)
         .eq('type', 'Facture');
       
-      // 🎯 حماية برمجية تمنع الانهيار
       const revenue = (invoices || []).reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
 
-      // 2. حساب عدد الطلبات وعدد العملاء المميزين
       const { data: requests } = await supabase
         .from('supply_requests')
         .select('merchant_id, items')
@@ -43,7 +40,6 @@ export default function AnalyticsB2B() {
       const uniqueClients = new Set((requests || []).map(req => req.merchant_id).filter(id => id));
       const clientsCount = uniqueClients.size;
 
-      // 3. استخراج أكثر المنتجات مبيعاً
       const productCounter = {};
       (requests || []).forEach(req => {
         (req.items || []).forEach(item => {
@@ -80,7 +76,7 @@ export default function AnalyticsB2B() {
           {language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى B2B'}
         </h2>
         <p className="text-slate-400 mt-1 font-medium">
-          {language === 'fr' ? 'Suivez vos performances et vos ventes en temps réel.' : 'تتبع أداءك ومبيعاتك في الوقت الفعلي بناءً على بياناتك الحقيقية.'}
+          {language === 'fr' ? 'Suivez vos performances et vos ventes en temps réel.' : 'تتبع أداءك ومبيعاتك في الوقت الفعلي.'}
         </p>
       </div>
 
@@ -89,21 +85,18 @@ export default function AnalyticsB2B() {
           <div className="absolute right-6 top-6 bg-emerald-500/20 p-3 rounded-full"><DollarSign className="text-emerald-400"/></div>
           <p className="text-slate-400 font-bold text-sm mb-1">{language === 'fr' ? "Chiffre d'Affaires" : 'رقم المعاملات'}</p>
           <h3 className="text-3xl font-black text-white mb-3">{stats.revenue.toLocaleString()} <span className="text-sm">DH</span></h3>
-          <span className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded text-xs font-bold">En direct 🟢</span>
         </div>
 
         <div className="bg-slate-800 border border-slate-700 p-6 rounded-3xl relative overflow-hidden shadow-lg">
           <div className="absolute right-6 top-6 bg-blue-500/20 p-3 rounded-full"><Package className="text-blue-400"/></div>
           <p className="text-slate-400 font-bold text-sm mb-1">{language === 'fr' ? 'Commandes B2B' : 'طلبات التزويد'}</p>
           <h3 className="text-3xl font-black text-white mb-3">{stats.ordersCount}</h3>
-          <span className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded text-xs font-bold">Total traité</span>
         </div>
 
         <div className="bg-slate-800 border border-slate-700 p-6 rounded-3xl relative overflow-hidden shadow-lg">
           <div className="absolute right-6 top-6 bg-purple-500/20 p-3 rounded-full"><Users className="text-purple-400"/></div>
           <p className="text-slate-400 font-bold text-sm mb-1">{language === 'fr' ? 'Clients Actifs' : 'العملاء النشطون'}</p>
           <h3 className="text-3xl font-black text-white mb-3">{stats.clientsCount}</h3>
-          <span className="bg-purple-500/10 text-purple-400 px-2 py-1 rounded text-xs font-bold">Commerçants</span>
         </div>
       </div>
 
@@ -139,24 +132,15 @@ export default function AnalyticsB2B() {
           <div className="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-1/4 -translate-y-1/4">
             <TrendingUp size={200} />
           </div>
-          <div className="bg-white/20 w-fit p-3 rounded-xl mb-6 backdrop-blur-md">
-            <Sparkles className="text-white" size={24} />
-          </div>
-          <h3 className="text-2xl font-black text-white mb-4">
-            {language === 'fr' ? 'Conseil Stratégique (IA)' : 'نصيحة استراتيجية (الذكاء الاصطناعي)'}
-          </h3>
+          <div className="bg-white/20 w-fit p-3 rounded-xl mb-6 backdrop-blur-md"><Sparkles className="text-white" size={24} /></div>
+          <h3 className="text-2xl font-black text-white mb-4">{language === 'fr' ? 'Conseil Stratégique' : 'نصيحة استراتيجية'}</h3>
           <p className="text-indigo-100 font-medium leading-relaxed mb-8 text-sm">
             {language === 'fr' 
               ? topProducts.length > 0 
-                ? `Basé sur vos ${stats.ordersCount} dernières commandes, nous remarquons une forte demande sur "${topProducts[0].name}". Prévoyez une augmentation de stock pour ce produit.` 
-                : "Commencez à recevoir des commandes pour obtenir des conseils de l'IA."
+                ? `Forte demande sur "${topProducts[0].name}". Prévoyez le stock.` : "Attente de commandes..."
               : topProducts.length > 0
-                ? `بناءً على طلباتك الأخيرة (${stats.ordersCount})، نلاحظ إقبالاً كبيراً على "${topProducts[0].name}". ننصحك بزيادة مخزون هذا المنتج للأسبوع القادم.`
-                : "ابدأ في استقبال الطلبات لكي يحلل الذكاء الاصطناعي أداءك."}
+                ? `إقبال كبير على "${topProducts[0].name}". ننصحك بزيادة المخزون.` : "في انتظار استقبال الطلبات..."}
           </p>
-          <button className="bg-white text-indigo-700 font-black py-3 px-6 rounded-xl hover:bg-indigo-50 transition-colors w-fit shadow-lg">
-            {language === 'fr' ? 'Voir le rapport complet' : 'عرض التقرير المفصل'}
-          </button>
         </div>
       </div>
     </div>
