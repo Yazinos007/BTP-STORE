@@ -19,30 +19,34 @@ export default function AnalyticsB2B() {
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
+      // 🎯 المعرف الذكي: يأخذ رقم الشركة الأم إذا كان المستخدم موظفاً
+      const targetId = supplier.supplier_id || supplier.id;
+
       // 1. حساب المداخيل الإجمالية (من الفواتير)
       const { data: invoices } = await supabase
         .from('documents')
         .select('total_amount')
-        .eq('owner_id', supplier.id)
+        .eq('owner_id', targetId)
         .eq('type', 'Facture');
       
-      const revenue = invoices?.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+      // 🎯 حماية برمجية تمنع الانهيار
+      const revenue = (invoices || []).reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
 
-      // 2. حساب عدد الطلبات وعدد العملاء المميزين (من طلبات B2B)
+      // 2. حساب عدد الطلبات وعدد العملاء المميزين
       const { data: requests } = await supabase
         .from('supply_requests')
         .select('merchant_id, items')
-        .eq('supplier_id', supplier.id);
+        .eq('supplier_id', targetId);
 
       const ordersCount = requests?.length || 0;
       
-      const uniqueClients = new Set(requests?.map(req => req.merchant_id).filter(id => id));
+      const uniqueClients = new Set((requests || []).map(req => req.merchant_id).filter(id => id));
       const clientsCount = uniqueClients.size;
 
-      // 3. استخراج أكثر المنتجات مبيعاً من سلة الطلبات
+      // 3. استخراج أكثر المنتجات مبيعاً
       const productCounter = {};
-      requests?.forEach(req => {
-        req.items?.forEach(item => {
+      (requests || []).forEach(req => {
+        (req.items || []).forEach(item => {
           productCounter[item.name] = (productCounter[item.name] || 0) + Number(item.quantity);
         });
       });
@@ -50,7 +54,7 @@ export default function AnalyticsB2B() {
       const sortedProducts = Object.entries(productCounter)
         .map(([name, qty]) => ({ name, quantity: qty }))
         .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5); // أخذ أعلى 5 منتجات فقط
+        .slice(0, 5); 
 
       setStats({ revenue, ordersCount, clientsCount });
       setTopProducts(sortedProducts);
@@ -66,7 +70,6 @@ export default function AnalyticsB2B() {
     return <div className="flex h-full items-center justify-center"><Loader2 size={40} className="animate-spin text-blue-500" /></div>;
   }
 
-  // تحديد القيمة القصوى لحساب عرض الخط الملون في المنتجات
   const maxProductQty = topProducts.length > 0 ? topProducts[0].quantity : 1;
 
   return (

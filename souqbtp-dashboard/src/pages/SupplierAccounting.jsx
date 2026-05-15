@@ -20,38 +20,40 @@ export default function SupplierAccounting() {
   const fetchFinancials = async () => {
     setIsLoading(true);
     try {
-      // 1. جلب المداخيل الحقيقية من الفواتير (Factures)
+      // 🎯 المعرف الذكي 
+      const targetId = supplier.supplier_id || supplier.id;
+
+      // 1. جلب المداخيل الحقيقية من الفواتير
       const { data: invoices, error: invError } = await supabase
         .from('documents')
         .select('total_amount')
-        .eq('owner_id', supplier.id)
+        .eq('owner_id', targetId)
         .eq('type', 'Facture');
 
       if (invError) throw invError;
-      const totalRevenue = invoices.reduce((sum, doc) => sum + Number(doc.total_amount || 0), 0);
+      
+      // 🎯 حماية ضد الـ Null
+      const totalRevenue = (invoices || []).reduce((sum, doc) => sum + Number(doc.total_amount || 0), 0);
       setRevenue(totalRevenue);
 
-      // 2. جلب المصاريف الحقيقية من جدول (expenses)
+      // 2. جلب المصاريف الحقيقية
       const { data: expenses, error: expError } = await supabase
         .from('expenses')
         .select('amount, category')
-        .eq('supplier_id', supplier.id);
+        .eq('supplier_id', targetId);
 
       if (expError) throw expError;
 
       let opsCosts = 0;
       let salCosts = 0;
 
-      if (expenses) {
-        expenses.forEach(exp => {
-          // تصنيف الرواتب مقابل المصاريف الأخرى
-          if (exp.category === 'salaires' || exp.category === 'hr') {
-            salCosts += Number(exp.amount || 0);
-          } else {
-            opsCosts += Number(exp.amount || 0);
-          }
-        });
-      }
+      (expenses || []).forEach(exp => {
+        if (exp.category === 'salaires' || exp.category === 'hr') {
+          salCosts += Number(exp.amount || 0);
+        } else {
+          opsCosts += Number(exp.amount || 0);
+        }
+      });
 
       setOperatingCosts(opsCosts);
       setSalaries(salCosts);
@@ -66,7 +68,6 @@ export default function SupplierAccounting() {
   const netResult = revenue - operatingCosts - salaries;
   const isProfitable = netResult >= 0;
 
-  // حساب نسب الأعمدة للرسم البياني ديناميكياً
   const maxChartValue = Math.max(revenue, operatingCosts + salaries) || 1;
   const revenueHeight = `${(revenue / maxChartValue) * 100}%`;
   const expensesHeight = `${((operatingCosts + salaries) / maxChartValue) * 100}%`;

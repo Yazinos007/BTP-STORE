@@ -23,17 +23,19 @@ export default function SupplierInvoices() {
   const fetchInvoices = async () => {
     setIsLoading(true);
     try {
-      // 🚨 الحل السحري هنا: أزلنا الربط المعقد الذي كان يفرغ الجدول
+      // 🎯 المعرف الذكي 
+      const targetId = supplier.supplier_id || supplier.id;
+
       const { data, error } = await supabase
         .from('documents')
         .select('*') 
-        .eq('owner_id', supplier.id)
+        .eq('owner_id', targetId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setInvoices(data || []);
 
-      const clientIds = [...new Set(data?.map(d => d.client_id))].filter(id => id);
+      const clientIds = [...new Set((data || []).map(d => d.client_id))].filter(id => id);
       clientIds.forEach(id => fetchMerchantData(id));
     } catch (err) {
       console.error('Error fetching invoices:', err);
@@ -49,7 +51,6 @@ export default function SupplierInvoices() {
   };
 
   const handleDownloadPDF = async (invoice) => {
-    // 🎯 الاسم التلقائي في الـ PDF
     const merchantName = merchants[invoice.client_id]?.store_name || (language === 'fr' ? 'Client B2B (Automatique)' : 'تاجر B2B (تلقائي)');
     const date = new Date(invoice.created_at).toLocaleDateString();
     
@@ -132,7 +133,6 @@ export default function SupplierInvoices() {
   };
 
   const filteredInvoices = invoices.filter(inv => {
-    // 🎯 الاسم التلقائي في البحث
     const merchantName = merchants[inv.client_id]?.store_name || 'Client B2B';
     const matchesSearch = inv.ref_number.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           merchantName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -198,7 +198,6 @@ export default function SupplierInvoices() {
                 filteredInvoices.map(inv => (
                   <tr key={inv.id} className="hover:bg-slate-700/30 transition-colors group">
                     <td className="p-5 font-black text-emerald-400">#{inv.ref_number}</td>
-                    {/* 🎯 الاسم التلقائي في الجدول بدلاً من الفراغ */}
                     <td className="p-5 font-bold text-white">
                       {merchants[inv.client_id]?.store_name || (language === 'fr' ? 'Client B2B (Auto)' : 'تاجر B2B')}
                     </td>
