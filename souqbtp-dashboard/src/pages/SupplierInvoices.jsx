@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-// 🌟 تم إضافة أيقونة الحذف Trash2 هنا
 import { FileText, Search, Download, Loader2, Trash2 } from 'lucide-react'; 
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -24,11 +23,12 @@ export default function SupplierInvoices() {
   const fetchInvoices = async () => {
     setIsLoading(true);
     try {
+      // 🚨 الحل السحري هنا: أزلنا الربط المعقد الذي كان يفرغ الجدول
       const { data, error } = await supabase
         .from('documents')
-        .select(`*, merchant:suppliers!client_id(store_name)`)
+        .select('*') 
         .eq('owner_id', supplier.id)
-        .order('created_at', { ascending: false }); // ترتيب الفواتير من الأحدث للأقدم
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setInvoices(data || []);
@@ -49,7 +49,8 @@ export default function SupplierInvoices() {
   };
 
   const handleDownloadPDF = async (invoice) => {
-    const merchantName = merchants[invoice.client_id]?.store_name || invoice.merchant?.store_name || 'Client B2B';
+    // 🎯 الاسم التلقائي في الـ PDF
+    const merchantName = merchants[invoice.client_id]?.store_name || (language === 'fr' ? 'Client B2B (Automatique)' : 'تاجر B2B (تلقائي)');
     const date = new Date(invoice.created_at).toLocaleDateString();
     
     const printElement = document.createElement('div');
@@ -119,12 +120,11 @@ export default function SupplierInvoices() {
     }
   };
 
-  // 🌟 تم إصلاح دالة الحذف واستخدام المتغيرات الصحيحة
   const handleDeleteInvoice = async (id) => {
     if (!window.confirm(language === 'fr' ? "Êtes-vous sûr de vouloir supprimer cette facture ?" : "هل أنت متأكد من حذف هذه الفاتورة؟")) return;
     try {
       await supabase.from('documents').delete().eq('id', id);
-      setInvoices(invoices.filter(inv => inv.id !== id)); // تم إصلاح setDocuments إلى setInvoices
+      setInvoices(invoices.filter(inv => inv.id !== id));
       alert(language === 'fr' ? "✅ Facture supprimée" : "✅ تم حذف الفاتورة بنجاح");
     } catch (err) {
       alert("Erreur de suppression");
@@ -132,7 +132,8 @@ export default function SupplierInvoices() {
   };
 
   const filteredInvoices = invoices.filter(inv => {
-    const merchantName = merchants[inv.client_id]?.store_name || inv.merchant?.store_name || '';
+    // 🎯 الاسم التلقائي في البحث
+    const merchantName = merchants[inv.client_id]?.store_name || 'Client B2B';
     const matchesSearch = inv.ref_number.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           merchantName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'All' || inv.type === filterType;
@@ -197,8 +198,10 @@ export default function SupplierInvoices() {
                 filteredInvoices.map(inv => (
                   <tr key={inv.id} className="hover:bg-slate-700/30 transition-colors group">
                     <td className="p-5 font-black text-emerald-400">#{inv.ref_number}</td>
-                    {/* 🌟 هنا يظهر اسم التاجر بوضوح */}
-                    <td className="p-5 font-bold text-white">{merchants[inv.client_id]?.store_name || inv.merchant?.store_name || '...'}</td>
+                    {/* 🎯 الاسم التلقائي في الجدول بدلاً من الفراغ */}
+                    <td className="p-5 font-bold text-white">
+                      {merchants[inv.client_id]?.store_name || (language === 'fr' ? 'Client B2B (Auto)' : 'تاجر B2B')}
+                    </td>
                     <td className="p-5 text-slate-400 text-sm font-medium">{new Date(inv.created_at).toLocaleDateString()}</td>
                     <td className="p-5">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${inv.type === 'Facture' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
@@ -208,20 +211,11 @@ export default function SupplierInvoices() {
                     <td className="p-5 text-right font-black text-xl text-white">
                       {Number(inv.total_amount).toLocaleString()} <span className="text-xs text-slate-500 font-bold">DH</span>
                     </td>
-                    {/* 🌟 تم إضافة زر الحذف بجانب زر التحميل */}
                     <td className="p-5 flex justify-center items-center gap-2">
-                      <button 
-                        onClick={() => handleDownloadPDF(inv)}
-                        className="p-2.5 bg-slate-700 hover:bg-emerald-600 rounded-xl transition-all group-hover:scale-110 shadow-lg"
-                        title={language === 'fr' ? 'Télécharger' : 'تحميل PDF'}
-                      >
+                      <button onClick={() => handleDownloadPDF(inv)} className="p-2.5 bg-slate-700 hover:bg-emerald-600 rounded-xl transition-all group-hover:scale-110 shadow-lg">
                         <Download size={18} className="text-slate-300 group-hover:text-white" />
                       </button>
-                      <button 
-                        onClick={() => handleDeleteInvoice(inv.id)}
-                        className="p-2.5 bg-slate-700 hover:bg-red-600 rounded-xl transition-all group-hover:scale-110 shadow-lg"
-                        title={language === 'fr' ? 'Supprimer' : 'حذف الفاتورة'}
-                      >
+                      <button onClick={() => handleDeleteInvoice(inv.id)} className="p-2.5 bg-slate-700 hover:bg-red-600 rounded-xl transition-all group-hover:scale-110 shadow-lg">
                         <Trash2 size={18} className="text-slate-300 group-hover:text-white" />
                       </button>
                     </td>

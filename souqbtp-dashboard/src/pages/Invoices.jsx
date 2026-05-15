@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import useDocumentStore from '../store/useDocumentStore';
 import useSupplierStore from '../store/useSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
-import useExternalSupplierStore from '../store/useExternalSupplierStore'; // 🌟 جلب الموردين لمعرفة أسماءهم
+import useExternalSupplierStore from '../store/useExternalSupplierStore'; 
 import { FileText, Search, Printer, Trash2, HardHat, Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabase'; // 🌟 جلب Supabase للاتصال بجدول المشتريات
+import { supabase } from '../lib/supabase'; 
 
 const translations = {
   ar: {
@@ -25,7 +25,7 @@ const translations = {
 
 export default function Invoices() {
   const { documents, isLoading, fetchDocuments, deleteDocument } = useDocumentStore();
-  const { suppliers, fetchSuppliers } = useExternalSupplierStore(); // 🌟 لترجمة ID المورد إلى اسمه
+  const { suppliers, fetchSuppliers } = useExternalSupplierStore(); 
   const { supplier } = useSupplierStore();
   const { language } = useSettingsStore();
   const t = translations[language];
@@ -33,7 +33,6 @@ export default function Invoices() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('All');
   
-  // 🌟 حالة جديدة لتخزين فواتير الشراء
   const [purchaseInvoices, setPurchaseInvoices] = useState([]);
   const [isPurchasesLoading, setIsPurchasesLoading] = useState(false);
 
@@ -43,7 +42,6 @@ export default function Invoices() {
     fetchPurchaseInvoices();
   }, []);
 
-  // 🌟 دالة جلب فواتير الشراء من الجدول الجديد
   const fetchPurchaseInvoices = async () => {
     setIsPurchasesLoading(true);
     try {
@@ -58,25 +56,24 @@ export default function Invoices() {
     }
   };
 
-  // 🌟 دالة الحذف المحدثة (تحذف من الجدول الصحيح حسب نوع الفاتورة)
   const handleDelete = async (doc) => {
     if (window.confirm(t.confirmDelete)) {
       if (doc.isPurchase) {
         await supabase.from('purchase_invoices').delete().eq('id', doc.id);
-        fetchPurchaseInvoices(); // تحديث القائمة
+        fetchPurchaseInvoices(); 
       } else {
         await deleteDocument(doc.id);
       }
     }
   };
 
-  // 🖨️ دالة إعادة الطباعة (محدثة لتدعم الموردين)
   const handleReprint = (doc) => {
     const storeName = supplier?.store_name || 'ENTREPRISE SOUQBTP';
     const date = new Date(doc.created_at).toLocaleDateString('fr-FR');
-    const clientName = doc.clients?.full_name || 'Inconnu';
+    // 🎯 الاسم التلقائي في الطباعة
+    const clientName = doc.clients?.full_name || (doc.type === 'Facture Achat' ? 'Fournisseur B2B' : 'Client B2B');
     const items = doc.items || [];
-    const partyLabel = doc.isPurchase ? 'Fournisseur' : 'Client'; // تغيير الكلمة حسب النوع
+    const partyLabel = doc.type === 'Facture Achat' ? 'Fournisseur' : 'Client'; 
     
     const docHtml = `
       <html>
@@ -141,7 +138,6 @@ export default function Invoices() {
 
   const safeDocuments = Array.isArray(documents) ? documents : [];
 
-  // 🌟 تحويل فواتير الشراء لتشبه شكل فواتير البيع لكي يسهل عرضها في نفس الجدول
   const formattedPurchases = purchaseInvoices.map(inv => {
     const supplierName = suppliers.find(s => s.id === inv.external_supplier_id)?.name || 'Fournisseur';
     return {
@@ -156,7 +152,6 @@ export default function Invoices() {
     };
   });
 
-  // 🌟 دمج جميع المستندات وترتيبها من الأحدث للأقدم
   const allCombinedDocs = [...safeDocuments, ...formattedPurchases].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   const filteredDocs = allCombinedDocs.filter(doc => {
@@ -169,7 +164,7 @@ export default function Invoices() {
     switch (type) {
       case 'Devis': return 'bg-blue-50 text-blue-600 border-blue-200';
       case 'Facture': return 'bg-emerald-50 text-emerald-600 border-emerald-200';
-      case 'Facture Achat': return 'bg-teal-50 text-teal-700 border-teal-200 shadow-sm'; // 🌟 لون مميز لفواتير الشراء
+      case 'Facture Achat': return 'bg-teal-50 text-teal-700 border-teal-200 shadow-sm'; 
       case 'Bon de Livraison': return 'bg-purple-50 text-purple-600 border-purple-200';
       case 'Bon de Commande': return 'bg-orange-50 text-orange-600 border-orange-200';
       default: return 'bg-gray-50 text-gray-600 border-gray-200';
@@ -185,7 +180,6 @@ export default function Invoices() {
         </div>
       </div>
 
-      {/* 📑 أزرار التبويب (Tabs) الذكية المحدثة */}
       <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
         {['All', 'Facture', 'Facture Achat', 'Devis', 'Bon de Livraison', 'Bon de Commande'].map(tab => (
           <button 
@@ -229,8 +223,9 @@ export default function Invoices() {
                 <tr key={doc.id} className="hover:bg-blue-50/30 transition-colors group">
                   <td className="px-6 py-4 font-bold text-gray-800 font-mono">{doc.ref_number}</td>
                   <td className="px-6 py-4">
+                    {/* 🎯 الحل السحري: إذا لم يجد الاسم، سيكتب "Fournisseur B2B" بدل الفراغ */}
                     <p className={`font-bold ${doc.isPurchase ? 'text-teal-700' : 'text-gray-800'}`}>
-                      {doc.clients?.full_name || '---'}
+                      {doc.clients?.full_name || (doc.type === 'Facture Achat' ? 'Fournisseur B2B' : 'Client B2B')}
                     </p>
                     {doc.chantier && <p className="text-xs font-bold text-orange-600 mt-1 flex items-center gap-1"><HardHat size={12}/> {doc.chantier}</p>}
                   </td>
