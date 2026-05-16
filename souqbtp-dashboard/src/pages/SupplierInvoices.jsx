@@ -23,29 +23,26 @@ export default function SupplierInvoices() {
   const fetchInvoices = async () => {
     setIsLoading(true);
     try {
-      // 🎯 1. المعرف الذكي للمورد (المدير أو الموظف)
       const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
 
-      // 🎯 2. الخدعة الذكية: جلب أسماء منتجات المورد وتنظيفها
       const { data: myProducts } = await supabase.from('products').select('name').eq('supplier_id', targetId);
       const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
 
-      // 🎯 3. جلب كل الفواتير من النظام وتجاوز قيد الـ ID الخاطئ
+      // 🎯 التعديل هنا: نجلب فقط فواتير البيع ووصولات التسليم، ونمنع ظهور فواتير الشراء (Facture Achat)
       const { data: allDocs, error } = await supabase
         .from('documents')
         .select('*') 
+        .in('type', ['Facture', 'Bon de Livraison']) 
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // 🎯 4. الفلترة السحرية: استخراج الفواتير التي تحتوي على بضاعة هذا المورد فقط
       const myInvoices = (allDocs || []).filter(doc => 
         (doc.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
       );
 
       setInvoices(myInvoices);
 
-      // جلب بيانات التجار (العملاء) بناءً على الفواتير المفلترة
       const clientIds = [...new Set(myInvoices.map(d => d.client_id))].filter(id => id);
       clientIds.forEach(id => fetchMerchantData(id));
     } catch (err) {

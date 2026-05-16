@@ -252,7 +252,7 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 دالة الاستلام (النسخة المالية: تسجيل الفواتير والمصاريف بشكل آمن ومكشوف)
+  // 🌟 دالة الاستلام (النسخة المستقرة + توليد وصل التسليم للمورد فقط)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
@@ -276,17 +276,29 @@ export default function Purchases() {
       const refNumber = Date.now().toString().slice(-4);
       let financialErrors = [];
 
-      // أ- فاتورة البيع للمورد (الـ Boss)
+      // أ- فاتورة البيع و وصل التسليم للمورد (الـ Boss)
       if (req.supplier_id) {
+          // 📝 توليد الفاتورة
           const { error: err1 } = await supabase.from('documents').insert({ 
              owner_id: req.supplier_id, 
-             client_id: null, // وضعناها null لتفادي خطأ الربط (Foreign Key)
+             client_id: null, 
              type: 'Facture', 
              ref_number: `FAC-B2B-${refNumber}`, 
              total_amount: req.total_amount, 
              items: req.items 
           });
           if (err1) financialErrors.push("Facture Boss: " + err1.message);
+
+          // 📦 توليد وصل التسليم (هذا هو التعديل الوحيد المضاف)
+          const { error: errBL } = await supabase.from('documents').insert({ 
+             owner_id: req.supplier_id, 
+             client_id: null, 
+             type: 'Bon de Livraison', 
+             ref_number: `BL-B2B-${refNumber}`, 
+             total_amount: req.total_amount, 
+             items: req.items 
+          });
+          if (errBL) financialErrors.push("BL Boss: " + errBL.message);
       }
 
       // ب- فاتورة الشراء للتاجر
@@ -311,9 +323,9 @@ export default function Purchases() {
 
       // 4. تقييم العملية (هل تم الحفظ المالي أم لا؟)
       if (financialErrors.length > 0) {
-          alert(`⚠️ تم الاستلام وتحديث المخزون بنجاح، لكن قاعدة البيانات رفضت تسجيل الفواتير:\n\n${financialErrors.join('\n')}`);
+          alert(`⚠️ تم الاستلام وتحديث المخزون بنجاح، لكن قاعدة البيانات رفضت تسجيل بعض الوثائق:\n\n${financialErrors.join('\n')}`);
       } else {
-          alert(language === 'fr' ? "✅ Réception validée et factures générées !" : "✅ تم الاستلام بنجاح وتوليد الفواتير والمصاريف!");
+          alert(language === 'fr' ? "✅ Réception validée (Factures et BL générés) !" : "✅ تم الاستلام بنجاح وتوليد الفواتير ووصل التسليم!");
       }
 
       // 5. التحديث الناعم والمستقر (بدون صفحة بيضاء)
