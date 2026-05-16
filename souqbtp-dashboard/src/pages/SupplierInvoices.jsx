@@ -28,11 +28,11 @@ export default function SupplierInvoices() {
       const { data: myProducts } = await supabase.from('products').select('name').eq('supplier_id', targetId);
       const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
 
-      // 🎯 التعديل هنا: نجلب فقط فواتير البيع ووصولات التسليم، ونمنع ظهور فواتير الشراء (Facture Achat)
+      // جلب الفواتير ووصولات التسليم فقط (استبعاد فواتير الشراء)
       const { data: allDocs, error } = await supabase
         .from('documents')
         .select('*') 
-        .in('type', ['Facture', 'Bon de Livraison']) 
+        .in('type', ['Facture', 'Bon de Livraison'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -59,9 +59,12 @@ export default function SupplierInvoices() {
   };
 
   const handleDownloadPDF = async (invoice) => {
-    // 🎯 الاسم التلقائي في الـ PDF
     const merchantName = merchants[invoice.client_id]?.store_name || (language === 'fr' ? 'Client B2B (Automatique)' : 'تاجر B2B (تلقائي)');
-    const date = new Date(invoice.created_at).toLocaleDateString();
+    
+    // 🎯 التعديل الأول: إضافة التوقيت الدقيق في ملف الـ PDF
+    const date = new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA', { 
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+    }).format(new Date(invoice.created_at));
     
     const printElement = document.createElement('div');
     printElement.style.padding = '40px';
@@ -135,14 +138,13 @@ export default function SupplierInvoices() {
     try {
       await supabase.from('documents').delete().eq('id', id);
       setInvoices(invoices.filter(inv => inv.id !== id));
-      alert(language === 'fr' ? "✅ Facture supprimée" : "✅ تم حذف الفاتورة بنجاح");
+      alert(language === 'fr' ? "✅ Document supprimé" : "✅ تم الحذف بنجاح");
     } catch (err) {
       alert("Erreur de suppression");
     }
   };
 
   const filteredInvoices = invoices.filter(inv => {
-    // 🎯 الاسم التلقائي في البحث مع حماية ضد القيمة الفارغة (null)
     const merchantName = merchants[inv.client_id]?.store_name || 'Client B2B';
     const matchesSearch = (inv.ref_number || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           merchantName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -203,18 +205,22 @@ export default function SupplierInvoices() {
               {isLoading ? (
                 <tr><td colSpan="6" className="p-10 text-center"><Loader2 size={30} className="animate-spin text-emerald-500 mx-auto"/></td></tr>
               ) : filteredInvoices.length === 0 ? (
-                <tr><td colSpan="6" className="p-10 text-center text-slate-500">{language === 'fr' ? 'Aucune facture trouvée' : 'لا توجد فواتير'}</td></tr>
+                <tr><td colSpan="6" className="p-10 text-center text-slate-500">{language === 'fr' ? 'Aucun document trouvé' : 'لا توجد وثائق'}</td></tr>
               ) : (
                 filteredInvoices.map(inv => (
                   <tr key={inv.id} className="hover:bg-slate-700/30 transition-colors group">
                     <td className="p-5 font-black text-emerald-400">#{inv.ref_number}</td>
-                    {/* 🎯 الاسم التلقائي في الجدول بدلاً من الفراغ */}
                     <td className="p-5 font-bold text-white">
                       {merchants[inv.client_id]?.store_name || (language === 'fr' ? 'Client B2B (Auto)' : 'تاجر B2B')}
                     </td>
-                    <td className="p-5 text-slate-400 text-sm font-medium">{new Date(inv.created_at).toLocaleDateString()}</td>
+                    {/* 🎯 التعديل الثاني: إضافة التوقيت لعمود التاريخ في الجدول */}
+                    <td className="p-5 text-slate-400 text-sm font-medium">
+                      {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA', { 
+                        day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                      }).format(new Date(inv.created_at))}
+                    </td>
                     <td className="p-5">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${inv.type === 'Facture' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${inv.type === 'Facture' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'}`}>
                         {inv.type}
                       </span>
                     </td>
