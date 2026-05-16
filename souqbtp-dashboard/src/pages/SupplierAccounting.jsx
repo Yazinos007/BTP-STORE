@@ -20,23 +20,31 @@ export default function SupplierAccounting() {
   const fetchFinancials = async () => {
     setIsLoading(true);
     try {
-      // 🎯 المعرف الذكي 
-      const targetId = supplier.supplier_id || supplier.id;
+      // 🎯 المعرف الذكي الصحيح للـ Boss والموظفين
+      const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
 
-      // 1. جلب المداخيل الحقيقية من الفواتير
-      const { data: invoices, error: invError } = await supabase
+      // 🎯 1. الخدعة الذكية: جلب أسماء منتجات المورد وتنظيفها
+      const { data: myProducts } = await supabase.from('products').select('name').eq('supplier_id', targetId);
+      const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
+
+      // 🎯 2. جلب كل الفواتير من النظام بدون قيود الـ ID
+      const { data: allInvoices, error: invError } = await supabase
         .from('documents')
-        .select('total_amount')
-        .eq('owner_id', targetId)
+        .select('total_amount, items')
         .eq('type', 'Facture');
 
       if (invError) throw invError;
       
-      // 🎯 حماية ضد الـ Null
-      const totalRevenue = (invoices || []).reduce((sum, doc) => sum + Number(doc.total_amount || 0), 0);
+      // 🎯 3. الفلترة: الفاتورة لي إذا كانت تحتوي على بضاعتي
+      const myInvoices = (allInvoices || []).filter(inv => 
+        (inv.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
+      );
+
+      // 🎯 4. حساب المداخيل الحقيقية
+      const totalRevenue = myInvoices.reduce((sum, doc) => sum + Number(doc.total_amount || 0), 0);
       setRevenue(totalRevenue);
 
-      // 2. جلب المصاريف الحقيقية
+      // 5. جلب المصاريف الحقيقية (المصاريف لا يوجد بها مشكلة فتسجل بالـ ID الصحيح)
       const { data: expenses, error: expError } = await supabase
         .from('expenses')
         .select('amount, category')

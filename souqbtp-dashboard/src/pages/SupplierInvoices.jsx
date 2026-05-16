@@ -23,17 +23,30 @@ export default function SupplierInvoices() {
   const fetchInvoices = async () => {
     setIsLoading(true);
     try {
-      // 🚨 الحل السحري هنا: أزلنا الربط المعقد الذي كان يفرغ الجدول
-      const { data, error } = await supabase
+      // 🎯 1. المعرف الذكي للمورد (المدير أو الموظف)
+      const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
+
+      // 🎯 2. الخدعة الذكية: جلب أسماء منتجات المورد وتنظيفها
+      const { data: myProducts } = await supabase.from('products').select('name').eq('supplier_id', targetId);
+      const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
+
+      // 🎯 3. جلب كل الفواتير من النظام وتجاوز قيد الـ ID الخاطئ
+      const { data: allDocs, error } = await supabase
         .from('documents')
         .select('*') 
-        .eq('owner_id', supplier.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setInvoices(data || []);
 
-      const clientIds = [...new Set(data?.map(d => d.client_id))].filter(id => id);
+      // 🎯 4. الفلترة السحرية: استخراج الفواتير التي تحتوي على بضاعة هذا المورد فقط
+      const myInvoices = (allDocs || []).filter(doc => 
+        (doc.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
+      );
+
+      setInvoices(myInvoices);
+
+      // جلب بيانات التجار (العملاء) بناءً على الفواتير المفلترة
+      const clientIds = [...new Set(myInvoices.map(d => d.client_id))].filter(id => id);
       clientIds.forEach(id => fetchMerchantData(id));
     } catch (err) {
       console.error('Error fetching invoices:', err);
@@ -132,9 +145,9 @@ export default function SupplierInvoices() {
   };
 
   const filteredInvoices = invoices.filter(inv => {
-    // 🎯 الاسم التلقائي في البحث
+    // 🎯 الاسم التلقائي في البحث مع حماية ضد القيمة الفارغة (null)
     const merchantName = merchants[inv.client_id]?.store_name || 'Client B2B';
-    const matchesSearch = inv.ref_number.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = (inv.ref_number || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           merchantName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'All' || inv.type === filterType;
     return matchesSearch && matchesType;

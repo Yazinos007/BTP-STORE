@@ -19,35 +19,39 @@ export default function AnalyticsB2B() {
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      // 🎯 المعرف الذكي: يأخذ رقم الشركة الأم إذا كان المستخدم موظفاً
-      const targetId = supplier.supplier_id || supplier.id;
+      const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
 
-      // 1. حساب المداخيل الإجمالية (من الفواتير)
-      const { data: invoices } = await supabase
-        .from('documents')
-        .select('total_amount')
-        .eq('owner_id', targetId)
-        .eq('type', 'Facture');
+      // 🎯 1. جلب أسماء المنتجات التي يملكها المورد وتنظيفها لمطابقتها في الفواتير
+      const { data: myProducts } = await supabase.from('products').select('name').eq('supplier_id', targetId);
+      const myProductNames = new Set(myProducts?.map(p => p.name.replace(/\s+/g, '').toLowerCase()) || []);
+
+      // 🎯 2. جلب كل الفواتير والطلبات بدون تحديد المالك لتفادي مشكلة الـ ID
+      const { data: allInvoices } = await supabase.from('documents').select('total_amount, items').eq('type', 'Facture');
+      const { data: allRequests } = await supabase.from('supply_requests').select('merchant_id, items');
+
+      // 🎯 3. الفلترة الذكية عن طريق "اسم المنتج" رداً على اختلاف الـ ID
+      const myInvoices = (allInvoices || []).filter(inv => 
+        (inv.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
+      );
       
-      // 🎯 حماية برمجية تمنع الانهيار
-      const revenue = (invoices || []).reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
+      const myRequests = (allRequests || []).filter(req => 
+        (req.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
+      );
 
-      // 2. حساب عدد الطلبات وعدد العملاء المميزين
-      const { data: requests } = await supabase
-        .from('supply_requests')
-        .select('merchant_id, items')
-        .eq('supplier_id', targetId);
-
-      const ordersCount = requests?.length || 0;
+      // 🎯 4. الحسابات الإجمالية للوحة التحكم بناءً على الفواتير المفلترة
+      const revenue = myInvoices.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
+      const ordersCount = myRequests.length;
       
-      const uniqueClients = new Set((requests || []).map(req => req.merchant_id).filter(id => id));
+      const uniqueClients = new Set(myRequests.map(req => req.merchant_id).filter(id => id));
       const clientsCount = uniqueClients.size;
 
-      // 3. استخراج أكثر المنتجات مبيعاً
       const productCounter = {};
-      (requests || []).forEach(req => {
+      myRequests.forEach(req => {
         (req.items || []).forEach(item => {
-          productCounter[item.name] = (productCounter[item.name] || 0) + Number(item.quantity);
+          const cleanName = (item.name || '').replace(/\s+/g, '').toLowerCase();
+          if (myProductNames.has(cleanName)) { // نحسب بضاعتنا فقط
+             productCounter[item.name] = (productCounter[item.name] || 0) + Number(item.quantity);
+          }
         });
       });
 
