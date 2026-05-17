@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-// 🎯 أضفنا أيقونات الموارد البشرية والمصاريف والمستشار الذكي (Sparkles)
 import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard } from 'lucide-react';
 
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
 import SupplierAccounting from './pages/SupplierAccounting';
-// 🎯 استدعاء الصفحات الفنية الجديدة للمورد
 import SupplierExpenses from './pages/SupplierExpenses';
 import SupplierHR from './pages/SupplierHR';
-import AISmartAdvisor from './pages/AISmartAdvisor'; // الصفحات العبقرية الجديدة
+import AISmartAdvisor from './pages/AISmartAdvisor'; 
 import SupplierOverview from './pages/SupplierOverview';
+import SupplierClients from './pages/SupplierClients'; // 🎯 استدعاء صفحة الـ CRM الجديدة للمورد
 
 // === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
@@ -48,7 +47,6 @@ import AnalyticsB2B from './pages/AnalyticsB2B';
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
 
-// --- 1. مكون ذكي للصفحات قيد الإنشاء ---
 const PlaceholderPage = ({ title, isDark = false }) => {
   const { language } = useSettingsStore();
   return (
@@ -61,15 +59,15 @@ const PlaceholderPage = ({ title, isDark = false }) => {
   );
 };
 
-// --- 2. 🌟 الهيكل الجديد الفخم الخاص بالمورد الكبير (Wholesaler Layout) ---
 const WholesalerDashboard = ({ supplier }) => {
   const { language } = useSettingsStore();
   
-  // 🎯 تنظيم الأزرار بالترتيب الذي طلبته بالضبط
+  // 🎯 تم إدراج قسم إدارة علاقات العملاء (B2B CRM) في القائمة الجانبية بشكل استراتيجي
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Vue d\'ensemble' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
-    { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' }, // 💡 تم تصحيح المسار هنا إلى /orders
+    { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' },
+    { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients B2B' : 'إدارة العملاء (CRM)' }, // 🎯 الزر الجديد المضاف لـ الـ CRM
     { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل' },
     { path: '/contracts', icon: FileSignature, label: language === 'fr' ? 'Contrats & Signatures' : 'المصافحة الرقمية' },
     { path: '/invoices', icon: FileText, label: language === 'fr' ? 'Factures B2B' : 'الفواتير الكبرى' },
@@ -137,11 +135,12 @@ const WholesalerDashboard = ({ supplier }) => {
         </header>
 
         <div className="flex-1 overflow-auto p-10 custom-scrollbar z-10">
-          {/* 🎯 ترتيب مسارات الـ Routes مطابق تماماً لترتيب الأزرار */}
           <Routes>
             <Route path="/" element={<SupplierOverview />} />
             <Route path="/stock" element={<SupplierStock />} />
-            <Route path="/orders" element={<SupplierOrders />} /> {/* 💡 تم تصحيح المسار هنا أيضاً */}
+            <Route path="/orders" element={<SupplierOrders />} />
+            {/* 🎯 إضافة راوتر المسار الخاص بصفحة العملاء الجديدة */}
+            <Route path="/clients" element={<SupplierClients />} />
             <Route path="/fleet" element={<Fleet />} />
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/invoices" element={<SupplierInvoices />} />
@@ -157,7 +156,6 @@ const WholesalerDashboard = ({ supplier }) => {
   );
 };
 
-// --- 3. الدماغ الرئيسي للتطبيق (App) ---
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
