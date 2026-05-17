@@ -20,14 +20,12 @@ export default function SupplierAccounting() {
   const fetchFinancials = async () => {
     setIsLoading(true);
     try {
-      // 🎯 المعرف الذكي الصحيح للـ Boss والموظفين
       const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
 
-      // 🎯 1. الخدعة الذكية: جلب أسماء منتجات المورد وتنظيفها
+      // 1. جلب المداخيل بناءً على اسم البضاعة
       const { data: myProducts } = await supabase.from('products').select('name').eq('supplier_id', targetId);
       const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
 
-      // 🎯 2. جلب كل الفواتير من النظام بدون قيود الـ ID
       const { data: allInvoices, error: invError } = await supabase
         .from('documents')
         .select('total_amount, items')
@@ -35,16 +33,14 @@ export default function SupplierAccounting() {
 
       if (invError) throw invError;
       
-      // 🎯 3. الفلترة: الفاتورة لي إذا كانت تحتوي على بضاعتي
       const myInvoices = (allInvoices || []).filter(inv => 
         (inv.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
       );
 
-      // 🎯 4. حساب المداخيل الحقيقية
       const totalRevenue = myInvoices.reduce((sum, doc) => sum + Number(doc.total_amount || 0), 0);
       setRevenue(totalRevenue);
 
-      // 5. جلب المصاريف الحقيقية (المصاريف لا يوجد بها مشكلة فتسجل بالـ ID الصحيح)
+      // 2. جلب المصاريف التشغيلية (من جدول المصاريف)
       const { data: expenses, error: expError } = await supabase
         .from('expenses')
         .select('amount, category')
@@ -53,18 +49,35 @@ export default function SupplierAccounting() {
       if (expError) throw expError;
 
       let opsCosts = 0;
-      let salCosts = 0;
+      let manualSalCosts = 0;
 
       (expenses || []).forEach(exp => {
         if (exp.category === 'salaires' || exp.category === 'hr') {
-          salCosts += Number(exp.amount || 0);
+          manualSalCosts += Number(exp.amount || 0); // في حال تم إدخال راتب يدوياً
         } else {
           opsCosts += Number(exp.amount || 0);
         }
       });
 
       setOperatingCosts(opsCosts);
-      setSalaries(salCosts);
+
+      // 🎯 3. التعديل الجديد: جلب الرواتب من قسم الموارد البشرية (جدول الموظفين)
+      const { data: employees, error: empError } = await supabase
+        .from('employees')
+        .select('base_salary, status')
+        .eq('supplier_id', targetId);
+
+      if (empError) throw empError;
+
+      let hrPayroll = 0;
+      (employees || []).forEach(emp => {
+        if (emp.status === 'Actif' || emp.status === 'active') {
+          hrPayroll += Number(emp.base_salary || 0);
+        }
+      });
+
+      // دمج الرواتب اليدوية (إن وجدت) مع رواتب الموارد البشرية
+      setSalaries(manualSalCosts + hrPayroll);
       
     } catch (err) {
       console.error('Error fetching financials:', err);
