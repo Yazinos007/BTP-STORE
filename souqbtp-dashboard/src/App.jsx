@@ -18,7 +18,8 @@ import Overview from './pages/Overview';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Wallet from './pages/Wallet';
-import Settings from './pages/Settings';
+// 🎯 تم تغيير الاسم هنا إلى RetailerSettings لفك الاشتباك!
+import RetailerSettings from './pages/Settings'; 
 import POS from './pages/POS';
 import Expenses from './pages/Expenses';
 import Invoices from './pages/Invoices';
@@ -63,7 +64,6 @@ const PlaceholderPage = ({ title, isDark = false }) => {
 const WholesalerDashboard = ({ supplier }) => {
   const { language } = useSettingsStore();
   
-  // 🎯 تم إدراج قسم إدارة علاقات العملاء (B2B CRM) في القائمة الجانبية بشكل استراتيجي
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Vue d\'ensemble' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
@@ -233,7 +233,7 @@ function App() {
                 <Route path="/products" element={<Products />} />
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/wallet" element={<Wallet />} />
-                <Route path="/settings" element={<Settings />} />
+                <Route path="/settings" element={<RetailerSettings />} />
                 <Route path="/pos" element={<POS />} />
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/invoices" element={<Invoices />} />
