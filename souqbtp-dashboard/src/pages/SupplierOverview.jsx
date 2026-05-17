@@ -123,7 +123,8 @@ export default function SupplierOverview() {
             </p>
             <div className="flex justify-between items-center bg-black/40 p-4 rounded-2xl mb-6">
               <div>
-                <p className="text-xs text-slate-500 uppercase font-black tracking-widest">توفير متوقع</p>
+                {/* 🎯 تم التعديل هنا */}
+                <p className="text-xs text-slate-500 uppercase font-black tracking-widest">{language === 'fr' ? 'Économie Prévue' : 'توفير متوقع'}</p>
                 <p className="text-2xl font-black text-emerald-400">85,000 MAD</p>
               </div>
               <button className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-black text-sm transition-all">
@@ -140,7 +141,8 @@ export default function SupplierOverview() {
               <h4 className="text-xl font-bold text-white">{language === 'fr' ? 'Optimiseur Logistique' : 'محسن اللوجستيك'}</h4>
             </div>
             <div className="flex items-center gap-3 mb-4 font-black text-white text-sm bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10 w-fit">
-               <span>طنجة</span> <ArrowRightLeft size={16} className="text-blue-400" /> <span>الدار البيضاء</span>
+               {/* 🎯 تم التعديل هنا */}
+               <span>{language === 'fr' ? 'Tanger' : 'طنجة'}</span> <ArrowRightLeft size={16} className="text-blue-400" /> <span>{language === 'fr' ? 'Casablanca' : 'الدار البيضاء'}</span>
             </div>
             <p className="text-slate-300 font-medium leading-relaxed mb-6">
               {language === 'fr' 

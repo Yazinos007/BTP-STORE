@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-// 🎯 تم إضافة الأيقونات الجديدة الخاصة برادار المناقصات (Gavel, Timer, Box, Send, MapPin)
 import { Sparkles, AlertTriangle, TrendingUp, Truck, ShieldAlert, ArrowRightLeft, CheckCircle2, ChevronRight, RefreshCw, Loader2, Gavel, Timer, Box, Send, MapPin } from 'lucide-react';
 
 const translations = {
@@ -63,15 +62,12 @@ export default function AISmartAdvisor() {
   const [isProcessingHedging, setIsProcessingHedging] = useState(false);
   const [isProcessingLogistics, setIsProcessingLogistics] = useState(false);
   
-  // 🎯 حالات رادار المناقصات الجديدة
   const [isBidding, setIsBidding] = useState(false);
   const [showTender, setShowTender] = useState(false);
 
   useEffect(() => {
-    // محاكاة تحميل الذكاء الاصطناعي للبيانات الضخمة
     const timer = setTimeout(() => {
       setIsLoading(false);
-      // 🎯 تشغيل رادار المناقصات بعد ثانيتين من فتح الصفحة لإبهار المستخدم
       setTimeout(() => setShowTender(true), 2000);
     }, 1200);
     return () => clearTimeout(timer);
@@ -93,12 +89,11 @@ export default function AISmartAdvisor() {
     }, 1500);
   };
 
-  // 🎯 دالة تقديم عرض السعر للمناقصة
   const handleBidAction = () => {
     setIsBidding(true);
     setTimeout(() => {
       setIsBidding(false);
-      setShowTender(false); // إخفاء المناقصة بعد التقديم
+      setShowTender(false);
       alert(language === 'fr' ? '✅ Votre offre a été transmise à l\'ingénieur !' : '✅ تم إرسال عرض سعرك للمهندس بنجاح! سيتم إخطارك فور اختياره.');
     }, 2000);
   };
@@ -114,7 +109,6 @@ export default function AISmartAdvisor() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in text-slate-300" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* رأس الصفحة الفخم */}
       <div className="flex justify-between items-start border-b border-slate-800 pb-6">
         <div>
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
@@ -131,7 +125,6 @@ export default function AISmartAdvisor() {
 
       <div className="grid grid-cols-1 gap-8">
         
-        {/* 🎯 الكرت الذهبي: رادار المناقصات الحية (يظهر فقط عندما يجد النظام فرصة) */}
         {showTender && (
           <div className="bg-gradient-to-br from-indigo-900 to-slate-950 border-2 border-indigo-500/50 p-8 rounded-3xl relative overflow-hidden shadow-[0_0_50px_rgba(79,70,229,0.2)] animate-slide-up">
             <div className="absolute top-0 right-0 p-4 bg-indigo-500 text-white font-black text-xs uppercase tracking-widest rounded-bl-2xl">
@@ -162,7 +155,8 @@ export default function AISmartAdvisor() {
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin size={18} className="text-red-400" />
-                      <span className="text-sm font-bold text-slate-300">{t.location}: Tangier (7km)</span>
+                      {/* 🎯 تم تنظيف الموقع هنا */}
+                      <span className="text-sm font-bold text-slate-300">{t.location}: {language === 'fr' ? 'Tanger (7km)' : 'طنجة (7 كلم)'}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-amber-400">
@@ -174,7 +168,8 @@ export default function AISmartAdvisor() {
 
               <div className="w-full lg:w-72 space-y-3">
                 <div className="p-4 bg-black/40 rounded-2xl border border-white/5 text-center">
-                  <p className="text-xs text-slate-500 uppercase font-black mb-1">الميزانية التقديرية</p>
+                  {/* 🎯 تم تنظيف الميزانية هنا */}
+                  <p className="text-xs text-slate-500 uppercase font-black mb-1">{language === 'fr' ? 'Budget Estimatif' : 'الميزانية التقديرية'}</p>
                   <p className="text-3xl font-black text-white">485,000 <span className="text-sm font-bold text-slate-400">{t.currency}</span></p>
                 </div>
                 <button 
@@ -189,7 +184,6 @@ export default function AISmartAdvisor() {
           </div>
         )}
 
-        {/* 🔮 الكرت الأول: رادار تقلبات الأسعار والتحوط */}
         <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl group">
           <div className="absolute top-0 right-0 w-80 h-80 bg-red-500/5 rounded-full blur-[100px] pointer-events-none"></div>
           
@@ -237,7 +231,6 @@ export default function AISmartAdvisor() {
           </div>
         </div>
 
-        {/* 🚛 الكرت الثاني: نظام الرجوع عامر للوجستيك التشاركي */}
         <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl group">
           <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none"></div>
           
@@ -262,8 +255,9 @@ export default function AISmartAdvisor() {
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.emptyReturn}</p>
                 <div className="flex items-center gap-3 mt-1.5 font-black text-white">
-                  <span>{language === 'fr' ? 'Tanger' : 'طنجة'}</span>
-                  <ArrowRightLeft size={16} className="text-blue-400 animate-pulse" />
+                  {/* 🎯 تم تنظيف أسماء المدن هنا */}
+                  <span>{language === 'fr' ? 'Tanger' : 'طنجة'}</span> 
+                  <ArrowRightLeft size={16} className="text-blue-400 animate-pulse" /> 
                   <span>{language === 'fr' ? 'Casablanca' : 'الدار البيضاء'}</span>
                 </div>
               </div>
