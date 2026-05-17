@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard } from 'lucide-react';
+import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, Settings } from 'lucide-react';
 
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
@@ -10,7 +10,8 @@ import SupplierExpenses from './pages/SupplierExpenses';
 import SupplierHR from './pages/SupplierHR';
 import AISmartAdvisor from './pages/AISmartAdvisor'; 
 import SupplierOverview from './pages/SupplierOverview';
-import SupplierClients from './pages/SupplierClients'; // 🎯 استدعاء صفحة الـ CRM الجديدة للمورد
+import SupplierClients from './pages/SupplierClients'; 
+import SupplierSettings from './pages/SupplierSettings';
 
 // === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
@@ -76,6 +77,7 @@ const WholesalerDashboard = ({ supplier }) => {
     { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
     { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' },
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
+    { path: '/settings', icon: Settings, label: language === 'fr' ? 'Paramètres & Confiance' : 'الإعدادات والتوثيق' },
   ];
 
   return (
@@ -148,6 +150,7 @@ const WholesalerDashboard = ({ supplier }) => {
             <Route path="/accounting" element={<SupplierAccounting />} />
             <Route path="/ai-advisor" element={<AISmartAdvisor />} />
             <Route path="/analytics" element={<AnalyticsB2B />} />
+            <Route path="/settings" element={<SupplierSettings />} />
           </Routes>
         </div>
       </main>
