@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator } from 'lucide-react';
+// 🎯 تمت إضافة أيقونات Users و Receipt الخاصة بالأقسام الجديدة
+import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt } from 'lucide-react';
+
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
 import SupplierAccounting from './pages/SupplierAccounting';
@@ -36,6 +38,9 @@ import SupplierOrders from './pages/SupplierOrders';
 import Fleet from './pages/Fleet';
 import Contracts from './pages/Contracts';
 import AnalyticsB2B from './pages/AnalyticsB2B';
+// 🎯 استدعاء الصفحات الجديدة للمورد
+import SupplierExpenses from './pages/SupplierExpenses';
+import SupplierHR from './pages/SupplierHR';
 
 // === إدارة الحالة (Stores) ===
 import useSupplierStore from './store/useSupplierStore';
@@ -58,6 +63,7 @@ const PlaceholderPage = ({ title, isDark = false }) => {
 const WholesalerDashboard = ({ supplier }) => {
   const { language } = useSettingsStore();
   
+  // 🎯 تمت إضافة الأزرار الجديدة في القائمة الجانبية للمورد
   const menuItems = [
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
     { path: '/', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' },
@@ -65,12 +71,13 @@ const WholesalerDashboard = ({ supplier }) => {
     { path: '/contracts', icon: FileSignature, label: language === 'fr' ? 'Contrats & Signatures' : 'المصافحة الرقمية' },
     { path: '/invoices', icon: FileText, label: language === 'fr' ? 'Factures B2B' : 'الفواتير الكبرى' },
     { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
+    { path: '/expenses', icon: Receipt, label: language === 'fr' ? 'Gestion des Charges' : 'إدارة المصاريف' },
+    { path: '/hr', icon: Users, label: language === 'fr' ? 'Ressources Humaines' : 'الموارد البشرية' },
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
   ];
 
   return (
     <div className="flex h-screen bg-[#0f172a] text-slate-300 font-sans selection:bg-blue-500/30" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* الشريط الجانبي الداكن */}
       <aside className="w-72 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20">
         <div className="h-20 flex items-center px-8 border-b border-slate-800 bg-slate-950/50">
           <h1 className="text-2xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
@@ -78,7 +85,7 @@ const WholesalerDashboard = ({ supplier }) => {
           </h1>
         </div>
         
-        <nav className="flex-1 py-8 px-4 space-y-2">
+        <nav className="flex-1 py-8 px-4 space-y-2 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
             <Link key={item.path} to={item.path} className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all text-slate-400 hover:text-white hover:bg-slate-800/80 group">
               <item.icon size={20} className="group-hover:text-blue-400 transition-colors" />
@@ -94,7 +101,6 @@ const WholesalerDashboard = ({ supplier }) => {
         </div>
       </aside>
 
-      {/* منطقة المحتوى للمورد */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
         
@@ -134,6 +140,9 @@ const WholesalerDashboard = ({ supplier }) => {
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/invoices" element={<SupplierInvoices />} />
             <Route path="/accounting" element={<SupplierAccounting />} />
+            {/* 🎯 إضافة راوتر الصفحات الجديدة */}
+            <Route path="/expenses" element={<SupplierExpenses />} />
+            <Route path="/hr" element={<SupplierHR />} />
             <Route path="/analytics" element={<AnalyticsB2B />} />
           </Routes>
         </div>
@@ -187,7 +196,6 @@ function App() {
   const storeName = supplier?.store_name || t.loading;
   const storeInitial = supplier?.store_name ? supplier.store_name.charAt(0).toUpperCase() : (language === 'fr' ? '?' : '؟');
 
-  // 🌟 مسار المورد الكبير (Wholesaler)
   if (isWholesaler) {
     return (
       <BrowserRouter>
@@ -196,7 +204,6 @@ function App() {
     );
   }
 
-  // 🌟 مسار التاجر الصغير (Retailer)
   return (
     <BrowserRouter>
       <div className="flex h-screen bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -245,5 +252,4 @@ function App() {
     </BrowserRouter>
   );
 }
-
 export default App;
