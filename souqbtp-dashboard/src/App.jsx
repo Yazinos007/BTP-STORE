@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-// 🎯 تمت إضافة أيقونات Users و Receipt الخاصة بالأقسام الجديدة
-import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt } from 'lucide-react';
+// 🎯 أضفنا أيقونات الموارد البشرية والمصاريف والمستشار الذكي (Sparkles)
+import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles } from 'lucide-react';
 
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
 import SupplierAccounting from './pages/SupplierAccounting';
+// 🎯 استدعاء الصفحات الفنية الجديدة للمورد
+import SupplierExpenses from './pages/SupplierExpenses';
+import SupplierHR from './pages/SupplierHR';
+import AISmartAdvisor from './pages/AISmartAdvisor'; // الصفحات العبقرية الجديدة
 
 // === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
@@ -38,9 +42,6 @@ import SupplierOrders from './pages/SupplierOrders';
 import Fleet from './pages/Fleet';
 import Contracts from './pages/Contracts';
 import AnalyticsB2B from './pages/AnalyticsB2B';
-// 🎯 استدعاء الصفحات الجديدة للمورد
-import SupplierExpenses from './pages/SupplierExpenses';
-import SupplierHR from './pages/SupplierHR';
 
 // === إدارة الحالة (Stores) ===
 import useSupplierStore from './store/useSupplierStore';
@@ -63,7 +64,7 @@ const PlaceholderPage = ({ title, isDark = false }) => {
 const WholesalerDashboard = ({ supplier }) => {
   const { language } = useSettingsStore();
   
-  // 🎯 تمت إضافة الأزرار الجديدة في القائمة الجانبية للمورد
+  // 🎯 تنظيم الأزرار: وضعنا المستشار الذكي في مكان استراتيجي بارز جداً
   const menuItems = [
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
     { path: '/', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' },
@@ -73,6 +74,7 @@ const WholesalerDashboard = ({ supplier }) => {
     { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
     { path: '/expenses', icon: Receipt, label: language === 'fr' ? 'Gestion des Charges' : 'إدارة المصاريف' },
     { path: '/hr', icon: Users, label: language === 'fr' ? 'Ressources Humaines' : 'الموارد البشرية' },
+    { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' }, // الزر العبقري
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
   ];
 
@@ -140,9 +142,10 @@ const WholesalerDashboard = ({ supplier }) => {
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/invoices" element={<SupplierInvoices />} />
             <Route path="/accounting" element={<SupplierAccounting />} />
-            {/* 🎯 إضافة راوتر الصفحات الجديدة */}
             <Route path="/expenses" element={<SupplierExpenses />} />
             <Route path="/hr" element={<SupplierHR />} />
+            {/* 🎯 مسار فتح الصفحة العبقرية الجديدة للمستشار الذكي */}
+            <Route path="/ai-advisor" element={<AISmartAdvisor />} />
             <Route path="/analytics" element={<AnalyticsB2B />} />
           </Routes>
         </div>
