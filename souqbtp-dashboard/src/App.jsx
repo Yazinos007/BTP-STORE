@@ -66,14 +66,15 @@ const WholesalerDashboard = ({ supplier }) => {
   
   // 🎯 تنظيم الأزرار: وضعنا المستشار الذكي في مكان استراتيجي بارز جداً
   const menuItems = [
+    { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Vue d\'ensemble' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
     { path: '/', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' },
     { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل' },
     { path: '/contracts', icon: FileSignature, label: language === 'fr' ? 'Contrats & Signatures' : 'المصافحة الرقمية' },
     { path: '/invoices', icon: FileText, label: language === 'fr' ? 'Factures B2B' : 'الفواتير الكبرى' },
-    { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
-    { path: '/expenses', icon: Receipt, label: language === 'fr' ? 'Gestion des Charges' : 'إدارة المصاريف' },
     { path: '/hr', icon: Users, label: language === 'fr' ? 'Ressources Humaines' : 'الموارد البشرية' },
+    { path: '/expenses', icon: Receipt, label: language === 'fr' ? 'Gestion des Charges' : 'إدارة المصاريف' },
+    { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
     { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' }, // الزر العبقري
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
   ];
@@ -136,15 +137,15 @@ const WholesalerDashboard = ({ supplier }) => {
 
         <div className="flex-1 overflow-auto p-10 custom-scrollbar z-10">
           <Routes>
+            <Route path="/" element={<SupplierOverview />} />
             <Route path="/stock" element={<SupplierStock />} />
             <Route path="/" element={<SupplierOrders />} />
             <Route path="/fleet" element={<Fleet />} />
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/invoices" element={<SupplierInvoices />} />
-            <Route path="/accounting" element={<SupplierAccounting />} />
-            <Route path="/expenses" element={<SupplierExpenses />} />
             <Route path="/hr" element={<SupplierHR />} />
-            {/* 🎯 مسار فتح الصفحة العبقرية الجديدة للمستشار الذكي */}
+            <Route path="/expenses" element={<SupplierExpenses />} />
+            <Route path="/accounting" element={<SupplierAccounting />} />
             <Route path="/ai-advisor" element={<AISmartAdvisor />} />
             <Route path="/analytics" element={<AnalyticsB2B />} />
           </Routes>
