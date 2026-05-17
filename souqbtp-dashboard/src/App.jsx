@@ -66,8 +66,8 @@ const WholesalerDashboard = ({ supplier }) => {
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Vue d\'ensemble' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
+    { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients B2B' : 'إدارة العملاء (CRM)' }, 
     { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' },
-    { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients B2B' : 'إدارة العملاء (CRM)' }, // 🎯 الزر الجديد المضاف لـ الـ CRM
     { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل' },
     { path: '/contracts', icon: FileSignature, label: language === 'fr' ? 'Contrats & Signatures' : 'المصافحة الرقمية' },
     { path: '/invoices', icon: FileText, label: language === 'fr' ? 'Factures B2B' : 'الفواتير الكبرى' },
@@ -138,9 +138,8 @@ const WholesalerDashboard = ({ supplier }) => {
           <Routes>
             <Route path="/" element={<SupplierOverview />} />
             <Route path="/stock" element={<SupplierStock />} />
-            <Route path="/orders" element={<SupplierOrders />} />
-            {/* 🎯 إضافة راوتر المسار الخاص بصفحة العملاء الجديدة */}
             <Route path="/clients" element={<SupplierClients />} />
+            <Route path="/orders" element={<SupplierOrders />} />
             <Route path="/fleet" element={<Fleet />} />
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/invoices" element={<SupplierInvoices />} />
