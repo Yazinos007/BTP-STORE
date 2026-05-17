@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 // 🎯 أضفنا أيقونات الموارد البشرية والمصاريف والمستشار الذكي (Sparkles)
-import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles } from 'lucide-react';
+import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard } from 'lucide-react';
 
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
@@ -11,6 +11,7 @@ import SupplierAccounting from './pages/SupplierAccounting';
 import SupplierExpenses from './pages/SupplierExpenses';
 import SupplierHR from './pages/SupplierHR';
 import AISmartAdvisor from './pages/AISmartAdvisor'; // الصفحات العبقرية الجديدة
+import SupplierOverview from './pages/SupplierOverview';
 
 // === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
@@ -64,18 +65,18 @@ const PlaceholderPage = ({ title, isDark = false }) => {
 const WholesalerDashboard = ({ supplier }) => {
   const { language } = useSettingsStore();
   
-  // 🎯 تنظيم الأزرار: وضعنا المستشار الذكي في مكان استراتيجي بارز جداً
+  // 🎯 تنظيم الأزرار بالترتيب الذي طلبته بالضبط
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Vue d\'ensemble' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
-    { path: '/', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' },
+    { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' }, // 💡 تم تصحيح المسار هنا إلى /orders
     { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل' },
     { path: '/contracts', icon: FileSignature, label: language === 'fr' ? 'Contrats & Signatures' : 'المصافحة الرقمية' },
     { path: '/invoices', icon: FileText, label: language === 'fr' ? 'Factures B2B' : 'الفواتير الكبرى' },
     { path: '/hr', icon: Users, label: language === 'fr' ? 'Ressources Humaines' : 'الموارد البشرية' },
     { path: '/expenses', icon: Receipt, label: language === 'fr' ? 'Gestion des Charges' : 'إدارة المصاريف' },
     { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
-    { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' }, // الزر العبقري
+    { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' },
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
   ];
 
@@ -136,10 +137,11 @@ const WholesalerDashboard = ({ supplier }) => {
         </header>
 
         <div className="flex-1 overflow-auto p-10 custom-scrollbar z-10">
+          {/* 🎯 ترتيب مسارات الـ Routes مطابق تماماً لترتيب الأزرار */}
           <Routes>
             <Route path="/" element={<SupplierOverview />} />
             <Route path="/stock" element={<SupplierStock />} />
-            <Route path="/" element={<SupplierOrders />} />
+            <Route path="/orders" element={<SupplierOrders />} /> {/* 💡 تم تصحيح المسار هنا أيضاً */}
             <Route path="/fleet" element={<Fleet />} />
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/invoices" element={<SupplierInvoices />} />
