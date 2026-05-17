@@ -23,25 +23,35 @@ export default function SupplierOverview() {
     try {
       const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
 
-      // 1. جلب المداخيل الحقيقية من الفواتير (نفس منطق المحاسبة)
-      const { data: myProducts } = await supabase.from('products').select('name, stock_quantity, sale_price').eq('supplier_id', targetId);
+      // 1. جلب منتجات المورد (نجلب كل الأعمدة لضمان التقاط السعر سواء كان price أو sale_price)
+      const { data: myProducts } = await supabase.from('products').select('*').eq('supplier_id', targetId);
       const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
       
+      // 2. حساب قيمة المخزون (الكمية × السعر)
+      const totalStockValue = (myProducts || []).reduce((sum, p) => {
+        const price = Number(p.price || p.sale_price || 0);
+        const qty = Number(p.stock_quantity || 0);
+        return sum + (price * qty);
+      }, 0);
+
+      // 3. جلب الفواتير لحساب المداخيل (تتبع بالاسم)
       const { data: allInvoices } = await supabase.from('documents').select('total_amount, items').eq('type', 'Facture');
-      const myInvoices = (allInvoices || []).filter(inv => (inv.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase())));
-      
+      const myInvoices = (allInvoices || []).filter(inv => 
+        (inv.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
+      );
       const totalRevenue = myInvoices.reduce((sum, doc) => sum + Number(doc.total_amount || 0), 0);
 
-      // 2. حساب قيمة المخزون الحالي
-      const totalStockValue = (myProducts || []).reduce((sum, p) => sum + (Number(p.stock_quantity || 0) * Number(p.sale_price || 0)), 0);
+      // 4. جلب الطلبات والعملاء (تتبع بالاسم لضمان الدقة)
+      const { data: allRequests } = await supabase.from('supply_requests').select('merchant_id, items');
+      const myRequests = (allRequests || []).filter(req => 
+        (req.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
+      );
 
-      // 3. عدد الطلبيات والعملاء
-      const { data: requests } = await supabase.from('supply_requests').select('merchant_id').eq('supplier_id', targetId);
-      const uniqueClients = new Set(requests?.map(r => r.merchant_id));
+      const uniqueClients = new Set(myRequests.map(req => req.merchant_id).filter(id => id));
 
       setStats({
         revenue: totalRevenue,
-        ordersCount: requests?.length || 0,
+        ordersCount: myRequests.length,
         clientsCount: uniqueClients.size,
         stockValue: totalStockValue
       });
@@ -138,7 +148,7 @@ export default function SupplierOverview() {
                 : 'فرصة : شاحنتك تعود فارغة من طنجة. شريك لديه شحنة جاهزة لنفس خط العودة.'}
             </p>
             <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-2xl font-black transition-all flex items-center justify-center gap-2">
-              {language === 'fr' ? 'Confirmer le Partage' : 'تأكيد مشاركة الشحنة'} <ChevronRight size={18} />
+              {language === 'fr' ? 'Confirmer le Partage' : 'تأكيد مشاركة الشحنة'} <ChevronRight size={18} className={language === 'ar' ? 'rotate-180' : ''} />
             </button>
           </div>
         </div>
