@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, Settings } from 'lucide-react';
+import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, Settings, Zap } from 'lucide-react';
 
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
@@ -79,6 +79,7 @@ const WholesalerDashboard = ({ supplier }) => {
     { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' },
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
     { path: '/settings', icon: Settings, label: language === 'fr' ? 'Paramètres & Confiance' : 'الإعدادات والتوثيق' },
+    { path: '/subscription', icon: Zap, label: language === 'fr' ? 'Abonnement' : 'الاشتراك والترقية' },
   ];
 
   return (
