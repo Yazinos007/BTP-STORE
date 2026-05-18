@@ -19,7 +19,6 @@ import Overview from './pages/Overview';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Wallet from './pages/Wallet';
-// 🎯 تم تغيير الاسم هنا إلى RetailerSettings لفك الاشتباك!
 import RetailerSettings from './pages/Settings'; 
 import POS from './pages/POS';
 import Expenses from './pages/Expenses';
@@ -39,6 +38,8 @@ import Clients from './pages/Clients';
 import Accounting from './pages/Accounting';
 import ExternalSuppliers from './pages/ExternalSuppliers';
 import Purchases from './pages/Purchases';
+// 🎯 أضفنا استدعاء صفحة اشتراكات التاجر هنا
+import RetailerSubscription from './pages/RetailerSubscription'; 
 
 // === صفحات المورد الكبير (Wholesaler) ===
 import SupplierOrders from './pages/SupplierOrders';
@@ -253,6 +254,8 @@ function App() {
                 <Route path="/accounting" element={<Accounting />} />
                 <Route path="/suppliers" element={<ExternalSuppliers />} />
                 <Route path="/purchases" element={<Purchases />} />
+                {/* 🎯 أضفنا مسار صفحة اشتراكات التاجر هنا لكي يفتح عند النقر */}
+                <Route path="/subscription" element={<RetailerSubscription />} />
               </Routes>
             </div>
           </div>
