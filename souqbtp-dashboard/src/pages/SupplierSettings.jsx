@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom'; // 🎯 استدعاء Link للربط بصفحة الاشتراكات
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { 
@@ -24,8 +25,12 @@ const translations = {
     submitVerification: 'إرسال الملفات للمراجعة',
     saving: 'جاري الإرسال...',
     subscriptionTitle: 'الباقة الحالية',
+    activePlan: 'الباقة النشطة',
     upgradeBtn: 'ترقية للباقة الذهبية (Enterprise)',
     storeInfo: 'بيانات الشركة الأساسية',
+    companyName: 'اسم الشركة',
+    phone: 'رقم الهاتف',
+    address: 'العنوان',
     saveInfo: 'حفظ التعديلات'
   },
   fr: {
@@ -45,8 +50,12 @@ const translations = {
     submitVerification: 'Soumettre pour vérification',
     saving: 'Envoi en cours...',
     subscriptionTitle: 'Abonnement Actuel',
+    activePlan: 'Plan Actif',
     upgradeBtn: 'Passer au plan Enterprise',
     storeInfo: 'Informations de l\'Entreprise',
+    companyName: 'Nom de l\'entreprise',
+    phone: 'Téléphone',
+    address: 'Adresse',
     saveInfo: 'Enregistrer les infos'
   }
 };
@@ -185,12 +194,13 @@ export default function SupplierSettings() {
               <Star size={20} className="text-blue-500" /> {t.subscriptionTitle}
             </h4>
             <div className="p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl mb-4">
-              <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Plan Actif</p>
+              <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">{t.activePlan}</p>
               <h5 className="text-2xl font-black text-white">Starter B2B</h5>
             </div>
-            <button className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-700 flex justify-center items-center gap-2">
+            {/* 🎯 تم تحويل الزر إلى Link ليوجه لصفحة الاشتراكات */}
+            <Link to="/subscription" className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-700 flex justify-center items-center gap-2">
               <Lock size={16} /> {t.upgradeBtn}
-            </button>
+            </Link>
           </div>
 
           {/* بيانات الشركة */}
@@ -200,15 +210,15 @@ export default function SupplierSettings() {
             </h4>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Nom de l'entreprise</label>
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t.companyName}</label>
                 <input type="text" defaultValue={supplier?.store_name} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Téléphone</label>
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t.phone}</label>
                 <input type="text" defaultValue={supplier?.phone} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Adresse</label>
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t.address}</label>
                 <input type="text" defaultValue={supplier?.address} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
               </div>
               <button className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 mt-2">

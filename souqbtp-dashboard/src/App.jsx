@@ -12,6 +12,7 @@ import AISmartAdvisor from './pages/AISmartAdvisor';
 import SupplierOverview from './pages/SupplierOverview';
 import SupplierClients from './pages/SupplierClients'; 
 import SupplierSettings from './pages/SupplierSettings';
+import SupplierSubscription from './pages/SupplierSubscription';
 
 // === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
@@ -151,6 +152,7 @@ const WholesalerDashboard = ({ supplier }) => {
             <Route path="/ai-advisor" element={<AISmartAdvisor />} />
             <Route path="/analytics" element={<AnalyticsB2B />} />
             <Route path="/settings" element={<SupplierSettings />} />
+            <Route path="/subscription" element={<SupplierSubscription />} />
           </Routes>
         </div>
       </main>
