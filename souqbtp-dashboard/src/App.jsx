@@ -21,7 +21,6 @@ import Overview from './pages/Overview';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Wallet from './pages/Wallet';
-import RetailerSettings from './pages/Settings'; 
 import POS from './pages/POS';
 import Expenses from './pages/Expenses';
 import Invoices from './pages/Invoices';
