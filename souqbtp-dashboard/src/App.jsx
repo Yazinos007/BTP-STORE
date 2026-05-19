@@ -12,7 +12,9 @@ import AISmartAdvisor from './pages/AISmartAdvisor';
 import SupplierOverview from './pages/SupplierOverview';
 import SupplierClients from './pages/SupplierClients'; 
 import SupplierSettings from './pages/SupplierSettings';
-import SupplierSubscription from './components/SupplierSubscription';
+import SupplierSubscription from './pages/SupplierSubscription';
+import RetailerSettings from './pages/Settings'; 
+import RetailerSubscription from './pages/RetailerSubscription';
 
 // === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
@@ -38,7 +40,6 @@ import Clients from './pages/Clients';
 import Accounting from './pages/Accounting';
 import ExternalSuppliers from './pages/ExternalSuppliers';
 import Purchases from './pages/Purchases';
-// import RetailerSubscription from './components/RetailerSubscription';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
@@ -240,6 +241,7 @@ function App() {
                 <Route path="/accounting" element={<Accounting />} />
                 <Route path="/suppliers" element={<ExternalSuppliers />} />
                 <Route path="/purchases" element={<Purchases />} />
+                <Route path="/subscription" element={<RetailerSubscription />} />
               </Routes>
             </div>
           </div>
