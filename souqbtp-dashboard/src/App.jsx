@@ -12,7 +12,7 @@ import AISmartAdvisor from './pages/AISmartAdvisor';
 import SupplierOverview from './pages/SupplierOverview';
 import SupplierClients from './pages/SupplierClients'; 
 import SupplierSettings from './pages/SupplierSettings';
-import SupplierSubscription from './pages/SupplierSubscription';
+import SupplierSubscription from './components/SupplierSubscription';
 
 // === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
