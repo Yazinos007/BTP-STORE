@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 🎯 استدعاء المُوجّه القوي
+import { useNavigate } from 'react-router-dom'; // 🎯 الموجه فقط (بدون Link)
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { 
@@ -64,7 +64,7 @@ export default function SupplierSettings() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
   const t = translations[language];
-  const navigate = useNavigate(); // 🎯 تفعيل المُوجّه
+  const navigate = useNavigate();
 
   const [verificationStatus, setVerificationStatus] = useState('unverified'); 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,7 +109,6 @@ export default function SupplierSettings() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/30 rounded-3xl p-8 relative overflow-hidden shadow-[0_0_40px_rgba(245,158,11,0.1)]">
             <div className="absolute -right-10 -top-10 text-amber-500/10 pointer-events-none">
@@ -177,7 +176,6 @@ export default function SupplierSettings() {
               <h5 className="text-2xl font-black text-white">Starter B2B</h5>
             </div>
             
-            {/* 🎯 زر الترقية الآن يستخدم onClick للتوجيه الإجباري */}
             <button 
               type="button"
               onClick={() => navigate('/subscription')} 
