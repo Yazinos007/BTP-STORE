@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom'; // 🎯 استدعاء Link للربط بصفحة الاشتراكات
+import { useNavigate } from 'react-router-dom'; // 🎯 استدعاء المُوجّه القوي
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { 
@@ -64,9 +64,9 @@ export default function SupplierSettings() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
   const t = translations[language];
+  const navigate = useNavigate(); // 🎯 تفعيل المُوجّه
 
-  // حالات الصفحة
-  const [verificationStatus, setVerificationStatus] = useState('unverified'); // 'unverified', 'pending', 'verified'
+  const [verificationStatus, setVerificationStatus] = useState('unverified'); 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState({ rc: null, ice: null, cin: null });
 
@@ -87,8 +87,6 @@ export default function SupplierSettings() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in text-slate-300" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      
-      {/* 👑 الهيدر */}
       <div className="flex justify-between items-start border-b border-slate-800 pb-6">
         <div>
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
@@ -98,7 +96,6 @@ export default function SupplierSettings() {
           <p className="text-slate-400 mt-2 font-medium">{t.subtitle}</p>
         </div>
         
-        {/* شارة التوثيق العلوية */}
         <div className={`px-4 py-2 rounded-xl flex items-center gap-2 font-bold text-sm border ${
           verificationStatus === 'verified' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
           verificationStatus === 'pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
@@ -107,19 +104,13 @@ export default function SupplierSettings() {
           {verificationStatus === 'verified' && <CheckCircle2 size={16} />}
           {verificationStatus === 'pending' && <Loader2 size={16} className="animate-spin" />}
           {verificationStatus === 'unverified' && <AlertTriangle size={16} />}
-          
-          {verificationStatus === 'verified' ? t.statusVerified : 
-           verificationStatus === 'pending' ? t.statusPending : 
-           t.statusUnverified}
+          {verificationStatus === 'verified' ? t.statusVerified : verificationStatus === 'pending' ? t.statusPending : t.statusUnverified}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* 🌟 العمود الأيمن: التوثيق (KYC) و الباقة */}
         <div className="lg:col-span-2 space-y-8">
-          
-          {/* كرت التوثيق الذهبي */}
           <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/30 rounded-3xl p-8 relative overflow-hidden shadow-[0_0_40px_rgba(245,158,11,0.1)]">
             <div className="absolute -right-10 -top-10 text-amber-500/10 pointer-events-none">
               <Award size={250} />
@@ -139,8 +130,6 @@ export default function SupplierSettings() {
 
             <form onSubmit={handleSubmitVerification} className="mt-8 space-y-6 relative z-10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                {/* رفع السجل التجاري */}
                 <div className="bg-slate-900/50 border border-slate-700 rounded-2xl p-5 text-center group hover:border-amber-500/50 transition-colors">
                   <FileText size={30} className="mx-auto mb-3 text-slate-500 group-hover:text-amber-400 transition-colors" />
                   <p className="text-sm font-bold text-white mb-3">{t.uploadRC}</p>
@@ -150,7 +139,6 @@ export default function SupplierSettings() {
                   </label>
                 </div>
 
-                {/* رفع ICE */}
                 <div className="bg-slate-900/50 border border-slate-700 rounded-2xl p-5 text-center group hover:border-amber-500/50 transition-colors">
                   <Building2 size={30} className="mx-auto mb-3 text-slate-500 group-hover:text-amber-400 transition-colors" />
                   <p className="text-sm font-bold text-white mb-3">{t.uploadICE}</p>
@@ -160,7 +148,6 @@ export default function SupplierSettings() {
                   </label>
                 </div>
 
-                {/* رفع CIN */}
                 <div className="bg-slate-900/50 border border-slate-700 rounded-2xl p-5 text-center group hover:border-amber-500/50 transition-colors">
                   <CreditCard size={30} className="mx-auto mb-3 text-slate-500 group-hover:text-amber-400 transition-colors" />
                   <p className="text-sm font-bold text-white mb-3">{t.uploadCIN}</p>
@@ -169,15 +156,10 @@ export default function SupplierSettings() {
                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleFileUpload(e, 'cin')} disabled={verificationStatus !== 'unverified'} />
                   </label>
                 </div>
-
               </div>
 
               {verificationStatus === 'unverified' && (
-                <button 
-                  type="submit" 
-                  disabled={!files.rc || !files.ice || !files.cin || isSubmitting}
-                  className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-black font-black rounded-2xl transition-all disabled:opacity-50 disabled:hover:bg-amber-500 flex justify-center items-center gap-2 shadow-lg shadow-amber-500/20"
-                >
+                <button type="submit" disabled={!files.rc || !files.ice || !files.cin || isSubmitting} className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-black font-black rounded-2xl transition-all disabled:opacity-50 disabled:hover:bg-amber-500 flex justify-center items-center gap-2 shadow-lg shadow-amber-500/20">
                   {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <><UploadCloud size={20} /> {t.submitVerification}</>}
                 </button>
               )}
@@ -185,10 +167,7 @@ export default function SupplierSettings() {
           </div>
         </div>
 
-        {/* 🏢 العمود الأيسر: بيانات الشركة والباقة */}
         <div className="space-y-8">
-          
-          {/* كرت الباقة */}
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
             <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Star size={20} className="text-blue-500" /> {t.subscriptionTitle}
@@ -197,13 +176,17 @@ export default function SupplierSettings() {
               <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">{t.activePlan}</p>
               <h5 className="text-2xl font-black text-white">Starter B2B</h5>
             </div>
-            {/* 🎯 تم تحويل الزر إلى Link ليوجه لصفحة الاشتراكات */}
-            <Link to="/subscription" className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-700 flex justify-center items-center gap-2">
+            
+            {/* 🎯 زر الترقية الآن يستخدم onClick للتوجيه الإجباري */}
+            <button 
+              type="button"
+              onClick={() => navigate('/subscription')} 
+              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-700 flex justify-center items-center gap-2 relative z-20 cursor-pointer"
+            >
               <Lock size={16} /> {t.upgradeBtn}
-            </Link>
+            </button>
           </div>
 
-          {/* بيانات الشركة */}
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
             <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Building2 size={20} className="text-blue-500" /> {t.storeInfo}
@@ -226,7 +209,6 @@ export default function SupplierSettings() {
               </button>
             </div>
           </div>
-
         </div>
 
       </div>

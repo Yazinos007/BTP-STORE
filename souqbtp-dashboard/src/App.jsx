@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-// 🎯 استدعاء أيقونة Zap (الصاعقة) الخاصة بالاشتراكات
 import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, Settings, Zap } from 'lucide-react';
 
 import SupplierStock from './pages/SupplierStock';
@@ -41,25 +40,13 @@ import ExternalSuppliers from './pages/ExternalSuppliers';
 import Purchases from './pages/Purchases';
 import RetailerSubscription from './pages/RetailerSubscription'; 
 
-// === إدارة الحالة (Stores) ===
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
-
-const PlaceholderPage = ({ title, isDark = false }) => {
-  const { language } = useSettingsStore();
-  return (
-    <div className={`p-12 text-center flex flex-col items-center justify-center h-full rounded-2xl border ${isDark ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-gray-50 border-dashed border-gray-200 text-gray-400'}`}>
-      <h2 className={`text-3xl font-black mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>{title}</h2>
-      <p className="text-lg font-bold opacity-70">
-        {language === 'fr' ? '🚀 Module en cours de développement...' : '🚀 هذه الوحدة قيد البرمجة...'}
-      </p>
-    </div>
-  );
-};
 
 const WholesalerDashboard = ({ supplier }) => {
   const { language } = useSettingsStore();
   
+  // 🎯 القائمة الأساسية للمورد
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Vue d\'ensemble' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
@@ -73,9 +60,7 @@ const WholesalerDashboard = ({ supplier }) => {
     { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
     { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' },
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
-    { path: '/settings', icon: Settings, label: language === 'fr' ? 'Paramètres & Confiance' : 'الإعدادات والتوثيق' },
-    // 🎯 إضافة زر الاشتراك هنا في قائمة المورد
-    { path: '/subscription', icon: Zap, label: language === 'fr' ? 'Abonnement' : 'الاشتراك والترقية' },
+    { path: '/settings', icon: Settings, label: language === 'fr' ? 'Paramètres & Confiance' : 'الإعدادات والتوثيق' }
   ];
 
   return (
@@ -86,10 +71,18 @@ const WholesalerDashboard = ({ supplier }) => {
             SouqBTP <span className="text-sm font-bold text-slate-500 uppercase tracking-widest ml-1">Portal</span>
           </h1>
         </div>
+
+        {/* 🌟 الزر الذهبي للترقية - بارز ومستقل في أعلى القائمة! 🌟 */}
+        <div className="px-5 pt-6 pb-2">
+          <Link to="/subscription" className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all">
+            <Zap size={20} className="fill-black" />
+            {language === 'fr' ? 'Passer à l\'Enterprise' : 'ترقية للباقة الذهبية'}
+          </Link>
+        </div>
         
-        <nav className="flex-1 py-8 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 py-4 px-4 space-y-2 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
-            <Link key={item.path} to={item.path} className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all text-slate-400 hover:text-white hover:bg-slate-800/80 group">
+            <Link key={item.path} to={item.path} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-slate-400 hover:text-white hover:bg-slate-800/80 group">
               <item.icon size={20} className="group-hover:text-blue-400 transition-colors" />
               {item.label}
             </Link>
@@ -149,6 +142,7 @@ const WholesalerDashboard = ({ supplier }) => {
             <Route path="/ai-advisor" element={<AISmartAdvisor />} />
             <Route path="/analytics" element={<AnalyticsB2B />} />
             <Route path="/settings" element={<SupplierSettings />} />
+            {/* 🎯 مسار الترقية موجود هنا */}
             <Route path="/subscription" element={<SupplierSubscription />} />
           </Routes>
         </div>
@@ -193,9 +187,7 @@ function App() {
     );
   }
 
-  if (!session) {
-    return <Login />;
-  }
+  if (!session) return <Login />;
 
   const isWholesaler = supplier?.role === 'wholesaler';
   const storeName = supplier?.store_name || t.loading;
