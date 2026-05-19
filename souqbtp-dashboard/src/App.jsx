@@ -38,7 +38,7 @@ import Clients from './pages/Clients';
 import Accounting from './pages/Accounting';
 import ExternalSuppliers from './pages/ExternalSuppliers';
 import Purchases from './pages/Purchases';
-import RetailerSubscription from './pages/RetailerSubscription'; 
+// import RetailerSubscription from './components/RetailerSubscription';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
