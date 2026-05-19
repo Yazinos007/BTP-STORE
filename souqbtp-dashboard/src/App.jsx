@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
+// 🎯 استدعاء أيقونة Zap (الصاعقة) الخاصة بالاشتراكات
 import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, Settings, Zap } from 'lucide-react';
 
 import SupplierStock from './pages/SupplierStock';
@@ -38,14 +39,7 @@ import Clients from './pages/Clients';
 import Accounting from './pages/Accounting';
 import ExternalSuppliers from './pages/ExternalSuppliers';
 import Purchases from './pages/Purchases';
-// 🎯 أضفنا استدعاء صفحة اشتراكات التاجر هنا
 import RetailerSubscription from './pages/RetailerSubscription'; 
-
-// === صفحات المورد الكبير (Wholesaler) ===
-import SupplierOrders from './pages/SupplierOrders';
-import Fleet from './pages/Fleet';
-import Contracts from './pages/Contracts';
-import AnalyticsB2B from './pages/AnalyticsB2B';
 
 // === إدارة الحالة (Stores) ===
 import useSupplierStore from './store/useSupplierStore';
@@ -80,6 +74,7 @@ const WholesalerDashboard = ({ supplier }) => {
     { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' },
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
     { path: '/settings', icon: Settings, label: language === 'fr' ? 'Paramètres & Confiance' : 'الإعدادات والتوثيق' },
+    // 🎯 إضافة زر الاشتراك هنا في قائمة المورد
     { path: '/subscription', icon: Zap, label: language === 'fr' ? 'Abonnement' : 'الاشتراك والترقية' },
   ];
 
@@ -254,7 +249,6 @@ function App() {
                 <Route path="/accounting" element={<Accounting />} />
                 <Route path="/suppliers" element={<ExternalSuppliers />} />
                 <Route path="/purchases" element={<Purchases />} />
-                {/* 🎯 أضفنا مسار صفحة اشتراكات التاجر هنا لكي يفتح عند النقر */}
                 <Route path="/subscription" element={<RetailerSubscription />} />
               </Routes>
             </div>
