@@ -142,7 +142,6 @@ const WholesalerDashboard = ({ supplier }) => {
             <Route path="/ai-advisor" element={<AISmartAdvisor />} />
             <Route path="/analytics" element={<AnalyticsB2B />} />
             <Route path="/settings" element={<SupplierSettings />} />
-            {/* 🎯 مسار الترقية موجود هنا */}
             <Route path="/subscription" element={<SupplierSubscription />} />
           </Routes>
         </div>
@@ -241,7 +240,6 @@ function App() {
                 <Route path="/accounting" element={<Accounting />} />
                 <Route path="/suppliers" element={<ExternalSuppliers />} />
                 <Route path="/purchases" element={<Purchases />} />
-                <Route path="/subscription" element={<RetailerSubscription />} />
               </Routes>
             </div>
           </div>
