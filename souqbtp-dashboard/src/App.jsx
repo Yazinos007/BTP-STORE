@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, Settings, Zap } from 'lucide-react';
+import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, Settings, Zap, Radar } from 'lucide-react';
 
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
@@ -19,6 +19,7 @@ import SupplierSettings from './pages/SupplierSettings';
 import SupplierSubscription from './pages/SupplierSubscription';
 import RetailerSettings from './pages/Settings'; 
 import RetailerSubscription from './pages/RetailerSubscription';
+import TenderRadar from './pages/TenderRadar';
 
 // === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
@@ -62,8 +63,9 @@ const WholesalerDashboard = ({ supplier }) => {
     { path: '/hr', icon: Users, label: language === 'fr' ? 'Ressources Humaines' : 'الموارد البشرية' },
     { path: '/expenses', icon: Receipt, label: language === 'fr' ? 'Gestion des Charges' : 'إدارة المصاريف' },
     { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
-    { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' },
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
+    { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' },
+    { path: '/tender-radar', icon: Radar, label: language === 'fr' ? 'Radar d\'Appels d\'Offres' : 'رادار المناقصات' },
     { path: '/settings', icon: Settings, label: language === 'fr' ? 'Paramètres & Confiance' : 'الإعدادات والتوثيق' }
   ];
 
@@ -143,8 +145,9 @@ const WholesalerDashboard = ({ supplier }) => {
             <Route path="/hr" element={<SupplierHR />} />
             <Route path="/expenses" element={<SupplierExpenses />} />
             <Route path="/accounting" element={<SupplierAccounting />} />
-            <Route path="/ai-advisor" element={<AISmartAdvisor />} />
             <Route path="/analytics" element={<AnalyticsB2B />} />
+            <Route path="/ai-advisor" element={<AISmartAdvisor />} />
+            <Route path="/tender-radar" element={<TenderRadar />} />
             <Route path="/settings" element={<SupplierSettings />} />
             <Route path="/subscription" element={<SupplierSubscription />} />
           </Routes>
