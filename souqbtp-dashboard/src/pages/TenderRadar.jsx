@@ -33,26 +33,30 @@ export default function TenderRadar() {
   }[language];
 
   useEffect(() => {
+    console.log("الرادار بدأ العمل!");
     fetchTenders();
   }, []);
 
   async function fetchTenders() {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('tenders')
-        .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+  try {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('tenders')
+      .select('*')
+      .eq('status', 'active');
 
-      if (error) throw error;
-      setTenders(data || []);
-    } catch (err) {
-      console.error('Error:', err);
-    } finally {
-      setLoading(false);
-    }
+    // أضف هذه الأسطر:
+    console.log("Data from Supabase:", data);
+    console.log("Error from Supabase:", error);
+
+    if (error) throw error;
+    setTenders(data || []);
+  } catch (err) {
+    console.error('Error:', err);
+  } finally {
+    setLoading(false);
   }
+}
 
   const filteredTenders = tenders.filter(tender => {
     const title = language === 'fr' ? tender.title_fr : tender.title_ar;
@@ -100,6 +104,7 @@ export default function TenderRadar() {
         </div>
       ) : filteredTenders.length > 0 ? (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          console.log("البيانات المحملة في الواجهة:", filteredTenders); 
           {filteredTenders.map(tender => (
             <div key={tender.id} className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-8 rounded-[2rem] hover:border-blue-500/40 transition-all group relative overflow-hidden shadow-xl">
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
