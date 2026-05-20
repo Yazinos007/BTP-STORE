@@ -112,7 +112,7 @@ export default function TenderRadar() {
               
               <div className="flex justify-between items-start mb-6">
                 <span className="px-4 py-1.5 bg-blue-600/10 text-blue-400 rounded-full text-xs font-black uppercase tracking-widest border border-blue-600/20">
-                  مناقصة
+                Appel d'offre
                 </span>
               </div>
 
