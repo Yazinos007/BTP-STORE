@@ -104,7 +104,6 @@ export default function TenderRadar() {
         </div>
       ) : filteredTenders.length > 0 ? (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          console.log("البيانات المحملة في الواجهة:", filteredTenders); 
           {filteredTenders.map(tender => (
             <div key={tender.id} className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-8 rounded-[2rem] hover:border-blue-500/40 transition-all group relative overflow-hidden shadow-xl">
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -113,12 +112,8 @@ export default function TenderRadar() {
               
               <div className="flex justify-between items-start mb-6">
                 <span className="px-4 py-1.5 bg-blue-600/10 text-blue-400 rounded-full text-xs font-black uppercase tracking-widest border border-blue-600/20">
-                  {tender.category}
+                  مناقصة
                 </span>
-                <div className="flex items-center gap-1 text-emerald-400 text-sm font-black tracking-tighter">
-                  <span className="text-xl">{Number(tender.value_mad).toLocaleString()}</span>
-                  <span className="text-[10px] uppercase opacity-70">MAD</span>
-                </div>
               </div>
 
               <h3 className="text-2xl font-black text-white mb-6 leading-snug h-16 line-clamp-2">
@@ -129,14 +124,6 @@ export default function TenderRadar() {
                 <div className="flex items-center gap-3 text-sm text-slate-400">
                   <div className="p-2 bg-slate-800 rounded-lg"><Building2 size={16} /></div>
                   <span className="truncate">{language === 'fr' ? tender.agency_fr : tender.agency_ar}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-slate-400">
-                  <div className="p-2 bg-slate-800 rounded-lg"><MapPin size={16} /></div>
-                  <span>{language === 'fr' ? tender.location_fr : tender.location_ar}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-slate-400">
-                  <div className="p-2 bg-slate-800 rounded-lg text-amber-500"><Calendar size={16} /></div>
-                  <span className="font-bold">{tender.deadline}</span>
                 </div>
               </div>
 
