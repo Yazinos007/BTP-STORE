@@ -6,7 +6,10 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 (async () => {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({ 
+  headless: true, // تأكد أنها true
+  args: ['--no-sandbox', '--disable-setuid-sandbox'] // هذه الوسائط تحل مشاكل Linux
+});
   const page = await browser.newPage();
   
   await page.goto('https://www.marchespublics.gov.ma/index.php?page=entreprise.EntrepriseAdvancedSearch&searchAnnCons');
