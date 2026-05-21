@@ -2,25 +2,21 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import * as cheerio from "https://esm.sh/cheerio@1.0.0-rc.12";
 
 serve(async (req) => {
-  // هذا الرابط هو رابط النتائج المباشر (بعد الضغط على زر البحث)
-  const url = 'https://www.marchespublics.gov.ma/pm/?page=entreprise.EntrepriseAdvancedSearch&cccpage=1';
-  
-  const response = await fetch(url, {
+  const response = await fetch('https://www.marchespublics.gov.ma/pm/?page=entreprise.EntrepriseAdvancedSearch', {
     headers: { "User-Agent": "Mozilla/5.0" }
   });
   
   const html = await response.text();
   const $ = cheerio.load(html);
   
-  // سنبحث عن الجدول الذي يحتوي على الصفقات
-  // في أغلب المواقع الحكومية يكون داخل جدول أو قائمة
-  const tenders: string[] = [];
-  $('tr').each((i, el) => {
-    const text = $(el).text().trim();
-    if (text.includes("Ciment") || text.includes("Construction") || text.includes("Appel")) {
-      tenders.push(text);
+  // استخراج جميع الـ Classes الفريدة في الصفحة
+  const classes = new Set<string>();
+  $('*').each((i, el) => {
+    const className = $(el).attr('class');
+    if (className) {
+      className.split(' ').forEach(c => classes.add(c));
     }
   });
 
-  return new Response(JSON.stringify({ found: tenders.length, sample: tenders.slice(0, 2) }));
+  return new Response(JSON.stringify({ classes: Array.from(classes).slice(0, 50) }));
 });
