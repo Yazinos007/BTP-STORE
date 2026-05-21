@@ -9,14 +9,14 @@ serve(async (req) => {
   const html = await response.text();
   const $ = cheerio.load(html);
   
-  // استخراج جميع الـ Classes الفريدة في الصفحة
-  const classes = new Set<string>();
-  $('*').each((i, el) => {
-    const className = $(el).attr('class');
-    if (className) {
-      className.split(' ').forEach(c => classes.add(c));
-    }
+  // استخراج النص من داخل div الذي يحمل class="content"
+  const contentText = $('.content').text().trim();
+  
+  // سنعيد الجزء الأول لنرى هل يحتوي على تفاصيل صفقات
+  return new Response(JSON.stringify({ 
+    success: true, 
+    data: contentText.substring(0, 500) 
+  }), { 
+    headers: { "Content-Type": "application/json" } 
   });
-
-  return new Response(JSON.stringify({ classes: Array.from(classes).slice(0, 50) }));
 });
