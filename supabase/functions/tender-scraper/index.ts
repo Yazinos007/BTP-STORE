@@ -12,6 +12,7 @@ serve(async (req) => {
   // 1. تحميل الصفحة (استخدام proxy لضمان عدم الحظر)
   const response = await fetch('https://www.marchespublics.gov.ma/pm/?page=entreprise.EntrepriseAdvancedSearch');
   const html = await response.text();
+  console.log("الروبوت يرى الآن هذا الجزء من الموقع:", html.substring(0, 1000));
   const $ = cheerio.load(html);
 
   // 2. استخراج العناوين (هنا نجمع البيانات الخام)
