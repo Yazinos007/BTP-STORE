@@ -7,8 +7,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 (async () => {
   const browser = await chromium.launch({ 
-  headless: true, // تأكد أنها true
-  args: ['--no-sandbox', '--disable-setuid-sandbox'] // هذه الوسائط تحل مشاكل Linux
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] 
 });
   const page = await browser.newPage();
   
