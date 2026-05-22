@@ -6,9 +6,14 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 (async () => {
-  const browser = await chromium.launch({ 
-  headless: true,
-  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] 
+const browser = await chromium.launch({ 
+  headless: true, // مهم جداً
+  args: [
+    '--no-sandbox', 
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu'
+  ] 
 });
   const page = await browser.newPage();
   
