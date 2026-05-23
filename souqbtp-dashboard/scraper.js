@@ -23,7 +23,13 @@ const browser = await chromium.launch({
 
   const tenders = await page.evaluate(() => {
     const rows = Array.from(document.querySelectorAll('tr'));
-    console.log("عدد الصفوف التي تم العثور عليها:", rows.length);
+    console.log("تم فحص عدد صفوف في الجدول:", rows.length);
+// لنطبع أول صف وجده الروبوت لنعرف ماذا يقرأ بالضبط
+if (rows.length > 0) {
+  console.log("محتوى أول صف:", rows[0]);
+} else {
+  console.log("تحذير: لم يجد الروبوت أي صفوف مطابقة للشرط.");
+}
     return rows.map(row => {
       const text = row.innerText.trim();
       if (text.includes("Objet :")) {
