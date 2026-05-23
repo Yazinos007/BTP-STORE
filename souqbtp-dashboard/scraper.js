@@ -15,21 +15,29 @@ const browser = await chromium.launch({
     '--disable-gpu'
   ] 
 });
-  const page = await browser.newPage();
+  
+const page = await browser.newPage();
   
   await page.goto('https://www.marchespublics.gov.ma/index.php?page=entreprise.EntrepriseAdvancedSearch&searchAnnCons');
   await page.getByRole('button', { name: /OK/i }).click();
-  await page.waitForTimeout(5000); 
+
+  // استبدلنا الانتظار الثابت بانتظار ظهور أول صف في الجدول
+  try {
+      await page.waitForSelector('tr', { timeout: 15000 }); 
+      console.log("تم العثور على الجدول بنجاح!");
+  } catch (e) {
+      console.log("تحذير: لم يظهر الجدول في الوقت المحدد، ربما تغير هيكل الموقع.");
+  }
 
   const tenders = await page.evaluate(() => {
-    // الأسطر التشخيصية لمعرفة لماذا يعود الروبوت بـ 0
+    // الأسطر التشخيصية التي اتفقنا عليها
     const allRows = document.querySelectorAll('tr');
     console.log("إجمالي الصفوف المكتشفة في الصفحة:", allRows.length);
     
     if (allRows.length > 0) {
-      console.log("نموذج من نص أول صف:", allRows[0].innerText.substring(0, 100));
+      console.log("نموذج من نص أول صف:", allRows[0].innerText.substring(0, 50));
     } else {
-      console.log("تحذير: لم يتم العثور على أي صفوف (tr) في الصفحة!");
+      console.log("تحذير: لا تزال قائمة الصفوف (tr) فارغة!");
     }
 
     // المنطق الأصلي الخاص بك
