@@ -48,8 +48,13 @@ const browser = await chromium.launch({
 
   const { data, error } = await supabase.from('tenders').insert(tenders);
 
-  if (error) console.error("خطأ Supabase:", error);
-  else console.log("تمت العملية بنجاح! تم إدخال الصفقات:", tenders.length);
+  if (error) {
+    console.error("خطأ Supabase:", error);
+    process.exit(1); // الخروج بكود خطأ
+  } else {
+    // هذه هي الرسالة التي سيلتقطها نظام التنبيه
+    console.log(`SUCCESS_COUNT:${tenders.length}`);
+  }
   
   await browser.close();
 })();
