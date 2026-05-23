@@ -23,6 +23,7 @@ const browser = await chromium.launch({
 
   const tenders = await page.evaluate(() => {
     const rows = Array.from(document.querySelectorAll('tr'));
+    console.log("عدد الصفوف التي تم العثور عليها:", rows.length);
     return rows.map(row => {
       const text = row.innerText.trim();
       if (text.includes("Objet :")) {
