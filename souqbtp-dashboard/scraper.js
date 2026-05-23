@@ -22,20 +22,23 @@ const browser = await chromium.launch({
   await page.waitForTimeout(5000); 
 
   const tenders = await page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('tr'));
-    console.log("تم فحص عدد صفوف في الجدول:", rows.length);
-// لنطبع أول صف وجده الروبوت لنعرف ماذا يقرأ بالضبط
-if (rows.length > 0) {
-  console.log("محتوى أول صف:", rows[0]);
-} else {
-  console.log("تحذير: لم يجد الروبوت أي صفوف مطابقة للشرط.");
-}
+    // الأسطر التشخيصية لمعرفة لماذا يعود الروبوت بـ 0
+    const allRows = document.querySelectorAll('tr');
+    console.log("إجمالي الصفوف المكتشفة في الصفحة:", allRows.length);
+    
+    if (allRows.length > 0) {
+      console.log("نموذج من نص أول صف:", allRows[0].innerText.substring(0, 100));
+    } else {
+      console.log("تحذير: لم يتم العثور على أي صفوف (tr) في الصفحة!");
+    }
+
+    // المنطق الأصلي الخاص بك
+    const rows = Array.from(allRows);
     return rows.map(row => {
       const text = row.innerText.trim();
       if (text.includes("Objet :")) {
-        // تحويل التاريخ هنا مباشرة داخل المتصفح
         const rawDate = text.match(/\d{2}\/\d{2}\/\d{4}/)?.[0];
-        let formattedDate = '1900-01-01'; // قيمة افتراضية
+        let formattedDate = '1900-01-01';
         if (rawDate) {
           const [d, m, y] = rawDate.split('/');
           formattedDate = `${y}-${m}-${d}`;
