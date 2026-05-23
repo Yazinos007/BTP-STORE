@@ -46,6 +46,7 @@ const browser = await chromium.launch({
     }).filter(item => item !== null);
   });
 
+  console.log("عدد الصفقات التي تم استخراجها من الموقع:", tenders.length);
   const { data, error } = await supabase.from('tenders').insert(tenders);
 
   if (error) {
