@@ -1,32 +1,31 @@
 name: Run Scraper
 on:
   schedule:
-    - cron: '0 8 * * *' # يعمل يومياً الساعة 8 صباحاً
-  workflow_dispatch: # تسمح لك بتشغيله يدوياً من زر Run workflow
+    - cron: '0 8 * * *'
+  workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: BTP-STORE  # هذا هو السطر الذي يحل المشكلة!
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-      - run: npm install
-      - run: npx playwright install --with-deps chromium
       
-      # 1. تشغيل السكربت وحفظ النتيجة
-      - name: Run Scraper
-        id: run_scraper
+      # نستخدم 'find' للعثور على المجلد الصحيح الذي يحتوي على package.json تلقائياً
+      - name: Setup and Run
         run: |
+          # العثور على المجلد الذي يحتوي على package.json
+          WORKING_DIR=$(find . -name "package.json" -exec dirname {} \;)
+          cd "$WORKING_DIR"
+          
+          # تثبيت المكتبات وتشغيل السكربت
+          npm install
+          npx playwright install --with-deps chromium
           OUTPUT=$(node scraper.js)
-          echo "$OUTPUT"
-          # استخراج العدد من المخرج (بافتراض أن السكربت يطبع SUCCESS_COUNT:X)
-          COUNT=$(echo "$OUTPUT" | grep "SUCCESS_COUNT" | cut -d':' -f2)
-          echo "COUNT=${COUNT:-0}" >> $GITHUB_ENV
+          
+          # إرسال التنبيه
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage \
+          -d chat_id=${{ secrets.CHAT_ID }} \
+          -d text="تقرير الروبوت: تم الانتهاء من الفحص. النتيجة: $OUTPUT"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
