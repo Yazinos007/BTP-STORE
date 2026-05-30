@@ -21,18 +21,17 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: |
-          # التوجه مباشرة إلى المجلد الصحيح الذي يحتوي على ملفات المشروع
           cd souqbtp-dashboard
           
-          # تثبيت المكتبات
+          echo "--- 1. تثبيت المكتبات ---"
           npm install
           npx playwright install --with-deps chromium
           
-          # تشغيل السكربت وحفظ الناتج
-          OUTPUT=$(node scraper.js)
-          echo "تم تنفيذ السكربت بنجاح."
+          echo "--- 2. تشغيل السكربت مع كشف الأخطاء ---"
+          # الأمر --trace-uncaught سيخرج لنا تفاصيل الخطأ البرمجي في الـ Logs
+          node --trace-uncaught scraper.js
           
-          # إرسال التنبيه عبر تيليجرام باستخدام المتغيرات
+          echo "--- 3. إرسال النتيجة ---"
           curl -s -X POST https://api.telegram.org/bot$BOT_TOKEN/sendMessage \
           -d chat_id=$CHAT_ID \
-          -d text="تقرير الروبوت: تم الانتهاء من الفحص. النتيجة: $OUTPUT"
+          -d text="تقرير الروبوت: تم التنفيذ بنجاح."
