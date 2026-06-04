@@ -31,7 +31,6 @@ import Expenses from './pages/Expenses';
 import Invoices from './pages/Invoices';
 import HR from './pages/HR';
 import Fiscal from './pages/Fiscal';
-import Login from './pages/Login';
 import Sidebar from './components/Sidebar';
 import Caisses from './pages/Caisses';
 import Devis from './pages/Devis';
@@ -223,7 +222,25 @@ function App() {
     );
   }
 
-  if (!session) return <Login />;
+  if (!session) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        <div className="text-5xl mb-4">⛔</div>
+        <h2 className="text-2xl font-bold text-red-500 mb-2">
+          {language === 'fr' ? 'Accès Non Autorisé' : 'الدخول غير مصرح'}
+        </h2>
+        <p className="text-slate-400 mb-6">
+          {language === 'fr' ? 'Veuillez vous connecter via le portail principal.' : 'هذه اللوحة محمية، يرجى الدخول من بوابة المنصة الرئيسية.'}
+        </p>
+        <button 
+          onClick={() => window.location.href = 'https://souqbtp.ma/app/auth.html'} 
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all"
+        >
+          {language === 'fr' ? 'Retour au portail' : 'العودة للمنصة الرئيسية'}
+        </button>
+      </div>
+    );
+  }
 
   const isWholesaler = session?.user?.user_metadata?.supplier_type === 'wholesale';
   const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || t.loading;
