@@ -224,8 +224,8 @@ function App() {
 
   if (!session) return <Login />;
 
-  const isWholesaler = supplier?.role === 'wholesaler';
-  const storeName = supplier?.store_name || t.loading;
+  const isWholesaler = session?.user?.user_metadata?.supplier_type === 'wholesale';
+  const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || t.loading;
   const storeInitial = supplier?.store_name ? supplier.store_name.charAt(0).toUpperCase() : (language === 'fr' ? '?' : '؟');
 
   if (isWholesaler) {
