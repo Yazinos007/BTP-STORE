@@ -170,11 +170,39 @@ function App() {
   }[language];
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) fetchSupplierProfile(session.user.id);
-      setLoading(false);
-    });
+    const initializeSession = async () => {
+      // 1. التحقق من وجود توكن قادم من لوحة PHP (الجسر السري)
+      const params = new URLSearchParams(window.location.search);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token'); 
+
+      if (accessToken) {
+        // إذا وجدنا التوكن، نقوم بتسجيل الدخول فوراً بدون صفحة Login
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || accessToken 
+        });
+
+        if (data?.session) {
+          setSession(data.session);
+          fetchSupplierProfile(data.session.user.id);
+          
+          // تنظيف الرابط من التوكن لأسباب أمنية (حتى لا يبقى ظاهراً)
+          window.history.replaceState({}, document.title, window.location.pathname);
+          setLoading(false);
+          return; // نتوقف هنا لكي لا ينفذ الكود العادي
+        }
+      }
+
+      // 2. الوضع العادي: إذا فتح اللوحة مباشرة من Vercel بدون PHP
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        if (session?.user) fetchSupplierProfile(session.user.id);
+        setLoading(false);
+      });
+    };
+
+    initializeSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
@@ -185,6 +213,7 @@ function App() {
   }, [fetchSupplierProfile]);
 
   if (loading || (session && !supplier)) {
+// ... (باقي الكود كما هو بدون تغيير)
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
         <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
