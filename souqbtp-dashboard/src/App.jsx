@@ -170,43 +170,44 @@ function App() {
   }[language];
 
   useEffect(() => {
-    const initializeSession = async () => {
-      // 1. التحقق من وجود توكن قادم من لوحة PHP (الجسر السري)
+    const initializeApp = async () => {
+      // 1. قراءة المفاتيح من الرابط (القادمة من PHP)
       const params = new URLSearchParams(window.location.search);
       const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token'); 
+      const refreshToken = params.get('refresh_token');
 
       if (accessToken) {
-        // إذا وجدنا التوكن، نقوم بتسجيل الدخول فوراً بدون صفحة Login
+        // إذا وجدنا مفتاحاً، ندخل بالقوة ونتجاوز صفحة Login
         const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
-          refresh_token: refreshToken || accessToken 
+          refresh_token: refreshToken || accessToken
         });
 
         if (data?.session) {
           setSession(data.session);
           fetchSupplierProfile(data.session.user.id);
           
-          // تنظيف الرابط من التوكن لأسباب أمنية (حتى لا يبقى ظاهراً)
+          // مسح الرابط سراً لكي لا يرى أحد التوكن
           window.history.replaceState({}, document.title, window.location.pathname);
           setLoading(false);
-          return; // نتوقف هنا لكي لا ينفذ الكود العادي
+          return; // إيقاف التنفيذ هنا!
         }
       }
 
-      // 2. الوضع العادي: إذا فتح اللوحة مباشرة من Vercel بدون PHP
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-        if (session?.user) fetchSupplierProfile(session.user.id);
-        setLoading(false);
-      });
+      // 2. إذا لم يكن هناك توكن في الرابط (الوضع العادي)
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      if (session?.user) {
+        fetchSupplierProfile(session.user.id);
+      }
+      setLoading(false);
     };
 
-    initializeSession();
+    initializeApp();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) fetchSupplierProfile(session.user.id);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+      if (currentSession?.user) fetchSupplierProfile(currentSession.user.id);
     });
 
     return () => subscription.unsubscribe();
