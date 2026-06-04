@@ -240,9 +240,18 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-white/10">
-        <button onClick={() => supabase.auth.signOut()} className="flex items-center gap-3 px-6 py-3 w-full text-red-400 hover:bg-red-400/10 rounded-lg transition-colors">
-          <LogOut size={18} /><span className="text-sm font-medium">{t.logout}</span>
-        </button>
+        <button 
+  onClick={async () => {
+    // 1. مسح الجلسة من React
+    await supabase.auth.signOut();
+    // 2. توجيه منصة PHP الأم إلى صفحة الخروج لكسر الإطار
+    window.parent.location.href = 'https://souqbtp.ma/app/logout.php';
+  }} 
+  className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-all"
+>
+  <LogOut size={20} /> 
+  {language === 'fr' ? 'Déconnexion' : 'تسجيل الخروج'}
+</button>
       </div>
     </div>
   );
