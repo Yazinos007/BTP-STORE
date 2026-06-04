@@ -1,7 +1,7 @@
 {
-  "name": "souqbtp-scraper",
+  "name": "souqbtp-dashboard",
   "version": "1.0.0",
-  "main": "scraper.js",
+  "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.106.1",
     "canvas-confetti": "^1.9.4",
