@@ -224,11 +224,16 @@ function App() {
     );
   }
 
-  // 1. التحقق هل الرابط الحالي هو صفحة عامة (مثل الماركت بليس)
-  const isPublicRoute = window.location.pathname.startsWith('/store');
+  // 1. قراءة المسار الحالي للمتصفح فوراً قبل أي شيء
+  const currentPath = window.location.pathname;
+  const isPublicRoute = currentPath.startsWith('/store');
 
-  // 2. تفعيل الحظر فقط إذا لم تكن هناك جلسة، ولم يكن الرابط عاماً
-  if (!session && !isPublicRoute) {
+  // 2. إذا كان الزائر يتصفح المتجر العام، اسمح له بالمرور مباشرة وتخطى الحارس
+  if (isPublicRoute) {
+    // نترك React يكمل طريقه ليعرض مكون <Marketplace /> بسلام دون قيود
+  } 
+  // 3. أما إذا كان يحاول الدخول للوحة التحكم المغلقة وليس لديه جلسة، هنا يعترضه الحارس
+  else if (!session) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         <div className="text-5xl mb-4">⛔</div>
