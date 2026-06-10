@@ -20,6 +20,7 @@ import SupplierSubscription from './pages/SupplierSubscription';
 import RetailerSettings from './pages/Settings'; 
 import RetailerSubscription from './pages/RetailerSubscription';
 import TenderRadar from './pages/TenderRadar';
+import Marketplace from './pages/Marketplace';
 
 // === صفحات التاجر (Retailer) ===
 import Overview from './pages/Overview';
@@ -149,6 +150,7 @@ const WholesalerDashboard = ({ supplier }) => {
             <Route path="/tender-radar" element={<TenderRadar />} />
             <Route path="/settings" element={<SupplierSettings />} />
             <Route path="/subscription" element={<SupplierSubscription />} />
+            <Route path="/store" element={<Marketplace />} />
           </Routes>
         </div>
       </main>
