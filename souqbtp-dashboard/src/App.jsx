@@ -224,7 +224,11 @@ function App() {
     );
   }
 
-  if (!session) {
+  // 1. التحقق هل الرابط الحالي هو صفحة عامة (مثل الماركت بليس)
+  const isPublicRoute = window.location.pathname.startsWith('/store');
+
+  // 2. تفعيل الحظر فقط إذا لم تكن هناك جلسة، ولم يكن الرابط عاماً
+  if (!session && !isPublicRoute) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         <div className="text-5xl mb-4">⛔</div>
