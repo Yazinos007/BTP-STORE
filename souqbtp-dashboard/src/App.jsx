@@ -174,12 +174,12 @@ function App() {
     return () => subscription.unsubscribe();
   }, [fetchSupplierProfile]);
 
-  // 🛡️ إذا كان جاري التحميل، نظهر شاشة التحميل شرط ألا نكون في صفحة المتجر العامة لتسريع الاستجابة للزوار
-  if (loading && !isStorePage) {
+  // 🛡️ فحص حاسم لمنع التجمد: لا نوقف الزائر العام للمتجر، ولكن ننتظر تحميل بيانات المورد إذا كان مسجلاً لدخوله
+  if (!isStorePage && loading) {
     return (
-      <div class="h-screen flex flex-col items-center justify-center bg-gray-50">
-        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-        <p class="font-bold text-gray-500">{language === 'fr' ? 'Chargement...' : 'جاري التحميل...'}</p>
+      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+        <p className="font-bold text-gray-500">{language === 'fr' ? 'Chargement...' : 'جاري التحميل...'}</p>
       </div>
     );
   }
@@ -188,24 +188,34 @@ function App() {
   const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || '';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
 
+  // 🛡️ حماية إضافية: إذا كان المورد متصلاً ولكن الجلب لم ينتهِ بعد، ننتظره ثانية لكي لا تظهر لوحة رمادية وامضة
+  if (!isStorePage && session && isWholesaler && !supplier) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
+        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+        <p className="font-bold text-slate-400">{language === 'fr' ? 'Chargement du profil...' : 'جاري جلب ملف المورد...'}</p>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <Routes>
+        {/* 🛒 1. خط العبور الآمن والمستقل تماماً لصفحة المتجر العام */}
         <Route path="/store" element={<Marketplace />} />
 
+        {/* 🔒 2. نظام التوجيه الخاص بلوحات التحكم المحمية */}
         <Route path="*" element={
           !session ? (
-            // شاشة الطرد للمستخدمين غير المسجلين
-            <div class="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-              <div class="text-5xl mb-4">⛔</div>
-              <h2 class="text-2xl font-bold text-red-500 mb-2">{language === 'fr' ? 'Accès Non Autorisé' : 'الدخول غير مصرح'}</h2>
-              <p class="text-slate-400 mb-6">{language === 'fr' ? 'Veuillez vous connecter via le portail principal.' : 'هذه اللوحة محمية، يرجى الدخول من بوابة المنصة الرئيسية.'}</p>
-              <button onClick={() => window.location.href = 'https://souqbtp.ma/app/auth.html'} class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all">
+            <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+              <div className="text-5xl mb-4">⛔</div>
+              <h2 className="text-2xl font-bold text-red-500 mb-2">{language === 'fr' ? 'Accès Non Autorisé' : 'الدخول غير مصرح'}</h2>
+              <p className="text-slate-400 mb-6">{language === 'fr' ? 'Veuillez vous connecter via le portail principal.' : 'هذه اللوحة محمية، يرجى الدخول من بوابة المنصة الرئيسية.'}</p>
+              <button onClick={() => window.location.href = 'https://souqbtp.ma/app/auth.html'} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all">
                 {language === 'fr' ? 'Retour au portail' : 'العودة للمنصة الرئيسية'}
               </button>
             </div>
           ) : isWholesaler ? (
-            // لوحة المورد الكبير
             <WholesalerDashboard supplier={supplier}>
               <Routes>
                 <Route path="/" element={<SupplierOverview />} />
@@ -226,22 +236,21 @@ function App() {
               </Routes>
             </WholesalerDashboard>
           ) : (
-            // لوحة التاجر التقسيط
-            <div class="flex h-screen bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+            <div className="flex h-screen bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
               <Sidebar />
-              <main class="flex-1 flex flex-col overflow-hidden">
-                <header class="h-16 bg-white border-b flex items-center justify-between px-6">
-                  <h2 class="text-xl font-semibold text-gray-800">
-                    {language === 'fr' ? 'Bienvenue, ' : 'مرحباً بك، '} <span class="text-blue-600">{storeName}</span>
+              <main className="flex-1 flex flex-col overflow-hidden">
+                <header className="h-16 bg-white border-b flex items-center justify-between px-6">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {language === 'fr' ? 'Bienvenue, ' : 'مرحباً بك، '} <span className="text-blue-600">{storeName}</span>
                   </h2>
-                  <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
                       {storeInitial}
                     </div>
                   </div>
                 </header>
-                <div class="flex-1 overflow-auto p-6">
-                  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 min-h-[400px]">
+                <div className="flex-1 overflow-auto p-6">
+                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 min-h-[400px]">
                     <Routes>
                       <Route path="/" element={<Overview />} />
                       <Route path="/products" element={<Products />} />
@@ -275,5 +284,4 @@ function App() {
       </Routes>
     </BrowserRouter>
   );
-}
-export default App;
+}export default App;
