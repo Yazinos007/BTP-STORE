@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, Settings, Zap, Radar } from 'lucide-react';
 
@@ -48,10 +48,10 @@ import Purchases from './pages/Purchases';
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
 
-const WholesalerDashboard = ({ supplier }) => {
+// لوحة المورد (بدون BrowserRouter داخلي لأنه أصبح مغلفاً من الخارج)
+const WholesalerDashboard = ({ supplier, children }) => {
   const { language } = useSettingsStore();
   
-  // 🎯 القائمة الأساسية للمورد
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Vue d\'ensemble' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
@@ -70,88 +70,57 @@ const WholesalerDashboard = ({ supplier }) => {
   ];
 
   return (
-    <div className="flex h-screen bg-[#0f172a] text-slate-300 font-sans selection:bg-blue-500/30" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <aside className="w-72 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20">
-        <div className="h-20 flex items-center px-8 border-b border-slate-800 bg-slate-950/50">
-          <h1 className="text-2xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-            SouqBTP <span className="text-sm font-bold text-slate-500 uppercase tracking-widest ml-1">Portal</span>
+    <div className="flex h-screen bg-[#0f172a] text-slate-300 font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <aside class="w-72 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20">
+        <div class="h-20 flex items-center px-8 border-b border-slate-800 bg-slate-950/50">
+          <h1 class="text-2xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+            SouqBTP <span class="text-sm font-bold text-slate-500 uppercase tracking-widest ml-1">Portal</span>
           </h1>
         </div>
-
-        {/* 🌟 الزر الذهبي للترقية - بارز ومستقل في أعلى القائمة! 🌟 */}
-        <div className="px-5 pt-6 pb-2">
-          <Link to="/subscription" className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all">
-            <Zap size={20} className="fill-black" />
+        <div class="px-5 pt-6 pb-2">
+          <Link to="/subscription" class="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all">
+            <Zap size={20} class="fill-black" />
             {language === 'fr' ? 'Passer à l\'Enterprise' : 'ترقية للباقة الذهبية'}
           </Link>
         </div>
-        
-        <nav className="flex-1 py-4 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <nav class="flex-1 py-4 px-4 space-y-2 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
-            <Link key={item.path} to={item.path} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-slate-400 hover:text-white hover:bg-slate-800/80 group">
-              <item.icon size={20} className="group-hover:text-blue-400 transition-colors" />
+            <Link key={item.path} to={item.path} class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-slate-400 hover:text-white hover:bg-slate-800/80 group">
+              <item.icon size={20} class="group-hover:text-blue-400 transition-colors" />
               {item.label}
             </Link>
           ))}
         </nav>
-
-        <div className="p-4 border-t border-slate-800">
-          <button onClick={() => supabase.auth.signOut()} className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-all">
+        <div class="p-4 border-t border-slate-800">
+          <button onClick={() => supabase.auth.signOut()} class="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-all">
             <LogOut size={20} /> {language === 'fr' ? 'Déconnexion' : 'تسجيل الخروج'}
           </button>
         </div>
       </aside>
-
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-        
-        <header className="h-20 border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-10 sticky top-0 z-10">
+      <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <header class="h-20 border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-10 sticky top-0 z-10">
           <div>
-            <h2 className="text-xl font-bold text-white">
-              {language === 'fr' ? 'Espace Fournisseur B2B' : 'بوابة المورد الكبير'}
-            </h2>
-            <p className="text-xs font-bold text-slate-500 mt-1 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h2 class="text-xl font-bold text-white">{language === 'fr' ? 'Espace Fournisseur B2B' : 'بوابة المورد الكبير'}</h2>
+            <p class="text-xs font-bold text-slate-500 mt-1 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               {language === 'fr' ? 'Système en ligne' : 'النظام متصل'}
             </p>
           </div>
-          
-          <div className="flex items-center gap-6">
-            <button className="relative p-2 text-slate-400 hover:text-white transition-colors">
-              <Bell size={22} />
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-slate-900"></span>
-            </button>
-            <div className="flex items-center gap-3 pl-6 border-l border-slate-700">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-white">{supplier?.store_name}</p>
-                <p className="text-xs text-slate-400 uppercase tracking-wider">{language === 'fr' ? 'Grossiste' : 'مورد جملة'}</p>
+          <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3 pl-6 border-l border-slate-700">
+              <div class="text-right hidden sm:block">
+                <p class="text-sm font-bold text-white">{supplier?.store_name}</p>
+                <p class="text-xs text-slate-400 uppercase tracking-wider">{language === 'fr' ? 'Grossiste' : 'مورد جملة'}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20 border border-white/10">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20 border border-white/10">
                 {supplier?.store_name?.charAt(0).toUpperCase() || 'W'}
               </div>
             </div>
           </div>
         </header>
-
-        <div className="flex-1 overflow-auto p-10 custom-scrollbar z-10">
-          <Routes>
-            <Route path="/" element={<SupplierOverview />} />
-            <Route path="/stock" element={<SupplierStock />} />
-            <Route path="/clients" element={<SupplierClients />} />
-            <Route path="/orders" element={<SupplierOrders />} />
-            <Route path="/fleet" element={<Fleet />} />
-            <Route path="/contracts" element={<Contracts />} />
-            <Route path="/invoices" element={<SupplierInvoices />} />
-            <Route path="/hr" element={<SupplierHR />} />
-            <Route path="/expenses" element={<SupplierExpenses />} />
-            <Route path="/accounting" element={<SupplierAccounting />} />
-            <Route path="/analytics" element={<AnalyticsB2B />} />
-            <Route path="/ai-advisor" element={<AISmartAdvisor />} />
-            <Route path="/tender-radar" element={<TenderRadar />} />
-            <Route path="/settings" element={<SupplierSettings />} />
-            <Route path="/subscription" element={<SupplierSubscription />} />
-            <Route path="/store" element={<Marketplace />} />
-          </Routes>
+        <div class="flex-1 overflow-auto p-10 custom-scrollbar z-10">
+          {children}
         </div>
       </main>
     </div>
@@ -165,41 +134,32 @@ function App() {
   const { language } = useSettingsStore();
   const { supplier, fetchSupplierProfile } = useSupplierStore();
 
-  const t = {
-    ar: { loading: 'جاري التحميل...', welcome: 'مرحباً بك، ' },
-    fr: { loading: 'Chargement en cours...', welcome: 'Bienvenue, ' }
-  }[language];
+  const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
 
   useEffect(() => {
     const initializeApp = async () => {
-      // 1. قراءة المفاتيح من الرابط (القادمة من PHP)
       const params = new URLSearchParams(window.location.search);
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
 
       if (accessToken) {
-        // إذا وجدنا مفتاحاً، ندخل بالقوة ونتجاوز صفحة Login
-        const { data, error } = await supabase.auth.setSession({
+        const { data } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || accessToken
         });
-
         if (data?.session) {
           setSession(data.session);
-          fetchSupplierProfile(data.session.user.id);
-          
-          // مسح الرابط سراً لكي لا يرى أحد التوكن
+          await fetchSupplierProfile(data.session.user.id);
           window.history.replaceState({}, document.title, window.location.pathname);
           setLoading(false);
-          return; // إيقاف التنفيذ هنا!
+          return;
         }
       }
 
-      // 2. إذا لم يكن هناك توكن في الرابط (الوضع العادي)
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      if (session?.user) {
-        fetchSupplierProfile(session.user.id);
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
+      if (currentSession?.user) {
+        await fetchSupplierProfile(currentSession.user.id);
       }
       setLoading(false);
     };
@@ -214,103 +174,105 @@ function App() {
     return () => subscription.unsubscribe();
   }, [fetchSupplierProfile]);
 
-  if (loading || (session && !supplier)) {
-// ... (باقي الكود كما هو بدون تغيير)
+  // 🛡️ إذا كان جاري التحميل، نظهر شاشة التحميل شرط ألا نكون في صفحة المتجر العامة لتسريع الاستجابة للزوار
+  if (loading && !isStorePage) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
-        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-        <p className="font-bold text-gray-500 animate-pulse">{t.loading}</p>
-      </div>
-    );
-  }
-
-  // 1. قراءة المسار الحالي للمتصفح فوراً قبل أي شيء
-  const currentPath = window.location.pathname;
-  const isPublicRoute = currentPath.startsWith('/store');
-
-  // 2. إذا كان الزائر يتصفح المتجر العام، اسمح له بالمرور مباشرة وتخطى الحارس
-  if (isPublicRoute) {
-    // نترك React يكمل طريقه ليعرض مكون <Marketplace /> بسلام دون قيود
-  } 
-  // 3. أما إذا كان يحاول الدخول للوحة التحكم المغلقة وليس لديه جلسة، هنا يعترضه الحارس
-  else if (!session) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-        <div className="text-5xl mb-4">⛔</div>
-        <h2 className="text-2xl font-bold text-red-500 mb-2">
-          {language === 'fr' ? 'Accès Non Autorisé' : 'الدخول غير مصرح'}
-        </h2>
-        <p className="text-slate-400 mb-6">
-          {language === 'fr' ? 'Veuillez vous connecter via le portail principal.' : 'هذه اللوحة محمية، يرجى الدخول من بوابة المنصة الرئيسية.'}
-        </p>
-        <button 
-          onClick={() => window.location.href = 'https://souqbtp.ma/app/auth.html'} 
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all"
-        >
-          {language === 'fr' ? 'Retour au portail' : 'العودة للمنصة الرئيسية'}
-        </button>
+      <div class="h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+        <p class="font-bold text-gray-500">{language === 'fr' ? 'Chargement...' : 'جاري التحميل...'}</p>
       </div>
     );
   }
 
   const isWholesaler = session?.user?.user_metadata?.supplier_type === 'wholesale';
-  const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || t.loading;
-  const storeInitial = supplier?.store_name ? supplier.store_name.charAt(0).toUpperCase() : (language === 'fr' ? '?' : '؟');
-
-  if (isWholesaler) {
-    return (
-      <BrowserRouter>
-        <WholesalerDashboard supplier={supplier} />
-      </BrowserRouter>
-    );
-  }
+  const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || '';
+  const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
 
   return (
     <BrowserRouter>
-      <div className="flex h-screen bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-       <Sidebar />
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <header className="h-16 bg-white border-b flex items-center justify-between px-6">
-            <h2 className="text-xl font-semibold text-gray-800">
-              {t.welcome} <span className="text-blue-600">{storeName}</span>
-            </h2>
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
-                {storeInitial}
-              </div>
-            </div>
-          </header>
+      <Routes>
+        <Route path="/store" element={<Marketplace />} />
 
-          <div className="flex-1 overflow-auto p-6">
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 min-h-[400px]">
-              <Routes>
-                <Route path="/" element={<Overview />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/wallet" element={<Wallet />} />
-                <Route path="/settings" element={<RetailerSettings />} />
-                <Route path="/pos" element={<POS />} />
-                <Route path="/expenses" element={<Expenses />} />
-                <Route path="/invoices" element={<Invoices />} />
-                <Route path="/hr" element={<HR />} />
-                <Route path="/fiscal" element={<Fiscal />} />
-                <Route path="/caisses" element={<Caisses />} />
-                <Route path="/devis" element={<Devis />} />
-                <Route path="/bc" element={<BC />} />
-                <Route path="/bl" element={<BL />} />
-                <Route path="/avoir" element={<Avoir />} />
-                <Route path="/fiches-expedition" element={<Expeditions />} />
-                <Route path="/factures-achat" element={<FacturesAchat />} />
-                <Route path="/clients" element={<Clients />} />
-                <Route path="/accounting" element={<Accounting />} />
-                <Route path="/suppliers" element={<ExternalSuppliers />} />
-                <Route path="/purchases" element={<Purchases />} />
-                <Route path="/subscription" element={<RetailerSubscription />} />
-              </Routes>
+        <Route path="*" element={
+          !session ? (
+            // شاشة الطرد للمستخدمين غير المسجلين
+            <div class="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+              <div class="text-5xl mb-4">⛔</div>
+              <h2 class="text-2xl font-bold text-red-500 mb-2">{language === 'fr' ? 'Accès Non Autorisé' : 'الدخول غير مصرح'}</h2>
+              <p class="text-slate-400 mb-6">{language === 'fr' ? 'Veuillez vous connecter via le portail principal.' : 'هذه اللوحة محمية، يرجى الدخول من بوابة المنصة الرئيسية.'}</p>
+              <button onClick={() => window.location.href = 'https://souqbtp.ma/app/auth.html'} class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all">
+                {language === 'fr' ? 'Retour au portail' : 'العودة للمنصة الرئيسية'}
+              </button>
             </div>
-          </div>
-        </main>
-      </div> 
+          ) : isWholesaler ? (
+            // لوحة المورد الكبير
+            <WholesalerDashboard supplier={supplier}>
+              <Routes>
+                <Route path="/" element={<SupplierOverview />} />
+                <Route path="/stock" element={<SupplierStock />} />
+                <Route path="/clients" element={<SupplierClients />} />
+                <Route path="/orders" element={<SupplierOrders />} />
+                <Route path="/fleet" element={<Fleet />} />
+                <Route path="/contracts" element={<Contracts />} />
+                <Route path="/invoices" element={<SupplierInvoices />} />
+                <Route path="/hr" element={<SupplierHR />} />
+                <Route path="/expenses" element={<SupplierExpenses />} />
+                <Route path="/accounting" element={<SupplierAccounting />} />
+                <Route path="/analytics" element={<AnalyticsB2B />} />
+                <Route path="/ai-advisor" element={<AISmartAdvisor />} />
+                <Route path="/tender-radar" element={<TenderRadar />} />
+                <Route path="/settings" element={<SupplierSettings />} />
+                <Route path="/subscription" element={<SupplierSubscription />} />
+              </Routes>
+            </WholesalerDashboard>
+          ) : (
+            // لوحة التاجر التقسيط
+            <div class="flex h-screen bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+              <Sidebar />
+              <main class="flex-1 flex flex-col overflow-hidden">
+                <header class="h-16 bg-white border-b flex items-center justify-between px-6">
+                  <h2 class="text-xl font-semibold text-gray-800">
+                    {language === 'fr' ? 'Bienvenue, ' : 'مرحباً بك، '} <span class="text-blue-600">{storeName}</span>
+                  </h2>
+                  <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
+                      {storeInitial}
+                    </div>
+                  </div>
+                </header>
+                <div class="flex-1 overflow-auto p-6">
+                  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 min-h-[400px]">
+                    <Routes>
+                      <Route path="/" element={<Overview />} />
+                      <Route path="/products" element={<Products />} />
+                      <Route path="/orders" element={<Orders />} />
+                      <Route path="/wallet" element={<Wallet />} />
+                      <Route path="/settings" element={<RetailerSettings />} />
+                      <Route path="/pos" element={<POS />} />
+                      <Route path="/expenses" element={<Expenses />} />
+                      <Route path="/invoices" element={<Invoices />} />
+                      <Route path="/hr" element={<HR />} />
+                      <Route path="/fiscal" element={<Fiscal />} />
+                      <Route path="/caisses" element={<Caisses />} />
+                      <Route path="/devis" element={<Devis />} />
+                      <Route path="/bc" element={<BC />} />
+                      <Route path="/bl" element={<BL />} />
+                      <Route path="/avoir" element={<Avoir />} />
+                      <Route path="/fiches-expedition" element={<Expeditions />} />
+                      <Route path="/factures-achat" element={<FacturesAchat />} />
+                      <Route path="/clients" element={<Clients />} />
+                      <Route path="/accounting" element={<Accounting />} />
+                      <Route path="/suppliers" element={<ExternalSuppliers />} />
+                      <Route path="/purchases" element={<Purchases />} />
+                      <Route path="/subscription" element={<RetailerSubscription />} />
+                    </Routes>
+                  </div>
+                </div>
+              </main>
+            </div>
+          )
+        } />
+      </Routes>
     </BrowserRouter>
   );
 }
