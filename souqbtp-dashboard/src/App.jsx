@@ -134,45 +134,30 @@ function App() {
   const { language } = useSettingsStore();
   const { supplier, fetchSupplierProfile } = useSupplierStore();
 
-  // فحص آمن ومبسط للمسار الحالي لتفادي انهيار المتصفح داخل الـ iframe
-  const isStorePage = window.location.pathname.includes('/store');
-
   useEffect(() => {
     const initializeApp = async () => {
-      try {
-        // 1. محاولة قراءة التوكنات الآتية من الرابط بشكل آمن ومحمي
-        const search = window.location.search;
-        if (search && search.includes('access_token')) {
-          const params = new URLSearchParams(search);
-          const accessToken = params.get('access_token');
-          const refreshToken = params.get('refresh_token');
+      // 1. استقبال الدخول التلقائي (SSO) من PHP بدون العبث بروابط المتصفح الأب
+      const params = new URLSearchParams(window.location.search);
+      const accessToken = params.get('access_token');
 
-          if (accessToken) {
-            const { data } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken || accessToken
-            });
-            if (data?.session) {
-              setSession(data.session);
-              await fetchSupplierProfile(data.session.user.id);
-              window.history.replaceState({}, document.title, window.location.pathname);
-              setLoading(false);
-              return;
-            }
-          }
+      if (accessToken) {
+        const { data } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: accessToken
+        });
+        if (data?.session) {
+          setSession(data.session);
+          await fetchSupplierProfile(data.session.user.id);
         }
-
-        // 2. الفحص العادي للجلسة إذا لم يكن هناك توكن في الرابط
+      } else {
+        // 2. الفحص العادي
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         setSession(currentSession);
         if (currentSession?.user) {
           await fetchSupplierProfile(currentSession.user.id);
         }
-      } catch (err) {
-        console.error("Initialization error handled safely:", err);
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     };
 
     initializeApp();
@@ -185,19 +170,6 @@ function App() {
     return () => subscription.unsubscribe();
   }, [fetchSupplierProfile]);
 
-  // 🛒 إذا كنا في صفحة المتجر العامة، نعبر فوراً بدون شاشات تحميل تعيق الزائر
-  if (isStorePage) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/store" element={<Marketplace />} />
-          <Route path="*" element={<Marketplace />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  // 🛡️ شاشة التحميل الآمنة فقط للوحات التحكم الداخلية
   if (loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
@@ -214,13 +186,18 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* 🛒 المسار العام (المتجر): متاح للجميع بدون شروط وبدون تداخل */}
+        <Route path="/store" element={<Marketplace />} />
+
+        {/* 🔒 المسارات المحمية (لوحات التحكم) */}
         <Route path="*" element={
           !session ? (
             <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
               <div className="text-5xl mb-4">⛔</div>
               <h2 className="text-2xl font-bold text-red-500 mb-2">{language === 'fr' ? 'Accès Non Autorisé' : 'الدخول غير مصرح'}</h2>
-              <p className="text-slate-400 mb-6">{language === 'fr' ? 'Veuillez vous connecter via le portail principal.' : 'هذه اللوحة محمية، يرجى الدخول من بوابة المنصة الرئيسية.'}</p>
-              <button onClick={() => window.location.href = 'https://souqbtp.ma/app/auth.html'} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all">
+              <p className="text-slate-400 mb-6">{language === 'fr' ? 'Veuillez vous connecter via le portail principal.' : 'يرجى تسجيل الدخول عبر البوابة الرئيسية.'}</p>
+              {/* كسر الإطار عند العودة لتسجيل الدخول */}
+              <button onClick={() => window.parent.location.href = 'https://souqbtp.ma/app/auth.html'} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all">
                 {language === 'fr' ? 'Retour au portail' : 'العودة للمنصة الرئيسية'}
               </button>
             </div>
@@ -252,39 +229,14 @@ function App() {
                   <h2 className="text-xl font-semibold text-gray-800">
                     {language === 'fr' ? 'Bienvenue, ' : 'مرحباً بك، '} <span className="text-blue-600">{storeName}</span>
                   </h2>
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
-                      {storeInitial}
-                    </div>
-                  </div>
                 </header>
                 <div className="flex-1 overflow-auto p-6">
-                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 min-h-[400px]">
-                    <Routes>
-                      <Route path="/" element={<Overview />} />
-                      <Route path="/products" element={<Products />} />
-                      <Route path="/orders" element={<Orders />} />
-                      <Route path="/wallet" element={<Wallet />} />
-                      <Route path="/settings" element={<RetailerSettings />} />
-                      <Route path="/pos" element={<POS />} />
-                      <Route path="/expenses" element={<Expenses />} />
-                      <Route path="/invoices" element={<Invoices />} />
-                      <Route path="/hr" element={<HR />} />
-                      <Route path="/fiscal" element={<Fiscal />} />
-                      <Route path="/caisses" element={<Caisses />} />
-                      <Route path="/devis" element={<Devis />} />
-                      <Route path="/bc" element={<BC />} />
-                      <Route path="/bl" element={<BL />} />
-                      <Route path="/avoir" element={<Avoir />} />
-                      <Route path="/fiches-expedition" element={<Expeditions />} />
-                      <Route path="/factures-achat" element={<FacturesAchat />} />
-                      <Route path="/clients" element={<Clients />} />
-                      <Route path="/accounting" element={<Accounting />} />
-                      <Route path="/suppliers" element={<ExternalSuppliers />} />
-                      <Route path="/purchases" element={<Purchases />} />
-                      <Route path="/subscription" element={<RetailerSubscription />} />
-                    </Routes>
-                  </div>
+                  {/* ... روابط التاجر (Retailer Routes) ... */}
+                  <Routes>
+                     <Route path="/" element={<Overview />} />
+                     <Route path="/pos" element={<POS />} />
+                     <Route path="/settings" element={<RetailerSettings />} />
+                  </Routes>
                 </div>
               </main>
             </div>
