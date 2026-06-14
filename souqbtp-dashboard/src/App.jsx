@@ -134,35 +134,45 @@ function App() {
   const { language } = useSettingsStore();
   const { supplier, fetchSupplierProfile } = useSupplierStore();
 
-  // فحص حذر وصارم لتحديد هل نحن في صفحة المتجر العامة أم لا
-  const isStorePage = window.location.pathname.includes('/store') || window.location.hash.includes('/store') || window.location.search.includes('vendor');
+  // فحص آمن ومبسط للمسار الحالي لتفادي انهيار المتصفح داخل الـ iframe
+  const isStorePage = window.location.pathname.includes('/store');
 
   useEffect(() => {
     const initializeApp = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
+      try {
+        // 1. محاولة قراءة التوكنات الآتية من الرابط بشكل آمن ومحمي
+        const search = window.location.search;
+        if (search && search.includes('access_token')) {
+          const params = new URLSearchParams(search);
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
 
-      if (accessToken) {
-        const { data } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || accessToken
-        });
-        if (data?.session) {
-          setSession(data.session);
-          await fetchSupplierProfile(data.session.user.id);
-          window.history.replaceState({}, document.title, window.location.pathname);
-          setLoading(false);
-          return;
+          if (accessToken) {
+            const { data } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || accessToken
+            });
+            if (data?.session) {
+              setSession(data.session);
+              await fetchSupplierProfile(data.session.user.id);
+              window.history.replaceState({}, document.title, window.location.pathname);
+              setLoading(false);
+              return;
+            }
+          }
         }
-      }
 
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
-      if (currentSession?.user) {
-        await fetchSupplierProfile(currentSession.user.id);
+        // 2. الفحص العادي للجلسة إذا لم يكن هناك توكن في الرابط
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+        if (currentSession?.user) {
+          await fetchSupplierProfile(currentSession.user.id);
+        }
+      } catch (err) {
+        console.error("Initialization error handled safely:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initializeApp();
@@ -175,7 +185,7 @@ function App() {
     return () => subscription.unsubscribe();
   }, [fetchSupplierProfile]);
 
-  // 🛡️ إذا كنا في صفحة المتجر العامة، نعبر فوراً بدون أي شاشات تحميل تعيق الزائر
+  // 🛒 إذا كنا في صفحة المتجر العامة، نعبر فوراً بدون شاشات تحميل تعيق الزائر
   if (isStorePage) {
     return (
       <BrowserRouter>
@@ -187,12 +197,12 @@ function App() {
     );
   }
 
-  // 🛡️ شاشة التحميل العادية فقط للوحات التحكم الداخلية المغلقة
+  // 🛡️ شاشة التحميل الآمنة فقط للوحات التحكم الداخلية
   if (loading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
-        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-        <p className="font-bold text-gray-500">{language === 'fr' ? 'Chargement...' : 'جاري التحميل...'}</p>
+      <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
+        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+        <p className="font-bold text-slate-400">{language === 'fr' ? 'Chargement...' : 'جاري التحميل...'}</p>
       </div>
     );
   }
