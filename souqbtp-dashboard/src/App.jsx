@@ -134,7 +134,8 @@ function App() {
   const { language } = useSettingsStore();
   const { supplier, fetchSupplierProfile } = useSupplierStore();
 
-  const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
+  // فحص حذر وصارم لتحديد هل نحن في صفحة المتجر العامة أم لا
+  const isStorePage = window.location.pathname.includes('/store') || window.location.hash.includes('/store') || window.location.search.includes('vendor');
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -174,8 +175,20 @@ function App() {
     return () => subscription.unsubscribe();
   }, [fetchSupplierProfile]);
 
-  // 🛡️ فحص حاسم لمنع التجمد: لا نوقف الزائر العام للمتجر، ولكن ننتظر تحميل بيانات المورد إذا كان مسجلاً لدخوله
-  if (!isStorePage && loading) {
+  // 🛡️ إذا كنا في صفحة المتجر العامة، نعبر فوراً بدون أي شاشات تحميل تعيق الزائر
+  if (isStorePage) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/store" element={<Marketplace />} />
+          <Route path="*" element={<Marketplace />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  // 🛡️ شاشة التحميل العادية فقط للوحات التحكم الداخلية المغلقة
+  if (loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
         <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
@@ -184,27 +197,13 @@ function App() {
     );
   }
 
-  const isWholesaler = session?.user?.user_metadata?.supplier_type === 'wholesale';
+  const isWholesaler = session?.user?.user_metadata?.supplier_type === 'wholesale' || session?.user?.user_metadata?.role === 'supplier';
   const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || '';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
-
-  // 🛡️ حماية إضافية: إذا كان المورد متصلاً ولكن الجلب لم ينتهِ بعد، ننتظره ثانية لكي لا تظهر لوحة رمادية وامضة
-  if (!isStorePage && session && isWholesaler && !supplier) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
-        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-        <p className="font-bold text-slate-400">{language === 'fr' ? 'Chargement du profil...' : 'جاري جلب ملف المورد...'}</p>
-      </div>
-    );
-  }
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* 🛒 1. خط العبور الآمن والمستقل تماماً لصفحة المتجر العام */}
-        <Route path="/store" element={<Marketplace />} />
-
-        {/* 🔒 2. نظام التوجيه الخاص بلوحات التحكم المحمية */}
         <Route path="*" element={
           !session ? (
             <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
