@@ -189,7 +189,7 @@ function App() {
     );
   }
 
-  const isWholesaler = session?.user?.user_metadata?.supplier_type === 'wholesale' || session?.user?.user_metadata?.role === 'supplier';
+  const isWholesaler = session?.user?.user_metadata?.supplier_type === 'wholesale' || supplier?.supplier_type === 'wholesale';
   const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || '';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
 
