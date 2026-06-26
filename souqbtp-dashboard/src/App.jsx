@@ -229,22 +229,32 @@ function App() {
           ) : (
             <div className="flex h-screen bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
               <Sidebar />
-              <main className="flex-1 flex flex-col overflow-hidden">
+             <main className="flex-1 flex flex-col overflow-hidden">
                 <header className="h-16 bg-white border-b flex items-center justify-between px-6">
                   <h2 className="text-xl font-semibold text-gray-800">
                     {language === 'fr' ? 'Bienvenue, ' : 'مرحباً بك، '} <span className="text-blue-600">{storeName}</span>
                   </h2>
+                  
                   <div className="flex items-center gap-4">
+                    {/* 🌟 الزر السحري الجديد لإدارة المتجر 🌟 */}
+                    <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all">
+                       <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : 'إدارة سلع المتجر'}</span>
+                    </Link>
+                    
+                    {/* الدائرة الأصلية للحرف الأول من اسم المتجر */}
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
                       {storeInitial}
                     </div>
                   </div>
                 </header>
+                
                 <div className="flex-1 overflow-auto p-6">
                   <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 min-h-[400px]">
                     <Routes>
                       <Route path="/" element={<Overview />} />
-                      <Route path="/products" element={<Products />} />
+                      {/* 🌟 هنا التغيير الأهم: توجيه مسار المنتجات إلى SupplierStock المطور 🌟 */}
+                      <Route path="/products" element={<SupplierStock />} />                     
+                      {/* باقي مسارات تاجر التجزئة الخاصة بك محفوظة بأمان */}
                       <Route path="/orders" element={<Orders />} />
                       <Route path="/wallet" element={<Wallet />} />
                       <Route path="/settings" element={<RetailerSettings />} />
