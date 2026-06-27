@@ -69,7 +69,8 @@ const WholesalerDashboard = ({ supplier, children }) => {
 
   return (
     <div className="flex h-screen bg-[#0f172a] text-slate-300 font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <aside className="w-72 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20">
+      {/* 🌟 التعديل 1: إضافة shrink-0 لمنع انكماش القائمة الجانبية للمورد الكبير */}
+      <aside className="w-72 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20">
         <div className="h-20 flex items-center px-8 border-b border-slate-800 bg-slate-950/50">
           <h1 className="text-2xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
             SouqBTP <span className="text-sm font-bold text-slate-500 uppercase tracking-widest ml-1">Portal</span>
@@ -95,7 +96,9 @@ const WholesalerDashboard = ({ supplier, children }) => {
           </button>
         </div>
       </aside>
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+      
+      {/* 🌟 التعديل 2: إضافة min-w-0 لمنع القسم الرئيسي من دفع القائمة الجانبية */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
         <header className="h-20 border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-10 sticky top-0 z-10">
           <div>
@@ -168,7 +171,6 @@ function App() {
     return () => subscription.unsubscribe();
   }, [fetchSupplierProfile]);
 
-  // مسار المتجر معزول تماما للزوار
   if (isStorePage) {
     return (
       <BrowserRouter>
@@ -228,20 +230,24 @@ function App() {
             </WholesalerDashboard>
           ) : (
             <div className="flex h-screen bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-              <Sidebar />
-             <main className="flex-1 flex flex-col overflow-hidden">
-                <header className="h-16 bg-white border-b flex items-center justify-between px-6">
+              
+              {/* 🌟 التعديل 3: تغليف السايدبار بحاوية shrink-0 لحمايته من الانكماش لتاجر التجزئة */}
+              <div className="shrink-0 flex">
+                <Sidebar />
+              </div>
+              
+              {/* 🌟 التعديل 4: إضافة min-w-0 هنا لردع تمدد الجداول العنيفة */}
+              <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+                <header className="h-16 bg-white border-b flex items-center justify-between px-6 shrink-0">
                   <h2 className="text-xl font-semibold text-gray-800">
                     {language === 'fr' ? 'Bienvenue, ' : 'مرحباً بك، '} <span className="text-blue-600">{storeName}</span>
                   </h2>
                   
                   <div className="flex items-center gap-4">
-                    {/* 🌟 الزر السحري الجديد لإدارة المتجر 🌟 */}
                     <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all">
                        <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : 'إدارة سلع المتجر'}</span>
                     </Link>
                     
-                    {/* الدائرة الأصلية للحرف الأول من اسم المتجر */}
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
                       {storeInitial}
                     </div>
@@ -252,9 +258,7 @@ function App() {
                   <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 min-h-[400px]">
                     <Routes>
                       <Route path="/" element={<Overview />} />
-                      {/* 🌟 هنا التغيير الأهم: توجيه مسار المنتجات إلى SupplierStock المطور 🌟 */}
                       <Route path="/products" element={<SupplierStock />} />                     
-                      {/* باقي مسارات تاجر التجزئة الخاصة بك محفوظة بأمان */}
                       <Route path="/orders" element={<Orders />} />
                       <Route path="/wallet" element={<Wallet />} />
                       <Route path="/settings" element={<RetailerSettings />} />
