@@ -47,6 +47,7 @@ import Purchases from './pages/Purchases';
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
 
+// 🛡️ لوحة المورد الكبير المحصنة
 const WholesalerDashboard = ({ supplier, children }) => {
   const { language } = useSettingsStore();
   
@@ -68,15 +69,14 @@ const WholesalerDashboard = ({ supplier, children }) => {
   ];
 
   return (
-    <div className="flex h-screen bg-[#0f172a] text-slate-300 font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* 🌟 التعديل 1: إضافة shrink-0 لمنع انكماش القائمة الجانبية للمورد الكبير */}
-      <aside className="w-72 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20">
-        <div className="h-20 flex items-center px-8 border-b border-slate-800 bg-slate-950/50">
+    <div className="flex h-screen w-full max-w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <aside className="w-72 shrink-0 h-full bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20">
+        <div className="h-20 shrink-0 flex items-center px-8 border-b border-slate-800 bg-slate-950/50">
           <h1 className="text-2xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
             SouqBTP <span className="text-sm font-bold text-slate-500 uppercase tracking-widest ml-1">Portal</span>
           </h1>
         </div>
-        <div className="px-5 pt-6 pb-2">
+        <div className="px-5 pt-6 pb-2 shrink-0">
           <Link to="/subscription" className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all">
             <Zap size={20} className="fill-black" />
             {language === 'fr' ? 'Passer à l\'Enterprise' : 'ترقية للباقة الذهبية'}
@@ -90,37 +90,35 @@ const WholesalerDashboard = ({ supplier, children }) => {
             </Link>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-slate-800 shrink-0">
           <button onClick={() => supabase.auth.signOut()} className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-all">
             <LogOut size={20} /> {language === 'fr' ? 'Déconnexion' : 'تسجيل الخروج'}
           </button>
         </div>
       </aside>
-      
-      {/* 🌟 التعديل 2: إضافة min-w-0 لمنع القسم الرئيسي من دفع القائمة الجانبية */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
+      <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <header className="h-20 border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-10 sticky top-0 z-10">
-          <div>
-            <h2 className="text-xl font-bold text-white">{language === 'fr' ? 'Espace Fournisseur B2B' : 'بوابة المورد الكبير'}</h2>
+        <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-10 sticky top-0 z-10">
+          <div className="truncate pr-4">
+            <h2 className="text-xl font-bold text-white truncate">{language === 'fr' ? 'Espace Fournisseur B2B' : 'بوابة المورد الكبير'}</h2>
             <p className="text-xs font-bold text-slate-500 mt-1 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
               {language === 'fr' ? 'Système en ligne' : 'النظام متصل'}
             </p>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 shrink-0">
             <div className="flex items-center gap-3 pl-6 border-l border-slate-700">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-white">{supplier?.store_name}</p>
                 <p className="text-xs text-slate-400 uppercase tracking-wider">{language === 'fr' ? 'Grossiste' : 'مورد جملة'}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20 border border-white/10">
+              <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20 border border-white/10">
                 {supplier?.store_name?.charAt(0).toUpperCase() || 'W'}
               </div>
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-auto p-10 custom-scrollbar z-10">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto p-10 w-full max-w-full relative z-10">
           {children}
         </div>
       </main>
@@ -229,33 +227,35 @@ function App() {
               </Routes>
             </WholesalerDashboard>
           ) : (
-            <div className="flex h-screen bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+            // 🛡️ لوحة تاجر التجزئة المحصنة بالكامل
+            <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
               
-              {/* 🌟 التعديل 3: تغليف السايدبار بحاوية shrink-0 لحمايته من الانكماش لتاجر التجزئة */}
-              <div className="shrink-0 flex">
+              {/* جدار الحماية الأول: منع السايدبار من الانكماش */}
+              <div className="shrink-0 flex h-full">
                 <Sidebar />
               </div>
               
-              {/* 🌟 التعديل 4: إضافة min-w-0 هنا لردع تمدد الجداول العنيفة */}
-              <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-                <header className="h-16 bg-white border-b flex items-center justify-between px-6 shrink-0">
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    {language === 'fr' ? 'Bienvenue, ' : 'مرحباً بك، '} <span className="text-blue-600">{storeName}</span>
+              {/* جدار الحماية الثاني: منع المحتوى الرئيسي من التمدد العشوائي */}
+              <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full">
+                <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
+                  <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate pr-4">
+                    {language === 'fr' ? 'Bienvenue, ' : 'مرحباً بك، '} <span className="text-blue-600 truncate">{storeName}</span>
                   </h2>
                   
-                  <div className="flex items-center gap-4">
-                    <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all">
+                  <div className="flex items-center gap-3 md:gap-4 shrink-0">
+                    <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
                        <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : 'إدارة سلع المتجر'}</span>
                     </Link>
                     
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
+                    <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
                       {storeInitial}
                     </div>
                   </div>
                 </header>
                 
-                <div className="flex-1 overflow-auto p-6">
-                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 min-h-[400px]">
+                {/* جدار الحماية الثالث والأخير: إجبار التمرير الداخلي (Scroll) */}
+                <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full">
+                  <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
                     <Routes>
                       <Route path="/" element={<Overview />} />
                       <Route path="/products" element={<SupplierStock />} />                     
