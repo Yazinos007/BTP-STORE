@@ -44,34 +44,51 @@ export default function SmartAIAssistant() {
   const { language } = useSettingsStore();
   const t = translations[language];
 
-  const [specialty, setSpecialty] = useState('gros_oeuvre');
+  const [specialty, setSpecialty] = useState('general'); // افتراضي
   const [trends, setTrends] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const hasAccess = supplier?.tier === 'pro' || supplier?.tier === 'enterprise';
 
   useEffect(() => {
+    let isMounted = true; // 🛡️ جدار حماية لمنع تحديث الحالة إذا تم تدمير المكون
+
     const analyzeAndFetch = async () => {
-      if (!supplier) return;
+      if (!supplier?.id) return;
+      
       try {
+        setLoading(true);
+        // 1. جلب فئات المنتجات فقط لتحديد التخصص
         const { data: products } = await supabase.from('products').select('category').eq('supplier_id', supplier.id);
+        
+        let currentSpecialty = 'general';
         if (products && products.length > 0) {
-          const counts = products.reduce((acc, p) => { acc[p.category] = (acc[p.category] || 0) + 1; return acc; }, {});
-          const topCat = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-          setSpecialty(topCat);
-        } else {
-          setSpecialty('general');
+          const counts = products.reduce((acc, p) => { 
+             const cat = p.category || 'general';
+             acc[cat] = (acc[cat] || 0) + 1; 
+             return acc; 
+          }, {});
+          currentSpecialty = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
         }
+        
+        // 2. جلب التحليلات من السوق
         const { data: trendData } = await supabase.from('market_trends').select('*').order('created_at', { ascending: false });
-        setTrends(trendData || []);
+        
+        if (isMounted) {
+          setSpecialty(currentSpecialty);
+          setTrends(trendData || []);
+        }
       } catch (err) {
-        console.error(err);
+        console.error("AI Assistant Error:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
+
     analyzeAndFetch();
-  }, [supplier]);
+
+    return () => { isMounted = false; };
+  }, [supplier?.id]); // 🚀 التغيير السحري هنا: الاعتماد على الـ ID فقط بدلاً من المتغير كاملاً
 
   // دالة لإخفاء التنبيه عند الضغط على "تجاهل"
   const dismissInsight = (id) => setTrends(trends.filter(insight => insight.id !== id));
@@ -84,14 +101,14 @@ export default function SmartAIAssistant() {
   return (
     <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-[23px] p-6 sm:p-8 shadow-2xl relative overflow-hidden mb-8 border border-white/5" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* تأثيرات الإضاءة الخلفية */}
-      <div className={`absolute top-0 ${language === 'ar' ? 'right-0 translate-x-1/2' : 'left-0 -translate-x-1/2'} w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2`}></div>
-      <div className={`absolute bottom-0 ${language === 'ar' ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} w-64 h-64 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2`}></div>
+      {/* تأثيرات الإضاءة الخلفية (تم تخفيفها لعدم إرهاق المتصفح) */}
+      <div className={`absolute top-0 ${language === 'ar' ? 'right-0 translate-x-1/2' : 'left-0 -translate-x-1/2'} w-64 h-64 bg-blue-500/5 rounded-full blur-2xl -translate-y-1/2 pointer-events-none`}></div>
+      <div className={`absolute bottom-0 ${language === 'ar' ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} w-64 h-64 bg-purple-500/5 rounded-full blur-2xl translate-y-1/2 pointer-events-none`}></div>
 
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-8">
-          <div className="p-3 bg-blue-500/20 text-blue-400 rounded-2xl shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-            <BrainCircuit size={28} className="animate-pulse" />
+          <div className="p-3 bg-blue-500/20 text-blue-400 rounded-2xl shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+            <BrainCircuit size={28} />
           </div>
           <div>
             <h3 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
@@ -106,8 +123,8 @@ export default function SmartAIAssistant() {
           
           {/* قفل الباقة العادية */}
           {!hasAccess && (
-            <div className="absolute inset-0 z-20 backdrop-blur-md bg-[#0f172a]/60 rounded-2xl flex flex-col items-center justify-center p-6 text-center border border-white/10 shadow-2xl">
-              <div className="p-4 bg-amber-500/20 rounded-full mb-4 text-amber-500 animate-bounce">
+            <div className="absolute inset-0 z-20 bg-[#0f172a]/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center border border-white/10 shadow-2xl">
+              <div className="p-4 bg-amber-500/20 rounded-full mb-4 text-amber-500">
                   <Lock size={32} />
               </div>
               <h4 className="text-white font-black text-xl mb-2">{t.lockedTitle}</h4>
@@ -118,23 +135,17 @@ export default function SmartAIAssistant() {
             </div>
           )}
 
-          {/* الكروت الفخمة (بالنقاط النابضة والأزرار المضيئة) */}
+          {/* الكروت الفخمة */}
           {filteredTrends.length > 0 ? (
             filteredTrends.map((trend) => {
               const isWarning = trend.type === 'alert';
               return (
-                <div key={trend.id} className={`bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors flex flex-col justify-between group ${!hasAccess ? 'filter blur-[4px] opacity-30 pointer-events-none' : ''}`}>
+                <div key={trend.id} className={`bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors flex flex-col justify-between group ${!hasAccess ? 'filter blur-[2px] opacity-30 pointer-events-none' : ''}`}>
                   <div>
                     <div className="flex justify-between items-start mb-4">
                       <div className={`p-2.5 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${isWarning ? 'bg-orange-500/20 text-orange-400 shadow-orange-500/10' : 'bg-emerald-500/20 text-emerald-400 shadow-emerald-500/10'}`}>
                         {isWarning ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
                       </div>
-                      
-                      {/* النقطة النابضة الأنيقة */}
-                      <span className="flex h-3.5 w-3.5 relative">
-                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isWarning ? 'bg-orange-400' : 'bg-emerald-400'}`}></span>
-                        <span className={`relative inline-flex rounded-full h-3.5 w-3.5 shadow-lg ${isWarning ? 'bg-orange-500 shadow-orange-500/50' : 'bg-emerald-500 shadow-emerald-500/50'}`}></span>
-                      </span>
                     </div>
                     
                     <h4 className="font-bold text-white text-lg mb-2 leading-snug">{trend.title}</h4>
@@ -143,7 +154,7 @@ export default function SmartAIAssistant() {
                     </p>
                   </div>
                   
-                  {/* الأزرار السفلية (زر العمل + زر التجاهل) */}
+                  {/* الأزرار السفلية */}
                   <div className="flex items-center gap-3 pt-5 border-t border-white/10 mt-auto">
                     <button className={`flex-1 py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${isWarning ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white shadow-orange-500/25' : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-emerald-500/25'}`}>
                       {trend.action_text} <ArrowRight size={18} className={language === 'ar' ? 'rotate-180' : ''} />
@@ -156,8 +167,8 @@ export default function SmartAIAssistant() {
               );
             })
           ) : (
-            <div className="col-span-2 py-16 text-center border-2 border-dashed border-white/5 rounded-2xl bg-white/[0.02]">
-               <p className="text-gray-500 text-sm font-medium">{t.emptyState}</p>
+            <div className="col-span-1 lg:col-span-2 py-16 text-center border-2 border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
+               <p className="text-gray-400 text-sm font-medium">{t.emptyState}</p>
             </div>
           )}
         </div>
