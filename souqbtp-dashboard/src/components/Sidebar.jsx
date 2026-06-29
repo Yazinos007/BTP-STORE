@@ -3,7 +3,7 @@ import {
   LayoutDashboard, MonitorPlay, Package, ShoppingCart, Wallet, 
   Settings, LogOut, Receipt, Users, FileText, Briefcase, Landmark,
   ChevronDown, ChevronRight, CreditCard, Globe, Calculator,
-  Truck, ShoppingBag, Zap // 👈 تمت إضافة أيقونة Zap هنا
+  Truck, ShoppingBag, Zap 
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -17,11 +17,18 @@ export default function Sidebar() {
   const [openMenus, setOpenMenus] = useState({});
 
   if (isLoading) return <div className={`w-[280px] h-screen bg-[#2d2252] shrink-0 ${language === 'fr' ? 'border-r' : 'border-l'} border-white/10 animate-pulse`} />;
-  if (!supplier) return null;
+  
+  // 🌟 الحل الجذري: تأمين هوية افتراضية في حال كانت بيانات الحساب القديم تالفة
+  const safeSupplier = supplier || { 
+    store_name: 'Mon Magasin', 
+    tier: 'starter', 
+    role: 'admin',
+    permissions: { sales: true, products: true, invoices: true, accounting: true, hr: true }
+  };
 
-  const tier = supplier.tier || 'starter';
-  const role = supplier.role || 'admin';
-  const userPermissions = supplier.permissions || {
+  const tier = safeSupplier.tier || 'starter';
+  const role = safeSupplier.role || 'admin';
+  const userPermissions = safeSupplier.permissions || {
     sales: true, products: true, invoices: true, accounting: true, hr: true
   };
 
@@ -153,13 +160,13 @@ export default function Sidebar() {
               {supplier?.logo_url ? (
                 <img src={supplier.logo_url} alt="Logo" className="w-full h-full object-cover" />
               ) : (
-                supplier?.store_name?.charAt(0)?.toUpperCase() || 'S'
+                safeSupplier.store_name?.charAt(0)?.toUpperCase() || 'S'
               )}
             </div>
             
             <div className="flex flex-col overflow-hidden justify-center h-16">
-              <h2 className="text-white font-black text-xl leading-tight truncate w-[140px] mb-1.5" title={supplier?.store_name}>
-                {supplier?.store_name || 'SouqBTP'}
+              <h2 className="text-white font-black text-xl leading-tight truncate w-[140px] mb-1.5" title={safeSupplier.store_name}>
+                {safeSupplier.store_name || 'SouqBTP'}
               </h2>
               
               <div className="flex flex-wrap gap-2">
