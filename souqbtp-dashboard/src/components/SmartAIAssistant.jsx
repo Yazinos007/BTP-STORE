@@ -44,36 +44,45 @@ export default function SmartAIAssistant() {
   const { language } = useSettingsStore();
   const t = translations[language];
 
-  const [specialty, setSpecialty] = useState('general'); // افتراضي
+  const [specialty, setSpecialty] = useState('general');
   const [trends, setTrends] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const hasAccess = supplier?.tier === 'pro' || supplier?.tier === 'enterprise';
 
   useEffect(() => {
-    let isMounted = true; // 🛡️ جدار حماية لمنع تحديث الحالة إذا تم تدمير المكون
+    let isMounted = true;
 
     const analyzeAndFetch = async () => {
-      if (!supplier?.id) return;
-      
+      // إذا لم تكتمل بيانات الحساب بعد، ننهي حالة التحميل بهدوء دون قفل الواجهة
+      if (!supplier?.id) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+
       try {
-        setLoading(true);
-        // 1. جلب فئات المنتجات فقط لتحديد التخصص
-        const { data: products } = await supabase.from('products').select('category').eq('supplier_id', supplier.id);
-        
+        // جلب فئات المنتجات بأمان لمعرفة التخصص
+        const { data: products } = await supabase
+          .from('products')
+          .select('category')
+          .eq('supplier_id', supplier.id);
+
         let currentSpecialty = 'general';
         if (products && products.length > 0) {
-          const counts = products.reduce((acc, p) => { 
-             const cat = p.category || 'general';
-             acc[cat] = (acc[cat] || 0) + 1; 
-             return acc; 
+          const counts = products.reduce((acc, p) => {
+            const cat = p.category || 'general';
+            acc[cat] = (acc[cat] || 0) + 1;
+            return acc;
           }, {});
           currentSpecialty = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
         }
-        
-        // 2. جلب التحليلات من السوق
-        const { data: trendData } = await supabase.from('market_trends').select('*').order('created_at', { ascending: false });
-        
+
+        // جلب بيانات مسارات السوق
+        const { data: trendData } = await supabase
+          .from('market_trends')
+          .select('*')
+          .order('created_at', { ascending: false });
+
         if (isMounted) {
           setSpecialty(currentSpecialty);
           setTrends(trendData || []);
@@ -87,23 +96,23 @@ export default function SmartAIAssistant() {
 
     analyzeAndFetch();
 
-    return () => { isMounted = false; };
-  }, [supplier?.id]); // 🚀 التغيير السحري هنا: الاعتماد على الـ ID فقط بدلاً من المتغير كاملاً
+    return () => {
+      isMounted = false;
+    };
+  }, [supplier?.id]);
 
-  // دالة لإخفاء التنبيه عند الضغط على "تجاهل"
   const dismissInsight = (id) => setTrends(trends.filter(insight => insight.id !== id));
 
   const filteredTrends = trends.filter(t => t.category === specialty || t.category === 'general');
   const displaySpecialty = t.categories[specialty] || specialty;
 
-  if (loading) return <div className="h-64 animate-pulse bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-[23px] mb-8 border border-white/5"></div>;
-
+  // الإبقاء على الحاوية الخارجية (Container) ثابتة ومستقرة دائماً لمنع الوميض واهتزاز الشاشة
   return (
-    <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-[23px] p-6 sm:p-8 shadow-2xl relative overflow-hidden mb-8 border border-white/5" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-[23px] p-6 sm:p-8 shadow-2xl relative overflow-hidden mb-8 border border-white/5 min-h-[260px]" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* تأثيرات الإضاءة الخلفية (تم تخفيفها لعدم إرهاق المتصفح) */}
-      <div className={`absolute top-0 ${language === 'ar' ? 'right-0 translate-x-1/2' : 'left-0 -translate-x-1/2'} w-64 h-64 bg-blue-500/5 rounded-full blur-2xl -translate-y-1/2 pointer-events-none`}></div>
-      <div className={`absolute bottom-0 ${language === 'ar' ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} w-64 h-64 bg-purple-500/5 rounded-full blur-2xl translate-y-1/2 pointer-events-none`}></div>
+      {/* تأثيرات الإضاءة الخلفية */}
+      <div className={`absolute top-0 ${language === 'ar' ? 'right-0 translate-x-1/2' : 'left-0 -translate-x-1/2'} w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 pointer-events-none`}></div>
+      <div className={`absolute bottom-0 ${language === 'ar' ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} w-64 h-64 bg-purple-500/5 rounded-full blur-3xl translate-y-1/2 pointer-events-none`}></div>
 
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-8">
@@ -119,59 +128,66 @@ export default function SmartAIAssistant() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 relative">
-          
-          {/* قفل الباقة العادية */}
-          {!hasAccess && (
-            <div className="absolute inset-0 z-20 bg-[#0f172a]/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center border border-white/10 shadow-2xl">
-              <div className="p-4 bg-amber-500/20 rounded-full mb-4 text-amber-500">
-                  <Lock size={32} />
+        {/* التحميل يحدث الآن بداخل المكون المستقر دون تغيير الأبعاد الخارجية */}
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 py-6">
+            <div className="h-32 bg-white/5 rounded-2xl animate-pulse border border-white/5"></div>
+            <div className="h-32 bg-white/5 rounded-2xl animate-pulse border border-white/5"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 relative">
+            
+            {/* قفل الباقة العادية */}
+            {!hasAccess && (
+              <div className="absolute inset-0 z-20 bg-[#0f172a]/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center border border-white/10 shadow-2xl">
+                <div className="p-4 bg-amber-500/20 rounded-full mb-4 text-amber-500">
+                    <Lock size={32} />
+                </div>
+                <h4 className="text-white font-black text-xl mb-2">{t.lockedTitle}</h4>
+                <p className="text-sm text-gray-300 mb-6 max-w-[300px] leading-relaxed">{t.lockedDesc}</p>
+                <button className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black text-sm rounded-xl transition-transform hover:scale-105 shadow-[0_0_20px_rgba(245,158,11,0.4)]">
+                  {t.upgradeBtn}
+                </button>
               </div>
-              <h4 className="text-white font-black text-xl mb-2">{t.lockedTitle}</h4>
-              <p className="text-sm text-gray-300 mb-6 max-w-[300px] leading-relaxed">{t.lockedDesc}</p>
-              <button className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black text-sm rounded-xl transition-transform hover:scale-105 shadow-[0_0_20px_rgba(245,158,11,0.4)]">
-                {t.upgradeBtn}
-              </button>
-            </div>
-          )}
+            )}
 
-          {/* الكروت الفخمة */}
-          {filteredTrends.length > 0 ? (
-            filteredTrends.map((trend) => {
-              const isWarning = trend.type === 'alert';
-              return (
-                <div key={trend.id} className={`bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors flex flex-col justify-between group ${!hasAccess ? 'filter blur-[2px] opacity-30 pointer-events-none' : ''}`}>
-                  <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className={`p-2.5 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${isWarning ? 'bg-orange-500/20 text-orange-400 shadow-orange-500/10' : 'bg-emerald-500/20 text-emerald-400 shadow-emerald-500/10'}`}>
-                        {isWarning ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
+            {/* الكروت الذكية */}
+            {filteredTrends.length > 0 ? (
+              filteredTrends.map((trend) => {
+                const isWarning = trend.type === 'alert';
+                return (
+                  <div key={trend.id} className={`bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors flex flex-col justify-between group ${!hasAccess ? 'filter blur-[2px] opacity-30 pointer-events-none' : ''}`}>
+                    <div>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className={`p-2.5 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${isWarning ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                          {isWarning ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
+                        </div>
                       </div>
+                      
+                      <h4 className="font-bold text-white text-lg mb-2 leading-snug">{trend.title}</h4>
+                      <p className="text-gray-400 text-sm leading-relaxed mb-6">
+                        {trend.description}
+                      </p>
                     </div>
                     
-                    <h4 className="font-bold text-white text-lg mb-2 leading-snug">{trend.title}</h4>
-                    <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                      {trend.description}
-                    </p>
+                    <div className="flex items-center gap-3 pt-5 border-t border-white/10 mt-auto">
+                      <button className={`flex-1 py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${isWarning ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white' : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white'}`}>
+                        {trend.action_text} <ArrowRight size={18} className={language === 'ar' ? 'rotate-180' : ''} />
+                      </button>
+                      <button onClick={() => dismissInsight(trend.id)} className="px-5 py-3 bg-white/5 hover:bg-white/10 text-gray-300 font-bold text-sm rounded-xl transition-colors">
+                        {t.ignoreBtn}
+                      </button>
+                    </div>
                   </div>
-                  
-                  {/* الأزرار السفلية */}
-                  <div className="flex items-center gap-3 pt-5 border-t border-white/10 mt-auto">
-                    <button className={`flex-1 py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${isWarning ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white shadow-orange-500/25' : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-emerald-500/25'}`}>
-                      {trend.action_text} <ArrowRight size={18} className={language === 'ar' ? 'rotate-180' : ''} />
-                    </button>
-                    <button onClick={() => dismissInsight(trend.id)} className="px-5 py-3 bg-white/5 hover:bg-white/10 text-gray-300 font-bold text-sm rounded-xl transition-colors">
-                      {t.ignoreBtn}
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="col-span-1 lg:col-span-2 py-16 text-center border-2 border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-               <p className="text-gray-400 text-sm font-medium">{t.emptyState}</p>
-            </div>
-          )}
-        </div>
+                );
+              })
+            ) : (
+              <div className="col-span-1 lg:col-span-2 py-16 text-center border-2 border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
+                 <p className="text-gray-400 text-sm font-medium">{t.emptyState}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
