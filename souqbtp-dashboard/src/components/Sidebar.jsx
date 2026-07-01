@@ -48,7 +48,8 @@ export default function Sidebar() {
       rh: 'الموارد البشرية', gestionEmployes: 'إدارة الموظفين',
       fiscal: 'النظام الجبائي', decTva: 'إقرارات TVA', chargesEnt: 'مصاريف الشركة', gestionCharges: 'إدارة المصاريف',
       accounting: 'المحاسبة العامة', logout: 'تسجيل الخروج',
-      subscription: 'الاشتراك والترقية' // 👈 ترجمة زر الاشتراك
+      settings: 'الملف الشخصي للمتجر',
+      subscription: 'الاشتراك والترقية'
     },
     fr: {
       overview: 'Vue d\'ensemble', pos: 'Point de Vente (POS)', products: 'Produits',
@@ -62,7 +63,8 @@ export default function Sidebar() {
       rh: 'RESSOURCES HUMAINES', gestionEmployes: 'Gestion des Employés',
       fiscal: 'SYSTÈME FISCAL', decTva: 'Déclarations TVA', chargesEnt: 'CHARGES ENTREPRISE', gestionCharges: 'Gestion des Charges',
       accounting: 'Comptabilité & Bilan', logout: 'Déconnexion',
-      subscription: 'Abonnement' // 👈 ترجمة زر الاشتراك
+      settings: 'Profil du Magasin', 
+      subscription: 'Abonnement' 
     }
   }[language];
 
@@ -146,7 +148,6 @@ export default function Sidebar() {
     { name: t.expenses, icon: Receipt, path: '/expenses', minTier: 'pro' },
     { name: t.wallet, icon: Wallet, path: '/wallet', minTier: 'pro' },
     { name: t.settings, icon: Settings, path: '/settings', minTier: 'starter' },
-    // 🎯 أضفنا زر الاشتراكات لباقي الباقات (متاح للجميع للترقية)
     { name: t.subscription, icon: Zap, path: '/subscription', minTier: 'starter' }, 
   ].filter(item => tier === 'pro' ? true : item.minTier === 'starter');
 
