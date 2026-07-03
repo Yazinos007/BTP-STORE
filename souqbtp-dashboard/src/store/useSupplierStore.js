@@ -91,11 +91,31 @@ const useSupplierStore = create((set) => ({
   },
 
   updateProfile: async (updates) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false };
-    const { data, error } = await supabase.from('suppliers').select('*').eq('id', id).single();
-    if (!error) set({ supplier: data });
-    return { success: !error, error };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false, error: 'User not authenticated' };
+      
+      // ✅ الكود الصحيح: نستخدم update لتعديل البيانات، ونستخدم user.id للتعرف على المورد
+      const { data, error } = await supabase
+        .from('suppliers')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single();
+        
+      if (error) {
+        console.error("Supabase Update Error:", error);
+        return { success: false, error };
+      }
+      
+      // ✅ تحديث البيانات في الواجهة فوراً
+      set({ supplier: data });
+      return { success: true };
+      
+    } catch (err) {
+      console.error("Store Update Error:", err);
+      return { success: false, error: err };
+    }
   },
 
   uploadLogo: async (file) => {
