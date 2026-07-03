@@ -9,7 +9,7 @@ const translations = {
     permsPanelTitle: 'لوحة التحكم بالصلاحيات',
     tabProfile: 'ملف الشركة', tabUsers: 'المستخدمين والصلاحيات', tabPrefs: 'تفضيلات النظام',
     storeName: 'اسم الشركة', phone: 'الهاتف', address: 'العنوان', ice: 'رقم ICE',
-    save: 'حفظ', saving: 'جاري الحفظ...', changeLogo: 'تغيير الشعار',
+    save: 'حفظ التعديلات', saving: 'جاري الحفظ...', changeLogo: 'تغيير الشعار',
     language: 'لغة النظام', langDesc: 'تغيير لغة الواجهة.',
     addUser: 'إضافة مستخدم', name: 'الاسم الكامل', email: 'البريد الإلكتروني',
     perms: { sales: 'المبيعات والطلبات', products: 'المخزون والمنتجات', purchases: 'المشتريات والموردين', invoices: 'إدارة الفواتير', accounting: 'المحاسبة والصناديق', hr: 'الموارد البشرية' },
@@ -45,12 +45,20 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('profile');
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({ store_name: '', phone: '', address: '', ice: '' });
+  const [isSaving, setIsSaving] = useState(false);
   
   const [showUserForm, setShowUserForm] = useState(false);
   const [userForm, setUserForm] = useState({ full_name: '', email: '', permissions: { sales: true, products: false, purchases: false, invoices: false, accounting: false, hr: false } });
 
   useEffect(() => {
-    if (supplier) setFormData({ store_name: supplier.store_name || '', phone: supplier.phone || '', address: supplier.address || '', ice: supplier.ice || '' });
+    if (supplier) {
+      setFormData({ 
+        store_name: supplier.store_name || '', 
+        phone: supplier.phone || '', 
+        address: supplier.address || '', 
+        ice: supplier.ice || '' 
+      });
+    }
     fetchTeamMembers();
   }, [supplier, fetchTeamMembers]);
 
@@ -61,8 +69,16 @@ export default function Settings() {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    await updateProfile(formData);
-    alert(language === 'fr' ? 'Enregistré avec succès' : 'تم الحفظ بنجاح');
+    setIsSaving(true);
+    try {
+      await updateProfile(formData);
+      alert(language === 'fr' ? '✅ Enregistré avec succès !' : '✅ تم حفظ البيانات بنجاح!');
+    } catch (err) {
+      console.error(err);
+      alert(language === 'fr' ? 'Erreur lors de la sauvegarde.' : 'حدث خطأ أثناء الحفظ.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleUserSubmit = async (e) => {
@@ -116,11 +132,16 @@ export default function Settings() {
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">{t.ice}</label><input type="text" value={formData.ice} onChange={e => setFormData({...formData, ice: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 outline-none bg-gray-50 font-mono" /></div>
               </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">{t.address}</label><input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 outline-none bg-gray-50" /></div>
-              <div className="pt-4 flex justify-end"><button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 font-bold"><Save size={18} /> {t.save}</button></div>
+              <div className="pt-4 flex justify-end">
+                <button type="submit" disabled={isSaving} className="bg-blue-600 text-white px-8 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 font-bold disabled:opacity-70">
+                  {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {isSaving ? t.saving : t.save}
+                </button>
+              </div>
             </form>
           </div>
         )}
 
+        {/* ... باقي الأكواد أسفل هذا القسم بدون تغيير (users و prefs) ... */}
         {activeTab === 'users' && (
           <div className="animate-fade-in space-y-6">
             <div className="flex justify-between items-center">

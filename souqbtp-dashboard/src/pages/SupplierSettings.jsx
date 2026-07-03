@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 🎯 الموجه فقط (بدون Link)
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { 
   ShieldCheck, UploadCloud, FileText, CheckCircle2, 
-  AlertTriangle, Lock, Award, Building2, CreditCard, Loader2, Star 
+  AlertTriangle, Lock, Award, Building2, CreditCard, Loader2, Star, Save 
 } from 'lucide-react';
 
 const translations = {
@@ -23,7 +23,7 @@ const translations = {
     statusPending: 'قيد المراجعة الإدارية',
     statusVerified: 'موثق ومعتمد',
     submitVerification: 'إرسال الملفات للمراجعة',
-    saving: 'جاري الإرسال...',
+    saving: 'جاري الحفظ...',
     subscriptionTitle: 'الباقة الحالية',
     activePlan: 'الباقة النشطة',
     upgradeBtn: 'ترقية للباقة الذهبية (Enterprise)',
@@ -48,7 +48,7 @@ const translations = {
     statusPending: 'En Cours d\'Examen',
     statusVerified: 'Vérifié & Certifié',
     submitVerification: 'Soumettre pour vérification',
-    saving: 'Envoi en cours...',
+    saving: 'Enregistrement...',
     subscriptionTitle: 'Abonnement Actuel',
     activePlan: 'Plan Actif',
     upgradeBtn: 'Passer au plan Enterprise',
@@ -62,13 +62,27 @@ const translations = {
 
 export default function SupplierSettings() {
   const { language } = useSettingsStore();
-  const { supplier } = useSupplierStore();
+  const { supplier, updateProfile } = useSupplierStore(); // 🎯 سحبنا دالة التحديث
   const t = translations[language];
   const navigate = useNavigate();
 
   const [verificationStatus, setVerificationStatus] = useState('unverified'); 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState({ rc: null, ice: null, cin: null });
+  
+  // 🎯 إضافة State لحفظ بيانات المتجر
+  const [storeData, setStoreData] = useState({ store_name: '', phone: '', address: '' });
+  const [isSavingInfo, setIsSavingInfo] = useState(false);
+
+  useEffect(() => {
+    if (supplier) {
+      setStoreData({
+        store_name: supplier.store_name || '',
+        phone: supplier.phone || '',
+        address: supplier.address || ''
+      });
+    }
+  }, [supplier]);
 
   const handleFileUpload = (e, type) => {
     const file = e.target.files[0];
@@ -83,6 +97,22 @@ export default function SupplierSettings() {
       setVerificationStatus('pending');
       alert(language === 'fr' ? '✅ Documents envoyés avec succès pour examen !' : '✅ تم إرسال ملفاتك بنجاح! فريق الإدارة سيقوم بمراجعتها قريباً.');
     }, 2000);
+  };
+
+  // 🎯 دالة حفظ بيانات الشركة
+  const handleSaveStoreInfo = async () => {
+    setIsSavingInfo(true);
+    try {
+      if (updateProfile) {
+        await updateProfile(storeData);
+        alert(language === 'fr' ? '✅ Informations enregistrées !' : '✅ تم تحديث بيانات الشركة بنجاح!');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(language === 'fr' ? 'Erreur lors de la sauvegarde.' : 'حدث خطأ أثناء الحفظ.');
+    } finally {
+      setIsSavingInfo(false);
+    }
   };
 
   return (
@@ -192,23 +222,24 @@ export default function SupplierSettings() {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{t.companyName}</label>
-                <input type="text" defaultValue={supplier?.store_name} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
+                <input type="text" value={storeData.store_name} onChange={e => setStoreData({...storeData, store_name: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{t.phone}</label>
-                <input type="text" defaultValue={supplier?.phone} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
+                <input type="text" value={storeData.phone} onChange={e => setStoreData({...storeData, phone: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{t.address}</label>
-                <input type="text" defaultValue={supplier?.address} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
+                <input type="text" value={storeData.address} onChange={e => setStoreData({...storeData, address: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
               </div>
-              <button className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 mt-2">
-                {t.saveInfo}
+              
+              {/* 🎯 إضافة الدالة وحالة التحميل للزر */}
+              <button onClick={handleSaveStoreInfo} disabled={isSavingInfo} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 mt-2 flex justify-center items-center gap-2 disabled:opacity-70">
+                {isSavingInfo ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {isSavingInfo ? t.saving : t.saveInfo}
               </button>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
