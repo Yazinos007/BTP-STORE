@@ -40,7 +40,7 @@ const useClientStore = create((set) => ({
   addClient: async (clientData) => {
     // 🛡️ الدرع الواقي عند الإضافة
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) return { success: false, error: 'Non authentifié' };
 
     let targetId = session.user.id;
     const supplier = useSupplierStore.getState().supplier;
@@ -57,17 +57,34 @@ const useClientStore = create((set) => ({
       ...clientData
     }]).select().single();
 
-    if (!error) set((state) => ({ clients: [data, ...state.clients] }));
+    if (error) {
+      console.error("Erreur Supabase lors de l'ajout:", error);
+      return { success: false, error }; // 🎯 هنا أضفنا الرد بالفشل
+    }
+
+    set((state) => ({ clients: [data, ...state.clients] }));
+    return { success: true }; // 🎯 هنا أضفنا الرد بالنجاح لكي تختفي النافذة
   },
 
   deleteClient: async (id) => {
     const { error } = await supabase.from('clients').delete().eq('id', id);
-    if (!error) set((state) => ({ clients: state.clients.filter(c => c.id !== id) }));
+    if (!error) {
+        set((state) => ({ clients: state.clients.filter(c => c.id !== id) }));
+        return { success: true };
+    }
+    return { success: false, error };
   },
 
   updateClient: async (id, updates) => {
-    const { error } = await supabase.from('clients').update(updates).eq('id', id);
-    if (!error) set((state) => ({ clients: state.clients.map(c => c.id === id ? { ...c, ...updates } : c) }));
+    const { data, error } = await supabase.from('clients').update(updates).eq('id', id).select().single();
+    
+    if (error) {
+        console.error("Erreur Supabase lors de la mise à jour:", error);
+        return { success: false, error }; // 🎯 رد بالفشل
+    }
+    
+    set((state) => ({ clients: state.clients.map(c => c.id === id ? { ...c, ...updates } : c) }));
+    return { success: true }; // 🎯 رد بالنجاح
   }
 }));
 
