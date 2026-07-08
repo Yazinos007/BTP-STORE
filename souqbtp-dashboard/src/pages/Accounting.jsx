@@ -3,8 +3,8 @@ import useOrderStore from '../store/useOrderStore';
 import useExpenseStore from '../store/useExpenseStore';
 import useHRStore from '../store/useHRStore';
 import useSettingsStore from '../store/useSettingsStore';
-import { Calculator, FileSpreadsheet, TrendingUp, TrendingDown, Scale, Download, ArrowRight } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Calculator, FileSpreadsheet, TrendingUp, TrendingDown, Scale, ArrowRight } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const translations = {
   ar: {
@@ -12,14 +12,18 @@ const translations = {
     revenue: 'رقم المعاملات (المداخيل)', expenses: 'إجمالي المصاريف', payroll: 'كتلة الأجور الشهرية', netResult: 'النتيجة الصافية (الربح/الخسارة)',
     cpcTitle: 'حساب العائدات والتكاليف (CPC)', exportBtn: 'تصدير للمحاسب (Excel)', currency: 'درهم',
     chartTitle: 'مقارنة المداخيل والمصاريف', revLabel: 'المداخيل', expLabel: 'المصاريف والرواتب',
-    rubrique: 'البيان (Rubrique)', montant: 'المبلغ', details: 'تفاصيل العمليات'
+    rubrique: 'البيان (Rubrique)', montant: 'المبلغ', details: 'تفاصيل العمليات',
+    prodExploitation: 'عائدات الاستغلال (المبيعات)', chargesExploitation: 'تكاليف الاستغلال (المصاريف)',
+    fraisPersonnel: 'تكاليف الموظفين (الرواتب)', netTitle: 'النتيجة الصافية'
   },
   fr: {
     title: 'Comptabilité & Bilan', subtitle: 'Situation financière et CPC générés automatiquement.',
     revenue: 'Chiffre d\'Affaires', expenses: 'Charges Opérationnelles', payroll: 'Masse Salariale (Mois)', netResult: 'Résultat Net',
     cpcTitle: 'Compte de Produits et Charges (CPC)', exportBtn: 'Export Fiduciaire (CSV)', currency: 'MAD',
     chartTitle: 'Comparaison Revenus vs Charges', revLabel: 'Revenus', expLabel: 'Charges & Salaires',
-    rubrique: 'Rubrique', montant: 'Montant', details: 'Détails des opérations'
+    rubrique: 'Rubrique', montant: 'Montant', details: 'Détails des opérations',
+    prodExploitation: 'Produits d\'Exploitation (Ventes)', chargesExploitation: 'Charges d\'Exploitation (Dépenses)',
+    fraisPersonnel: 'Frais de Personnel (Salaires)', netTitle: 'RÉSULTAT NET'
   }
 };
 
@@ -34,7 +38,6 @@ export default function Accounting() {
     fetchOrders(); fetchExpenses(); fetchEmployees();
   }, [fetchOrders, fetchExpenses, fetchEmployees]);
 
-  // 🧠 المعالجة الذكية للبيانات (تجميع من كل الأقسام)
   const safeOrders = Array.isArray(orders) ? orders : [];
   const safeExpenses = Array.isArray(expenses) ? expenses : [];
   const safeEmployees = Array.isArray(employees) ? employees : [];
@@ -42,7 +45,7 @@ export default function Accounting() {
   const totalRevenue = safeOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + Number(o.total_amount), 0);
   const totalExpenses = safeExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
   
-  // حساب رواتب الموظفين النشطين (أساسي + منح - اقتطاعات)
+  // 🎯 المعادلة الدقيقة للأجور (أساسي + منح - اقتطاعات)
   const totalPayroll = safeEmployees.filter(emp => emp.status === 'Actif' || emp.status === 'active').reduce((sum, emp) => {
     return sum + Number(emp.base_salary || 0) + Number(emp.primes_avances || 0) - Number(emp.retenues || 0);
   }, 0);
@@ -50,35 +53,22 @@ export default function Accounting() {
   const totalCharges = totalExpenses + totalPayroll;
   const netResult = totalRevenue - totalCharges;
 
-  // 📊 بيانات المخطط
   const chartData = [
     { name: t.revLabel, value: totalRevenue, fill: '#10B981' },
     { name: t.expLabel, value: totalCharges, fill: '#EF4444' }
   ];
 
-  // 📥 دالة تصدير التقرير المفصل للمحاسب (Grand Livre)
   const exportDetailedCSV = () => {
-    // 1. إعداد رأس الملف (الأعمدة)
     let csvContent = "Date,Type d'operation,Description / Categorie,Montant (MAD)\n";
-
-    // 2. جلب المبيعات (المداخيل)
-    const safeOrders = Array.isArray(orders) ? orders : [];
     safeOrders.filter(o => o.status === 'delivered').forEach(order => {
       const date = new Date(order.created_at).toLocaleDateString('fr-FR');
-      // نضيف علامة زائد (+) قبل المبيعات
       csvContent += `${date},Vente / Revenu,Commande #${order.id.substring(0, 8)},+${order.total_amount}\n`;
     });
-
-    // 3. جلب المصاريف (الخسائر)
-    const safeExpenses = Array.isArray(expenses) ? expenses : [];
     safeExpenses.forEach(expense => {
       const date = new Date(expense.created_at).toLocaleDateString('fr-FR');
-      // نضيف علامة ناقص (-) قبل المصاريف
       csvContent += `${date},Charge / Depense,${expense.category} - ${expense.description},-${expense.amount}\n`;
     });
-
-    // 4. تحميل الملف
-    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' }); // \uFEFF لدعم الحروف العربية إن وجدت
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
@@ -99,7 +89,7 @@ export default function Accounting() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-8" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h2 className="text-3xl font-black text-gray-800 tracking-tight flex items-center gap-3"><Calculator className="text-blue-600" /> {t.title}</h2>
@@ -118,7 +108,6 @@ export default function Accounting() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-        {/* 📊 المخطط المالي */}
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <h3 className="font-bold text-gray-800 mb-6">{t.chartTitle}</h3>
           <div className="h-72">
@@ -134,7 +123,6 @@ export default function Accounting() {
           </div>
         </div>
 
-        {/* 📑 تقرير الـ CPC */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
           <div className="p-6 bg-gray-50 border-b border-gray-100">
             <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2"><Scale size={20} className="text-blue-600"/> {t.cpcTitle}</h3>
@@ -148,26 +136,22 @@ export default function Accounting() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {/* المداخيل */}
                 <tr className="hover:bg-gray-50">
-                  <td className="py-4 font-bold text-gray-800 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Produits d'Exploitation (Ventes)</td>
-                  <td className="py-4 text-end font-bold text-emerald-600 font-mono text-lg">{totalRevenue.toLocaleString()}</td>
+                  <td className="py-4 font-bold text-gray-800 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> {t.prodExploitation}</td>
+                  <td className="py-4 text-end font-bold text-emerald-600 font-mono text-lg" dir="ltr">{totalRevenue.toLocaleString()}</td>
                 </tr>
-                {/* المصاريف */}
                 <tr className="hover:bg-gray-50">
-                  <td className="py-4 font-bold text-gray-800 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-orange-500"></div> Charges d'Exploitation (Dépenses)</td>
-                  <td className="py-4 text-end font-bold text-orange-600 font-mono text-lg">-{totalExpenses.toLocaleString()}</td>
+                  <td className="py-4 font-bold text-gray-800 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-orange-500"></div> {t.chargesExploitation}</td>
+                  <td className="py-4 text-end font-bold text-orange-600 font-mono text-lg" dir="ltr">-{totalExpenses.toLocaleString()}</td>
                 </tr>
-                {/* الرواتب */}
                 <tr className="hover:bg-gray-50">
-                  <td className="py-4 font-bold text-gray-800 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-500"></div> Frais de Personnel (Salaires)</td>
-                  <td className="py-4 text-end font-bold text-purple-600 font-mono text-lg">-{totalPayroll.toLocaleString()}</td>
+                  <td className="py-4 font-bold text-gray-800 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-500"></div> {t.fraisPersonnel}</td>
+                  <td className="py-4 text-end font-bold text-purple-600 font-mono text-lg" dir="ltr">-{totalPayroll.toLocaleString()}</td>
                 </tr>
-                {/* النتيجة الصافية */}
                 <tr className="bg-gray-50">
-                  <td className="py-5 font-black text-gray-900 text-lg flex items-center gap-2"><ArrowRight size={20} className={netResult >= 0 ? "text-blue-600" : "text-red-600"}/> RÉSULTAT NET</td>
-                  <td className={`py-5 text-end font-black text-2xl font-mono ${netResult >= 0 ? "text-blue-700" : "text-red-600"}`}>
-                    {netResult.toLocaleString()} <span className="text-sm">{t.currency}</span>
+                  <td className="py-5 font-black text-gray-900 text-lg flex items-center gap-2"><ArrowRight size={20} className={netResult >= 0 ? "text-blue-600" : "text-red-600"}/> {t.netTitle}</td>
+                  <td className={`py-5 text-end font-black text-2xl font-mono ${netResult >= 0 ? "text-blue-700" : "text-red-600"}`} dir="ltr">
+                    {netResult.toLocaleString()} <span className="text-sm uppercase">{t.currency}</span>
                   </td>
                 </tr>
               </tbody>

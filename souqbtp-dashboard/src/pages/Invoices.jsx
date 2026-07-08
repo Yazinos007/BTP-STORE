@@ -12,14 +12,26 @@ const translations = {
     search: 'ابحث برقم المستند أو اسم العميل/المورد...', all: 'الكل',
     docNo: 'رقم المستند', client: 'العميل / المورد', type: 'النوع', date: 'التاريخ', total: 'المجموع', actions: 'إجراءات',
     empty: 'لا توجد مستندات مسجلة بهذا القسم.', loading: 'جاري التحميل...',
-    currency: 'درهم', confirmDelete: 'هل أنت متأكد من حذف هذا المستند؟'
+    currency: 'درهم', confirmDelete: 'هل أنت متأكد من حذف هذا المستند؟',
+    types: {
+      'Facture': 'فاتورة (Facture)', 'Facture Achat': 'فاتورة شراء (Facture Achat)',
+      'Devis': 'عرض سعر (Devis)', 'Bon de Livraison': 'سند تسليم (BL)', 'Bon de Commande': 'سند طلب (BC)'
+    },
+    defaultClient: 'عميل (Client B2B)', defaultSupplier: 'مورد (Fournisseur B2B)',
+    printLabel: 'طباعة'
   },
   fr: {
     title: 'Gestion des Documents', subtitle: 'Archive complète des Devis, Factures, BL et BC.',
     search: 'Rechercher par N°, Client/Fournisseur...', all: 'Tous',
     docNo: 'N° Document', client: 'Client / Fournisseur', type: 'Type', date: 'Date', total: 'Total', actions: 'Actions',
     empty: 'Aucun document trouvé.', loading: 'Chargement...',
-    currency: 'MAD', confirmDelete: 'Voulez-vous vraiment supprimer ce document ?'
+    currency: 'MAD', confirmDelete: 'Voulez-vous vraiment supprimer ce document ?',
+    types: {
+      'Facture': 'Facture', 'Facture Achat': 'Facture Achat',
+      'Devis': 'Devis', 'Bon de Livraison': 'Bon de Livraison', 'Bon de Commande': 'Bon de Commande'
+    },
+    defaultClient: 'Client B2B', defaultSupplier: 'Fournisseur B2B',
+    printLabel: 'Imprimer'
   }
 };
 
@@ -70,8 +82,7 @@ export default function Invoices() {
   const handleReprint = (doc) => {
     const storeName = supplier?.store_name || 'ENTREPRISE SOUQBTP';
     const date = new Date(doc.created_at).toLocaleDateString('fr-FR');
-    // 🎯 الاسم التلقائي في الطباعة
-    const clientName = doc.clients?.full_name || (doc.type === 'Facture Achat' ? 'Fournisseur B2B' : 'Client B2B');
+    const clientName = doc.clients?.full_name || (doc.type === 'Facture Achat' ? t.defaultSupplier : t.defaultClient);
     const items = doc.items || [];
     const partyLabel = doc.type === 'Facture Achat' ? 'Fournisseur' : 'Client'; 
     
@@ -139,7 +150,7 @@ export default function Invoices() {
   const safeDocuments = Array.isArray(documents) ? documents : [];
 
   const formattedPurchases = purchaseInvoices.map(inv => {
-    const supplierName = suppliers.find(s => s.id === inv.external_supplier_id)?.name || 'Fournisseur';
+    const supplierName = suppliers.find(s => s.id === inv.external_supplier_id)?.name || t.defaultSupplier;
     return {
       id: inv.id,
       ref_number: inv.invoice_number,
@@ -186,7 +197,7 @@ export default function Invoices() {
             key={tab} onClick={() => setActiveTab(tab)}
             className={`px-5 py-2.5 rounded-xl font-bold whitespace-nowrap transition-all border-2 ${activeTab === tab ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30' : 'bg-white text-gray-500 border-transparent hover:border-gray-200'}`}
           >
-            {tab === 'All' ? t.all : tab}
+            {tab === 'All' ? t.all : t.types[tab]}
             <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${activeTab === tab ? 'bg-white/20' : 'bg-gray-100 text-gray-400'}`}>
               {tab === 'All' ? allCombinedDocs.length : allCombinedDocs.filter(d => d.type === tab).length}
             </span>
@@ -223,14 +234,13 @@ export default function Invoices() {
                 <tr key={doc.id} className="hover:bg-blue-50/30 transition-colors group">
                   <td className="px-6 py-4 font-bold text-gray-800 font-mono">{doc.ref_number}</td>
                   <td className="px-6 py-4">
-                    {/* 🎯 الحل السحري: إذا لم يجد الاسم، سيكتب "Fournisseur B2B" بدل الفراغ */}
                     <p className={`font-bold ${doc.isPurchase ? 'text-teal-700' : 'text-gray-800'}`}>
-                      {doc.clients?.full_name || (doc.type === 'Facture Achat' ? 'Fournisseur B2B' : 'Client B2B')}
+                      {doc.clients?.full_name || (doc.type === 'Facture Achat' ? t.defaultSupplier : t.defaultClient)}
                     </p>
                     {doc.chantier && <p className="text-xs font-bold text-orange-600 mt-1 flex items-center gap-1"><HardHat size={12}/> {doc.chantier}</p>}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`px-3 py-1.5 rounded-lg text-xs font-black border ${getDocStyle(doc.type)}`}>{doc.type}</span>
+                    <span className={`px-3 py-1.5 rounded-lg text-xs font-black border ${getDocStyle(doc.type)}`}>{t.types[doc.type] || doc.type}</span>
                   </td>
                   <td className="px-6 py-4 text-gray-500 font-medium text-xs">
                     {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(doc.created_at))}
@@ -240,8 +250,8 @@ export default function Invoices() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleReprint(doc)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2 bg-blue-50" title="Imprimer">
-                        <Printer size={16} /> <span className="text-xs font-bold hidden xl:block">Imprimer</span>
+                      <button onClick={() => handleReprint(doc)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2 bg-blue-50" title={t.printLabel}>
+                        <Printer size={16} /> <span className="text-xs font-bold hidden xl:block">{t.printLabel}</span>
                       </button>
                       <button onClick={() => handleDelete(doc)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Supprimer"><Trash2 size={16}/></button>
                     </div>
