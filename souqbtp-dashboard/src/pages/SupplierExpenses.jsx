@@ -72,11 +72,9 @@ export default function SupplierExpenses() {
     try {
       const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
 
-      // جلب المصاريف
       const { data: expData } = await supabase.from('expenses').select('*').eq('supplier_id', targetId).order('created_at', { ascending: false });
       setExpenses(expData || []);
 
-      // جلب المداخيل للمورد بناءً على بضاعته لتطابق المحاسبة
       const { data: myProducts } = await supabase.from('products').select('name').eq('supplier_id', targetId);
       const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
       const { data: allInvoices } = await supabase.from('documents').select('total_amount, items').eq('type', 'Facture');
@@ -90,25 +88,42 @@ export default function SupplierExpenses() {
     }
   };
 
+  // 🎯 الدالة المحمية بالـ try..catch لضمان عدم التعليق
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
-    const payload = { 
-      title: formData.title, amount: parseFloat(formData.amount), category: formData.category, 
-      payment_method: formData.payment_method, supplier_id: targetId 
-    };
-
-    if (editingId) {
-      await supabase.from('expenses').update(payload).eq('id', editingId);
-    } else {
-      await supabase.from('expenses').insert({ ...payload, date: new Date().toISOString() });
-    }
     
-    setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
-    setEditingId(null);
-    setIsSubmitting(false);
-    fetchData(); // تحديث القائمة
+    try {
+      const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
+      
+      // 🎯 فصلنا البيانات التي تتعدل عن البيانات الأساسية كـ supplier_id لتجنب رفض قاعدة البيانات
+      const payload = { 
+        title: formData.title, 
+        amount: parseFloat(formData.amount), 
+        category: formData.category, 
+        payment_method: formData.payment_method 
+      };
+
+      if (editingId) {
+        const { error } = await supabase.from('expenses').update(payload).eq('id', editingId);
+        if (error) throw error;
+      } else {
+        payload.supplier_id = targetId; // يضاف فقط عند إنشاء مصروف جديد
+        payload.date = new Date().toISOString();
+        const { error } = await supabase.from('expenses').insert([payload]);
+        if (error) throw error;
+      }
+      
+      setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
+      setEditingId(null);
+      await fetchData(); // تحديث القائمة بعد النجاح
+      
+    } catch (error) {
+      console.error("Erreur d'enregistrement:", error);
+      alert(language === 'fr' ? 'Erreur lors de la sauvegarde.' : 'حدث خطأ أثناء حفظ المصروف.');
+    } finally {
+      setIsSubmitting(false); // 🎯 هذا السطر يضمن فك التعليق عن الزر مهما حدث!
+    }
   };
 
   const handleEdit = (exp) => {
