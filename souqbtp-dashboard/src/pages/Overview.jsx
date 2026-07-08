@@ -71,7 +71,6 @@ export default function Overview() {
     const safeExpenses = Array.isArray(expenses) ? expenses : [];
     const safeEmployees = Array.isArray(employees) ? employees : [];
 
-    // 🎯 ذكاء التعرف على أسماء الأعمدة لتجنب الأصفار
     const totalVal = safeProducts.reduce((sum, p) => {
       const price = Number(p.price || p.sale_price || p.prix || p.prix_vente || 0);
       const qty = Number(p.stock_quantity || p.stock || p.quantite || 0);
@@ -85,10 +84,17 @@ export default function Overview() {
     
     const activeEmp = safeEmployees.filter(e => e.status === 'Actif' || e.status === 'active');
     
-    // 🎯 ذكاء التعرف على عمود الراتب
+    // 🎯 ذكاء التعرف على تفاصيل الأجور (الراتب، المنح، التسبيقات، والاقتطاعات)
     const totalPayroll = activeEmp.reduce((sum, e) => {
-      const empSalary = Number(e.salary || e.salaire || e.base_salary || 0);
-      return sum + empSalary;
+      const baseSalary = Number(e.salary || e.salaire || e.base_salary || 0);
+      const primes = Number(e.bonus || e.prime || e.primes || 0);
+      const avances = Number(e.advance || e.avance || e.avances || 0);
+      const retenues = Number(e.deduction || e.deductions || e.retenue || e.retenues || 0);
+
+      // المعادلة المحاسبية: الراتب الأساسي + المنح - (التسبيقات + الاقتطاعات)
+      const netSalary = (baseSalary + primes) - (avances + retenues);
+      
+      return sum + netSalary;
     }, 0);
     
     const calculatedNetProfit = revenue - totalExp - totalPayroll; 
@@ -172,27 +178,23 @@ export default function Overview() {
 
       {canView('products') && <SmartAIAssistant />}
 
-      {/* 🚀 الصف الأول: 4 بطاقات */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-2">
         {canView('sales') && <StatCard title={t.revenue} value={stats.totalRevenue.toLocaleString()} icon={TrendingUp} bgGradient="bg-gradient-to-br from-blue-600 to-indigo-600" suffix={t.currency} />}
-        {/* 🎯 إعادة بطاقة الطلبات قيد المعالجة */}
         {canView('sales') && <StatCard title={t.activeOrders} value={stats.activeOrders} icon={ShoppingCart} bgGradient="bg-gradient-to-br from-emerald-500 to-teal-400" suffix={t.orderUnit} />}
         {canView('products') && <StatCard title={t.activeProds} value={isProductsLoading ? '...' : stats.totalProducts} subValue={`${t.inventory}: ${stats.inventoryValue.toLocaleString()} ${t.currency}`} icon={Package} bgGradient="bg-gradient-to-br from-teal-500 to-emerald-600" suffix={t.prodUnit} />}
         {canView('hr') && <StatCard title={t.hr} value={stats.activeEmployees} subValue={`${t.payroll}: ${stats.payroll.toLocaleString()} ${t.currency}`} icon={Briefcase} bgGradient="bg-gradient-to-br from-purple-600 to-fuchsia-600" suffix={t.empUnit} />}
       </div>
 
-      {/* 🚀 الصف الثاني: 4 بطاقات */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
         {canView('accounting') && <StatCard title={t.cashBalance} value={stats.cashBalance.toLocaleString()} icon={Wallet} bgGradient="bg-gradient-to-br from-slate-700 to-slate-900" suffix={t.currency} />}
         {canView('sales') && <StatCard title={t.debts} value={stats.totalDebts.toLocaleString()} icon={CreditCard} bgGradient="bg-gradient-to-br from-orange-500 to-amber-500" suffix={t.currency} />}
         {canView('accounting') && <StatCard title={t.expenses} value={stats.totalExpenses.toLocaleString()} icon={Receipt} bgGradient="bg-gradient-to-br from-gray-500 to-gray-600" suffix={t.currency} />}
         
-        {/* 🚨 بطاقة النتيجة الصافية تنبض بشكل ذكي */}
         {canView('accounting') && (
           <div className={`relative overflow-hidden p-6 rounded-2xl border-2 text-white flex flex-col justify-between
             ${stats.netProfit < 0 
-              ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 shadow-[0_0_25px_rgba(220,38,38,0.6)] animate-[pulse_1.5s_ease-in-out_infinite]' // نبض سريع للإنذار
-              : 'bg-gradient-to-br from-emerald-400 to-green-600 border-green-300 shadow-[0_0_25px_rgba(16,185,129,0.5)] animate-[pulse_3s_ease-in-out_infinite]' // نبض هادئ ومريح للاستقرار
+              ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 shadow-[0_0_25px_rgba(220,38,38,0.6)] animate-[pulse_1.5s_ease-in-out_infinite]' 
+              : 'bg-gradient-to-br from-emerald-400 to-green-600 border-green-300 shadow-[0_0_25px_rgba(16,185,129,0.5)] animate-[pulse_3s_ease-in-out_infinite]' 
             } transition-all duration-300`}
           >
             <div className="absolute -right-6 -top-6 opacity-20 pointer-events-none">
