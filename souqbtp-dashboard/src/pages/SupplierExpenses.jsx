@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
+import useExpenseStore from '../store/useExpenseStore'; // 🎯 استيراد المتجر المكتمل
 import { Receipt, Plus, TrendingDown, DollarSign, PieChart as PieChartIcon, CreditCard, Tag, Edit, Trash2, X, Search, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -53,50 +54,47 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 export default function SupplierExpenses() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
+  // 🎯 استدعاء دوال المتجر بالكامل
+  const { expenses, fetchExpenses, addExpense, updateExpense, deleteExpense } = useExpenseStore();
   const t = translations[language];
   
-  const [expenses, setExpenses] = useState([]);
   const [revenue, setRevenue] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingUI, setIsLoadingUI] = useState(true);
   const [formData, setFormData] = useState({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    if (supplier?.id) fetchData();
+    if (supplier?.id) {
+      loadData();
+    }
   }, [supplier]);
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  const loadData = async () => {
+    setIsLoadingUI(true);
+    await fetchExpenses();
+    
     try {
       const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
-
-      const { data: expData } = await supabase.from('expenses').select('*').eq('supplier_id', targetId).order('created_at', { ascending: false });
-      setExpenses(expData || []);
-
       const { data: myProducts } = await supabase.from('products').select('name').eq('supplier_id', targetId);
       const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
       const { data: allInvoices } = await supabase.from('documents').select('total_amount, items').eq('type', 'Facture');
       const myInvoices = (allInvoices || []).filter(inv => (inv.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase())));
-      
       setRevenue(myInvoices.reduce((sum, doc) => sum + Number(doc.total_amount || 0), 0));
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching revenue:", error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingUI(false);
     }
   };
 
-  // 🎯 الدالة المحمية بالـ try..catch لضمان عدم التعليق
+  // 🛡️ دالة الحفظ المحمية تماماً ضد التعليق
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
-      const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
-      
-      // 🎯 فصلنا البيانات التي تتعدل عن البيانات الأساسية كـ supplier_id لتجنب رفض قاعدة البيانات
       const payload = { 
         title: formData.title, 
         amount: parseFloat(formData.amount), 
@@ -104,25 +102,25 @@ export default function SupplierExpenses() {
         payment_method: formData.payment_method 
       };
 
+      let result;
       if (editingId) {
-        const { error } = await supabase.from('expenses').update(payload).eq('id', editingId);
-        if (error) throw error;
+        result = await updateExpense(editingId, payload);
       } else {
-        payload.supplier_id = targetId; // يضاف فقط عند إنشاء مصروف جديد
-        payload.date = new Date().toISOString();
-        const { error } = await supabase.from('expenses').insert([payload]);
-        if (error) throw error;
+        result = await addExpense(payload);
       }
-      
-      setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
-      setEditingId(null);
-      await fetchData(); // تحديث القائمة بعد النجاح
-      
+
+      if (result && result.success) {
+        setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
+        setEditingId(null);
+      } else {
+        throw new Error("Opération refusée par la base de données");
+      }
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
-      alert(language === 'fr' ? 'Erreur lors de la sauvegarde.' : 'حدث خطأ أثناء حفظ المصروف.');
+      alert(language === 'fr' ? "Erreur lors de la sauvegarde." : "حدث خطأ أثناء الحفظ.");
     } finally {
-      setIsSubmitting(false); // 🎯 هذا السطر يضمن فك التعليق عن الزر مهما حدث!
+      // ✅ سيفك التعليق عن الزر دائماً
+      setIsSubmitting(false);
     }
   };
 
@@ -133,15 +131,13 @@ export default function SupplierExpenses() {
 
   const handleDelete = async (id) => { 
     if (window.confirm(t.confirmDelete)) {
-      await supabase.from('expenses').delete().eq('id', id);
-      fetchData();
+      await deleteExpense(id);
     }
   };
   
   const cancelEdit = () => { setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' }); setEditingId(null); };
 
   const titleSuggestions = [...new Set(expenses.map(exp => exp?.title).filter(Boolean))];
-
   const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
   const netProfit = revenue - totalExpenses;
 
@@ -149,19 +145,9 @@ export default function SupplierExpenses() {
     acc[exp.category] = (acc[exp.category] || 0) + Number(exp.amount);
     return acc;
   }, {});
-
   const sortedCategoryKeys = Object.keys(expensesByCategoryKey).sort((a, b) => expensesByCategoryKey[b] - expensesByCategoryKey[a]);
-
-  const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => {
-    map[key] = COLORS[index % COLORS.length];
-    return map;
-  }, {});
-
-  const chartData = sortedCategoryKeys.map(key => ({
-    name: t.categories[key] || t.categories.other,
-    value: expensesByCategoryKey[key],
-    fill: categoryColorMap[key]
-  }));
+  const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => { map[key] = COLORS[index % COLORS.length]; return map; }, {});
+  const chartData = sortedCategoryKeys.map(key => ({ name: t.categories[key] || t.categories.other, value: expensesByCategoryKey[key], fill: categoryColorMap[key] }));
 
   const filteredExpenses = expenses.filter(exp => {
     const term = searchTerm.toLowerCase();
@@ -228,7 +214,7 @@ export default function SupplierExpenses() {
             </div>
             <div className="flex gap-2 pt-2 mt-4 border-t border-gray-100">
               {editingId && ( <button type="button" onClick={cancelEdit} className="w-1/3 bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 font-bold transition-all flex items-center justify-center gap-1"><X size={16}/> {t.cancel}</button> )}
-              <button type="submit" disabled={isSubmitting} className={`${editingId ? 'w-2/3' : 'w-full'} bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30`}>{isSubmitting ? t.saving : (editingId ? t.editExpense : t.save)}</button>
+              <button type="submit" disabled={isSubmitting} className={`${editingId ? 'w-2/3' : 'w-full'} bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30`}>{isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : (editingId ? t.editExpense : t.save)}</button>
             </div>
           </form>
         </div>
@@ -237,8 +223,9 @@ export default function SupplierExpenses() {
           {chartData.length > 0 && (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <h3 className="font-bold text-gray-800 mb-4">{t.analytics}</h3>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="w-full">
+                {/* 🎯 الحل القاطع لانهيار الرسم البياني: إعطاء ارتفاع ثابت 300 */}
+                <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie data={chartData} cx="50%" cy="50%" innerRadius={70} outerRadius={90} paddingAngle={5} dataKey="value" stroke="none">
                       {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
@@ -260,7 +247,7 @@ export default function SupplierExpenses() {
               </div>
             </div>
             
-            {isLoading ? ( <div className="p-12 text-center text-gray-500"><Loader2 size={30} className="animate-spin text-blue-500 mx-auto" /></div> ) : filteredExpenses.length === 0 ? ( <div className="p-12 text-center text-gray-400"><Receipt size={40} className="mx-auto mb-3 opacity-20" />{t.empty}</div> ) : (
+            {isLoadingUI ? ( <div className="p-12 text-center text-gray-500"><Loader2 size={30} className="animate-spin text-blue-500 mx-auto" /></div> ) : filteredExpenses.length === 0 ? ( <div className="p-12 text-center text-gray-400"><Receipt size={40} className="mx-auto mb-3 opacity-20" />{t.empty}</div> ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-start text-sm">
                   <thead className="border-b border-gray-100 bg-white">
