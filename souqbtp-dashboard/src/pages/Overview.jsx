@@ -84,15 +84,14 @@ export default function Overview() {
     
     const activeEmp = safeEmployees.filter(e => e.status === 'Actif' || e.status === 'active');
     
-    // 🎯 ذكاء التعرف على تفاصيل الأجور (الراتب، المنح، التسبيقات، والاقتطاعات)
+    // 🎯 المعادلة المحاسبية الدقيقة متطابقة 100% مع نظام الموارد البشرية الخاص بك
     const totalPayroll = activeEmp.reduce((sum, e) => {
-      const baseSalary = Number(e.salary || e.salaire || e.base_salary || 0);
-      const primes = Number(e.bonus || e.prime || e.primes || 0);
-      const avances = Number(e.advance || e.avance || e.avances || 0);
-      const retenues = Number(e.deduction || e.deductions || e.retenue || e.retenues || 0);
+      const baseSalary = Number(e.base_salary || 0);
+      const primesAvances = Number(e.primes_avances || 0);
+      const retenues = Number(e.retenues || 0);
 
-      // المعادلة المحاسبية: الراتب الأساسي + المنح - (التسبيقات + الاقتطاعات)
-      const netSalary = (baseSalary + primes) - (avances + retenues);
+      // صافي الأجر = الراتب الأساسي + (المنح/التسبيقات) - الاقتطاعات
+      const netSalary = baseSalary + primesAvances - retenues;
       
       return sum + netSalary;
     }, 0);
