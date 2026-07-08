@@ -71,15 +71,25 @@ export default function Overview() {
     const safeExpenses = Array.isArray(expenses) ? expenses : [];
     const safeEmployees = Array.isArray(employees) ? employees : [];
 
-    const totalVal = safeProducts.reduce((sum, p) => sum + (Number(p.price || p.sale_price || 0) * Number(p.stock_quantity || 0)), 0);
+    // 🎯 ذكاء التعرف على أسماء الأعمدة لتجنب الأصفار
+    const totalVal = safeProducts.reduce((sum, p) => {
+      const price = Number(p.price || p.sale_price || p.prix || p.prix_vente || 0);
+      const qty = Number(p.stock_quantity || p.stock || p.quantite || 0);
+      return sum + (price * qty);
+    }, 0);
+
     const activeOrds = safeOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').length;
     const revenue = safeOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + Number(o.total_amount), 0);
-    const debts = safeClients.reduce((sum, c) => sum + Number(c.total_debt || 0), 0);
-    const totalExp = safeExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+    const debts = safeClients.reduce((sum, c) => sum + Number(c.total_debt || c.dette || 0), 0);
+    const totalExp = safeExpenses.reduce((sum, e) => sum + Number(e.amount || e.montant || 0), 0);
     
-    // حسابات الـ HR والصناديق الجديدة
     const activeEmp = safeEmployees.filter(e => e.status === 'Actif' || e.status === 'active');
-    const totalPayroll = activeEmp.reduce((sum, e) => sum + Number(e.salary || 0), 0);
+    
+    // 🎯 ذكاء التعرف على عمود الراتب
+    const totalPayroll = activeEmp.reduce((sum, e) => {
+      const empSalary = Number(e.salary || e.salaire || e.base_salary || 0);
+      return sum + empSalary;
+    }, 0);
     
     const calculatedNetProfit = revenue - totalExp - totalPayroll; 
     const calculatedCash = (revenue - totalExp) > 0 ? (revenue - totalExp) : 0;
@@ -121,7 +131,6 @@ export default function Overview() {
   const criticalStock = safeProducts.filter(p => p.stock_quantity <= 5 && p.stock_quantity > 0);
   const outOfStock = safeProducts.filter(p => p.stock_quantity === 0);
 
-  // مكون البطاقة الإحصائية المعدل ليدعم البيانات الإضافية (SubValue)
   const StatCard = ({ title, value, subValue, icon: Icon, bgGradient, suffix = '' }) => (
     <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300 flex flex-col justify-between`}>
       <div className="absolute -right-6 -top-6 opacity-20 pointer-events-none"><Icon size={120} /></div>
@@ -143,7 +152,6 @@ export default function Overview() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 بانر الترقية الجذاب (يظهر فقط لأصحاب الباقة المجانية) */}
       {isBasic && (
         <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden border border-amber-400">
           <div className="absolute right-0 top-0 opacity-10 pointer-events-none"><Zap size={200} /></div>
@@ -164,52 +172,45 @@ export default function Overview() {
 
       {canView('products') && <SmartAIAssistant />}
 
+      {/* 🚀 الصف الأول: 4 بطاقات */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-2">
-        {/* المبيعات */}
         {canView('sales') && <StatCard title={t.revenue} value={stats.totalRevenue.toLocaleString()} icon={TrendingUp} bgGradient="bg-gradient-to-br from-blue-600 to-indigo-600" suffix={t.currency} />}
-        
-        {/* المنتجات (مدمج معها قيمة المخزون) */}
-        {canView('products') && <StatCard title={t.activeProds} value={isProductsLoading ? '...' : stats.totalProducts} subValue={`${t.inventory}: ${stats.inventoryValue.toLocaleString()} ${t.currency}`} icon={Package} bgGradient="bg-gradient-to-br from-emerald-500 to-teal-500" suffix={t.prodUnit} />}
-        
-        {/* الموارد البشرية (مدمج معها كتلة الأجور) */}
+        {/* 🎯 إعادة بطاقة الطلبات قيد المعالجة */}
+        {canView('sales') && <StatCard title={t.activeOrders} value={stats.activeOrders} icon={ShoppingCart} bgGradient="bg-gradient-to-br from-emerald-500 to-teal-400" suffix={t.orderUnit} />}
+        {canView('products') && <StatCard title={t.activeProds} value={isProductsLoading ? '...' : stats.totalProducts} subValue={`${t.inventory}: ${stats.inventoryValue.toLocaleString()} ${t.currency}`} icon={Package} bgGradient="bg-gradient-to-br from-teal-500 to-emerald-600" suffix={t.prodUnit} />}
         {canView('hr') && <StatCard title={t.hr} value={stats.activeEmployees} subValue={`${t.payroll}: ${stats.payroll.toLocaleString()} ${t.currency}`} icon={Briefcase} bgGradient="bg-gradient-to-br from-purple-600 to-fuchsia-600" suffix={t.empUnit} />}
-        
-        {/* رصيد الصناديق */}
-        {canView('accounting') && <StatCard title={t.cashBalance} value={stats.cashBalance.toLocaleString()} icon={Wallet} bgGradient="bg-gradient-to-br from-slate-700 to-slate-900" suffix={t.currency} />}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-2">
-        {/* الديون */}
+      {/* 🚀 الصف الثاني: 4 بطاقات */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
+        {canView('accounting') && <StatCard title={t.cashBalance} value={stats.cashBalance.toLocaleString()} icon={Wallet} bgGradient="bg-gradient-to-br from-slate-700 to-slate-900" suffix={t.currency} />}
         {canView('sales') && <StatCard title={t.debts} value={stats.totalDebts.toLocaleString()} icon={CreditCard} bgGradient="bg-gradient-to-br from-orange-500 to-amber-500" suffix={t.currency} />}
-        
-        {/* المصاريف */}
         {canView('accounting') && <StatCard title={t.expenses} value={stats.totalExpenses.toLocaleString()} icon={Receipt} bgGradient="bg-gradient-to-br from-gray-500 to-gray-600" suffix={t.currency} />}
         
-        {/* 🚨 بطاقة النتيجة الصافية (النبض الذكي) تأخذ مساحة عمودين */}
+        {/* 🚨 بطاقة النتيجة الصافية تنبض بشكل ذكي */}
         {canView('accounting') && (
-          <div className={`lg:col-span-2 relative overflow-hidden p-6 rounded-2xl border-2 text-white flex flex-col justify-between
+          <div className={`relative overflow-hidden p-6 rounded-2xl border-2 text-white flex flex-col justify-between
             ${stats.netProfit < 0 
-              ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 shadow-[0_0_20px_rgba(220,38,38,0.5)] animate-[pulse_2s_ease-in-out_infinite]' 
-              : 'bg-gradient-to-br from-emerald-400 to-green-600 border-green-300 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+              ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 shadow-[0_0_25px_rgba(220,38,38,0.6)] animate-[pulse_1.5s_ease-in-out_infinite]' // نبض سريع للإنذار
+              : 'bg-gradient-to-br from-emerald-400 to-green-600 border-green-300 shadow-[0_0_25px_rgba(16,185,129,0.5)] animate-[pulse_3s_ease-in-out_infinite]' // نبض هادئ ومريح للاستقرار
             } transition-all duration-300`}
           >
             <div className="absolute -right-6 -top-6 opacity-20 pointer-events-none">
-              {stats.netProfit < 0 ? <ShieldAlert size={150} /> : <ShieldCheck size={150} />}
+              {stats.netProfit < 0 ? <ShieldAlert size={120} /> : <ShieldCheck size={120} />}
             </div>
-            <div className="relative z-10 flex items-center gap-4 mb-2">
+            <div className="relative z-10 flex items-center gap-4 mb-3">
               <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md border border-white/10">
-                <Activity size={28} className="text-white" />
+                <Activity size={24} className="text-white" />
               </div>
-              <p className="text-lg font-black uppercase tracking-wider text-white">{t.netProfit}</p>
+              <p className="text-sm font-black uppercase tracking-wider text-white/90">{t.netProfit}</p>
             </div>
-            <div className="relative z-10 mt-2">
-              <h4 className="text-5xl font-black tracking-tight">{stats.netProfit.toLocaleString()} <span className="text-xl font-bold text-white/80">{t.currency}</span></h4>
+            <div className="relative z-10">
+              <h4 className="text-3xl font-black tracking-tight">{stats.netProfit.toLocaleString()} <span className="text-sm font-bold text-white/80">{t.currency}</span></h4>
             </div>
           </div>
         )}
       </div>
 
-      {/* باقي الصفحة (الرسم البياني وتنبيهات المخزون) كما هي بدون تغيير جوهري */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         {canView('sales') && (
           <div className={`${canView('products') ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col`}>
