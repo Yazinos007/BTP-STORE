@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSettingsStore from '../store/useSettingsStore';
+import useSupplierStore from '../store/useSupplierStore'; // 🎯 استيراد متجر المورد للوصول لدالة التحديث
 import { Store, CheckCircle2, Zap, ArrowRight, Minus, Loader2, CreditCard, Shield } from 'lucide-react';
 
 const translations = {
@@ -116,6 +117,7 @@ const translations = {
 
 export default function RetailerSubscription() {
   const { language } = useSettingsStore();
+  const { updateProfile } = useSupplierStore(); // 🎯 سحب دالة التحديث من المتجر
   const t = translations[language];
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -127,13 +129,29 @@ export default function RetailerSubscription() {
     pro: { monthly: 299, annual: 2870 } 
   };
 
-  const handleSubscribe = (tier) => {
+  // 🎯 الدالة الحقيقية لترقية الحساب
+  const handleSubscribe = async (tier) => {
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      // إرسال طلب الترقية لقاعدة البيانات (تغيير نوع الباقة)
+      const result = await updateProfile({ tier: tier });
+      
+      if (result.success) {
+        alert(language === 'fr' 
+          ? '🌟 Félicitations ! Votre abonnement a été activé avec succès. Toutes les fonctionnalités sont débloquées.' 
+          : '🌟 تهانينا! تم تفعيل الباقة بنجاح، جميع الأقسام الاحترافية مفتوحة الآن.');
+        
+        // إعادة التوجيه للصفحة الرئيسية ليرى الأقسام الجديدة
+        navigate('/'); 
+      } else {
+        alert(language === 'fr' ? 'Erreur lors de l\'activation.' : 'حدث خطأ أثناء التفعيل، يرجى المحاولة لاحقاً.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert(language === 'fr' ? 'Erreur de connexion.' : 'خطأ في الاتصال بالخادم.');
+    } finally {
       setIsSubmitting(false);
-      alert(language === 'fr' ? '🌟 Félicitations ! Plan activé.' : '🌟 تهانينا! تم تفعيل الباقة بنجاح.');
-      navigate('/'); 
-    }, 1500);
+    }
   };
 
   return (
@@ -186,7 +204,8 @@ export default function RetailerSubscription() {
             <span className="text-5xl font-black text-blue-600">{isAnnual ? prices.premium.annual.toLocaleString() : prices.premium.monthly.toLocaleString()}</span>
             <span className="text-gray-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
-          <button onClick={() => handleSubscribe('premium')} disabled={isSubmitting} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm">
+          {/* 🎯 ربط زر Premium بالدالة */}
+          <button onClick={() => handleSubscribe('pro')} disabled={isSubmitting} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm">
             {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <><Zap size={18} className="fill-white" /> {t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} /></>}
           </button>
           <div className="space-y-4">
@@ -207,8 +226,9 @@ export default function RetailerSubscription() {
             <span className="text-5xl font-black text-gray-900">{isAnnual ? prices.pro.annual.toLocaleString() : prices.pro.monthly.toLocaleString()}</span>
             <span className="text-gray-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
-          <button onClick={() => handleSubscribe('pro')} disabled={isSubmitting} className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black rounded-xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 text-sm">
-            {isSubmitting ? <Loader2 size={18} className="animate-spin text-white" /> : <><Shield size={16} /> {t.contactSales}</>}
+          {/* 🎯 ربط زر Pro (Enterprise) بالدالة */}
+          <button onClick={() => handleSubscribe('enterprise')} disabled={isSubmitting} className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black rounded-xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 text-sm">
+            {isSubmitting ? <Loader2 size={18} className="animate-spin text-white" /> : <><Shield size={16} /> {t.contactSales} (S'abonner)</>}
           </button>
           <div className="space-y-4">
             {t.plans.pro.features.map((feat, i) => (
