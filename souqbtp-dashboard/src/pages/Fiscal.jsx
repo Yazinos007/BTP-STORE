@@ -9,16 +9,18 @@ const translations = {
     tvaCollected: 'TVA المحصلة (المبيعات)', tvaDeductible: 'TVA القابلة للخصم (المشتريات)', tvaDue: 'TVA واجبة الأداء',
     addDec: 'تسجيل تصريح جديد', editDec: 'تعديل التصريح', period: 'الفترة (شهر/ربع سنة)', 
     save: 'حفظ التصريح', saving: 'جاري التسجيل...', cancel: 'إلغاء', actions: 'إجراءات', confirmDelete: 'حذف هذا التصريح نهائياً؟',
-    history: 'سجل التصاريح الجبائية', empty: 'لا توجد تصاريح مسجلة.', currency: 'درهم',
-    status: 'الحالة', statusPending: 'قيد الانتظار', statusPaid: 'تم الأداء', searchPlaceholder: 'ابحث بالفترة...'
+    history: 'سجل التصاريح الجبائية', empty: 'لا توجد تصاريح مسجلة.', currency: 'درهم', loading: 'جاري التحميل...',
+    status: 'الحالة', statusPending: 'قيد الانتظار', statusPaid: 'تم الأداء', searchPlaceholder: 'ابحث بالفترة...',
+    module: 'وحدة المحاسبة', tvaColShort: 'TVA المحصلة', tvaDedShort: 'TVA قابلة للخصم', netPay: 'الصافي للأداء'
   },
   fr: {
     title: 'Système Fiscal', subtitle: 'Gestion et suivi des déclarations de TVA.',
     tvaCollected: 'TVA Collectée (Ventes)', tvaDeductible: 'TVA Récupérable (Achats)', tvaDue: 'TVA Due (À payer)',
     addDec: 'Nouvelle Déclaration', editDec: 'Modifier la Déclaration', period: 'Période (Mois/Trimestre)', 
     save: 'Enregistrer', saving: 'Enregistrement...', cancel: 'Annuler', actions: 'Actions', confirmDelete: 'Supprimer cette déclaration ?',
-    history: 'Historique des Déclarations', empty: 'Aucune déclaration enregistrée.', currency: 'MAD',
-    status: 'Statut', statusPending: 'En attente', statusPaid: 'Payé', searchPlaceholder: 'Rechercher par période...'
+    history: 'Historique des Déclarations', empty: 'Aucune déclaration enregistrée.', currency: 'MAD', loading: 'Chargement...',
+    status: 'Statut', statusPending: 'En attente', statusPaid: 'Payé', searchPlaceholder: 'Rechercher par période...',
+    module: 'Module Comptable', tvaColShort: 'TVA Collectée', tvaDedShort: 'TVA Récup.', netPay: 'Net à Payer'
   }
 };
 
@@ -34,7 +36,6 @@ export default function Fiscal() {
 
   useEffect(() => { fetchDeclarations(); }, [fetchDeclarations]);
 
-  // الحساب التلقائي لـ TVA
   const tva_due_calculated = (Number(formData.tva_collected) || 0) - (Number(formData.tva_deductible) || 0);
 
   const handleSubmit = async (e) => {
@@ -72,15 +73,11 @@ export default function Fiscal() {
   };
 
   const safeDeclarations = Array.isArray(declarations) ? declarations : [];
-
-  // 🧠 الإكمال التلقائي للفترات (اقتراحات جاهزة + سابقة)
   const defaultPeriods = ["T1 - 2026", "T2 - 2026", "T3 - 2026", "T4 - 2026", "Janvier 2026", "Février 2026"];
   const periodSuggestions = [...new Set([...defaultPeriods, ...safeDeclarations.map(d => d?.period).filter(Boolean)])];
 
-  // 🔍 فلترة البحث
   const filteredDeclarations = safeDeclarations.filter(dec => dec.period?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // حساب الإجماليات للبطاقات
   const totalTvaCollected = safeDeclarations.reduce((sum, d) => sum + Number(d.tva_collected), 0);
   const totalTvaDeductible = safeDeclarations.reduce((sum, d) => sum + Number(d.tva_deductible), 0);
   const totalTvaDue = safeDeclarations.filter(d => d.status === 'pending').reduce((sum, d) => sum + Number(d.tva_due), 0);
@@ -106,14 +103,14 @@ export default function Fiscal() {
           <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
         </div>
         <span className="bg-amber-100 text-amber-700 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border border-amber-200">
-          Module Comptable
+          {t.module}
         </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard title={t.tvaCollected} value={totalTvaCollected.toLocaleString()} icon={TrendingUp} bgGradient="bg-gradient-to-br from-emerald-600 to-emerald-400" />
         <StatCard title={t.tvaDeductible} value={totalTvaDeductible.toLocaleString()} icon={TrendingDown} bgGradient="bg-gradient-to-br from-orange-500 to-red-500" />
-        <StatCard title={t.tvaDue + " (Non Payé)"} value={totalTvaDue.toLocaleString()} icon={Landmark} bgGradient={totalTvaDue > 0 ? "bg-gradient-to-br from-blue-800 via-blue-600 to-indigo-500" : "bg-gradient-to-br from-gray-600 to-gray-400"} />
+        <StatCard title={t.tvaDue + ` (${t.statusPending})`} value={totalTvaDue.toLocaleString()} icon={Landmark} bgGradient={totalTvaDue > 0 ? "bg-gradient-to-br from-blue-800 via-blue-600 to-indigo-500" : "bg-gradient-to-br from-gray-600 to-gray-400"} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
@@ -171,9 +168,9 @@ export default function Fiscal() {
                   <thead className="border-b border-gray-100 bg-white">
                     <tr>
                       <th className="px-6 py-4 text-gray-500 font-bold">{t.period}</th>
-                      <th className="px-6 py-4 text-gray-500 font-bold text-end">TVA Collectée</th>
-                      <th className="px-6 py-4 text-gray-500 font-bold text-end">TVA Récup.</th>
-                      <th className="px-6 py-4 text-gray-500 font-bold text-end">Net à Payer</th>
+                      <th className="px-6 py-4 text-gray-500 font-bold text-end">{t.tvaColShort}</th>
+                      <th className="px-6 py-4 text-gray-500 font-bold text-end">{t.tvaDedShort}</th>
+                      <th className="px-6 py-4 text-gray-500 font-bold text-end">{t.netPay}</th>
                       <th className="px-6 py-4 text-gray-500 font-bold text-center">{t.status}</th>
                       <th className="px-6 py-4 text-gray-500 font-bold text-center">{t.actions}</th>
                     </tr>
