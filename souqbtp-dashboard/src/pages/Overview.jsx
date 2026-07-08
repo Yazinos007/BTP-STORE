@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useSupplierStore from '../store/useSupplierStore';
 import useProductStore from '../store/useProductStore';
 import useOrderStore from '../store/useOrderStore';
@@ -6,30 +7,35 @@ import useClientStore from '../store/useClientStore';
 import useExpenseStore from '../store/useExpenseStore';
 import useHRStore from '../store/useHRStore';
 import useSettingsStore from '../store/useSettingsStore';
-import { Package, ShoppingCart, Wallet, TrendingUp, AlertTriangle, CreditCard, Receipt, Briefcase, Activity } from 'lucide-react';
+import { Package, ShoppingCart, Wallet, TrendingUp, AlertTriangle, CreditCard, Receipt, Briefcase, Activity, Zap, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import SmartAIAssistant from '../components/SmartAIAssistant';
 
 const translations = {
   ar: {
-    title: 'نظرة عامة والذكاء الاصطناعي', subtitle: 'تحليلات، تنبؤات ذكية، وملخص لأداء متجرك.',
+    title: 'لوحة القيادة', subtitle: 'تحليلات، تنبؤات ذكية، وملخص لأداء متجرك.',
     activeProds: 'المنتجات النشطة', prodUnit: 'منتج', inventory: 'قيمة المخزون', currency: 'درهم',
     activeOrders: 'طلبات قيد المعالجة', orderUnit: 'طلب', revenue: 'إجمالي المبيعات',
     debts: 'ديون العملاء', expenses: 'إجمالي المصاريف', hr: 'الموظفين النشطين', empUnit: 'موظف',
+    payroll: 'كتلة الأجور', cashBalance: 'رصيد الصناديق', netProfit: 'النتيجة الصافية',
     chartTitle: 'تطور المبيعات (الـ 6 أشهر الأخيرة)', stockAlerts: 'تنبيهات المخزون', outOfStock: 'نفد تماماً',
     lowStock: 'باقي', perfectStock: 'مخزونك في حالة ممتازة!',
+    upgradeTitle: 'ارتقِ بمتجرك إلى مستوى Enterprise 🚀', upgradeDesc: 'افتح جميع الميزات الاحترافية: المحاسبة، إدارة الموارد البشرية، وتعدد الصناديق.', upgradeBtn: 'الترقية الآن'
   },
   fr: {
-    title: 'Vue d\'ensemble & IA', subtitle: 'Analyses, prévisions intelligentes et performances.',
+    title: 'Tableau de Bord', subtitle: 'Analyses, prévisions intelligentes et performances.',
     activeProds: 'Produits Actifs', prodUnit: 'Produits', inventory: 'Valeur du Stock', currency: 'MAD',
     activeOrders: 'Commandes en cours', orderUnit: 'Commandes', revenue: 'Chiffre d\'Affaires',
     debts: 'Créances Clients', expenses: 'Total des Charges', hr: 'Employés Actifs', empUnit: 'Employés',
+    payroll: 'Masse Salariale', cashBalance: 'Solde des Caisses', netProfit: 'Résultat Net',
     chartTitle: 'Évolution des Ventes (6 derniers mois)', stockAlerts: 'Alertes de Stock', outOfStock: 'Rupture',
     lowStock: 'Reste', perfectStock: 'Votre stock est en parfait état !',
+    upgradeTitle: 'Passez au niveau Enterprise 🚀', upgradeDesc: 'Débloquez toutes les fonctionnalités : Comptabilité, RH, et Multi-caisses.', upgradeBtn: 'Passer à l\'Enterprise'
   }
 };
 
 export default function Overview() {
+  const navigate = useNavigate();
   const { supplier } = useSupplierStore();
   const { products, fetchProducts, isLoading: isProductsLoading } = useProductStore();
   const { orders, fetchOrders } = useOrderStore();
@@ -39,22 +45,23 @@ export default function Overview() {
   const { language } = useSettingsStore();
   const t = translations[language];
 
-  const [stats, setStats] = useState({ totalProducts: 0, inventoryValue: 0, activeOrders: 0, totalRevenue: 0, totalDebts: 0, totalExpenses: 0, activeEmployees: 0 });
+  const [stats, setStats] = useState({ 
+    totalProducts: 0, inventoryValue: 0, activeOrders: 0, totalRevenue: 0, 
+    totalDebts: 0, totalExpenses: 0, activeEmployees: 0, payroll: 0, 
+    netProfit: 0, cashBalance: 0 
+  });
 
-  // 🛡️ استخراج دور وصلاحيات المستخدم الحالي بأمان
   const role = supplier?.role || 'admin';
   const perms = supplier?.permissions || { sales: true, products: true, invoices: true, accounting: true, hr: true };
   const canView = (permission) => role === 'admin' || perms[permission];
+  const isBasic = supplier?.tier === 'basic' || supplier?.tier === 'free';
 
   useEffect(() => {
     if (!supplier) return; 
-
     if (canView('products')) fetchProducts();
     if (canView('sales')) { fetchOrders(); fetchClients(); }
     if (canView('accounting')) fetchExpenses();
     if (canView('hr')) fetchEmployees();
-    
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supplier?.id]); 
 
   useEffect(() => {
@@ -64,17 +71,24 @@ export default function Overview() {
     const safeExpenses = Array.isArray(expenses) ? expenses : [];
     const safeEmployees = Array.isArray(employees) ? employees : [];
 
-    const totalVal = safeProducts.reduce((sum, p) => sum + (Number(p.price) * Number(p.stock_quantity)), 0);
+    const totalVal = safeProducts.reduce((sum, p) => sum + (Number(p.price || p.sale_price || 0) * Number(p.stock_quantity || 0)), 0);
     const activeOrds = safeOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').length;
     const revenue = safeOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + Number(o.total_amount), 0);
     const debts = safeClients.reduce((sum, c) => sum + Number(c.total_debt || 0), 0);
     const totalExp = safeExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-    const activeEmp = safeEmployees.filter(e => e.status === 'Actif' || e.status === 'active').length;
+    
+    // حسابات الـ HR والصناديق الجديدة
+    const activeEmp = safeEmployees.filter(e => e.status === 'Actif' || e.status === 'active');
+    const totalPayroll = activeEmp.reduce((sum, e) => sum + Number(e.salary || 0), 0);
+    
+    const calculatedNetProfit = revenue - totalExp - totalPayroll; 
+    const calculatedCash = (revenue - totalExp) > 0 ? (revenue - totalExp) : 0;
 
     setStats({ 
       totalProducts: safeProducts.length, inventoryValue: totalVal, 
       activeOrders: activeOrds, totalRevenue: revenue,
-      totalDebts: debts, totalExpenses: totalExp, activeEmployees: activeEmp
+      totalDebts: debts, totalExpenses: totalExp, activeEmployees: activeEmp.length,
+      payroll: totalPayroll, netProfit: calculatedNetProfit, cashBalance: calculatedCash
     });
   }, [products, orders, clients, expenses, employees]);
 
@@ -98,11 +112,7 @@ export default function Overview() {
         })
         .reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
 
-      data.push({
-        nameAr: monthsAr[mIndex],
-        nameFr: monthsFr[mIndex],
-        مبيعات: monthRevenue,
-      });
+      data.push({ nameAr: monthsAr[mIndex], nameFr: monthsFr[mIndex], مبيعات: monthRevenue });
     }
     return data;
   }, [orders]);
@@ -111,58 +121,96 @@ export default function Overview() {
   const criticalStock = safeProducts.filter(p => p.stock_quantity <= 5 && p.stock_quantity > 0);
   const outOfStock = safeProducts.filter(p => p.stock_quantity === 0);
 
-  const StatCard = ({ title, value, icon: Icon, bgGradient, suffix = '' }) => (
-    <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300`}>
+  // مكون البطاقة الإحصائية المعدل ليدعم البيانات الإضافية (SubValue)
+  const StatCard = ({ title, value, subValue, icon: Icon, bgGradient, suffix = '' }) => (
+    <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300 flex flex-col justify-between`}>
       <div className="absolute -right-6 -top-6 opacity-20 pointer-events-none"><Icon size={120} /></div>
-      <div className="relative z-10 flex items-center gap-4">
-        <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md border border-white/10"><Icon size={28} className="text-white" /></div>
-        <div>
-          <p className="text-sm font-medium text-white/80 mb-1">{title}</p>
-          <h4 className="text-3xl font-black tracking-tight">{value} <span className="text-sm font-normal text-white/70">{suffix}</span></h4>
-        </div>
+      <div className="relative z-10 flex items-center gap-4 mb-3">
+        <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md border border-white/10"><Icon size={24} className="text-white" /></div>
+        <p className="text-sm font-black uppercase tracking-wider text-white/90">{title}</p>
+      </div>
+      <div className="relative z-10">
+        <h4 className="text-3xl font-black tracking-tight">{value} <span className="text-sm font-bold text-white/70">{suffix}</span></h4>
+        {subValue && (
+          <div className="mt-3 pt-3 border-t border-white/20">
+            <p className="text-xs font-bold text-white/90">{subValue}</p>
+          </div>
+        )}
       </div>
     </div>
   );
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="mb-6">
-        <h2 className="text-3xl font-black text-gray-800 tracking-tight flex items-center gap-3">
-          <Activity className="text-blue-600" size={32} /> {t.title}
-        </h2>
-        <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
-      </div>
-
-      {/* 🚀 المساعد الذكي الجديد (يظهر فقط لمن لديه صلاحية المنتجات) */}
-      {canView('products') && (
-        <SmartAIAssistant />
+      
+      {/* 🚀 بانر الترقية الجذاب (يظهر فقط لأصحاب الباقة المجانية) */}
+      {isBasic && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden border border-amber-400">
+          <div className="absolute right-0 top-0 opacity-10 pointer-events-none"><Zap size={200} /></div>
+          <div className="relative z-10">
+            <h3 className="text-2xl font-black text-white mb-2 flex items-center gap-2"><Zap size={24} className="fill-white"/> {t.upgradeTitle}</h3>
+            <p className="text-amber-50 font-medium">{t.upgradeDesc}</p>
+          </div>
+          <button onClick={() => navigate('/subscription')} className="relative z-10 whitespace-nowrap bg-gray-900 hover:bg-black text-white px-8 py-4 rounded-xl font-black shadow-lg transition-transform hover:scale-105 flex items-center gap-2">
+            <Zap size={18} className="fill-amber-400 text-amber-400"/> {t.upgradeBtn}
+          </button>
+        </div>
       )}
 
-      {/* البطاقات الإحصائية */}
+      <div className="mb-6 flex items-center gap-3">
+        <div className="w-2 h-8 bg-blue-600 rounded-full"></div>
+        <h2 className="text-3xl font-black text-gray-800 tracking-tight">{t.title}</h2>
+      </div>
+
+      {canView('products') && <SmartAIAssistant />}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-2">
-        {canView('products') && (
-          <>
-            <StatCard title={t.activeProds} value={isProductsLoading ? '...' : stats.totalProducts} icon={Package} bgGradient="bg-gradient-to-br from-blue-700 to-blue-500" suffix={t.prodUnit} />
-            <StatCard title={t.inventory} value={isProductsLoading ? '...' : stats.inventoryValue.toLocaleString()} icon={Wallet} bgGradient="bg-gradient-to-br from-orange-600 to-orange-400" suffix={t.currency} />
-          </>
-        )}
-        {canView('sales') && (
-          <>
-            <StatCard title={t.activeOrders} value={stats.activeOrders} icon={ShoppingCart} bgGradient="bg-gradient-to-br from-emerald-600 to-emerald-400" suffix={t.orderUnit} />
-            <StatCard title={t.revenue} value={stats.totalRevenue.toLocaleString()} icon={TrendingUp} bgGradient="bg-gradient-to-br from-indigo-700 via-blue-600 to-cyan-500" suffix={t.currency} />
-            <StatCard title={t.debts} value={stats.totalDebts.toLocaleString()} icon={CreditCard} bgGradient="bg-gradient-to-br from-red-600 to-rose-400" suffix={t.currency} />
-          </>
-        )}
+        {/* المبيعات */}
+        {canView('sales') && <StatCard title={t.revenue} value={stats.totalRevenue.toLocaleString()} icon={TrendingUp} bgGradient="bg-gradient-to-br from-blue-600 to-indigo-600" suffix={t.currency} />}
+        
+        {/* المنتجات (مدمج معها قيمة المخزون) */}
+        {canView('products') && <StatCard title={t.activeProds} value={isProductsLoading ? '...' : stats.totalProducts} subValue={`${t.inventory}: ${stats.inventoryValue.toLocaleString()} ${t.currency}`} icon={Package} bgGradient="bg-gradient-to-br from-emerald-500 to-teal-500" suffix={t.prodUnit} />}
+        
+        {/* الموارد البشرية (مدمج معها كتلة الأجور) */}
+        {canView('hr') && <StatCard title={t.hr} value={stats.activeEmployees} subValue={`${t.payroll}: ${stats.payroll.toLocaleString()} ${t.currency}`} icon={Briefcase} bgGradient="bg-gradient-to-br from-purple-600 to-fuchsia-600" suffix={t.empUnit} />}
+        
+        {/* رصيد الصناديق */}
+        {canView('accounting') && <StatCard title={t.cashBalance} value={stats.cashBalance.toLocaleString()} icon={Wallet} bgGradient="bg-gradient-to-br from-slate-700 to-slate-900" suffix={t.currency} />}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-2">
+        {/* الديون */}
+        {canView('sales') && <StatCard title={t.debts} value={stats.totalDebts.toLocaleString()} icon={CreditCard} bgGradient="bg-gradient-to-br from-orange-500 to-amber-500" suffix={t.currency} />}
+        
+        {/* المصاريف */}
+        {canView('accounting') && <StatCard title={t.expenses} value={stats.totalExpenses.toLocaleString()} icon={Receipt} bgGradient="bg-gradient-to-br from-gray-500 to-gray-600" suffix={t.currency} />}
+        
+        {/* 🚨 بطاقة النتيجة الصافية (النبض الذكي) تأخذ مساحة عمودين */}
         {canView('accounting') && (
-          <StatCard title={t.expenses} value={stats.totalExpenses.toLocaleString()} icon={Receipt} bgGradient="bg-gradient-to-br from-gray-700 to-gray-500" suffix={t.currency} />
-        )}
-        {canView('hr') && (
-          <StatCard title={t.hr} value={stats.activeEmployees} icon={Briefcase} bgGradient="bg-gradient-to-br from-purple-700 to-purple-500" suffix={t.empUnit} />
+          <div className={`lg:col-span-2 relative overflow-hidden p-6 rounded-2xl border-2 text-white flex flex-col justify-between
+            ${stats.netProfit < 0 
+              ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 shadow-[0_0_20px_rgba(220,38,38,0.5)] animate-[pulse_2s_ease-in-out_infinite]' 
+              : 'bg-gradient-to-br from-emerald-400 to-green-600 border-green-300 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+            } transition-all duration-300`}
+          >
+            <div className="absolute -right-6 -top-6 opacity-20 pointer-events-none">
+              {stats.netProfit < 0 ? <ShieldAlert size={150} /> : <ShieldCheck size={150} />}
+            </div>
+            <div className="relative z-10 flex items-center gap-4 mb-2">
+              <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md border border-white/10">
+                <Activity size={28} className="text-white" />
+              </div>
+              <p className="text-lg font-black uppercase tracking-wider text-white">{t.netProfit}</p>
+            </div>
+            <div className="relative z-10 mt-2">
+              <h4 className="text-5xl font-black tracking-tight">{stats.netProfit.toLocaleString()} <span className="text-xl font-bold text-white/80">{t.currency}</span></h4>
+            </div>
+          </div>
         )}
       </div>
 
+      {/* باقي الصفحة (الرسم البياني وتنبيهات المخزون) كما هي بدون تغيير جوهري */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        {/* رسم بياني للمبيعات */}
         {canView('sales') && (
           <div className={`${canView('products') ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col`}>
             <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2"><TrendingUp size={20} className="text-blue-600"/> {t.chartTitle}</h3>
@@ -186,7 +234,6 @@ export default function Overview() {
           </div>
         )}
 
-        {/* تنبيهات المخزون */}
         {canView('products') && (
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col h-[400px]">
             <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2"><AlertTriangle size={20} className="text-red-500" /> {t.stockAlerts}</h3>
