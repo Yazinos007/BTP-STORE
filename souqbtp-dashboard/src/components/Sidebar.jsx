@@ -5,7 +5,7 @@ import {
   ChevronDown, ChevronRight, CreditCard, Globe, Calculator,
   Truck, ShoppingBag, Zap 
 } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import useSupplierStore from '../store/useSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
@@ -14,11 +14,11 @@ export default function Sidebar() {
   const { supplier, isLoading } = useSupplierStore();
   const { language, toggleLanguage } = useSettingsStore();
   const location = useLocation();
+  const navigate = useNavigate(); // 🎯 أضفنا useNavigate للتوجيه
   const [openMenus, setOpenMenus] = useState({});
 
   if (isLoading) return <div className={`w-[280px] h-screen bg-[#2d2252] shrink-0 ${language === 'fr' ? 'border-r' : 'border-l'} border-white/10 animate-pulse`} />;
   
-  // 🌟 الحل الجذري: تأمين هوية افتراضية في حال كانت بيانات الحساب القديم تالفة
   const safeSupplier = supplier || { 
     store_name: 'Mon Magasin', 
     tier: 'starter', 
@@ -49,7 +49,8 @@ export default function Sidebar() {
       fiscal: 'النظام الجبائي', decTva: 'إقرارات TVA', chargesEnt: 'مصاريف الشركة', gestionCharges: 'إدارة المصاريف',
       accounting: 'المحاسبة العامة', logout: 'تسجيل الخروج',
       settings: 'الملف الشخصي للمتجر',
-      subscription: 'الاشتراك والترقية'
+      upgrade: 'ارتقِ إلى Enterprise', // 🎯 ترجمة الزر الجديد
+      manageSub: 'إدارة الاشتراك'
     },
     fr: {
       overview: 'Vue d\'ensemble', pos: 'Point de Vente (POS)', products: 'Produits',
@@ -64,10 +65,12 @@ export default function Sidebar() {
       fiscal: 'SYSTÈME FISCAL', decTva: 'Déclarations TVA', chargesEnt: 'CHARGES ENTREPRISE', gestionCharges: 'Gestion des Charges',
       accounting: 'Comptabilité & Bilan', logout: 'Déconnexion',
       settings: 'Profil du Magasin', 
-      subscription: 'Abonnement' 
+      upgrade: "Passer à l'Enterprise", // 🎯 ترجمة الزر الجديد
+      manageSub: "Gérer l'Abonnement"
     }
   }[language];
 
+  // 🎯 تم حذف زر الاشتراك من هذه القائمة لنقله للأعلى
   const enterpriseMenu = [
     { name: t.dashboard, icon: LayoutDashboard, path: '/', alwaysShow: true },
     {
@@ -123,9 +126,7 @@ export default function Sidebar() {
       group: t.accounting, icon: Calculator, requiredPermission: 'accounting',
       subItems: [{ name: t.accounting, path: '/accounting' }]
     },
-    { name: t.settings, icon: Settings, path: '/settings', adminOnly: true },
-    // 🎯 أضفنا زر الاشتراكات للنسخة الـ Enterprise (إذا كان التاجر في باقة Enterprise)
-    { name: t.subscription, icon: Zap, path: '/subscription', adminOnly: true } 
+    { name: t.settings, icon: Settings, path: '/settings', adminOnly: true }
   ];
 
   const filteredEnterpriseMenu = enterpriseMenu.filter(item => {
@@ -136,6 +137,7 @@ export default function Sidebar() {
     return false;
   });
 
+  // 🎯 تم حذف زر الاشتراك من هذه القائمة أيضاً لنقله للأعلى
   const normalMenuItems = [
     { name: t.overview, icon: LayoutDashboard, path: '/', minTier: 'starter' },
     { name: t.pos, icon: MonitorPlay, path: '/pos', minTier: 'starter' },
@@ -147,8 +149,7 @@ export default function Sidebar() {
     { name: t.invoices, icon: FileText, path: '/invoices', minTier: 'pro' },
     { name: t.expenses, icon: Receipt, path: '/expenses', minTier: 'pro' },
     { name: t.wallet, icon: Wallet, path: '/wallet', minTier: 'pro' },
-    { name: t.settings, icon: Settings, path: '/settings', minTier: 'starter' },
-    { name: t.subscription, icon: Zap, path: '/subscription', minTier: 'starter' }, 
+    { name: t.settings, icon: Settings, path: '/settings', minTier: 'starter' }
   ].filter(item => tier === 'pro' ? true : item.minTier === 'starter');
 
   return (
@@ -199,6 +200,24 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">
+        
+        {/* 🚀 الزر الذهبي الجذاب للترقية (يظهر فقط للإدارة) */}
+        {(role === 'admin' || supplier?.role === 'admin') && (
+          <div className="px-4 mb-6">
+            <button 
+              onClick={() => navigate('/subscription')}
+              className={`w-full py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg hover:-translate-y-0.5 ${
+                !isEnterprise 
+                  ? 'bg-[#eab308] hover:bg-[#ca8a04] text-slate-900 shadow-yellow-500/20' // اللون الذهبي البارز للمجانيين
+                  : 'bg-white/10 hover:bg-white/20 text-white' // لون هادئ لمن قام بالترقية
+              }`}
+            >
+              <Zap size={18} className={!isEnterprise ? "fill-slate-900" : "text-amber-400"} />
+              {!isEnterprise ? t.upgrade : t.manageSub}
+            </button>
+          </div>
+        )}
+
         {isEnterprise ? (
           <div className="space-y-1">
             {filteredEnterpriseMenu.map((item, idx) => {
