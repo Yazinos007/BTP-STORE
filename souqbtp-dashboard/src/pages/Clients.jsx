@@ -52,7 +52,6 @@ export default function Clients() {
   const [paymentClient, setPaymentClient] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  // 🎯 حالات نافذة سجل المعاملات
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [clientHistory, setClientHistory] = useState([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
@@ -85,7 +84,6 @@ export default function Clients() {
     fetchClientStats();
   }, [clients]);
 
-  // 🎯 جلب المعاملات فور الضغط على الزر
   const handleViewHistory = async (client) => {
     setPaymentClient(client);
     setShowHistoryModal(true);
@@ -213,12 +211,14 @@ export default function Clients() {
                           <td className="px-6 py-4">
                             <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <a href={getWhatsAppLink(client)} target="_blank" rel="noopener noreferrer" className="p-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg"><MessageCircle size={16}/></a>
-                              
-                              {/* 🎯 زر سجل المعاملات */}
                               <button onClick={() => handleViewHistory(client)} className="p-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 rounded-lg" title="سجل المعاملات"><ClipboardList size={16}/></button>
-                              
                               {Number(client.total_debt) > 0 && <button onClick={() => { setPaymentClient(client); setShowPaymentModal(true); }} className="p-2 bg-slate-800 text-white rounded-lg"><Banknote size={16}/></button>}
-                              <button onClick={() => handleEdit(client)} className="p-2 text-blue-500 rounded-lg"><Edit size={16}/></button>
+                              <button onClick={() => handleEdit(client)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Edit size={16}/></button>
+                              
+                              {/* 🎯 ها هو زر الحذف عاد لمكانه بقوة! */}
+                              <button onClick={() => handleDelete(client.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Supprimer">
+                                <Trash2 size={16}/>
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -232,7 +232,6 @@ export default function Clients() {
         </div>
       </div>
 
-      {/* 🎯 النافذة المنبثقة لسجل المعاملات الذكي */}
       {showHistoryModal && paymentClient && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-up flex flex-col max-h-[85vh]">
@@ -277,7 +276,6 @@ export default function Clients() {
         </div>
       )}
 
-      {/* نافذة الدفع */}
       {showPaymentModal && paymentClient && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-slide-up">

@@ -64,7 +64,6 @@ export default function Expenses() {
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 🎯 إضافة حالة اختيار الشهر والأرشفة (الشهر الحالي كقيمة افتراضية)
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -75,13 +74,11 @@ export default function Expenses() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // 🎯 عند الإضافة يجب أن يحفظ في الشهر الذي اختاره المستخدم أو التاريخ الحالي إذا نسي
     const payload = { 
       title: formData.title, 
       amount: parseFloat(formData.amount), 
       category: formData.category, 
       payment_method: formData.payment_method,
-      // إذا كان يضيف مصروفاً جديداً نمرر له الشهر المختار لتسجيله فيه
       date: new Date(`${selectedMonth}-01`).toISOString() 
     };
     if (editingId) await updateExpense(editingId, payload);
@@ -103,7 +100,6 @@ export default function Expenses() {
   const safeOrders = Array.isArray(orders) ? orders : [];
   const titleSuggestions = [...new Set(safeExpenses.map(exp => exp?.title).filter(Boolean))];
 
-  // 🎯 فلترة المصاريف لتشمل الشهر المختار فقط
   const currentMonthExpenses = safeExpenses.filter(exp => {
     const expDate = new Date(exp.created_at || exp.date || Date.now());
     const expMonthStr = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}`;
@@ -132,12 +128,12 @@ export default function Expenses() {
     fill: categoryColorMap[key]
   }));
 
-  // 🎯 فلترة البحث والترتيب التنازلي (حسب المبلغ)
+  // 🎯 الدالة المصححة: ترتب بناءً على القيمة المطلقة للمبلغ (من الأكبر للأصغر)
   const filteredExpenses = currentMonthExpenses.filter(exp => {
     const term = searchTerm.toLowerCase();
     const catLabel = t.categories[exp.category] || '';
     return ( exp.title?.toLowerCase().includes(term) || catLabel.toLowerCase().includes(term) || exp.amount?.toString().includes(term) );
-  }).sort((a, b) => Number(b.amount) - Number(a.amount));
+  }).sort((a, b) => Math.abs(Number(b.amount)) - Math.abs(Number(a.amount)));
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
     <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300`}>
@@ -160,7 +156,6 @@ export default function Expenses() {
           <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
         </div>
         
-        {/* 🎯 أداة اختيار الشهر (Month Picker) */}
         <div className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
           <Calendar className="text-blue-600 ml-2" size={20} />
           <input 
