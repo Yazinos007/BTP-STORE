@@ -2,17 +2,17 @@ import { useState, useEffect } from 'react';
 import useExpenseStore from '../store/useExpenseStore';
 import useOrderStore from '../store/useOrderStore';
 import useSettingsStore from '../store/useSettingsStore';
-import { Receipt, Plus, TrendingDown, DollarSign, PieChart as PieChartIcon, CreditCard, Tag, Edit, Trash2, X, Search, Loader2 } from 'lucide-react';
+import { Receipt, Plus, TrendingDown, DollarSign, PieChart as PieChartIcon, CreditCard, Tag, Edit, Trash2, X, Search, Loader2, Calendar } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const translations = {
   ar: {
     title: 'إدارة المصاريف والنتيجة', subtitle: 'تتبع نفقات شركتك بدقة واحصل على تحليلات مفصلة.',
-    revenue: 'إجمالي المبيعات (المحصلة)', expenses: 'إجمالي المصاريف', netProfit: 'النتيجة الصافية',
+    revenue: 'إجمالي المبيعات (المحصلة)', expenses: 'مصاريف الشهر المختار', netProfit: 'النتيجة الصافية',
     addExpense: 'تسجيل مصروف جديد', editExpense: 'تعديل المصروف', desc: 'البيان / الوصف', amount: 'المبلغ',
     category: 'التصنيف', paymentMethod: 'طريقة الدفع', save: 'إضافة المصروف', saving: 'جاري التسجيل...',
     cancel: 'إلغاء', actions: 'إجراءات', confirmDelete: 'هل أنت متأكد من حذف هذا المصروف؟',
-    history: 'سجل المصاريف', date: 'التاريخ', empty: 'لا توجد مصاريف مسجلة.', currency: 'درهم',
+    history: 'سجل المصاريف', date: 'التاريخ', empty: 'لا توجد مصاريف مسجلة في هذا الشهر.', currency: 'درهم',
     categories: { 
       achats: 'شراء السلع/المواد', carburant: 'المحروقات والطريق السيار',
       transport: 'النقل واللوجستيك', loyer: 'الكراء / الإيجار', 
@@ -24,15 +24,15 @@ const translations = {
       other: 'أخرى' 
     },
     methods: { cash: 'نقداً (Espèces)', cheque: 'شيك (Chèque)', transfer: 'تحويل (Virement)', card: 'بطاقة (Carte)' },
-    analytics: 'التحليل المالي للمصاريف', searchPlaceholder: 'ابحث بالوصف أو التصنيف...'
+    analytics: 'التحليل المالي للشهر', searchPlaceholder: 'ابحث بالوصف أو التصنيف...'
   },
   fr: {
     title: 'Gestion des Charges et Résultat', subtitle: 'Suivez les dépenses de votre entreprise avec précision.',
-    revenue: 'Total Ventes (Encaissées)', expenses: 'Total des Charges', netProfit: 'Résultat Net',
+    revenue: 'Total Ventes (Encaissées)', expenses: 'Charges du mois', netProfit: 'Résultat Net',
     addExpense: 'Enregistrer une charge', editExpense: 'Modifier la charge', desc: 'Description / Motif', amount: 'Montant',
     category: 'Catégorie', paymentMethod: 'Mode de Paiement', save: 'Ajouter la charge', saving: 'Enregistrement...',
     cancel: 'Annuler', actions: 'Actions', confirmDelete: 'Voulez-vous vraiment supprimer cette charge ?',
-    history: 'Historique des charges', date: 'Date', empty: 'Aucune charge enregistrée.', currency: 'MAD',
+    history: 'Historique des charges', date: 'Date', empty: 'Aucune charge enregistrée ce mois-ci.', currency: 'MAD',
     categories: { 
       achats: 'Achat de marchandises', carburant: 'Carburant & Péage',
       transport: 'Transport & Logistique', loyer: 'Loyer & Charges locatives', 
@@ -44,7 +44,7 @@ const translations = {
       other: 'Autre' 
     },
     methods: { cash: 'Espèces', cheque: 'Chèque', transfer: 'Virement', card: 'Carte Bancaire' },
-    analytics: 'Analyse des Charges', searchPlaceholder: 'Rechercher par description, catégorie...'
+    analytics: 'Analyse Mensuelle', searchPlaceholder: 'Rechercher par description, catégorie...'
   }
 };
 
@@ -64,12 +64,26 @@ export default function Expenses() {
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // 🎯 إضافة حالة اختيار الشهر والأرشفة (الشهر الحالي كقيمة افتراضية)
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+
   useEffect(() => { fetchExpenses(); fetchOrders(); }, [fetchExpenses, fetchOrders]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const payload = { title: formData.title, amount: parseFloat(formData.amount), category: formData.category, payment_method: formData.payment_method };
+    // 🎯 عند الإضافة يجب أن يحفظ في الشهر الذي اختاره المستخدم أو التاريخ الحالي إذا نسي
+    const payload = { 
+      title: formData.title, 
+      amount: parseFloat(formData.amount), 
+      category: formData.category, 
+      payment_method: formData.payment_method,
+      // إذا كان يضيف مصروفاً جديداً نمرر له الشهر المختار لتسجيله فيه
+      date: new Date(`${selectedMonth}-01`).toISOString() 
+    };
     if (editingId) await updateExpense(editingId, payload);
     else await addExpense(payload);
     setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
@@ -89,12 +103,18 @@ export default function Expenses() {
   const safeOrders = Array.isArray(orders) ? orders : [];
   const titleSuggestions = [...new Set(safeExpenses.map(exp => exp?.title).filter(Boolean))];
 
-  const totalExpenses = safeExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+  // 🎯 فلترة المصاريف لتشمل الشهر المختار فقط
+  const currentMonthExpenses = safeExpenses.filter(exp => {
+    const expDate = new Date(exp.created_at || exp.date || Date.now());
+    const expMonthStr = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}`;
+    return expMonthStr === selectedMonth;
+  });
+
+  const totalExpenses = currentMonthExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
   const totalRevenue = safeOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + Number(o.total_amount), 0);
   const netProfit = totalRevenue - totalExpenses;
 
-  // خريطة الألوان الديناميكية
-  const expensesByCategoryKey = safeExpenses.reduce((acc, exp) => {
+  const expensesByCategoryKey = currentMonthExpenses.reduce((acc, exp) => {
     acc[exp.category] = (acc[exp.category] || 0) + Number(exp.amount);
     return acc;
   }, {});
@@ -112,11 +132,12 @@ export default function Expenses() {
     fill: categoryColorMap[key]
   }));
 
-  const filteredExpenses = safeExpenses.filter(exp => {
+  // 🎯 فلترة البحث والترتيب التنازلي (حسب المبلغ)
+  const filteredExpenses = currentMonthExpenses.filter(exp => {
     const term = searchTerm.toLowerCase();
     const catLabel = t.categories[exp.category] || '';
     return ( exp.title?.toLowerCase().includes(term) || catLabel.toLowerCase().includes(term) || exp.amount?.toString().includes(term) );
-  }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }).sort((a, b) => Number(b.amount) - Number(a.amount));
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
     <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300`}>
@@ -133,9 +154,22 @@ export default function Expenses() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="mb-6">
-        <h2 className="text-3xl font-black text-gray-800 tracking-tight">{t.title}</h2>
-        <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h2 className="text-3xl font-black text-gray-800 tracking-tight">{t.title}</h2>
+          <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
+        </div>
+        
+        {/* 🎯 أداة اختيار الشهر (Month Picker) */}
+        <div className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+          <Calendar className="text-blue-600 ml-2" size={20} />
+          <input 
+            type="month" 
+            value={selectedMonth} 
+            onChange={(e) => setSelectedMonth(e.target.value)} 
+            className="outline-none bg-transparent font-black text-gray-700 cursor-pointer"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -177,7 +211,7 @@ export default function Expenses() {
             </div>
             <div className="flex gap-2 pt-2 mt-4 border-t border-gray-100">
               {editingId && ( <button type="button" onClick={cancelEdit} className="w-1/3 bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 font-bold transition-all flex items-center justify-center gap-1"><X size={16}/> {t.cancel}</button> )}
-              <button type="submit" disabled={isSubmitting} className={`${editingId ? 'w-2/3' : 'w-full'} bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30`}>{isSubmitting ? t.saving : (editingId ? t.editExpense : t.save)}</button>
+              <button type="submit" disabled={isSubmitting} className={`${editingId ? 'w-2/3' : 'w-full'} bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30`}>{isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : (editingId ? t.editExpense : t.save)}</button>
             </div>
           </form>
         </div>
@@ -200,7 +234,7 @@ export default function Expenses() {
             </div>
           )}
 
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden h-full">
             <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-2"> <Receipt size={20} className="text-gray-400" /> <h3 className="font-black text-gray-800">{t.history}</h3> </div>
               <div className="relative w-full sm:w-72">
@@ -224,7 +258,6 @@ export default function Expenses() {
                   <tbody className="divide-y divide-gray-50">
                     {filteredExpenses.map((exp) => {
                       const currentCategoryColor = categoryColorMap[exp.category] || COLORS[COLORS.length - 1];
-                      
                       return (
                         <tr key={exp.id} className={`hover:bg-blue-50/30 transition-colors group ${editingId === exp.id ? 'bg-blue-50' : ''}`}>
                           <td className="px-6 py-4 text-gray-800 font-bold">{exp.title}</td>
@@ -242,7 +275,7 @@ export default function Expenses() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-gray-500 font-medium text-xs">
-                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at))}
+                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at || exp.date))}
                           </td>
                           <td className="px-6 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">
                             -{Number(exp.amount).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
