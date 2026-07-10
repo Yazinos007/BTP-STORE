@@ -106,12 +106,12 @@ export default function Expenses() {
     return expMonthStr === selectedMonth;
   });
 
-  const totalExpenses = currentMonthExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
-  const totalRevenue = safeOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + Number(o.total_amount), 0);
+  const totalExpenses = currentMonthExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+  const totalRevenue = safeOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
   const netProfit = totalRevenue - totalExpenses;
 
   const expensesByCategoryKey = currentMonthExpenses.reduce((acc, exp) => {
-    acc[exp.category] = (acc[exp.category] || 0) + Number(exp.amount);
+    acc[exp.category] = (acc[exp.category] || 0) + Number(exp.amount || 0);
     return acc;
   }, {});
 
@@ -128,12 +128,23 @@ export default function Expenses() {
     fill: categoryColorMap[key]
   }));
 
-  // 🎯 الدالة المصححة: ترتب بناءً على القيمة المطلقة للمبلغ (من الأكبر للأصغر)
-  const filteredExpenses = currentMonthExpenses.filter(exp => {
-    const term = searchTerm.toLowerCase();
-    const catLabel = t.categories[exp.category] || '';
-    return ( exp.title?.toLowerCase().includes(term) || catLabel.toLowerCase().includes(term) || exp.amount?.toString().includes(term) );
-  }).sort((a, b) => Math.abs(Number(b.amount)) - Math.abs(Number(a.amount)));
+  // 🎯 الدالة الصارمة للترتيب من الأكبر للأصغر متجاهلة أي أخطاء برمجية
+  const filteredExpenses = currentMonthExpenses
+    .filter(exp => {
+      const term = searchTerm.toLowerCase();
+      const catLabel = t.categories[exp.category] || '';
+      return (
+        exp.title?.toLowerCase().includes(term) || 
+        catLabel.toLowerCase().includes(term) || 
+        exp.amount?.toString().includes(term)
+      );
+    })
+    .sort((a, b) => {
+      // parseFloat + || 0 تمنع ظهور NaN الذي يدمر الترتيب
+      const amountA = Math.abs(parseFloat(a.amount) || 0);
+      const amountB = Math.abs(parseFloat(b.amount) || 0);
+      return amountB - amountA; // ترتيب تنازلي (الأكبر أولاً)
+    });
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
     <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300`}>
