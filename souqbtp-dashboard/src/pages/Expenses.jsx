@@ -128,22 +128,28 @@ export default function Expenses() {
     fill: categoryColorMap[key]
   }));
 
-  // 🎯 الدالة الصارمة للترتيب من الأكبر للأصغر متجاهلة أي أخطاء برمجية
-  const filteredExpenses = currentMonthExpenses
+  // 🎯 الدالة المدرعة للترتيب التنازلي الإجباري
+  const sortedAndFilteredExpenses = [...currentMonthExpenses]
     .filter(exp => {
       const term = searchTerm.toLowerCase();
       const catLabel = t.categories[exp.category] || '';
       return (
         exp.title?.toLowerCase().includes(term) || 
         catLabel.toLowerCase().includes(term) || 
-        exp.amount?.toString().includes(term)
+        String(exp.amount || '').includes(term)
       );
     })
     .sort((a, b) => {
-      // parseFloat + || 0 تمنع ظهور NaN الذي يدمر الترتيب
-      const amountA = Math.abs(parseFloat(a.amount) || 0);
-      const amountB = Math.abs(parseFloat(b.amount) || 0);
-      return amountB - amountA; // ترتيب تنازلي (الأكبر أولاً)
+      // 1. تنظيف الرقم تماماً من أي مسافات، نصوص، أو فواصل خاطئة
+      const cleanA = String(a.amount || 0).replace(/[^0-9.]/g, '');
+      const cleanB = String(b.amount || 0).replace(/[^0-9.]/g, '');
+      
+      // 2. تحويله إلى رقم حقيقي وتجاهل إشارة السالب (أخذ القيمة المطلقة)
+      const valA = Math.abs(Number(cleanA) || 0);
+      const valB = Math.abs(Number(cleanB) || 0);
+      
+      // 3. الترتيب من الأكبر إلى الأصغر
+      return valB - valA;
     });
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
@@ -249,7 +255,7 @@ export default function Expenses() {
               </div>
             </div>
             
-            {isLoading ? ( <div className="p-12 text-center text-gray-500"><Loader2 size={30} className="animate-spin text-blue-500 mx-auto" /></div> ) : filteredExpenses.length === 0 ? ( <div className="p-12 text-center text-gray-400"><Receipt size={40} className="mx-auto mb-3 opacity-20" />{t.empty}</div> ) : (
+            {isLoading ? ( <div className="p-12 text-center text-gray-500"><Loader2 size={30} className="animate-spin text-blue-500 mx-auto" /></div> ) : sortedAndFilteredExpenses.length === 0 ? ( <div className="p-12 text-center text-gray-400"><Receipt size={40} className="mx-auto mb-3 opacity-20" />{t.empty}</div> ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-start text-sm">
                   <thead className="border-b border-gray-100 bg-white">
@@ -262,7 +268,8 @@ export default function Expenses() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {filteredExpenses.map((exp) => {
+                    {/* 🎯 تم استخدام المتغير الجديد المرتب إجبارياً هنا */}
+                    {sortedAndFilteredExpenses.map((exp) => {
                       const currentCategoryColor = categoryColorMap[exp.category] || COLORS[COLORS.length - 1];
                       return (
                         <tr key={exp.id} className={`hover:bg-blue-50/30 transition-colors group ${editingId === exp.id ? 'bg-blue-50' : ''}`}>
