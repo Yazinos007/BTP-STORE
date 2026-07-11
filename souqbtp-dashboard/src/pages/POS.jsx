@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Search, Trash2, Plus, Minus, CheckCircle, CreditCard, Printer, ShoppingCart, Loader2, X, HardHat, FileText } from 'lucide-react';
+import { Search, Trash2, Plus, Minus, CheckCircle, CreditCard, Printer, ShoppingCart, Loader2, X, HardHat, FileText, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import useProductStore from '../store/useProductStore';
 import useSupplierStore from '../store/useSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
 import useClientStore from '../store/useClientStore';
-import confetti from 'canvas-confetti'; // 🌟 أضفنا مكتبة الاحتفال
+import confetti from 'canvas-confetti'; 
 
 const translations = {
   ar: {
@@ -15,7 +15,8 @@ const translations = {
     successCredit: '⏳ تم البيع بالآجل! تم إرسال الطلبية وحفظ BL تلقائياً.', error: 'حدث خطأ أثناء العملية.',
     noStock: 'عذراً، هذا المنتج غير متوفر!', selectClient: 'اختر العميل (الزبون)', cancel: 'إلغاء', confirm: 'تأكيد',
     chantier: 'اسم الورش (اختياري)', genDoc: 'إصدار Devis/BC', docType: 'نوع المستند',
-    successDoc: '✅ تم إصدار المستند بنجاح! السلة لازالت ممتلئة إذا أردت إتمام البيع.'
+    successDoc: '✅ تم إصدار المستند بنجاح! السلة لازالت ممتلئة إذا أردت إتمام البيع.',
+    optionalClient: '-- زبون عابر (اختياري) --'
   },
   fr: {
     title: 'Point de Vente (POS)', search: 'Rechercher un produit...', stock: 'Stock:',
@@ -24,7 +25,8 @@ const translations = {
     successCredit: '⏳ Vente à crédit enregistrée ! BL généré automatiquement.', error: 'Erreur lors de l\'opération.',
     noStock: 'Produit indisponible !', selectClient: 'Sélectionner le client', cancel: 'Annuler', confirm: 'Confirmer',
     chantier: 'Nom du Chantier (Optionnel)', genDoc: 'Générer Devis/BC', docType: 'Type de Document',
-    successDoc: '✅ Document généré ! Le panier est conservé pour la vente.'
+    successDoc: '✅ Document généré ! Le panier est conservé pour la vente.',
+    optionalClient: '-- Client de passage (Optionnel) --'
   }
 };
 
@@ -38,9 +40,12 @@ export default function POS() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showCreditModal, setShowCreditModal] = useState(false);
-  const [showDocModal, setShowDocModal] = useState(false);
   
+  // 🌟 استبدلنا showCreditModal بنافذة دفع موحدة (Checkout Modal)
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutMethod, setCheckoutMethod] = useState('Espèces'); // 'Espèces' أو 'Crédit'
+  
+  const [showDocModal, setShowDocModal] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState('');
   const [chantier, setChantier] = useState('');
   const [docType, setDocType] = useState('Devis');
@@ -78,12 +83,15 @@ export default function POS() {
   
   const total = cart.reduce((sum, item) => sum + (Number(item.price) * (Number(item.quantity) || 0)), 0);
 
-  // 🌟 نظام الطباعة الصامتة (من كودك الأصلي)
+  // 🌟 نظام الطباعة الصامتة
   const handlePrintTicket = () => {
     if (cart.length === 0) return;
     const storeName = supplier?.store_name || 'SouqBTP';
     const date = new Date().toLocaleString(language === 'fr' ? 'fr-FR' : 'ar-MA');
-    const ticketHtml = `<html><head><title>Ticket</title><style>@page{margin:0;}body{font-family:monospace;font-size:13px;padding:15px;max-width:320px;margin:0 auto;}.center{text-align:center;}.bold{font-weight:bold;}.divider{border-bottom:1px dashed #000;margin:10px 0;}.flex-between{display:flex;justify-content:space-between;margin-bottom:6px;}.total-section{border-top:2px dashed #000;margin-top:15px;padding-top:10px;font-size:16px;font-weight:bold;}</style></head><body><div class="center"><h2 style="margin:0;">${storeName}</h2><p style="margin:5px 0;">${date}</p></div><div class="divider"></div><div class="flex-between bold"><span>Article</span><span>Montant</span></div><div class="divider"></div>${cart.map(item => `<div class="flex-between"><span>${item.quantity}x ${item.name}</span><span class="bold">${(item.quantity * item.price).toLocaleString()}</span></div>`).join('')}<div class="total-section flex-between"><span>TOTAL :</span><span>${total.toLocaleString()} MAD</span></div><div class="divider"></div><div class="center">Merci !</div></body></html>`;
+    // 🌟 إضافة اسم العميل للتذكرة إذا تم اختياره
+    const clientNameText = selectedClientId ? `<p style="margin:5px 0;">Client: ${clients.find(c => c.id === selectedClientId)?.full_name}</p>` : '';
+    
+    const ticketHtml = `<html><head><title>Ticket</title><style>@page{margin:0;}body{font-family:monospace;font-size:13px;padding:15px;max-width:320px;margin:0 auto;}.center{text-align:center;}.bold{font-weight:bold;}.divider{border-bottom:1px dashed #000;margin:10px 0;}.flex-between{display:flex;justify-content:space-between;margin-bottom:6px;}.total-section{border-top:2px dashed #000;margin-top:15px;padding-top:10px;font-size:16px;font-weight:bold;}</style></head><body><div class="center"><h2 style="margin:0;">${storeName}</h2><p style="margin:5px 0;">${date}</p>${clientNameText}</div><div class="divider"></div><div class="flex-between bold"><span>Article</span><span>Montant</span></div><div class="divider"></div>${cart.map(item => `<div class="flex-between"><span>${item.quantity}x ${item.name}</span><span class="bold">${(item.quantity * item.price).toLocaleString()}</span></div>`).join('')}<div class="total-section flex-between"><span>TOTAL :</span><span>${total.toLocaleString()} MAD</span></div><div class="divider"></div><div class="center">Merci !</div></body></html>`;
     const iframe = document.createElement('iframe'); iframe.style.display = 'none'; document.body.appendChild(iframe); iframe.contentDocument.write(ticketHtml); iframe.contentDocument.close(); setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => document.body.removeChild(iframe), 1000); }, 300);
   };
 
@@ -127,9 +135,9 @@ export default function POS() {
     try {
       // 1. تسجيل الطلبية
       const { error: orderError } = await supabase.from('orders').insert([{
-        supplier_id: supplier.id, client_id: clientId, chantier: chantier || null, total_amount: total, status: 'pending', payment_status: paymentMethod === 'Espèces' ? 'paid' : 'unpaid', payment_method: paymentMethod, items: validCart
+        supplier_id: supplier.id, client_id: clientId || null, chantier: chantier || null, total_amount: total, status: 'pending', payment_status: paymentMethod === 'Espèces' ? 'paid' : 'unpaid', payment_method: paymentMethod, items: validCart
       }]);
-      if (orderError) throw new Error("Erreur Order: " + orderError.message); // 🚨 تحديث
+      if (orderError) throw new Error("Erreur Order: " + orderError.message);
 
       // 2. إنقاص المخزون
       for (const item of validCart) {
@@ -144,7 +152,7 @@ export default function POS() {
         await supabase.from('clients').update({ total_debt: newDebt }).eq('id', clientId);
       }
 
-      // 4. حفظ المستند التلقائي
+      // 4. حفظ المستند التلقائي (هنا سيأخذ العميل الصحيح دائماً)
       const autoDocType = paymentMethod === 'Espèces' ? 'Facture' : 'Bon de Livraison';
       const prefix = paymentMethod === 'Espèces' ? 'FAC' : 'BL';
       const refNumber = `${prefix}-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -152,16 +160,15 @@ export default function POS() {
       const { error: docError } = await supabase.from('documents').insert([{
         owner_id: supplier.id, client_id: clientId || null, type: autoDocType, ref_number: refNumber, chantier: chantier || null, total_amount: total, items: validCart
       }]);
-      if (docError) throw new Error("Erreur Document: " + docError.message); // 🚨 تحديث
+      if (docError) throw new Error("Erreur Document: " + docError.message);
 
-      // 🌟 5. الاحتفال المبهج عند إتمام البيع بنجاح
+      // 🌟 5. الاحتفال المبهج
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#10b981', '#3b82f6', '#f59e0b'] });
 
       setCart([]); setChantier(''); fetchProducts(); if (clientId) fetchClients();
-      setShowCreditModal(false); setSelectedClientId('');
+      setShowCheckoutModal(false); setSelectedClientId('');
       alert(paymentMethod === 'Espèces' ? t.successCash : t.successCredit);
     } catch (error) { 
-      // 🚨 هذا هو التعديل الذهبي: طباعة الخطأ الحقيقي بدلاً من t.error
       console.error("Erreur POS Détaillée:", error);
       alert(`Erreur détaillée:\n${error.message || error}`); 
     } finally { 
@@ -233,8 +240,22 @@ export default function POS() {
           
           <div className="space-y-2">
             <div className="flex gap-2">
-              <button disabled={cart.length === 0 || isProcessing} onClick={() => processOrder('Espèces')} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg text-sm"><CheckCircle size={16} /> {t.cash}</button>
-              <button disabled={cart.length === 0 || isProcessing} onClick={() => setShowCreditModal(true)} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg text-sm"><CreditCard size={16} /> {t.credit}</button>
+              {/* 🌟 الزر الأخضر يفتح نافذة الـ Checkout الآن */}
+              <button 
+                disabled={cart.length === 0 || isProcessing} 
+                onClick={() => { setCheckoutMethod('Espèces'); setShowCheckoutModal(true); }} 
+                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg text-sm"
+              >
+                <CheckCircle size={16} /> {t.cash}
+              </button>
+              {/* 🌟 زر الكريدي يفتح نفس نافذة الـ Checkout */}
+              <button 
+                disabled={cart.length === 0 || isProcessing} 
+                onClick={() => { setCheckoutMethod('Crédit'); setShowCheckoutModal(true); }} 
+                className="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg text-sm"
+              >
+                <CreditCard size={16} /> {t.credit}
+              </button>
             </div>
             
             <div className="flex gap-2">
@@ -247,7 +268,53 @@ export default function POS() {
         </div>
       </div>
 
-      {/* نوافذ Devis والديون (بدون تغيير للحفاظ على قوة كودك) */}
+      {/* 🌟 نافذة الدفع الموحدة (للنقدي والكريدي) */}
+      {showCheckoutModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+          <div className={`bg-white rounded-3xl shadow-2xl p-6 w-[450px] animate-slide-up border-t-8 ${checkoutMethod === 'Espèces' ? 'border-emerald-500' : 'border-orange-500'}`}>
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
+                {checkoutMethod === 'Espèces' ? <><CheckCircle className="text-emerald-500"/> {t.cash}</> : <><CreditCard className="text-orange-500"/> {t.credit}</>}
+              </h3>
+              <button onClick={() => setShowCheckoutModal(false)} className="text-gray-400 hover:bg-gray-100 p-2 rounded-full"><X size={20}/></button>
+            </div>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t.selectClient}</label>
+                <select 
+                  value={selectedClientId} 
+                  onChange={(e) => setSelectedClientId(e.target.value)} 
+                  required={checkoutMethod === 'Crédit'} // إجباري فقط في حالة الكريدي
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                >
+                  <option value="" disabled={checkoutMethod === 'Crédit'}>{checkoutMethod === 'Espèces' ? t.optionalClient : `-- ${t.selectClient} --`}</option>
+                  {clients.map(client => (<option key={client.id} value={client.id}>{client.full_name}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><HardHat size={16} className="text-gray-400"/> {t.chantier}</label>
+                <input type="text" value={chantier} onChange={(e) => setChantier(e.target.value)} placeholder="مثال: فيلا طريق إيموزار" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-gray-500/20 font-medium" />
+              </div>
+              <div className={`p-4 rounded-xl border flex justify-between items-center ${checkoutMethod === 'Espèces' ? 'bg-emerald-50 border-emerald-100' : 'bg-orange-50 border-orange-100'}`}>
+                <span className={`font-medium text-sm ${checkoutMethod === 'Espèces' ? 'text-emerald-800' : 'text-orange-800'}`}>الإجمالي:</span>
+                <span className={`font-black text-xl ${checkoutMethod === 'Espèces' ? 'text-emerald-600' : 'text-orange-600'}`} dir="ltr">{total.toLocaleString()} MAD</span>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setShowCheckoutModal(false)} className="w-1/3 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl">{t.cancel}</button>
+                <button 
+                  onClick={() => processOrder(checkoutMethod, selectedClientId || null)} 
+                  disabled={(checkoutMethod === 'Crédit' && !selectedClientId) || isProcessing} 
+                  className={`flex-1 py-3.5 text-white font-bold rounded-xl flex justify-center items-center gap-2 disabled:opacity-50 shadow-lg ${checkoutMethod === 'Espèces' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30' : 'bg-orange-600 hover:bg-orange-700 shadow-orange-500/30'}`}
+                >
+                  {isProcessing ? <Loader2 className="animate-spin" size={18} /> : t.confirm}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🌟 نافذة Devis (بدون تغيير) */}
       {showDocModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl p-6 w-[450px] animate-slide-up border-t-8 border-blue-600">
@@ -281,40 +348,6 @@ export default function POS() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {showCreditModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl p-6 w-[450px] animate-slide-up border-t-8 border-orange-500">
-            <div className="flex justify-between items-center mb-6 border-b pb-4">
-              <h3 className="text-xl font-black text-gray-800">{t.selectClient}</h3>
-              <button onClick={() => setShowCreditModal(false)} className="text-gray-400 hover:bg-gray-100 p-2 rounded-full"><X size={20}/></button>
-            </div>
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.selectClient}</label>
-                <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700">
-                  <option value="" disabled>-- {t.selectClient} --</option>
-                  {clients.map(client => (<option key={client.id} value={client.id}>{client.full_name}</option>))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><HardHat size={16} className="text-orange-500"/> {t.chantier}</label>
-                <input type="text" value={chantier} onChange={(e) => setChantier(e.target.value)} placeholder="مثال: فيلا طريق إيموزار" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 font-medium" />
-              </div>
-              <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex justify-between items-center">
-                <span className="text-orange-800 font-medium text-sm">الإجمالي:</span>
-                <span className="text-orange-600 font-black text-xl" dir="ltr">{total.toLocaleString()} MAD</span>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowCreditModal(false)} className="w-1/3 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl">{t.cancel}</button>
-                <button onClick={() => processOrder('Crédit', selectedClientId)} disabled={!selectedClientId || isProcessing} className="flex-1 py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl flex justify-center items-center gap-2 disabled:opacity-50 shadow-lg shadow-orange-500/30">
-                  {isProcessing ? <Loader2 className="animate-spin" size={18} /> : t.confirm}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
