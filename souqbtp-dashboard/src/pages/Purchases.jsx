@@ -38,7 +38,6 @@ const translations = {
     msgError: 'Désolé, une erreur est survenue :',
     profitMargin: 'Marge:', expectedProfit: 'Profit Prévu:',
     msgSuccess: '✅ Stock, Facture et Charge enregistrés avec succès !',
-    // 🌟 الإضافات الجديدة للترجمة
     invoiceDesc: 'Facture d\'achat N° :',
     categoryName: 'Achat de marchandises'
   }
@@ -74,7 +73,7 @@ export default function Purchases() {
     if (sigCanvas.current) sigCanvas.current.clear();
   };
 
-  // 🌟 دالة حفظ التوقيع كصورة (محدثة لتجاوز خطأ التجميع)
+  // 🌟 دالة حفظ التوقيع كصورة
   const handleSaveSignature = async () => {
     try {
       if (!sigCanvas.current || sigCanvas.current.isEmpty()) {
@@ -83,7 +82,6 @@ export default function Purchases() {
 
       setIsProcessing(true);
 
-      // 🌟 التعديل هنا: استخدمنا getCanvas() بدلاً من getTrimmedCanvas() لتجنب خطأ q.default
       const signatureImageBase64 = sigCanvas.current.getCanvas().toDataURL('image/png');
 
       const { error } = await supabase
@@ -125,10 +123,9 @@ export default function Purchases() {
   const removeFromCart = (id) => setCart(prev => prev.filter(item => item.id !== id));
   const total = cart.reduce((sum, item) => sum + (Number(item.purchase_price) * Number(item.quantity)), 0);
 
-// 🌟 حالات تتبع طلبات B2B
+  // 🌟 حالات تتبع طلبات B2B
   const [b2bRequests, setB2bRequests] = useState([]);
   
-  // 🌟 دالة جلب طلبات التاجر
   const fetchB2BRequests = async () => {
     const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
     const { data } = await supabase
@@ -140,11 +137,8 @@ export default function Purchases() {
     if (data) setB2bRequests(data);
   };
 
-  // 🌟 جلب الطلبات وتشغيل التحديث اللحظي
   useEffect(() => {
     fetchB2BRequests();
-    
-    // رادار يستمع لتغييرات المورد (مثلاً عندما يوافق المورد، تتغير الحالة فوراً عند التاجر)
     const channel = supabase.channel('b2b-tracking')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'supply_requests' }, () => {
         fetchB2BRequests();
@@ -153,7 +147,6 @@ export default function Purchases() {
     return () => { supabase.removeChannel(channel); };
   }, [supplier]);
 
-  // 🌟 دالة المصافحة الرقمية (التوقيع)
   const handleSignContract = async (id) => {
     const signatureName = window.prompt(
       language === 'fr' 
@@ -161,7 +154,7 @@ export default function Purchases() {
       : "لتوقيع هذا العقد والموافقة عليه، اكتب اسمك الكامل هنا:"
     );
     
-    if (!signatureName) return; // إذا ألغى العملية
+    if (!signatureName) return;
 
     try {
       const { error } = await supabase
@@ -194,7 +187,6 @@ export default function Purchases() {
         return;
       }
 
-      // تحديث القائمة فوراً بعد النجاح
       fetchB2BRequests();
       alert(language === 'fr' ? "✅ Commande annulée." : "✅ تم إلغاء الطلب بنجاح.");
       
@@ -204,18 +196,16 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 دالة تعديل الطلب للتاجر (استرجاع للسلة)
   const handleEditB2B = async (req) => {
     const confirmMsg = language === 'fr' ? 'Modifier cette commande ?' : 'هل تريد استرجاع الطلب للسلة لتعديله؟';
     if (!window.confirm(confirmMsg)) return;
     
-    setCart(req.items); // إرجاع السلع للسلة
-    await supabase.from('supply_requests').delete().eq('id', req.id); // مسح الطلب القديم
+    setCart(req.items);
+    await supabase.from('supply_requests').delete().eq('id', req.id);
     fetchB2BRequests();
-    window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة
+    window.scrollTo({ top: 0, behavior: 'smooth' }); 
   };
 
-  // 🌟 1. دالة الإرسال (ترجمة صحيحة وبدون صفحة بيضاء)
   const handleSendPO = async () => {
     if (!selectedSupplierId) return alert(language === 'fr' ? "Veuillez sélectionner un fournisseur" : "الرجاء اختيار المورد من القائمة أولاً");
     if (cart.length === 0) return alert(language === 'fr' ? "Panier vide" : "السلة فارغة");
@@ -223,10 +213,7 @@ export default function Purchases() {
     setIsProcessing(true);
     try {
       const merchantId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
-
       const { data: chosenSup } = await supabase.from('suppliers').select('store_name').eq('id', selectedSupplierId).single();
-
-      // 🎯 حل مشكلة الصورة 1: الترجمة الصحيحة إذا لم نجد اسم المورد
       const fallbackName = language === 'fr' ? "fournisseur" : "المورد";
       const supplierName = chosenSup?.store_name || fallbackName;
 
@@ -243,7 +230,6 @@ export default function Purchases() {
       setCart([]);
       alert(language === 'fr' ? `✅ Commande envoyée à ${supplierName}` : `✅ تم إرسال الطلب إلى ${supplierName}`);
       
-      // 🎯 التحديث الناعم: نجلب الطلبات الجديدة فوراً بدون Reload للمتصفح
       if (typeof fetchB2BRequests === 'function') fetchB2BRequests();
     } catch (err) {
       alert("Erreur: " + err.message);
@@ -252,14 +238,13 @@ export default function Purchases() {
     }
   };
 
-  // 🌟 دالة الاستلام (النسخة المستقرة + توليد وصل التسليم للمورد فقط)
   const handleReceiveOrder = async (req) => {
     setIsProcessing(true);
     try {
-      // 1. إنهاء الطلب وتحديث حالة العملية
+      // 1. إنهاء الطلب
       await supabase.from('supply_requests').update({ status: 'completed' }).eq('id', req.id);
 
-      // 2. تحديث المخازن (نفس الكود الناجح والمستقر)
+      // 2. تحديث المخازن 
       const { data: allProds } = await supabase.from('products').select('id, name, stock_quantity, supplier_id');
       
       for (const item of req.items) {
@@ -272,13 +257,12 @@ export default function Purchases() {
         if (bProd) await supabase.from('products').update({ stock_quantity: Math.max(0, Number(bProd.stock_quantity || 0) - Number(item.quantity)) }).eq('id', bProd.id);
       }
 
-      // 3. 🚨 القسم المالي: تسجيل الفواتير والمصاريف مع التقاط الأخطاء
+      // 3. 🚨 القسم المالي: تسجيل الفواتير والمصاريف
       const refNumber = Date.now().toString().slice(-4);
       let financialErrors = [];
 
       // أ- فاتورة البيع و وصل التسليم للمورد (الـ Boss)
       if (req.supplier_id) {
-          // 📝 توليد الفاتورة
           const { error: err1 } = await supabase.from('documents').insert({ 
              owner_id: req.supplier_id, 
              client_id: null, 
@@ -289,7 +273,6 @@ export default function Purchases() {
           });
           if (err1) financialErrors.push("Facture Boss: " + err1.message);
 
-          // 📦 توليد وصل التسليم (هذا هو التعديل الوحيد المضاف)
           const { error: errBL } = await supabase.from('documents').insert({ 
              owner_id: req.supplier_id, 
              client_id: null, 
@@ -301,17 +284,28 @@ export default function Purchases() {
           if (errBL) financialErrors.push("BL Boss: " + errBL.message);
       }
 
-      // ب- فاتورة الشراء للتاجر
-      const { error: err2 } = await supabase.from('documents').insert({ 
-         owner_id: req.merchant_id, 
-         type: 'Facture Achat', 
-         ref_number: `ACH-B2B-${refNumber}`, 
+      // 🎯 ب- فاتورة الشراء للتاجر (تم نقلها لـ purchase_invoices لكي ترتبط بالمورد الحقيقي BigBoss)
+      const { error: err2 } = await supabase.from('purchase_invoices').insert({ 
+         supplier_id: req.merchant_id, 
+         external_supplier_id: req.supplier_id, // 🎯 هنا السر! نربط الفاتورة بالـ ID الخاص بالمورد
+         invoice_number: `ACH-B2B-${refNumber}`, 
          total_amount: req.total_amount, 
-         items: req.items 
+         items: req.items,
+         payment_method: 'credit' // نعتبرها بالآجل افتراضياً في الـ B2B
       });
       if (err2) financialErrors.push("Facture Achat: " + err2.message);
 
-      // ج- المصروف المحاسبي
+      // 🎯 ج- تحديث ديون المورد (بما أنها فاتورة بالآجل)
+      try {
+        const { data: extSup } = await supabase.from('external_suppliers').select('total_debt').eq('id', req.supplier_id).single();
+        if (extSup) {
+          await supabase.from('external_suppliers').update({ 
+            total_debt: Number(extSup.total_debt || 0) + Number(req.total_amount) 
+          }).eq('id', req.supplier_id);
+        }
+      } catch(e) { console.error("Debt Error", e); }
+
+      // د- المصروف المحاسبي
       const { error: err3 } = await supabase.from('expenses').insert({ 
          supplier_id: req.merchant_id, 
          title: `Achat Stock B2B`, 
@@ -321,14 +315,14 @@ export default function Purchases() {
       });
       if (err3) financialErrors.push("Dépenses: " + err3.message);
 
-      // 4. تقييم العملية (هل تم الحفظ المالي أم لا؟)
+      // 4. تقييم العملية
       if (financialErrors.length > 0) {
           alert(`⚠️ تم الاستلام وتحديث المخزون بنجاح، لكن قاعدة البيانات رفضت تسجيل بعض الوثائق:\n\n${financialErrors.join('\n')}`);
       } else {
           alert(language === 'fr' ? "✅ Réception validée (Factures et BL générés) !" : "✅ تم الاستلام بنجاح وتوليد الفواتير ووصل التسليم!");
       }
 
-      // 5. التحديث الناعم والمستقر (بدون صفحة بيضاء)
+      // 5. التحديث الناعم
       if (typeof fetchB2BRequests === 'function') fetchB2BRequests();
       
       try {
@@ -353,10 +347,8 @@ export default function Purchases() {
       const targetId = supplier.supplier_id ? supplier.supplier_id : supplier.id;
       const extSupplier = suppliers.find(s => s.id === selectedSupplierId);
       
-      // توليد رقم فاتورة شراء فريد
       const invNumber = `ACH-${Date.now().toString().slice(-6)}`;
 
-      // أ- تحديث المخزون وثمن التكلفة
       for (const item of cart) {
         await updateProduct(item.id, { 
           stock_quantity: Number(item.stock_quantity) + Number(item.quantity),
@@ -364,7 +356,6 @@ export default function Purchases() {
         });
       }
 
-      // ب- تسجيل فاتورة الشراء
       const { error: invError } = await supabase.from('purchase_invoices').insert([{
         supplier_id: targetId,
         external_supplier_id: selectedSupplierId,
@@ -375,14 +366,12 @@ export default function Purchases() {
       }]);
       if (invError) throw invError;
 
-      // ج- تسجيل المصروف تلقائياً (فقط في الكاش)
       if (method === 'cash') {
         const { error: eError } = await supabase.from('expenses').insert([{
           supplier_id: targetId,
           title: `${t.invoiceDesc} ${invNumber}`, 
           amount: total,
           category: 'achats'
-          // 🌟 قمنا بحذف سطر التاريخ تماماً، قاعدة البيانات ستسجله بنفسها تلقائياً!
         }]);
         
         if (eError) {
@@ -390,7 +379,6 @@ export default function Purchases() {
         }
       }
 
-      // د- إذا كان كريدي، تحديث ديون المورد
       if (method === 'credit') {
         const newDebt = Number(extSupplier?.total_debt || 0) + total;
         await updateSupplier(selectedSupplierId, { total_debt: newDebt });
@@ -399,7 +387,6 @@ export default function Purchases() {
       setCart([]);
       setSelectedSupplierId('');
       
-      // 🌟 (3) التنبيه النهائي مربوط بقاموس الترجمة
       alert(`${t.msgSuccess} \n${t.invoiceDesc} ${invNumber}`);
       
     } catch (err) {
@@ -491,7 +478,6 @@ export default function Purchases() {
         <div className="flex justify-between items-start mb-2">
         <div>
         <p className="font-bold text-sm text-white">{item.name}</p>
-        {/* 💰 حساب هامش الربح التلقائي */}
         <p className="text-[10px] text-emerald-400 font-bold mt-1">
           {t.expectedProfit} {((item.price - item.purchase_price) * item.quantity).toLocaleString()} DH
           <span className="text-gray-500 ml-2">({item.price - item.purchase_price} DH/قطعة)</span>
@@ -532,7 +518,6 @@ export default function Purchases() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {/* زر الكاش القديم */}
                 <button 
                   disabled={isProcessing || cart.length === 0} onClick={() => handleCompletePurchase('cash')}
                   className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black flex justify-center items-center gap-2 transition-all shadow-lg"
@@ -540,7 +525,6 @@ export default function Purchases() {
                   {isProcessing ? <Loader2 className="animate-spin" /> : <><CheckCircle size={20}/> {t.payCash}</>}
                 </button>
                 
-                {/* زر الكريدي القديم */}
                 <button 
                    disabled={isProcessing || cart.length === 0} onClick={() => handleCompletePurchase('credit')}
                    className="w-full py-4 bg-orange-600 hover:bg-orange-500 rounded-2xl font-black flex justify-center items-center gap-2 transition-all shadow-lg"
@@ -548,7 +532,6 @@ export default function Purchases() {
                   <CreditCard size={20}/> {t.payCredit}
                 </button>
 
-                {/* 🌟 الزر الجديد: طلب تزويد من المورد الكبير (PO) */}
                 <button 
                    disabled={isProcessing || cart.length === 0} 
                    onClick={handleSendPO}
@@ -561,7 +544,7 @@ export default function Purchases() {
           </div>
         </div>
       </div>
-      {/* 🌟 رادار تتبع الطلبات (B2B Tracking) */}
+
       <div className="mt-12 bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
         <h3 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2">
           <Truck className="text-blue-600" />
@@ -583,14 +566,12 @@ export default function Purchases() {
                   </div>
                   
                   <div className="flex flex-col items-end gap-2">
-                    {/* شارة الحالة اللحظية */}
                     {req.status === 'pending' && <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'En attente' : 'بانتظار المورد'}</span>}
                     {req.status === 'confirmed' && <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'Signature Requise' : 'يتطلب توقيعك'}</span>}
                     {req.status === 'signed' && <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Signé & Confirmé' : 'تم التوقيع بنجاح'}</span>}
                     {req.status === 'shipped' && <span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'En Route 🚚' : 'الشاحنة في الطريق 🚚'}</span>}
                     {req.status === 'delivered' && <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Livré ✅' : 'تم التسليم ✅'}</span>}
 
-                    {/* 🌟 أزرار التعديل والحذف (تظهر فقط إذا كان الطلب قيد الانتظار) */}
                     {req.status === 'pending' && (
                       <div className="flex gap-2 mt-1">
                         <button onClick={() => handleEditB2B(req)} className="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-all" title="تعديل"><Edit2 size={16}/></button>
@@ -616,7 +597,6 @@ export default function Purchases() {
                   </div>
                 </div>
 
-                {/* 🌟 بيانات السائق والشاحنة تظهر للتاجر هنا */}
                 {(req.status === 'shipped' || req.status === 'delivered') && (
                   <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-4">
                     <div className="flex justify-between items-center mb-2">
@@ -634,7 +614,6 @@ export default function Purchases() {
                   </div>
                 )}
 
-                {/* 🌟 أنيميشن الشاحنة المتحركة مع بخار البنزين */}
                 {req.status === 'shipped' && (
                   <div className="mb-4">
                     <style>{`
@@ -652,7 +631,6 @@ export default function Purchases() {
                   </div>
                 )}
 
-                {/* الأزرار النهائية (المصافحة، الاستلام، والتأكيد) */}
                 {req.status === 'confirmed' && (
                   <button 
                     onClick={() => openSignModal(req.id)}
@@ -669,7 +647,6 @@ export default function Purchases() {
                 </div>
                 )}
 
-                {/* زر الاستلام يظهر للتاجر سواء كانت الشاحنة في الطريق أو أخبره المورد أنها وصلت */}
                 {(req.status === 'shipped' || req.status === 'delivered') && (
                   <button 
                     onClick={() => handleReceiveOrder(req)} 
@@ -680,7 +657,6 @@ export default function Purchases() {
                   </button>
                 )}
 
-                {/* رسالة النجاح النهائية تظهر عندما تصبح الحالة completed */}
                 {req.status === 'completed' && (
                   <div className="w-full py-3 bg-emerald-50 text-emerald-600 rounded-xl font-black flex justify-center items-center gap-2 border border-emerald-200 text-sm">
                      🎉 {language === 'fr' ? `Livré, Facturé & Intégré au Stock !` : `تم التسليم، وجرد المخزون، وتوليد الفاتورة بنجاح!`}
@@ -692,7 +668,6 @@ export default function Purchases() {
         )}
       </div>
 
-      {/* 🌟🌟🌟 هنا يوضع كود النافذة المنبثقة (خارج البطاقات وقبل نهاية الصفحة) 🌟🌟🌟 */}
       {isSignModalOpen && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative animate-fade-in text-center">
@@ -703,7 +678,6 @@ export default function Purchases() {
               {language === 'fr' ? 'Veuillez dessiner votre signature dans le cadre ci-dessous.' : 'المرجو رسم توقيعك بوضوح داخل الإطار بالأسفل.'}
             </p>
             
-            {/* مساحة الرسم */}
             <div className="border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 mb-4 overflow-hidden" dir="ltr">
               <SignatureCanvas 
                 ref={sigCanvas}
