@@ -41,9 +41,9 @@ export default function POS() {
   const [cart, setCart] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // 🌟 استبدلنا showCreditModal بنافذة دفع موحدة (Checkout Modal)
+  // 🌟 النافذة الموحدة الجديدة للدفع
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [checkoutMethod, setCheckoutMethod] = useState('Espèces'); // 'Espèces' أو 'Crédit'
+  const [checkoutMethod, setCheckoutMethod] = useState('Espèces'); 
   
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState('');
@@ -83,12 +83,10 @@ export default function POS() {
   
   const total = cart.reduce((sum, item) => sum + (Number(item.price) * (Number(item.quantity) || 0)), 0);
 
-  // 🌟 نظام الطباعة الصامتة
   const handlePrintTicket = () => {
     if (cart.length === 0) return;
     const storeName = supplier?.store_name || 'SouqBTP';
     const date = new Date().toLocaleString(language === 'fr' ? 'fr-FR' : 'ar-MA');
-    // 🌟 إضافة اسم العميل للتذكرة إذا تم اختياره
     const clientNameText = selectedClientId ? `<p style="margin:5px 0;">Client: ${clients.find(c => c.id === selectedClientId)?.full_name}</p>` : '';
     
     const ticketHtml = `<html><head><title>Ticket</title><style>@page{margin:0;}body{font-family:monospace;font-size:13px;padding:15px;max-width:320px;margin:0 auto;}.center{text-align:center;}.bold{font-weight:bold;}.divider{border-bottom:1px dashed #000;margin:10px 0;}.flex-between{display:flex;justify-content:space-between;margin-bottom:6px;}.total-section{border-top:2px dashed #000;margin-top:15px;padding-top:10px;font-size:16px;font-weight:bold;}</style></head><body><div class="center"><h2 style="margin:0;">${storeName}</h2><p style="margin:5px 0;">${date}</p>${clientNameText}</div><div class="divider"></div><div class="flex-between bold"><span>Article</span><span>Montant</span></div><div class="divider"></div>${cart.map(item => `<div class="flex-between"><span>${item.quantity}x ${item.name}</span><span class="bold">${(item.quantity * item.price).toLocaleString()}</span></div>`).join('')}<div class="total-section flex-between"><span>TOTAL :</span><span>${total.toLocaleString()} MAD</span></div><div class="divider"></div><div class="center">Merci !</div></body></html>`;
@@ -133,26 +131,22 @@ export default function POS() {
     const validCart = cart.map(item => ({...item, quantity: Number(item.quantity) || 1}));
     setIsProcessing(true);
     try {
-      // 1. تسجيل الطلبية
       const { error: orderError } = await supabase.from('orders').insert([{
         supplier_id: supplier.id, client_id: clientId || null, chantier: chantier || null, total_amount: total, status: 'pending', payment_status: paymentMethod === 'Espèces' ? 'paid' : 'unpaid', payment_method: paymentMethod, items: validCart
       }]);
       if (orderError) throw new Error("Erreur Order: " + orderError.message);
 
-      // 2. إنقاص المخزون
       for (const item of validCart) {
         const newStock = item.stock_quantity - item.quantity;
         await supabase.from('products').update({ stock_quantity: newStock }).eq('id', item.id);
       }
 
-      // 3. تحديث الديون
       if (paymentMethod === 'Crédit' && clientId) {
         const client = clients.find(c => c.id === clientId);
         const newDebt = Number(client.total_debt || 0) + total;
         await supabase.from('clients').update({ total_debt: newDebt }).eq('id', clientId);
       }
 
-      // 4. حفظ المستند التلقائي (هنا سيأخذ العميل الصحيح دائماً)
       const autoDocType = paymentMethod === 'Espèces' ? 'Facture' : 'Bon de Livraison';
       const prefix = paymentMethod === 'Espèces' ? 'FAC' : 'BL';
       const refNumber = `${prefix}-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -162,7 +156,6 @@ export default function POS() {
       }]);
       if (docError) throw new Error("Erreur Document: " + docError.message);
 
-      // 🌟 5. الاحتفال المبهج
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#10b981', '#3b82f6', '#f59e0b'] });
 
       setCart([]); setChantier(''); fetchProducts(); if (clientId) fetchClients();
@@ -240,7 +233,7 @@ export default function POS() {
           
           <div className="space-y-2">
             <div className="flex gap-2">
-              {/* 🌟 الزر الأخضر يفتح نافذة الـ Checkout الآن */}
+              {/* 🌟 الزر الأخضر (كاش) يفتح نافذة الـ Checkout */}
               <button 
                 disabled={cart.length === 0 || isProcessing} 
                 onClick={() => { setCheckoutMethod('Espèces'); setShowCheckoutModal(true); }} 
@@ -248,7 +241,7 @@ export default function POS() {
               >
                 <CheckCircle size={16} /> {t.cash}
               </button>
-              {/* 🌟 زر الكريدي يفتح نفس نافذة الـ Checkout */}
+              {/* 🌟 زر الكريدي يفتح نفس النافذة */}
               <button 
                 disabled={cart.length === 0 || isProcessing} 
                 onClick={() => { setCheckoutMethod('Crédit'); setShowCheckoutModal(true); }} 
@@ -268,7 +261,7 @@ export default function POS() {
         </div>
       </div>
 
-      {/* 🌟 نافذة الدفع الموحدة (للنقدي والكريدي) */}
+      {/* 🌟 نافذة الـ Checkout (للدفع النقدي والكريدي) */}
       {showCheckoutModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
           <div className={`bg-white rounded-3xl shadow-2xl p-6 w-[450px] animate-slide-up border-t-8 ${checkoutMethod === 'Espèces' ? 'border-emerald-500' : 'border-orange-500'}`}>
@@ -284,8 +277,8 @@ export default function POS() {
                 <select 
                   value={selectedClientId} 
                   onChange={(e) => setSelectedClientId(e.target.value)} 
-                  required={checkoutMethod === 'Crédit'} // إجباري فقط في حالة الكريدي
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                  required={checkoutMethod === 'Crédit'} 
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 cursor-pointer"
                 >
                   <option value="" disabled={checkoutMethod === 'Crédit'}>{checkoutMethod === 'Espèces' ? t.optionalClient : `-- ${t.selectClient} --`}</option>
                   {clients.map(client => (<option key={client.id} value={client.id}>{client.full_name}</option>))}
@@ -299,7 +292,7 @@ export default function POS() {
                 <span className={`font-medium text-sm ${checkoutMethod === 'Espèces' ? 'text-emerald-800' : 'text-orange-800'}`}>الإجمالي:</span>
                 <span className={`font-black text-xl ${checkoutMethod === 'Espèces' ? 'text-emerald-600' : 'text-orange-600'}`} dir="ltr">{total.toLocaleString()} MAD</span>
               </div>
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-2 border-t border-gray-100">
                 <button onClick={() => setShowCheckoutModal(false)} className="w-1/3 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl">{t.cancel}</button>
                 <button 
                   onClick={() => processOrder(checkoutMethod, selectedClientId || null)} 
@@ -314,7 +307,7 @@ export default function POS() {
         </div>
       )}
 
-      {/* 🌟 نافذة Devis (بدون تغيير) */}
+      {/* نافذة Devis (بدون تغيير) */}
       {showDocModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl p-6 w-[450px] animate-slide-up border-t-8 border-blue-600">
@@ -332,7 +325,7 @@ export default function POS() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">{t.selectClient}</label>
-                <select required value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700">
+                <select required value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 cursor-pointer">
                   <option value="" disabled>-- {t.selectClient} --</option>
                   {clients.map(client => (<option key={client.id} value={client.id}>{client.full_name}</option>))}
                 </select>
