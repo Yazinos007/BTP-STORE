@@ -4,7 +4,8 @@ import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { 
   TrendingUp, Users, Package, DollarSign, Sparkles, AlertTriangle, 
-  ShieldAlert, Truck, ChevronRight, ArrowRightLeft, RefreshCw, Loader2 
+  ShieldAlert, ShieldCheck, Truck, ChevronRight, ArrowRightLeft, 
+  Loader2, Briefcase, Receipt, Wallet, CreditCard, ShoppingCart, Activity 
 } from 'lucide-react';
 
 export default function SupplierOverview() {
@@ -12,7 +13,11 @@ export default function SupplierOverview() {
   const { supplier } = useSupplierStore();
   
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({ revenue: 0, ordersCount: 0, clientsCount: 0, stockValue: 0 });
+  const [stats, setStats] = useState({ 
+    revenue: 0, activeOrders: 0, clientsCount: 0, stockValue: 0, 
+    totalProducts: 0, totalExpenses: 0, activeEmployees: 0, payroll: 0,
+    debts: 0, netProfit: 0, cashBalance: 0
+  });
 
   useEffect(() => {
     if (supplier?.id) fetchDashboardData();
@@ -23,38 +28,48 @@ export default function SupplierOverview() {
     try {
       const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
 
-      // 1. جلب منتجات المورد (نجلب كل الأعمدة لضمان التقاط السعر سواء كان price أو sale_price)
+      // 1. المنتجات والمخزون
       const { data: myProducts } = await supabase.from('products').select('*').eq('supplier_id', targetId);
       const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
-      
-      // 2. حساب قيمة المخزون (الكمية × السعر)
-      const totalStockValue = (myProducts || []).reduce((sum, p) => {
-        const price = Number(p.price || p.sale_price || 0);
-        const qty = Number(p.stock_quantity || 0);
-        return sum + (price * qty);
-      }, 0);
+      const stockVal = (myProducts || []).reduce((sum, p) => sum + (Number(p.price || p.sale_price || 0) * Number(p.stock_quantity || 0)), 0);
 
-      // 3. جلب الفواتير لحساب المداخيل (تتبع بالاسم)
+      // 2. المداخيل (تتبع بالاسم لضمان الدقة للمورد)
       const { data: allInvoices } = await supabase.from('documents').select('total_amount, items').eq('type', 'Facture');
       const myInvoices = (allInvoices || []).filter(inv => 
         (inv.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
       );
       const totalRevenue = myInvoices.reduce((sum, doc) => sum + Number(doc.total_amount || 0), 0);
 
-      // 4. جلب الطلبات والعملاء (تتبع بالاسم لضمان الدقة)
-      const { data: allRequests } = await supabase.from('supply_requests').select('merchant_id, items');
+      // 3. الطلبات قيد المعالجة (طلبات الجملة B2B)
+      const { data: allRequests } = await supabase.from('supply_requests').select('merchant_id, items, status');
       const myRequests = (allRequests || []).filter(req => 
         (req.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
       );
-
+      const activeOrders = myRequests.filter(req => req.status !== 'completed' && req.status !== 'cancelled').length;
       const uniqueClients = new Set(myRequests.map(req => req.merchant_id).filter(id => id));
 
+      // 4. الموارد البشرية وكتلة الأجور
+      const { data: employees } = await supabase.from('employees').select('base_salary, primes_avances, retenues, status').eq('supplier_id', targetId);
+      const activeEmps = (employees || []).filter(e => e.status === 'Actif' || e.status === 'active');
+      const totalPayroll = activeEmps.reduce((sum, e) => sum + (Number(e.base_salary || 0) + Number(e.primes_avances || 0) - Number(e.retenues || 0)), 0);
+
+      // 5. المصاريف
+      const { data: expenses } = await supabase.from('expenses').select('amount').eq('supplier_id', targetId);
+      const totalExpenses = (expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      
+      // 6. الديون
+      const { data: clients } = await supabase.from('clients').select('total_debt').eq('supplier_id', targetId);
+      const totalDebts = (clients || []).reduce((sum, c) => sum + Number(c.total_debt || 0), 0);
+
+      const calculatedNetProfit = totalRevenue - totalExpenses - totalPayroll;
+      const calculatedCash = (totalRevenue - totalExpenses) > 0 ? (totalRevenue - totalExpenses) : 0;
+
       setStats({
-        revenue: totalRevenue,
-        ordersCount: myRequests.length,
-        clientsCount: uniqueClients.size,
-        stockValue: totalStockValue
+        revenue: totalRevenue, activeOrders, clientsCount: uniqueClients.size, stockValue: stockVal,
+        totalProducts: myProducts?.length || 0, totalExpenses, activeEmployees: activeEmps.length,
+        payroll: totalPayroll, debts: totalDebts, netProfit: calculatedNetProfit, cashBalance: calculatedCash
       });
+
     } catch (error) {
       console.error(error);
     } finally {
@@ -69,38 +84,78 @@ export default function SupplierOverview() {
   );
 
   return (
-    <div className="space-y-10 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="space-y-10 animate-fade-in pb-10" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 القسم العلوي: بطاقات الإحصائيات الحقيقية الفخمة */}
+      {/* 🚀 الصف الأول: البطاقات العلوية المدمجة */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title={language === 'fr' ? "Chiffre d'Affaires" : 'إجمالي المداخيل'} 
           value={stats.revenue.toLocaleString()} 
-          icon={DollarSign} 
-          color="blue"
+          icon={DollarSign} color="blue" suffix="MAD"
         />
         <StatCard 
-          title={language === 'fr' ? "Valeur du Stock" : 'قيمة المخزون'} 
-          value={stats.stockValue.toLocaleString()} 
-          icon={Package} 
-          color="emerald"
+          title={language === 'fr' ? "Commandes en cours" : 'طلبات قيد المعالجة'} 
+          value={stats.activeOrders} 
+          icon={ShoppingCart} color="emerald" suffix={language === 'fr' ? "Cmds" : "طلب"}
         />
         <StatCard 
-          title={language === 'fr' ? "Commandes B2B" : 'طلبات الجملة'} 
-          value={stats.ordersCount} 
-          icon={TrendingUp} 
-          color="indigo"
+          title={language === 'fr' ? "Produits Actifs" : 'المنتجات النشطة'} 
+          value={stats.totalProducts} 
+          subValue={`${language === 'fr' ? "Valeur Stock" : "قيمة المخزون"}: ${stats.stockValue.toLocaleString()} MAD`} 
+          icon={Package} color="teal" suffix={language === 'fr' ? "Prods" : "منتج"}
         />
         <StatCard 
-          title={language === 'fr' ? "Clients Actifs" : 'العملاء النشطون'} 
-          value={stats.clientsCount} 
-          icon={Users} 
-          color="purple"
+          title={language === 'fr' ? "Employés Actifs" : 'الموظفون النشطون'} 
+          value={stats.activeEmployees} 
+          subValue={`${language === 'fr' ? "Masse Salariale" : "كتلة الأجور"}: ${stats.payroll.toLocaleString()} MAD`} 
+          icon={Briefcase} color="purple" suffix={language === 'fr' ? "Emp" : "موظف"}
         />
       </div>
 
-      {/* 🔮 القسم الأوسط: المستشار الاستراتيجي الخارق (IA Advisor) */}
-      <div className="space-y-6">
+      {/* 🚀 الصف الثاني: البطاقات المالية والنتيجة الصافية النابضة */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          title={language === 'fr' ? "Solde des Caisses" : 'رصيد الصناديق'} 
+          value={stats.cashBalance.toLocaleString()} 
+          icon={Wallet} color="slate" suffix="MAD"
+        />
+        <StatCard 
+          title={language === 'fr' ? "Créances Clients" : 'ديون العملاء'} 
+          value={stats.debts.toLocaleString()} 
+          icon={CreditCard} color="orange" suffix="MAD"
+        />
+        <StatCard 
+          title={language === 'fr' ? "Total des Charges" : 'إجمالي المصاريف'} 
+          value={stats.totalExpenses.toLocaleString()} 
+          icon={Receipt} color="gray" suffix="MAD"
+        />
+        
+        {/* 🚨 بطاقة النتيجة الصافية (النبض الذكي) */}
+        <div className={`relative overflow-hidden p-6 rounded-3xl border-2 text-white flex flex-col justify-between
+          ${stats.netProfit < 0 
+            ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 shadow-[0_0_25px_rgba(220,38,38,0.6)] animate-[pulse_1.5s_ease-in-out_infinite]' 
+            : 'bg-gradient-to-br from-emerald-500 to-green-700 border-green-400 shadow-[0_0_25px_rgba(16,185,129,0.5)] animate-[pulse_3s_ease-in-out_infinite]' 
+          } transition-all duration-300`}
+        >
+          <div className="absolute -right-6 -top-6 opacity-20 pointer-events-none">
+            {stats.netProfit < 0 ? <ShieldAlert size={120} /> : <ShieldCheck size={120} />}
+          </div>
+          <div className="relative z-10 flex items-center gap-4 mb-3">
+            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md border border-white/10">
+              <Activity size={24} className="text-white" />
+            </div>
+            <p className="text-sm font-black uppercase tracking-wider text-white/90">
+              {language === 'fr' ? "Résultat Net" : 'النتيجة الصافية'}
+            </p>
+          </div>
+          <div className="relative z-10">
+            <h4 className="text-3xl font-black tracking-tight">{stats.netProfit.toLocaleString()} <span className="text-sm font-bold text-white/80">MAD</span></h4>
+          </div>
+        </div>
+      </div>
+
+      {/* 🔮 القسم الأوسط: المستشار الاستراتيجي الخارق (IA Advisor) - لم يتم المساس به */}
+      <div className="space-y-6 pt-6">
         <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
           <Sparkles className="text-blue-400 animate-pulse" size={28} />
           <h3 className="text-2xl font-black text-white">
@@ -123,7 +178,6 @@ export default function SupplierOverview() {
             </p>
             <div className="flex justify-between items-center bg-black/40 p-4 rounded-2xl mb-6">
               <div>
-                {/* 🎯 تم التعديل هنا */}
                 <p className="text-xs text-slate-500 uppercase font-black tracking-widest">{language === 'fr' ? 'Économie Prévue' : 'توفير متوقع'}</p>
                 <p className="text-2xl font-black text-emerald-400">85,000 MAD</p>
               </div>
@@ -141,7 +195,6 @@ export default function SupplierOverview() {
               <h4 className="text-xl font-bold text-white">{language === 'fr' ? 'Optimiseur Logistique' : 'محسن اللوجستيك'}</h4>
             </div>
             <div className="flex items-center gap-3 mb-4 font-black text-white text-sm bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10 w-fit">
-               {/* 🎯 تم التعديل هنا */}
                <span>{language === 'fr' ? 'Tanger' : 'طنجة'}</span> <ArrowRightLeft size={16} className="text-blue-400" /> <span>{language === 'fr' ? 'Casablanca' : 'الدار البيضاء'}</span>
             </div>
             <p className="text-slate-300 font-medium leading-relaxed mb-6">
@@ -159,23 +212,35 @@ export default function SupplierOverview() {
   );
 }
 
-// مكون البطاقة الإحصائية الفرعي
-function StatCard({ title, value, icon: Icon, color }) {
+// مكون البطاقة الإحصائية الفرعي المعدل لدعم البيانات الفرعية (subValue)
+function StatCard({ title, value, subValue, icon: Icon, color, suffix }) {
   const colors = {
     blue: "from-blue-600 to-indigo-700 shadow-blue-500/20",
-    emerald: "from-emerald-600 to-teal-700 shadow-emerald-500/20",
-    indigo: "from-indigo-600 to-purple-700 shadow-indigo-500/20",
-    purple: "from-purple-600 to-pink-700 shadow-purple-500/20"
+    emerald: "from-emerald-500 to-teal-600 shadow-emerald-500/20",
+    teal: "from-teal-500 to-cyan-600 shadow-teal-500/20",
+    indigo: "from-indigo-500 to-blue-600 shadow-indigo-500/20",
+    purple: "from-purple-600 to-fuchsia-600 shadow-purple-500/20",
+    orange: "from-orange-500 to-amber-600 shadow-orange-500/20",
+    slate: "from-slate-700 to-slate-900 shadow-slate-800/20",
+    gray: "from-gray-500 to-gray-700 shadow-gray-500/20"
   };
 
   return (
-    <div className={`bg-gradient-to-br ${colors[color]} p-6 rounded-3xl shadow-xl relative overflow-hidden group transition-all hover:-translate-y-1`}>
+    <div className={`bg-gradient-to-br ${colors[color]} p-6 rounded-3xl shadow-xl relative overflow-hidden group transition-all hover:-translate-y-1 flex flex-col justify-between`}>
       <div className="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-1/4 -translate-y-1/4 group-hover:scale-110 transition-transform">
-        <Icon size={140} />
+        <Icon size={130} />
+      </div>
+      <div className="relative z-10 flex items-center gap-4 mb-3">
+        <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md border border-white/10"><Icon size={24} className="text-white" /></div>
+        <p className="text-white/90 text-sm font-black uppercase tracking-wider">{title}</p>
       </div>
       <div className="relative z-10">
-        <p className="text-white/70 text-sm font-bold uppercase tracking-widest mb-1">{title}</p>
-        <h4 className="text-3xl font-black text-white">{value}</h4>
+        <h4 className="text-3xl font-black text-white">{value} <span className="text-sm font-bold text-white/70">{suffix}</span></h4>
+        {subValue && (
+          <div className="mt-3 pt-3 border-t border-white/20">
+            <p className="text-xs font-bold text-white/90">{subValue}</p>
+          </div>
+        )}
       </div>
     </div>
   );
