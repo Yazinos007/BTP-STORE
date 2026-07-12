@@ -56,20 +56,17 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const { language } = useSettingsStore();
   
   const menuItems = [
-    { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Vue d\'ensemble' : 'نظرة عامة' },
+    { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Overview' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
-    
-    // 🌟 الأقسام الجديدة المضافة هنا: العملاء والديون، الصناديق، النظام الجبائي
-    { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients & Dettes' : 'العملاء والديون (CRM)' }, 
-    { path: '/caisses', icon: Wallet, label: language === 'fr' ? 'Caisses & Banques' : 'الصناديق والحسابات' },
-    { path: '/fiscal', icon: Landmark, label: language === 'fr' ? 'Système Fiscal' : 'النظام الجبائي (TVA)' },
-
+    { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients & Dettes' : 'العملاء والديون (CRM)' },
     { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' },
     { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل' },
     { path: '/contracts', icon: FileSignature, label: language === 'fr' ? 'Contrats & Signatures' : 'المصافحة الرقمية' },
     { path: '/invoices', icon: FileText, label: language === 'fr' ? 'Factures B2B' : 'الفواتير الكبرى' },
     { path: '/hr', icon: Users, label: language === 'fr' ? 'Ressources Humaines' : 'الموارد البشرية' },
     { path: '/expenses', icon: Receipt, label: language === 'fr' ? 'Gestion des Charges' : 'إدارة المصاريف' },
+    { path: '/caisses', icon: Wallet, label: language === 'fr' ? 'Caisses & Banques' : 'الصناديق والحسابات' },
+    { path: '/fiscal', icon: Landmark, label: language === 'fr' ? 'Système Fiscal' : 'النظام الجبائي (TVA)' },
     { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
     { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' },
