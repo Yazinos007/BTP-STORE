@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, Settings, Zap, Radar } from 'lucide-react';
+import { 
+  Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, 
+  FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
+  Settings, Zap, Radar, Wallet, Landmark, CreditCard 
+} from 'lucide-react';
 
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
@@ -25,7 +29,7 @@ import Marketplace from './pages/Marketplace';
 import Overview from './pages/Overview';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
-import Wallet from './pages/Wallet';
+import RetailerWallet from './pages/Wallet';
 import POS from './pages/POS';
 import Expenses from './pages/Expenses';
 import Invoices from './pages/Invoices';
@@ -54,7 +58,12 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Vue d\'ensemble' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
-    { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients B2B' : 'إدارة العملاء (CRM)' }, 
+    
+    // 🌟 الأقسام الجديدة المضافة هنا: العملاء والديون، الصناديق، النظام الجبائي
+    { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients & Dettes' : 'العملاء والديون (CRM)' }, 
+    { path: '/caisses', icon: Wallet, label: language === 'fr' ? 'Caisses & Banques' : 'الصناديق والحسابات' },
+    { path: '/fiscal', icon: Landmark, label: language === 'fr' ? 'Système Fiscal' : 'النظام الجبائي (TVA)' },
+
     { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' },
     { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل' },
     { path: '/contracts', icon: FileSignature, label: language === 'fr' ? 'Contrats & Signatures' : 'المصافحة الرقمية' },
@@ -211,7 +220,9 @@ function App() {
               <Routes>
                 <Route path="/" element={<SupplierOverview />} />
                 <Route path="/stock" element={<SupplierStock />} />
-                <Route path="/clients" element={<SupplierClients />} />
+                <Route path="/clients" element={<Clients />} /> {/* 🌟 استخدام صفحة Clients الموجودة */}
+                <Route path="/caisses" element={<Caisses />} /> {/* 🌟 استخدام صفحة Caisses الموجودة */}
+                <Route path="/fiscal" element={<Fiscal />} />   {/* 🌟 استخدام صفحة Fiscal الموجودة */}
                 <Route path="/orders" element={<SupplierOrders />} />
                 <Route path="/fleet" element={<Fleet />} />
                 <Route path="/contracts" element={<Contracts />} />
@@ -230,12 +241,10 @@ function App() {
             // 🛡️ لوحة تاجر التجزئة المحصنة بالكامل
             <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
               
-              {/* جدار الحماية الأول: منع السايدبار من الانكماش */}
               <div className="shrink-0 flex h-full">
                 <Sidebar />
               </div>
               
-              {/* جدار الحماية الثاني: منع المحتوى الرئيسي من التمدد العشوائي */}
               <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full">
                 <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
                   <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate pr-4">
@@ -253,14 +262,13 @@ function App() {
                   </div>
                 </header>
                 
-                {/* جدار الحماية الثالث والأخير: إجبار التمرير الداخلي (Scroll) */}
                 <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full">
                   <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
                     <Routes>
                       <Route path="/" element={<Overview />} />
                       <Route path="/products" element={<SupplierStock />} />                     
                       <Route path="/orders" element={<Orders />} />
-                      <Route path="/wallet" element={<Wallet />} />
+                      <Route path="/wallet" element={<RetailerWallet />} />
                       <Route path="/settings" element={<RetailerSettings />} />
                       <Route path="/pos" element={<POS />} />
                       <Route path="/expenses" element={<Expenses />} />
