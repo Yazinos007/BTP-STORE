@@ -170,35 +170,35 @@ export default function SupplierExpenses() {
   const chartData = sortedCategoryKeys.map(key => ({ name: t.categories[key] || t.categories.other, value: expensesByCategoryKey[key], fill: categoryColorMap[key] }));
 
   // 🎯 الدالة المدرعة للترتيب التنازلي الإجباري والفلترة 
-  const sortedAndFilteredExpenses = [...safeExpenses]
-    .filter(exp => {
-      const term = searchTerm.toLowerCase();
-      const catLabel = t.categories[exp.category] || '';
-      return (
-        exp.title?.toLowerCase().includes(term) || 
-        catLabel.toLowerCase().includes(term) || 
-        String(exp.amount || '').includes(term)
-      );
-    })
-    .sort((a, b) => {
-      if (sortBy === 'amount') {
-        // 1. تنظيف الرقم تماماً من أي مسافات، نصوص، أو فواصل خاطئة (يزيل السالب أيضاً)
-        const cleanA = String(a.amount || 0).replace(/[^0-9.]/g, '');
-        const cleanB = String(b.amount || 0).replace(/[^0-9.]/g, '');
-        
-        // 2. تحويله إلى رقم حقيقي وتجاهل إشارة السالب
-        const valA = Math.abs(Number(cleanA) || 0);
-        const valB = Math.abs(Number(cleanB) || 0);
-        
-        // 3. الترتيب من الأكبر إلى الأصغر
-        return valB - valA;
-      } else {
-        // ترتيب الأحدث أولاً
-        const dateA = new Date(a.created_at || a.date || Date.now()).getTime();
-        const dateB = new Date(b.created_at || b.date || Date.now()).getTime();
-        return dateB - dateA;
-      }
-    });
+const sortedAndFilteredExpenses = [...safeExpenses]
+  .filter(exp => {
+    const term = searchTerm.toLowerCase();
+    const catLabel = t.categories[exp.category] || '';
+    return (
+      exp.title?.toLowerCase().includes(term) || 
+      catLabel.toLowerCase().includes(term) || 
+      String(exp.amount || '').includes(term)
+    );
+  })
+  .sort((a, b) => {
+    if (sortBy === 'amount') {
+      // 1. تنظيف الرقم تماماً من أي مسافات، نصوص، أو فواصل خاطئة (يزيل السالب أيضاً)
+      const cleanA = String(a.amount || 0).replace(/[^0-9.]/g, '');
+      const cleanB = String(b.amount || 0).replace(/[^0-9.]/g, '');
+      
+      // 2. تحويله إلى رقم حقيقي وتجاهل إشارة السالب
+      const valA = Math.abs(Number(cleanA) || 0);
+      const valB = Math.abs(Number(cleanB) || 0);
+      
+      // 3. الترتيب من الأكبر إلى الأصغر (التنازلي)
+      return valB - valA;
+    } else {
+      // ترتيب الأحدث أولاً
+      const dateA = new Date(a.created_at || a.date || Date.now()).getTime();
+      const dateB = new Date(b.created_at || b.date || Date.now()).getTime();
+      return dateB - dateA;
+    }
+  });
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
     <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300`}>
