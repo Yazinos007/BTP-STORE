@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import useExpenseStore from '../store/useExpenseStore'; 
-import { Receipt, Plus, TrendingDown, DollarSign, PieChart as PieChartIcon, CreditCard, Tag, Edit, Trash2, X, Search, Loader2 } from 'lucide-react';
+import { Receipt, Plus, TrendingDown, DollarSign, PieChart as PieChartIcon, CreditCard, Tag, Edit, Trash2, X, Search, Loader2, UploadCloud, CheckCircle, Paperclip } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const translations = {
@@ -59,7 +59,8 @@ export default function SupplierExpenses() {
   
   const [revenue, setRevenue] = useState(0);
   const [isLoadingUI, setIsLoadingUI] = useState(true);
-  const [formData, setFormData] = useState({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
+  const [formData, setFormData] = useState({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
+  const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,19 +89,54 @@ export default function SupplierExpenses() {
     }
   };
 
+  // دالة رفع الوثيقة الثبوتية إلى Supabase Storage
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from('uploads')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({ ...prev, receipt_url: urlData.publicUrl }));
+      
+    } catch (err) {
+      console.error('Error uploading:', err.message);
+      alert(language === 'fr' ? `Erreur de téléchargement: ${err.message}` : `فشل رفع الملف: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
-      // إرسال القيمة بالسالب إذا كان هذا هو المتوقع في النظام، أو كما يكتبها المستخدم
       const amountValue = formData.amount < 0 ? parseFloat(formData.amount) : -Math.abs(parseFloat(formData.amount));
       
       const payload = { 
         title: formData.title, 
         amount: amountValue, 
         category: formData.category, 
-        payment_method: formData.payment_method 
+        payment_method: formData.payment_method,
+        receipt_url: formData.receipt_url || null
       };
 
       let result;
@@ -111,10 +147,10 @@ export default function SupplierExpenses() {
       }
 
       if (result && result.success) {
-        setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
+        setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
         setEditingId(null);
       } else {
-        throw new Error("Opération refusée par la base de données");
+        throw new Error("Opération refusée");
       }
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
@@ -125,12 +161,12 @@ export default function SupplierExpenses() {
   };
 
   const handleEdit = (exp) => {
-    // جلب القيمة كقيمة موجبة للفورم لكي لا يرى المستخدم سالبين
     setFormData({ 
       title: exp.title, 
       amount: Math.abs(Number(exp.amount)), 
       category: exp.category, 
-      payment_method: exp.payment_method 
+      payment_method: exp.payment_method,
+      receipt_url: exp.receipt_url || ''
     });
     setEditingId(exp.id);
   };
@@ -141,15 +177,16 @@ export default function SupplierExpenses() {
     }
   };
   
-  const cancelEdit = () => { setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' }); setEditingId(null); };
+  const cancelEdit = () => { 
+    setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' }); 
+    setEditingId(null); 
+  };
 
   const titleSuggestions = [...new Set(expenses.map(exp => exp?.title).filter(Boolean))];
   
-  // 🎯 حساب الإجمالي مع تحويل كل المصاريف السلبية إلى موجبة
   const totalExpenses = expenses.reduce((sum, exp) => sum + Math.abs(Number(exp.amount)), 0);
   const netProfit = revenue - totalExpenses;
 
-  // 🎯 تجميع البيانات للرسم البياني بالقيم الموجبة (الرسم البياني لا يقبل السالب)
   const expensesByCategoryKey = expenses.reduce((acc, exp) => {
     acc[exp.category] = (acc[exp.category] || 0) + Math.abs(Number(exp.amount));
     return acc;
@@ -163,8 +200,7 @@ export default function SupplierExpenses() {
     fill: categoryColorMap[key] 
   }));
 
-  // 🎯 الفلترة والترتيب التنازلي القاطع
-  // نستخدم [...expenses] لاستنساخ المصفوفة وتجنب أخطاء Zustand
+  // 🎯 الفلترة والترتيب التنازلي الآمن والصارم (تجنب أخطاء القيم غير المعرفة NaN)
   const filteredExpenses = [...expenses]
     .filter(exp => {
       const term = searchTerm.toLowerCase();
@@ -177,10 +213,10 @@ export default function SupplierExpenses() {
       );
     })
     .sort((a, b) => {
-      // ترتيب تنازلي الأحدث في الأعلى
-      const dateA = new Date(a.created_at || 0).getTime();
-      const dateB = new Date(b.created_at || 0).getTime();
-      return dateB - dateA;
+      // حماية الأكواد من التواريخ غير المعرفة (تاريخ الأحدث يوضع في الأعلى دائماً)
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA; 
     });
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
@@ -240,9 +276,33 @@ export default function SupplierExpenses() {
                 {Object.entries(t.methods).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
               </select>
             </div>
+
+            {/* 📎 ميزة رفع الوثائق الثبوتية المستعادة */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
+                <Paperclip size={16} className="text-gray-400"/> {language === 'fr' ? 'Justificatif / Reçu' : 'الوثيقة الثبوتية / الوصل'}
+              </label>
+              <label className={`w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed rounded-xl cursor-pointer transition-all ${formData.receipt_url ? 'border-green-400 bg-green-50 text-green-600' : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
+                {isUploading ? (
+                  <Loader2 size={18} className="animate-spin text-blue-500" />
+                ) : formData.receipt_url ? (
+                  <><CheckCircle size={18} className="text-green-500" /> <span className="text-sm font-bold">{language === 'fr' ? 'Reçu chargé' : 'تم رفع الوصل بنجاح'}</span></>
+                ) : (
+                  <><UploadCloud size={18} /> <span className="text-sm font-medium">{language === 'fr' ? 'Cliquez pour charger' : 'اضغط لرفع الوصل'}</span></>
+                )}
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  onChange={handleFileUpload} 
+                  disabled={isUploading} 
+                  accept="image/png, image/jpeg, image/jpg, application/pdf" 
+                />
+              </label>
+            </div>
+
             <div className="flex gap-2 pt-2 mt-4 border-t border-gray-100">
               {editingId && ( <button type="button" onClick={cancelEdit} className="w-1/3 bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 font-bold transition-all flex items-center justify-center gap-1"><X size={16}/> {t.cancel}</button> )}
-              <button type="submit" disabled={isSubmitting} className={`${editingId ? 'w-2/3' : 'w-full'} bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30`}>{isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : (editingId ? t.editExpense : t.save)}</button>
+              <button type="submit" disabled={isSubmitting || isUploading} className={`${editingId ? 'w-2/3' : 'w-full'} bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30`}>{isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : (editingId ? t.editExpense : t.save)}</button>
             </div>
           </form>
         </div>
@@ -291,7 +351,23 @@ export default function SupplierExpenses() {
                       const currentCategoryColor = categoryColorMap[exp.category] || COLORS[COLORS.length - 1];
                       return (
                         <tr key={exp.id} className={`hover:bg-blue-50/30 transition-colors group ${editingId === exp.id ? 'bg-blue-50' : ''}`}>
-                          <td className="px-6 py-4 text-gray-800 font-bold">{exp.title}</td>
+                          <td className="px-6 py-4 text-gray-800 font-bold">
+                            <div className="flex items-center gap-2">
+                              {exp.title}
+                              {/* أيقونة فتح الوصل إذا كان متوفراً */}
+                              {exp.receipt_url && (
+                                <a 
+                                  href={exp.receipt_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-blue-500 hover:text-blue-700 inline-flex items-center" 
+                                  title="عرض الوثيقة"
+                                >
+                                  <Paperclip size={14} />
+                                </a>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-6 py-4">
                             <span className="px-3 py-1.5 rounded-lg text-xs font-black inline-flex items-center gap-1.5 border" style={{ backgroundColor: `${currentCategoryColor}10`, borderColor: `${currentCategoryColor}40`, color: currentCategoryColor }}>
                               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentCategoryColor }}></span>
