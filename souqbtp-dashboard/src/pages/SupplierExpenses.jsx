@@ -155,12 +155,13 @@ export default function SupplierExpenses() {
   const handleDelete = async (id) => { if (window.confirm(t.confirmDelete)) await deleteExpense(id); };
   const cancelEdit = () => { setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' }); setEditingId(null); };
 
-  const titleSuggestions = [...new Set(expenses.map(exp => exp?.title).filter(Boolean))];
-  const totalExpenses = expenses.reduce((sum, exp) => sum + Math.abs(Number(exp.amount)), 0);
+  const safeExpenses = Array.isArray(expenses) ? expenses : [];
+  const titleSuggestions = [...new Set(safeExpenses.map(exp => exp?.title).filter(Boolean))];
+  const totalExpenses = safeExpenses.reduce((sum, exp) => sum + Math.abs(Number(exp.amount || 0)), 0);
   const netProfit = revenue - totalExpenses;
 
-  const expensesByCategoryKey = expenses.reduce((acc, exp) => {
-    acc[exp.category] = (acc[exp.category] || 0) + Math.abs(Number(exp.amount));
+  const expensesByCategoryKey = safeExpenses.reduce((acc, exp) => {
+    acc[exp.category] = (acc[exp.category] || 0) + Math.abs(Number(exp.amount || 0));
     return acc;
   }, {});
   
@@ -168,24 +169,34 @@ export default function SupplierExpenses() {
   const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => { map[key] = COLORS[index % COLORS.length]; return map; }, {});
   const chartData = sortedCategoryKeys.map(key => ({ name: t.categories[key] || t.categories.other, value: expensesByCategoryKey[key], fill: categoryColorMap[key] }));
 
-  // 🎯 الفلترة والترتيب التنازلي المتقدم (تجاوز مشكلة السالب)
-  const filteredExpenses = [...expenses]
-    .map((exp, index) => ({ ...exp, originalIndex: index })) // للحفاظ على استقرار الترتيب للعناصر الجديدة
+  // 🎯 الدالة المدرعة للترتيب التنازلي الإجباري والفلترة 
+  const sortedAndFilteredExpenses = [...safeExpenses]
     .filter(exp => {
       const term = searchTerm.toLowerCase();
       const catLabel = t.categories[exp.category] || '';
-      const amountStr = Math.abs(Number(exp.amount)).toString();
-      return exp.title?.toLowerCase().includes(term) || catLabel.toLowerCase().includes(term) || amountStr.includes(term);
+      return (
+        exp.title?.toLowerCase().includes(term) || 
+        catLabel.toLowerCase().includes(term) || 
+        String(exp.amount || '').includes(term)
+      );
     })
     .sort((a, b) => {
       if (sortBy === 'amount') {
-        // ترتيب تنازلي حسب المبلغ (الأعلى أولاً) بتجاهل السالب
-        return Math.abs(Number(b.amount)) - Math.abs(Number(a.amount));
+        // 1. تنظيف الرقم تماماً من أي مسافات، نصوص، أو فواصل خاطئة (يزيل السالب أيضاً)
+        const cleanA = String(a.amount || 0).replace(/[^0-9.]/g, '');
+        const cleanB = String(b.amount || 0).replace(/[^0-9.]/g, '');
+        
+        // 2. تحويله إلى رقم حقيقي وتجاهل إشارة السالب
+        const valA = Math.abs(Number(cleanA) || 0);
+        const valB = Math.abs(Number(cleanB) || 0);
+        
+        // 3. الترتيب من الأكبر إلى الأصغر
+        return valB - valA;
       } else {
         // ترتيب الأحدث أولاً
-        const dateA = a.created_at ? new Date(a.created_at).getTime() : Date.now() + a.originalIndex;
-        const dateB = b.created_at ? new Date(b.created_at).getTime() : Date.now() + b.originalIndex;
-        return dateB - dateA; 
+        const dateA = new Date(a.created_at || a.date || Date.now()).getTime();
+        const dateB = new Date(b.created_at || b.date || Date.now()).getTime();
+        return dateB - dateA;
       }
     });
 
@@ -247,10 +258,11 @@ export default function SupplierExpenses() {
               </select>
             </div>
 
-            {/* ميزة رفع الوثائق */}
+            {/* ميزة رفع الوثائق أصبحت اختيارية مع توضيح ذلك في العنوان */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
-                <Paperclip size={16} className="text-gray-400"/> {language === 'fr' ? 'Justificatif / Reçu' : 'الوثيقة الثبوتية / الوصل'}
+                <Paperclip size={16} className="text-gray-400"/> 
+                {language === 'fr' ? 'Justificatif / Reçu (Optionnel)' : 'الوثيقة الثبوتية / الوصل (اختياري)'}
               </label>
               <label className={`w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed rounded-xl cursor-pointer transition-all ${formData.receipt_url ? 'border-green-400 bg-green-50 text-green-600' : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
                 {isUploading ? (
@@ -260,6 +272,7 @@ export default function SupplierExpenses() {
                 ) : (
                   <><UploadCloud size={18} /> <span className="text-sm font-medium">{language === 'fr' ? 'Cliquez pour charger' : 'اضغط لرفع الوصل'}</span></>
                 )}
+                {/* حقل الإدخال لا يحتوي على required */}
                 <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept="image/png, image/jpeg, image/jpg, application/pdf" />
               </label>
             </div>
@@ -289,14 +302,14 @@ export default function SupplierExpenses() {
             </div>
           )}
 
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-            {/* واجهة البحث وإضافة قائمة الترتيب المنسدلة */}
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden h-full">
             <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-2"> 
                 <Receipt size={20} className="text-gray-400" /> 
                 <h3 className="font-black text-gray-800">{t.history}</h3> 
               </div>
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                {/* قائمة اختيار نوع الترتيب */}
                 <select 
                   value={sortBy} 
                   onChange={(e) => setSortBy(e.target.value)}
@@ -312,7 +325,7 @@ export default function SupplierExpenses() {
               </div>
             </div>
             
-            {isLoadingUI ? ( <div className="p-12 text-center text-gray-500"><Loader2 size={30} className="animate-spin text-blue-500 mx-auto" /></div> ) : filteredExpenses.length === 0 ? ( <div className="p-12 text-center text-gray-400"><Receipt size={40} className="mx-auto mb-3 opacity-20" />{t.empty}</div> ) : (
+            {isLoadingUI ? ( <div className="p-12 text-center text-gray-500"><Loader2 size={30} className="animate-spin text-blue-500 mx-auto" /></div> ) : sortedAndFilteredExpenses.length === 0 ? ( <div className="p-12 text-center text-gray-400"><Receipt size={40} className="mx-auto mb-3 opacity-20" />{t.empty}</div> ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-start text-sm">
                   <thead className="border-b border-gray-100 bg-white">
@@ -325,7 +338,8 @@ export default function SupplierExpenses() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {filteredExpenses.map((exp) => {
+                    {/* استخدمنا المصفوفة المفلترة والمرتبة بشكل سليم */}
+                    {sortedAndFilteredExpenses.map((exp) => {
                       const currentCategoryColor = categoryColorMap[exp.category] || COLORS[COLORS.length - 1];
                       return (
                         <tr key={exp.id} className={`hover:bg-blue-50/30 transition-colors group ${editingId === exp.id ? 'bg-blue-50' : ''}`}>
@@ -344,7 +358,7 @@ export default function SupplierExpenses() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-gray-500 font-medium text-xs">
-                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at || new Date()))}
+                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at || exp.date || new Date()))}
                           </td>
                           <td className="px-6 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">
                             -{Math.abs(Number(exp.amount)).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
