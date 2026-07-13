@@ -14,6 +14,7 @@ const translations = {
     category: 'التصنيف', paymentMethod: 'طريقة الدفع', save: 'إضافة المصروف', saving: 'جاري التسجيل...',
     cancel: 'إلغاء', actions: 'إجراءات', confirmDelete: 'هل أنت متأكد من حذف هذا المصروف؟',
     history: 'سجل المصاريف', date: 'التاريخ', empty: 'لا توجد مصاريف مسجلة.', currency: 'درهم',
+    recentFirst: 'الأحدث أولاً', highestFirst: 'الأعلى مبلغاً',
     categories: { 
       achats: 'شراء السلع/المواد', carburant: 'المحروقات والطريق السيار',
       transport: 'النقل واللوجستيك', loyer: 'الكراء / الإيجار', 
@@ -34,6 +35,7 @@ const translations = {
     category: 'Catégorie', paymentMethod: 'Mode de Paiement', save: 'Ajouter la charge', saving: 'Enregistrement...',
     cancel: 'Annuler', actions: 'Actions', confirmDelete: 'Voulez-vous vraiment supprimer cette charge ?',
     history: 'Historique des charges', date: 'Date', empty: 'Aucune charge enregistrée.', currency: 'MAD',
+    recentFirst: 'Plus récent', highestFirst: 'Montant le plus élevé',
     categories: { 
       achats: 'Achat de marchandises', carburant: 'Carburant & Péage',
       transport: 'Transport & Logistique', loyer: 'Loyer & Charges locatives', 
@@ -64,6 +66,7 @@ export default function SupplierExpenses() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('date'); // حالة الترتيب: date أو amount
 
   useEffect(() => {
     if (supplier?.id) {
@@ -89,7 +92,6 @@ export default function SupplierExpenses() {
     }
   };
 
-  // دالة رفع الوثيقة الثبوتية إلى Supabase Storage
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -101,19 +103,11 @@ export default function SupplierExpenses() {
       
       const { data, error: uploadError } = await supabase.storage
         .from('uploads')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+        .upload(fileName, file, { cacheControl: '3600', upsert: false });
 
-      if (uploadError) {
-        throw new Error(uploadError.message);
-      }
+      if (uploadError) throw new Error(uploadError.message);
 
-      const { data: urlData } = supabase.storage
-        .from('uploads')
-        .getPublicUrl(fileName);
-
+      const { data: urlData } = supabase.storage.from('uploads').getPublicUrl(fileName);
       setFormData(prev => ({ ...prev, receipt_url: urlData.publicUrl }));
       
     } catch (err) {
@@ -130,21 +124,12 @@ export default function SupplierExpenses() {
     
     try {
       const amountValue = formData.amount < 0 ? parseFloat(formData.amount) : -Math.abs(parseFloat(formData.amount));
-      
       const payload = { 
-        title: formData.title, 
-        amount: amountValue, 
-        category: formData.category, 
-        payment_method: formData.payment_method,
-        receipt_url: formData.receipt_url || null
+        title: formData.title, amount: amountValue, category: formData.category, 
+        payment_method: formData.payment_method, receipt_url: formData.receipt_url || null
       };
 
-      let result;
-      if (editingId) {
-        result = await updateExpense(editingId, payload);
-      } else {
-        result = await addExpense(payload);
-      }
+      let result = editingId ? await updateExpense(editingId, payload) : await addExpense(payload);
 
       if (result && result.success) {
         setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
@@ -153,7 +138,6 @@ export default function SupplierExpenses() {
         throw new Error("Opération refusée");
       }
     } catch (error) {
-      console.error("Erreur d'enregistrement:", error);
       alert(language === 'fr' ? "Erreur lors de la sauvegarde." : "حدث خطأ أثناء الحفظ.");
     } finally {
       setIsSubmitting(false);
@@ -162,28 +146,16 @@ export default function SupplierExpenses() {
 
   const handleEdit = (exp) => {
     setFormData({ 
-      title: exp.title, 
-      amount: Math.abs(Number(exp.amount)), 
-      category: exp.category, 
-      payment_method: exp.payment_method,
-      receipt_url: exp.receipt_url || ''
+      title: exp.title, amount: Math.abs(Number(exp.amount)), 
+      category: exp.category, payment_method: exp.payment_method, receipt_url: exp.receipt_url || ''
     });
     setEditingId(exp.id);
   };
 
-  const handleDelete = async (id) => { 
-    if (window.confirm(t.confirmDelete)) {
-      await deleteExpense(id);
-    }
-  };
-  
-  const cancelEdit = () => { 
-    setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' }); 
-    setEditingId(null); 
-  };
+  const handleDelete = async (id) => { if (window.confirm(t.confirmDelete)) await deleteExpense(id); };
+  const cancelEdit = () => { setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' }); setEditingId(null); };
 
   const titleSuggestions = [...new Set(expenses.map(exp => exp?.title).filter(Boolean))];
-  
   const totalExpenses = expenses.reduce((sum, exp) => sum + Math.abs(Number(exp.amount)), 0);
   const netProfit = revenue - totalExpenses;
 
@@ -194,29 +166,27 @@ export default function SupplierExpenses() {
   
   const sortedCategoryKeys = Object.keys(expensesByCategoryKey).sort((a, b) => expensesByCategoryKey[b] - expensesByCategoryKey[a]);
   const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => { map[key] = COLORS[index % COLORS.length]; return map; }, {});
-  const chartData = sortedCategoryKeys.map(key => ({ 
-    name: t.categories[key] || t.categories.other, 
-    value: expensesByCategoryKey[key], 
-    fill: categoryColorMap[key] 
-  }));
+  const chartData = sortedCategoryKeys.map(key => ({ name: t.categories[key] || t.categories.other, value: expensesByCategoryKey[key], fill: categoryColorMap[key] }));
 
-  // 🎯 الفلترة والترتيب التنازلي الآمن والصارم (تجنب أخطاء القيم غير المعرفة NaN)
+  // 🎯 الفلترة والترتيب التنازلي المتقدم (تجاوز مشكلة السالب)
   const filteredExpenses = [...expenses]
+    .map((exp, index) => ({ ...exp, originalIndex: index })) // للحفاظ على استقرار الترتيب للعناصر الجديدة
     .filter(exp => {
       const term = searchTerm.toLowerCase();
       const catLabel = t.categories[exp.category] || '';
       const amountStr = Math.abs(Number(exp.amount)).toString();
-      return ( 
-        exp.title?.toLowerCase().includes(term) || 
-        catLabel.toLowerCase().includes(term) || 
-        amountStr.includes(term) 
-      );
+      return exp.title?.toLowerCase().includes(term) || catLabel.toLowerCase().includes(term) || amountStr.includes(term);
     })
     .sort((a, b) => {
-      // حماية الأكواد من التواريخ غير المعرفة (تاريخ الأحدث يوضع في الأعلى دائماً)
-      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return dateB - dateA; 
+      if (sortBy === 'amount') {
+        // ترتيب تنازلي حسب المبلغ (الأعلى أولاً) بتجاهل السالب
+        return Math.abs(Number(b.amount)) - Math.abs(Number(a.amount));
+      } else {
+        // ترتيب الأحدث أولاً
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : Date.now() + a.originalIndex;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : Date.now() + b.originalIndex;
+        return dateB - dateA; 
+      }
     });
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
@@ -277,7 +247,7 @@ export default function SupplierExpenses() {
               </select>
             </div>
 
-            {/* 📎 ميزة رفع الوثائق الثبوتية المستعادة */}
+            {/* ميزة رفع الوثائق */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
                 <Paperclip size={16} className="text-gray-400"/> {language === 'fr' ? 'Justificatif / Reçu' : 'الوثيقة الثبوتية / الوصل'}
@@ -290,13 +260,7 @@ export default function SupplierExpenses() {
                 ) : (
                   <><UploadCloud size={18} /> <span className="text-sm font-medium">{language === 'fr' ? 'Cliquez pour charger' : 'اضغط لرفع الوصل'}</span></>
                 )}
-                <input 
-                  type="file" 
-                  className="hidden" 
-                  onChange={handleFileUpload} 
-                  disabled={isUploading} 
-                  accept="image/png, image/jpeg, image/jpg, application/pdf" 
-                />
+                <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept="image/png, image/jpeg, image/jpg, application/pdf" />
               </label>
             </div>
 
@@ -326,11 +290,25 @@ export default function SupplierExpenses() {
           )}
 
           <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-            <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-2"> <Receipt size={20} className="text-gray-400" /> <h3 className="font-black text-gray-800">{t.history}</h3> </div>
-              <div className="relative w-full sm:w-72">
-                <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'right-3' : 'left-3'} text-gray-400`} />
-                <input type="text" placeholder={t.searchPlaceholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full ${language === 'ar' ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm font-medium bg-white transition-all`} />
+            {/* واجهة البحث وإضافة قائمة الترتيب المنسدلة */}
+            <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-2"> 
+                <Receipt size={20} className="text-gray-400" /> 
+                <h3 className="font-black text-gray-800">{t.history}</h3> 
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                <select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full sm:w-auto px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm font-bold bg-white text-gray-700 transition-all cursor-pointer"
+                >
+                  <option value="date">{t.recentFirst}</option>
+                  <option value="amount">{t.highestFirst}</option>
+                </select>
+                <div className="relative w-full sm:w-72">
+                  <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'right-3' : 'left-3'} text-gray-400`} />
+                  <input type="text" placeholder={t.searchPlaceholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full ${language === 'ar' ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm font-medium bg-white transition-all`} />
+                </div>
               </div>
             </div>
             
@@ -354,17 +332,8 @@ export default function SupplierExpenses() {
                           <td className="px-6 py-4 text-gray-800 font-bold">
                             <div className="flex items-center gap-2">
                               {exp.title}
-                              {/* أيقونة فتح الوصل إذا كان متوفراً */}
                               {exp.receipt_url && (
-                                <a 
-                                  href={exp.receipt_url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-blue-500 hover:text-blue-700 inline-flex items-center" 
-                                  title="عرض الوثيقة"
-                                >
-                                  <Paperclip size={14} />
-                                </a>
+                                <a href={exp.receipt_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 inline-flex items-center" title="عرض الوثيقة"><Paperclip size={14} /></a>
                               )}
                             </div>
                           </td>
