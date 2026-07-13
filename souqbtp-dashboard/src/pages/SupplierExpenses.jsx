@@ -123,22 +123,39 @@ export default function SupplierExpenses() {
     setIsSubmitting(true);
     
     try {
-      const amountValue = formData.amount < 0 ? parseFloat(formData.amount) : -Math.abs(parseFloat(formData.amount));
+      // 1. تنظيف القيمة دائماً وتحويلها إلى رقم سالب (لأنها مصاريف) 
+      // نأخذ القيمة المطلقة أولاً ثم نضربها في -1 لضمان الاتساق
+      const rawAmount = parseFloat(String(formData.amount).replace(/[^0-9.]/g, ''));
+      const finalAmount = -Math.abs(rawAmount);
+
       const payload = { 
-        title: formData.title, amount: amountValue, category: formData.category, 
-        payment_method: formData.payment_method, receipt_url: formData.receipt_url || null
+        title: formData.title, 
+        amount: finalAmount, 
+        category: formData.category, 
+        payment_method: formData.payment_method, 
+        receipt_url: formData.receipt_url || null
       };
 
-      let result = editingId ? await updateExpense(editingId, payload) : await addExpense(payload);
+      console.log("Sending payload:", payload); // للمراقبة في Console
 
-      if (result && result.success) {
+      let result;
+      if (editingId) {
+        result = await updateExpense(editingId, payload);
+      } else {
+        result = await addExpense(payload);
+      }
+
+      // 2. التحقق من النتيجة
+      if (result) {
         setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
         setEditingId(null);
+        alert(language === 'fr' ? "Enregistré avec succès !" : "تم التسجيل بنجاح!");
       } else {
-        throw new Error("Opération refusée");
+        throw new Error("Server returned no result");
       }
     } catch (error) {
-      alert(language === 'fr' ? "Erreur lors de la sauvegarde." : "حدث خطأ أثناء الحفظ.");
+      console.error("Save Error:", error);
+      alert(language === 'fr' ? "Erreur lors de la sauvegarde. Vérifiez votre connexion." : "حدث خطأ أثناء الحفظ. تأكد من اتصالك بالإنترنت.");
     } finally {
       setIsSubmitting(false);
     }
