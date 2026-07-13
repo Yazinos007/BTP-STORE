@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-import useExpenseStore from '../store/useExpenseStore'; // 🎯 استيراد المتجر المكتمل
+import useExpenseStore from '../store/useExpenseStore'; 
 import { Receipt, Plus, TrendingDown, DollarSign, PieChart as PieChartIcon, CreditCard, Tag, Edit, Trash2, X, Search, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -54,7 +54,6 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 export default function SupplierExpenses() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  // 🎯 استدعاء دوال المتجر بالكامل
   const { expenses, fetchExpenses, addExpense, updateExpense, deleteExpense } = useExpenseStore();
   const t = translations[language];
   
@@ -89,7 +88,6 @@ export default function SupplierExpenses() {
     }
   };
 
-  // 🛡️ دالة الحفظ المحمية تماماً ضد التعليق
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -119,7 +117,6 @@ export default function SupplierExpenses() {
       console.error("Erreur d'enregistrement:", error);
       alert(language === 'fr' ? "Erreur lors de la sauvegarde." : "حدث خطأ أثناء الحفظ.");
     } finally {
-      // ✅ سيفك التعليق عن الزر دائماً
       setIsSubmitting(false);
     }
   };
@@ -149,11 +146,14 @@ export default function SupplierExpenses() {
   const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => { map[key] = COLORS[index % COLORS.length]; return map; }, {});
   const chartData = sortedCategoryKeys.map(key => ({ name: t.categories[key] || t.categories.other, value: expensesByCategoryKey[key], fill: categoryColorMap[key] }));
 
-  const filteredExpenses = expenses.filter(exp => {
-    const term = searchTerm.toLowerCase();
-    const catLabel = t.categories[exp.category] || '';
-    return ( exp.title?.toLowerCase().includes(term) || catLabel.toLowerCase().includes(term) || exp.amount?.toString().includes(term) );
-  });
+  // 🎯 التعديل هنا: إضافة الترتيب التنازلي حسب التاريخ (الأحدث أولاً)
+  const filteredExpenses = expenses
+    .filter(exp => {
+      const term = searchTerm.toLowerCase();
+      const catLabel = t.categories[exp.category] || '';
+      return ( exp.title?.toLowerCase().includes(term) || catLabel.toLowerCase().includes(term) || exp.amount?.toString().includes(term) );
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // <-- سطر الفلترة التنازلية الجديد
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
     <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300`}>
@@ -224,7 +224,6 @@ export default function SupplierExpenses() {
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <h3 className="font-bold text-gray-800 mb-4">{t.analytics}</h3>
               <div className="w-full">
-                {/* 🎯 الحل القاطع لانهيار الرسم البياني: إعطاء ارتفاع ثابت 300 */}
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie data={chartData} cx="50%" cy="50%" innerRadius={70} outerRadius={90} paddingAngle={5} dataKey="value" stroke="none">
