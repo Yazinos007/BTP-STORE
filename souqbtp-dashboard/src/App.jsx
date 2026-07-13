@@ -51,21 +51,81 @@ import Purchases from './pages/Purchases';
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
 
-// 🛡️ لوحة المورد الكبير المحصنة
+// 🛡️ لوحة المورد الكبير المحصنة مع المستشعرات الذكية
 const WholesalerDashboard = ({ supplier, children }) => {
   const { language } = useSettingsStore();
+  
+  // 🌟 حالات نبض الإشعارات
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const [readyToShipCount, setReadyToShipCount] = useState(0);
+
+  // 🌟 المستشعر الذكي (يقرأ الطلبات، يحدّث النبض، ويسجل العملاء تلقائياً في الـ CRM)
+  useEffect(() => {
+    if (!supplier?.id) return;
+
+    const syncSmartData = async () => {
+      // 1. جلب الطلبات الواردة
+      const { data: orders } = await supabase
+        .from('supply_requests')
+        .select('status, merchant_id')
+        .eq('supplier_id', supplier.id);
+
+      if (orders) {
+        // تحديث أرقام النبض
+        setPendingOrdersCount(orders.filter(o => o.status === 'pending').length);
+        setReadyToShipCount(orders.filter(o => o.status === 'signed').length);
+
+        // 2. 🤖 المزامنة التلقائية مع الـ CRM
+        const uniqueMerchantIds = [...new Set(orders.map(o => o.merchant_id).filter(Boolean))];
+        if (uniqueMerchantIds.length > 0) {
+          // جلب أسماء العملاء المسجلين حالياً لتفادي التكرار
+          const { data: currentClients } = await supabase.from('clients').select('full_name').eq('supplier_id', supplier.id);
+          const clientNamesSet = new Set(currentClients?.map(c => c.full_name) || []);
+
+          // جلب بيانات التجار الذين أرسلوا الطلبات
+          const { data: merchants } = await supabase.from('suppliers').select('id, store_name, phone').in('id', uniqueMerchantIds);
+
+          if (merchants) {
+            for (const merchant of merchants) {
+              const name = merchant.store_name || 'Client B2B';
+              // إذا لم يكن العميل مسجلاً في الـ CRM، قم بتسجيله فوراً
+              if (!clientNamesSet.has(name)) {
+                await supabase.from('clients').insert({
+                  supplier_id: supplier.id,
+                  full_name: name,
+                  phone: merchant.phone || '',
+                  total_debt: 0 // يبدأ الدين من صفر حتى تكتمل الفاتورة
+                });
+                clientNamesSet.add(name); // إضافته للمجموعة المؤقتة لمنع تكراره في نفس اللفة
+              }
+            }
+          }
+        }
+      }
+    };
+
+    syncSmartData();
+
+    // تشغيل الرادار اللحظي (يتحدث النبض فور إرسال أي طلب أو إمضائه)
+    const channel = supabase.channel('wholesaler-smart-radar')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'supply_requests', filter: `supplier_id=eq.${supplier.id}` }, () => {
+        syncSmartData();
+      }).subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [supplier]);
   
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Overview' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
-    { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients & Dettes' : 'العملاء والديون (CRM)' },
-    { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة' },
-    { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل' },
+    { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients & Dettes' : 'العملاء والديون (CRM)' }, 
+    { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة', badge: pendingOrdersCount },
+    { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل', badge: readyToShipCount },  
     { path: '/contracts', icon: FileSignature, label: language === 'fr' ? 'Contrats & Signatures' : 'المصافحة الرقمية' },
     { path: '/invoices', icon: FileText, label: language === 'fr' ? 'Factures B2B' : 'الفواتير الكبرى' },
     { path: '/hr', icon: Users, label: language === 'fr' ? 'Ressources Humaines' : 'الموارد البشرية' },
-    { path: '/expenses', icon: Receipt, label: language === 'fr' ? 'Gestion des Charges' : 'إدارة المصاريف' },
     { path: '/caisses', icon: Wallet, label: language === 'fr' ? 'Caisses & Banques' : 'الصناديق والحسابات' },
+    { path: '/expenses', icon: Receipt, label: language === 'fr' ? 'Gestion des Charges' : 'إدارة المصاريف' },
     { path: '/fiscal', icon: Landmark, label: language === 'fr' ? 'Système Fiscal' : 'النظام الجبائي (TVA)' },
     { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
     { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
@@ -88,11 +148,19 @@ const WholesalerDashboard = ({ supplier, children }) => {
             {language === 'fr' ? 'Passer à l\'Enterprise' : 'ترقية للباقة الذهبية'}
           </Link>
         </div>
-        <nav className="flex-1 py-4 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
-            <Link key={item.path} to={item.path} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-slate-400 hover:text-white hover:bg-slate-800/80 group">
-              <item.icon size={20} className="group-hover:text-blue-400 transition-colors" />
-              {item.label}
+            <Link key={item.path} to={item.path} className="flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all text-slate-400 hover:text-white hover:bg-slate-800/80 group">
+              <div className="flex items-center gap-3">
+                <item.icon size={20} className="group-hover:text-blue-400 transition-colors" />
+                {item.label}
+              </div>
+              {/* 🌟 شارة النبض الحمراء */}
+              {item.badge > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
@@ -217,9 +285,9 @@ function App() {
               <Routes>
                 <Route path="/" element={<SupplierOverview />} />
                 <Route path="/stock" element={<SupplierStock />} />
-                <Route path="/clients" element={<Clients />} /> {/* 🌟 استخدام صفحة Clients الموجودة */}
-                <Route path="/caisses" element={<Caisses />} /> {/* 🌟 استخدام صفحة Caisses الموجودة */}
-                <Route path="/fiscal" element={<Fiscal />} />   {/* 🌟 استخدام صفحة Fiscal الموجودة */}
+                <Route path="/clients" element={<Clients />} /> 
+                <Route path="/caisses" element={<Caisses />} /> 
+                <Route path="/fiscal" element={<Fiscal />} />   
                 <Route path="/orders" element={<SupplierOrders />} />
                 <Route path="/fleet" element={<Fleet />} />
                 <Route path="/contracts" element={<Contracts />} />
@@ -235,30 +303,24 @@ function App() {
               </Routes>
             </WholesalerDashboard>
           ) : (
-            // 🛡️ لوحة تاجر التجزئة المحصنة بالكامل
             <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-              
               <div className="shrink-0 flex h-full">
                 <Sidebar />
               </div>
-              
               <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full">
                 <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
                   <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate pr-4">
                     {language === 'fr' ? 'Bienvenue, ' : 'مرحباً بك، '} <span className="text-blue-600 truncate">{storeName}</span>
                   </h2>
-                  
                   <div className="flex items-center gap-3 md:gap-4 shrink-0">
                     <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
                        <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : 'إدارة سلع المتجر'}</span>
                     </Link>
-                    
                     <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
                       {storeInitial}
                     </div>
                   </div>
                 </header>
-                
                 <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full">
                   <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
                     <Routes>
