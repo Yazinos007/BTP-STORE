@@ -12,6 +12,7 @@ export default function SupplierInvoices() {
   
   const [invoices, setInvoices] = useState([]);
   const [merchants, setMerchants] = useState({});
+  const [b2bNames, setB2bNames] = useState({}); // 🌟 حالة جديدة لحفظ أسماء التجار الآليين
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('All');
@@ -28,7 +29,6 @@ export default function SupplierInvoices() {
       const { data: myProducts } = await supabase.from('products').select('name').eq('supplier_id', targetId);
       const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
 
-      // جلب الفواتير ووصولات التسليم فقط (استبعاد فواتير الشراء)
       const { data: allDocs, error } = await supabase
         .from('documents')
         .select('*') 
@@ -38,13 +38,40 @@ export default function SupplierInvoices() {
       if (error) throw error;
 
       const myInvoices = (allDocs || []).filter(doc => 
-        (doc.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
+        (doc.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase())) || doc.owner_id === targetId
       );
 
       setInvoices(myInvoices);
 
-      const clientIds = [...new Set(myInvoices.map(d => d.client_id))].filter(id => id);
+      // 1. جلب أسماء العملاء العاديين من الـ CRM
+      const clientIds = [...new Set(myInvoices.map(d => d.client_id))].filter(Boolean);
       clientIds.forEach(id => fetchMerchantData(id));
+
+      // 2. 🌟 الخوارزمية الذكية: مطابقة الفواتير الآلية واستخراج أسماء التجار
+      const b2bDocs = myInvoices.filter(d => !d.client_id && (d.ref_number || '').includes('-B2B-'));
+      
+      if (b2bDocs.length > 0) {
+          const { data: pInvs } = await supabase.from('purchase_invoices').select('invoice_number, supplier_id');
+          const { data: allMerchants } = await supabase.from('suppliers').select('id, store_name');
+          
+          const merchantDict = {};
+          allMerchants?.forEach(m => merchantDict[m.id] = m.store_name);
+
+          const newB2BNames = {};
+          pInvs?.forEach(pinv => {
+              const suffix = (pinv.invoice_number || '').split('-B2B-')[1];
+              if (suffix) {
+                  const matchedDocs = b2bDocs.filter(d => (d.ref_number || '').endsWith(`-B2B-${suffix}`));
+                  matchedDocs.forEach(d => {
+                      if (merchantDict[pinv.supplier_id]) {
+                          newB2BNames[d.id] = merchantDict[pinv.supplier_id];
+                      }
+                  });
+              }
+          });
+          setB2bNames(newB2BNames);
+      }
+
     } catch (err) {
       console.error('Error fetching invoices:', err);
     } finally {
@@ -54,14 +81,31 @@ export default function SupplierInvoices() {
 
   const fetchMerchantData = async (id) => {
     if (merchants[id]) return;
-    const { data } = await supabase.from('suppliers').select('store_name').eq('id', id).single();
-    if (data) setMerchants(prev => ({ ...prev, [id]: data }));
+    
+    // 🌟 البحث أولاً في جدول العملاء (CRM)
+    const { data: clientData } = await supabase.from('clients').select('full_name').eq('id', id).single();
+    if (clientData) {
+       setMerchants(prev => ({ ...prev, [id]: { store_name: clientData.full_name } }));
+       return;
+    }
+    
+    // 🌟 إذا لم يوجد، نبحث في جدول الموردين
+    const { data: supData } = await supabase.from('suppliers').select('store_name').eq('id', id).single();
+    if (supData) {
+       setMerchants(prev => ({ ...prev, [id]: supData }));
+    }
+  };
+
+  // 🌟 دالة مساعدة لجلب الاسم الصحيح دائماً
+  const getClientName = (inv) => {
+    if (merchants[inv.client_id]?.store_name) return merchants[inv.client_id].store_name;
+    if (b2bNames[inv.id]) return b2bNames[inv.id];
+    return language === 'fr' ? 'Client B2B (Auto)' : 'تاجر B2B';
   };
 
   const handleDownloadPDF = async (invoice) => {
-    const merchantName = merchants[invoice.client_id]?.store_name || (language === 'fr' ? 'Client B2B (Automatique)' : 'تاجر B2B (تلقائي)');
+    const merchantName = getClientName(invoice);
     
-    // 🎯 التعديل الأول: إضافة التوقيت الدقيق في ملف الـ PDF
     const date = new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA', { 
       day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
     }).format(new Date(invoice.created_at));
@@ -145,7 +189,7 @@ export default function SupplierInvoices() {
   };
 
   const filteredInvoices = invoices.filter(inv => {
-    const merchantName = merchants[inv.client_id]?.store_name || 'Client B2B';
+    const merchantName = getClientName(inv);
     const matchesSearch = (inv.ref_number || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           merchantName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'All' || inv.type === filterType;
@@ -210,10 +254,12 @@ export default function SupplierInvoices() {
                 filteredInvoices.map(inv => (
                   <tr key={inv.id} className="hover:bg-slate-700/30 transition-colors group">
                     <td className="p-5 font-black text-emerald-400">#{inv.ref_number}</td>
+                    
+                    {/* 🌟 استدعاء الاسم الصحيح هنا */}
                     <td className="p-5 font-bold text-white">
-                      {merchants[inv.client_id]?.store_name || (language === 'fr' ? 'Client B2B (Auto)' : 'تاجر B2B')}
+                      {getClientName(inv)}
                     </td>
-                    {/* 🎯 التعديل الثاني: إضافة التوقيت لعمود التاريخ في الجدول */}
+                    
                     <td className="p-5 text-slate-400 text-sm font-medium">
                       {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA', { 
                         day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
