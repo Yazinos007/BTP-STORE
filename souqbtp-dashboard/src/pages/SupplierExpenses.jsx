@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import useExpenseStore from '../store/useExpenseStore'; 
-import { Receipt, Plus, TrendingDown, DollarSign, PieChart as PieChartIcon, CreditCard, Tag, Edit, Trash2, X, Search, Loader2, UploadCloud, CheckCircle, Paperclip } from 'lucide-react';
+import { Receipt, Plus, TrendingDown, DollarSign, PieChart as PieChartIcon, CreditCard, Tag, Edit, Trash2, X, Search, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const translations = {
@@ -14,8 +14,6 @@ const translations = {
     category: 'التصنيف', paymentMethod: 'طريقة الدفع', save: 'إضافة المصروف', saving: 'جاري التسجيل...',
     cancel: 'إلغاء', actions: 'إجراءات', confirmDelete: 'هل أنت متأكد من حذف هذا المصروف؟',
     history: 'سجل المصاريف', date: 'التاريخ', empty: 'لا توجد مصاريف مسجلة.', currency: 'درهم',
-    receipt: 'المرفق', uploadReceipt: 'إرفاق إيصال / صورة', clickToUpload: 'اضغط لرفع ملف (اختياري)',
-    uploading: 'جاري الرفع...', uploadSuccess: 'تم الرفع بنجاح!', viewReceipt: 'عرض الإيصال',
     categories: { 
       achats: 'شراء السلع/المواد', carburant: 'المحروقات والطريق السيار',
       transport: 'النقل واللوجستيك', loyer: 'الكراء / الإيجار', 
@@ -36,8 +34,6 @@ const translations = {
     category: 'Catégorie', paymentMethod: 'Mode de Paiement', save: 'Ajouter la charge', saving: 'Enregistrement...',
     cancel: 'Annuler', actions: 'Actions', confirmDelete: 'Voulez-vous vraiment supprimer cette charge ?',
     history: 'Historique des charges', date: 'Date', empty: 'Aucune charge enregistrée.', currency: 'MAD',
-    receipt: 'Reçu', uploadReceipt: 'Joindre un reçu', clickToUpload: 'Cliquez pour uploader (Optionnel)',
-    uploading: 'Téléchargement...', uploadSuccess: 'Téléchargé avec succès!', viewReceipt: 'Voir le reçu',
     categories: { 
       achats: 'Achat de marchandises', carburant: 'Carburant & Péage',
       transport: 'Transport & Logistique', loyer: 'Loyer & Charges locatives', 
@@ -63,8 +59,7 @@ export default function SupplierExpenses() {
   
   const [revenue, setRevenue] = useState(0);
   const [isLoadingUI, setIsLoadingUI] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
-  const [formData, setFormData] = useState({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
+  const [formData, setFormData] = useState({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,46 +88,19 @@ export default function SupplierExpenses() {
     }
   };
 
-  // 🎯 دالة رفع الملفات إلى Supabase
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('uploads') // تأكد من اسم الحاوية في Supabase Storage
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('uploads')
-        .getPublicUrl(fileName);
-
-      setFormData(prev => ({ ...prev, receipt_url: urlData.publicUrl }));
-    } catch (err) {
-      console.error('Error uploading:', err);
-      alert(language === 'fr' ? "Erreur de téléchargement" : "حدث خطأ أثناء رفع الملف");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
+      // إرسال القيمة بالسالب إذا كان هذا هو المتوقع في النظام، أو كما يكتبها المستخدم
+      const amountValue = formData.amount < 0 ? parseFloat(formData.amount) : -Math.abs(parseFloat(formData.amount));
+      
       const payload = { 
         title: formData.title, 
-        amount: parseFloat(formData.amount), 
+        amount: amountValue, 
         category: formData.category, 
-        payment_method: formData.payment_method,
-        receipt_url: formData.receipt_url // 🎯 إضافة الرابط للبيانات المُرسلة
+        payment_method: formData.payment_method 
       };
 
       let result;
@@ -143,10 +111,10 @@ export default function SupplierExpenses() {
       }
 
       if (result && result.success) {
-        setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
+        setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' });
         setEditingId(null);
       } else {
-        throw new Error("Opération refusée");
+        throw new Error("Opération refusée par la base de données");
       }
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
@@ -157,7 +125,13 @@ export default function SupplierExpenses() {
   };
 
   const handleEdit = (exp) => {
-    setFormData({ title: exp.title, amount: exp.amount, category: exp.category, payment_method: exp.payment_method, receipt_url: exp.receipt_url || '' });
+    // جلب القيمة كقيمة موجبة للفورم لكي لا يرى المستخدم سالبين
+    setFormData({ 
+      title: exp.title, 
+      amount: Math.abs(Number(exp.amount)), 
+      category: exp.category, 
+      payment_method: exp.payment_method 
+    });
     setEditingId(exp.id);
   };
 
@@ -167,34 +141,47 @@ export default function SupplierExpenses() {
     }
   };
   
-  const cancelEdit = () => { setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' }); setEditingId(null); };
+  const cancelEdit = () => { setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash' }); setEditingId(null); };
 
   const titleSuggestions = [...new Set(expenses.map(exp => exp?.title).filter(Boolean))];
+  
+  // 🎯 حساب الإجمالي مع تحويل كل المصاريف السلبية إلى موجبة
   const totalExpenses = expenses.reduce((sum, exp) => sum + Math.abs(Number(exp.amount)), 0);
   const netProfit = revenue - totalExpenses;
 
+  // 🎯 تجميع البيانات للرسم البياني بالقيم الموجبة (الرسم البياني لا يقبل السالب)
   const expensesByCategoryKey = expenses.reduce((acc, exp) => {
-    acc[exp.category] = (acc[exp.category] || 0) + Number(exp.amount);
+    acc[exp.category] = (acc[exp.category] || 0) + Math.abs(Number(exp.amount));
     return acc;
   }, {});
+  
   const sortedCategoryKeys = Object.keys(expensesByCategoryKey).sort((a, b) => expensesByCategoryKey[b] - expensesByCategoryKey[a]);
   const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => { map[key] = COLORS[index % COLORS.length]; return map; }, {});
-  const chartData = sortedCategoryKeys.map(key => ({ name: t.categories[key] || t.categories.other, value: expensesByCategoryKey[key], fill: categoryColorMap[key] }));
+  const chartData = sortedCategoryKeys.map(key => ({ 
+    name: t.categories[key] || t.categories.other, 
+    value: expensesByCategoryKey[key], 
+    fill: categoryColorMap[key] 
+  }));
 
+  // 🎯 الفلترة والترتيب التنازلي القاطع
+  // نستخدم [...expenses] لاستنساخ المصفوفة وتجنب أخطاء Zustand
   const filteredExpenses = [...expenses]
     .filter(exp => {
       const term = searchTerm.toLowerCase();
       const catLabel = t.categories[exp.category] || '';
-      // استخدام Math.abs لضمان عمل البحث عن الرقم حتى لو كان مسجلاً بالسالب
-      const amountStr = Math.abs(Number(exp.amount)).toString(); 
-      
+      const amountStr = Math.abs(Number(exp.amount)).toString();
       return ( 
         exp.title?.toLowerCase().includes(term) || 
         catLabel.toLowerCase().includes(term) || 
         amountStr.includes(term) 
       );
     })
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .sort((a, b) => {
+      // ترتيب تنازلي الأحدث في الأعلى
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return dateB - dateA;
+    });
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
     <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300`}>
@@ -234,7 +221,6 @@ export default function SupplierExpenses() {
               <input type="text" list="titles-list" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 font-medium transition-all" placeholder="Ex: Achat fournitures..." autoComplete="off" />
               <datalist id="titles-list">{titleSuggestions.map((title, i) => <option key={i} value={title} />)}</datalist>
             </div>
-            
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">{t.amount}</label>
               <div className="relative">
@@ -242,42 +228,21 @@ export default function SupplierExpenses() {
                 <span className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'left-4' : 'right-4'} text-xs font-bold text-gray-400`}>{t.currency}</span>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-2 flex items-center gap-1"><Tag size={14} className="text-gray-400"/> {t.category}</label>
-                <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 outline-none bg-white font-medium text-gray-700 text-sm">
-                  {Object.entries(t.categories).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-2 flex items-center gap-1"><CreditCard size={14} className="text-gray-400"/> {t.paymentMethod}</label>
-                <select value={formData.payment_method} onChange={(e) => setFormData({...formData, payment_method: e.target.value})} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 outline-none bg-white font-medium text-gray-700 text-sm">
-                  {Object.entries(t.methods).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
-                </select>
-              </div>
-            </div>
-
-            {/* 🎯 قسم رفع الإيصال */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
-                <Paperclip size={16} className="text-gray-400"/> {t.uploadReceipt}
-              </label>
-              <label className={`w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed rounded-xl cursor-pointer transition-all ${formData.receipt_url ? 'border-green-400 bg-green-50 text-green-600' : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                {isUploading ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : formData.receipt_url ? (
-                  <><CheckCircle size={18} /> <span className="text-sm font-bold">{t.uploadSuccess}</span></>
-                ) : (
-                  <><UploadCloud size={18} /> <span className="text-sm font-medium">{t.clickToUpload}</span></>
-                )}
-                <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept="image/*,application/pdf" />
-              </label>
+              <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1"><Tag size={16} className="text-gray-400"/> {t.category}</label>
+              <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-white font-medium text-gray-700 transition-all shadow-sm">
+                {Object.entries(t.categories).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
+              </select>
             </div>
-
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1"><CreditCard size={16} className="text-gray-400"/> {t.paymentMethod}</label>
+              <select value={formData.payment_method} onChange={(e) => setFormData({...formData, payment_method: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-white font-medium text-gray-700 transition-all shadow-sm">
+                {Object.entries(t.methods).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
+              </select>
+            </div>
             <div className="flex gap-2 pt-2 mt-4 border-t border-gray-100">
               {editingId && ( <button type="button" onClick={cancelEdit} className="w-1/3 bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 font-bold transition-all flex items-center justify-center gap-1"><X size={16}/> {t.cancel}</button> )}
-              <button type="submit" disabled={isSubmitting || isUploading} className={`${editingId ? 'w-2/3' : 'w-full'} bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30`}>{isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : (editingId ? t.editExpense : t.save)}</button>
+              <button type="submit" disabled={isSubmitting} className={`${editingId ? 'w-2/3' : 'w-full'} bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30`}>{isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : (editingId ? t.editExpense : t.save)}</button>
             </div>
           </form>
         </div>
@@ -314,12 +279,11 @@ export default function SupplierExpenses() {
                 <table className="w-full text-start text-sm">
                   <thead className="border-b border-gray-100 bg-white">
                     <tr>
-                      <th className="px-4 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.desc}</th>
-                      <th className="px-4 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.category}</th>
-                      <th className="px-4 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.date}</th>
-                      <th className="px-4 py-4 text-gray-400 font-black text-center uppercase tracking-wider text-xs">{t.receipt}</th>
-                      <th className="px-4 py-4 text-gray-400 font-black text-end uppercase tracking-wider text-xs">{t.amount}</th>
-                      <th className="px-4 py-4 text-gray-400 font-black text-center uppercase tracking-wider text-xs">{t.actions}</th>
+                      <th className="px-6 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.desc}</th>
+                      <th className="px-6 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.category}</th>
+                      <th className="px-6 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.date}</th>
+                      <th className="px-6 py-4 text-gray-400 font-black text-end uppercase tracking-wider text-xs">{t.amount}</th>
+                      <th className="px-6 py-4 text-gray-400 font-black text-center uppercase tracking-wider text-xs">{t.actions}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -327,30 +291,20 @@ export default function SupplierExpenses() {
                       const currentCategoryColor = categoryColorMap[exp.category] || COLORS[COLORS.length - 1];
                       return (
                         <tr key={exp.id} className={`hover:bg-blue-50/30 transition-colors group ${editingId === exp.id ? 'bg-blue-50' : ''}`}>
-                          <td className="px-4 py-4 text-gray-800 font-bold">{exp.title}</td>
-                          <td className="px-4 py-4">
+                          <td className="px-6 py-4 text-gray-800 font-bold">{exp.title}</td>
+                          <td className="px-6 py-4">
                             <span className="px-3 py-1.5 rounded-lg text-xs font-black inline-flex items-center gap-1.5 border" style={{ backgroundColor: `${currentCategoryColor}10`, borderColor: `${currentCategoryColor}40`, color: currentCategoryColor }}>
                               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentCategoryColor }}></span>
                               {t.categories[exp.category] || t.categories.other}
                             </span>
                           </td>
-                          <td className="px-4 py-4 text-gray-500 font-medium text-xs">
-                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at))}
+                          <td className="px-6 py-4 text-gray-500 font-medium text-xs">
+                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at || new Date()))}
                           </td>
-                          {/* 🎯 زر الإيصال في الجدول */}
-                          <td className="px-4 py-4 text-center">
-                            {exp.receipt_url ? (
-                              <a href={exp.receipt_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center p-2 bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 rounded-lg transition-colors" title={t.viewReceipt}>
-                                <Paperclip size={16} />
-                              </a>
-                            ) : (
-                              <span className="text-gray-300">-</span>
-                            )}
+                          <td className="px-6 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">
+                            -{Math.abs(Number(exp.amount)).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
                           </td>
-                          <td className="px-4 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">
-                          -{Math.abs(Number(exp.amount)).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
-                          </td>
-                          <td className="px-4 py-4">
+                          <td className="px-6 py-4">
                             <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <button onClick={() => handleEdit(exp)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title={t.editExpense}><Edit size={16}/></button>
                               <button onClick={() => handleDelete(exp.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Supprimer"><Trash2 size={16}/></button>
