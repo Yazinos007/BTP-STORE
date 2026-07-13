@@ -123,39 +123,30 @@ export default function SupplierExpenses() {
     setIsSubmitting(true);
     
     try {
-      // 1. تنظيف القيمة دائماً وتحويلها إلى رقم سالب (لأنها مصاريف) 
-      // نأخذ القيمة المطلقة أولاً ثم نضربها في -1 لضمان الاتساق
-      const rawAmount = parseFloat(String(formData.amount).replace(/[^0-9.]/g, ''));
-      const finalAmount = -Math.abs(rawAmount);
+      // إرسال الرقم كموجب دائماً (هذا يحل مشكلة رفض السيرفر للأرقام السالبة)
+      const rawAmount = parseFloat(String(formData.amount || 0).replace(/[^0-9.]/g, ''));
+      const finalAmount = Math.abs(rawAmount); 
 
       const payload = { 
         title: formData.title, 
-        amount: finalAmount, 
+        amount: finalAmount, // الآن هو رقم موجب
         category: formData.category, 
         payment_method: formData.payment_method, 
         receipt_url: formData.receipt_url || null
       };
 
-      console.log("Sending payload:", payload); // للمراقبة في Console
-
-      let result;
       if (editingId) {
-        result = await updateExpense(editingId, payload);
+        await updateExpense(editingId, payload);
       } else {
-        result = await addExpense(payload);
+        await addExpense(payload);
       }
 
-      // 2. التحقق من النتيجة
-      if (result) {
-        setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
-        setEditingId(null);
-        alert(language === 'fr' ? "Enregistré avec succès !" : "تم التسجيل بنجاح!");
-      } else {
-        throw new Error("Server returned no result");
-      }
+      setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
+      setEditingId(null);
+      alert("تم الحفظ بنجاح");
     } catch (error) {
-      console.error("Save Error:", error);
-      alert(language === 'fr' ? "Erreur lors de la sauvegarde. Vérifiez votre connexion." : "حدث خطأ أثناء الحفظ. تأكد من اتصالك بالإنترنت.");
+      console.error("خطأ الحفظ التفصيلي:", error);
+      alert("خطأ أثناء الحفظ: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -229,6 +220,30 @@ const sortedAndFilteredExpenses = [...safeExpenses]
       </div>
     </div>
   );
+
+  const sortedAndFilteredExpenses = useMemo(() => {
+    let list = [...(Array.isArray(expenses) ? expenses : [])];
+
+    // الفلترة
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter(exp => 
+        (exp.title || '').toLowerCase().includes(term) || 
+        String(exp.amount || '').includes(term)
+      );
+    }
+
+    // الترتيب
+    return list.sort((a, b) => {
+      if (sortBy === 'amount') {
+        // بما أنها أرقام موجبة الآن، الترتيب مباشر
+        return Number(b.amount || 0) - Number(a.amount || 0);
+      } else {
+        // الترتيب حسب التاريخ
+        return new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0);
+      }
+    });
+  }, [expenses, searchTerm, sortBy]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
