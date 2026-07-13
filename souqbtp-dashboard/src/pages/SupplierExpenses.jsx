@@ -170,7 +170,7 @@ export default function SupplierExpenses() {
   const cancelEdit = () => { setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' }); setEditingId(null); };
 
   const titleSuggestions = [...new Set(expenses.map(exp => exp?.title).filter(Boolean))];
-  const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+  const totalExpenses = expenses.reduce((sum, exp) => sum + Math.abs(Number(exp.amount)), 0);
   const netProfit = revenue - totalExpenses;
 
   const expensesByCategoryKey = expenses.reduce((acc, exp) => {
@@ -181,14 +181,20 @@ export default function SupplierExpenses() {
   const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => { map[key] = COLORS[index % COLORS.length]; return map; }, {});
   const chartData = sortedCategoryKeys.map(key => ({ name: t.categories[key] || t.categories.other, value: expensesByCategoryKey[key], fill: categoryColorMap[key] }));
 
-  // 🎯 الترتيب التنازلي حسب التاريخ لضمان ظهور الأحدث أولاً
-  const filteredExpenses = expenses
+  const filteredExpenses = [...expenses]
     .filter(exp => {
       const term = searchTerm.toLowerCase();
       const catLabel = t.categories[exp.category] || '';
-      return ( exp.title?.toLowerCase().includes(term) || catLabel.toLowerCase().includes(term) || exp.amount?.toString().includes(term) );
+      // استخدام Math.abs لضمان عمل البحث عن الرقم حتى لو كان مسجلاً بالسالب
+      const amountStr = Math.abs(Number(exp.amount)).toString(); 
+      
+      return ( 
+        exp.title?.toLowerCase().includes(term) || 
+        catLabel.toLowerCase().includes(term) || 
+        amountStr.includes(term) 
+      );
     })
-    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
     <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300`}>
@@ -342,7 +348,7 @@ export default function SupplierExpenses() {
                             )}
                           </td>
                           <td className="px-4 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">
-                            -{Number(exp.amount).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
+                          -{Math.abs(Number(exp.amount)).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
                           </td>
                           <td className="px-4 py-4">
                             <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
