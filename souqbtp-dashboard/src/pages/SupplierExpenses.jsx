@@ -125,16 +125,21 @@ export default function SupplierExpenses() {
     setIsSubmitting(true);
     
     try {
-      const rawAmount = parseFloat(String(formData.amount || 0).replace(/[^0-9.]/g, ''));
-      const finalAmount = Math.abs(rawAmount); 
+      const finalAmount = Math.abs(parseFloat(String(formData.amount || 0).replace(/[^0-9.]/g, '')));
 
+      // تحضير البيانات - تأكد أن الأسماء (title, amount, category, payment_method) 
+      // تطابق تماماً أسماء الأعمدة في قاعدة بيانات Supabase
       const payload = { 
         title: formData.title, 
         amount: finalAmount, 
         category: formData.category, 
-        payment_method: formData.payment_method, 
-        receipt_url: formData.receipt_url || null
+        payment_method: formData.payment_method
       };
+      
+      // لا ترسل receipt_url إذا كان فارغاً لتجنب خطأ قاعدة البيانات
+      if (formData.receipt_url) {
+        payload.receipt_url = formData.receipt_url;
+      }
 
       if (editingId) {
         await updateExpense(editingId, payload);
@@ -144,13 +149,15 @@ export default function SupplierExpenses() {
         alert(language === 'fr' ? "La charge a été enregistrée avec succès." : "تم تسجيل المصروف بنجاح.");
       }
 
+      // تنظيف الفورم
       setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
       setEditingId(null);
-      // إعادة تحميل البيانات لضمان ظهور التعديلات فوراً
-      await fetchExpenses(); 
+      
+      // تحديث البيانات فوراً
+      await fetchExpenses();
     } catch (error) {
-      console.error("Erreur:", error);
-      alert(language === 'fr' ? "Erreur lors de l'opération: " + error.message : "خطأ أثناء العملية: " + error.message);
+      console.error("خطأ الحفظ:", error);
+      alert("Erreur: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -358,14 +365,15 @@ export default function SupplierExpenses() {
                       const currentCategoryColor = categoryColorMap[exp.category] || COLORS[COLORS.length - 1];
                       return (
                         <tr key={exp.id} className={`hover:bg-blue-50/30 transition-colors group ${editingId === exp.id ? 'bg-blue-50' : ''}`}>
-                          <td className="px-6 py-4 text-gray-800 font-bold">
-                            <div className="flex items-center gap-2">
-                              {exp.title}
-                              {exp.receipt_url && (
-                                <a href={exp.receipt_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 inline-flex items-center" title="عرض الوثيقة"><Paperclip size={14} /></a>
-                              )}
-                            </div>
-                          </td>
+                          
+                      <td className="px-6 py-4 text-red-900 font-bold">
+                      <div className="flex items-center gap-2">
+                      {exp.title}
+                      {exp.receipt_url && (
+                      <a href={exp.receipt_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 inline-flex items-center" title="عرض الوثيقة"><Paperclip size={14} /></a>
+                      )}
+                      </div>
+                      </td>
                           <td className="px-6 py-4">
                             <span className="px-3 py-1.5 rounded-lg text-xs font-black inline-flex items-center gap-1.5 border" style={{ backgroundColor: `${currentCategoryColor}10`, borderColor: `${currentCategoryColor}40`, color: currentCategoryColor }}>
                               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentCategoryColor }}></span>
@@ -375,10 +383,11 @@ export default function SupplierExpenses() {
                           <td className="px-6 py-4 text-gray-500 font-medium text-xs">
                             {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at || exp.date || new Date()))}
                           </td>
-                          
-                          <td className="px-6 py-4 text-red-800 font-black font-mono text-end text-base" dir="ltr">
+
+                          <td className="px-6 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">
                             -{Math.abs(Number(exp.amount)).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
                           </td>
+
                           <td className="px-6 py-4">
                             <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <button onClick={() => handleEdit(exp)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title={t.editExpense}><Edit size={16}/></button>
