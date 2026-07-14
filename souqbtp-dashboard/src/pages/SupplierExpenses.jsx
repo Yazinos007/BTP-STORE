@@ -66,6 +66,8 @@ export default function SupplierExpenses() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // 🎯 تعديل: جعل الترتيب التنازلي بالمبالغ هو الافتراضي فور فتح الصفحة
   const [sortBy, setSortBy] = useState('amount'); 
 
   useEffect(() => {
@@ -176,7 +178,7 @@ export default function SupplierExpenses() {
   const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => { map[key] = COLORS[index % COLORS.length]; return map; }, {});
   const chartData = sortedCategoryKeys.map(key => ({ name: t.categories[key] || t.categories.other, value: expensesByCategoryKey[key], fill: categoryColorMap[key] }));
 
-  // 🎯 الدالة المدرعة المدمجة (تم إزالة التكرار)
+  // 🎯 الدالة المدرعة المدمجة للفلترة والترتيب التنازلي التلقائي
   const sortedAndFilteredExpenses = useMemo(() => {
     let list = [...safeExpenses];
 
@@ -321,8 +323,8 @@ export default function SupplierExpenses() {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="w-full sm:w-auto px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm font-bold bg-white text-gray-700 transition-all cursor-pointer"
                 >
-                  <option value="date">{t.recentFirst}</option>
                   <option value="amount">{t.highestFirst}</option>
+                  <option value="date">{t.recentFirst}</option>
                 </select>
                 <div className="relative w-full sm:w-72">
                   <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'right-3' : 'left-3'} text-gray-400`} />
