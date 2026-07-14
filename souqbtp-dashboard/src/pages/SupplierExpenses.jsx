@@ -66,7 +66,7 @@ export default function SupplierExpenses() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('date'); 
+  const [sortBy, setSortBy] = useState('amount'); 
 
   useEffect(() => {
     if (supplier?.id) {
