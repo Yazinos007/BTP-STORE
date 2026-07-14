@@ -323,7 +323,7 @@ export default function Expenses() {
             </div>
           )}
 
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden h-full">
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden h-fit">
             <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-2"> 
                 <Receipt size={20} className="text-gray-400" /> 
