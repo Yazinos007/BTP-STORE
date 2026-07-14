@@ -154,12 +154,17 @@ export default function SupplierExpenses() {
   };
 
   const handleEdit = (exp) => {
-    setFormData({ 
-      title: exp.title, amount: Math.abs(Number(exp.amount)), 
-      category: exp.category, payment_method: exp.payment_method, receipt_url: exp.receipt_url || ''
-    });
-    setEditingId(exp.id);
-  };
+  const safeAmount = String(exp.amount || 0).replace(/[^0-9.-]/g, '');  
+  setFormData({ 
+    title: exp.title, 
+    amount: Math.abs(Number(safeAmount) || 0), 
+    category: exp.category, 
+    payment_method: exp.payment_method, 
+    receipt_url: exp.receipt_url || ''
+  });
+  setEditingId(exp.id);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
   const handleDelete = async (id) => { if (window.confirm(t.confirmDelete)) await deleteExpense(id); };
   const cancelEdit = () => { setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' }); setEditingId(null); };
@@ -311,7 +316,7 @@ export default function SupplierExpenses() {
             </div>
           )}
 
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden h-full">
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden h-fit">
             <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-2"> 
                 <Receipt size={20} className="text-gray-400" /> 
