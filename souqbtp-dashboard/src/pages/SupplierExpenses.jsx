@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
@@ -66,7 +66,7 @@ export default function SupplierExpenses() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('date'); // حالة الترتيب: date أو amount
+  const [sortBy, setSortBy] = useState('date'); 
 
   useEffect(() => {
     if (supplier?.id) {
@@ -123,13 +123,12 @@ export default function SupplierExpenses() {
     setIsSubmitting(true);
     
     try {
-      // إرسال الرقم كموجب دائماً (هذا يحل مشكلة رفض السيرفر للأرقام السالبة)
       const rawAmount = parseFloat(String(formData.amount || 0).replace(/[^0-9.]/g, ''));
       const finalAmount = Math.abs(rawAmount); 
 
       const payload = { 
         title: formData.title, 
-        amount: finalAmount, // الآن هو رقم موجب
+        amount: finalAmount, 
         category: formData.category, 
         payment_method: formData.payment_method, 
         receipt_url: formData.receipt_url || null
@@ -177,36 +176,38 @@ export default function SupplierExpenses() {
   const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => { map[key] = COLORS[index % COLORS.length]; return map; }, {});
   const chartData = sortedCategoryKeys.map(key => ({ name: t.categories[key] || t.categories.other, value: expensesByCategoryKey[key], fill: categoryColorMap[key] }));
 
-  // 🎯 الدالة المدرعة للترتيب التنازلي الإجباري والفلترة 
-const sortedAndFilteredExpenses = [...safeExpenses]
-  .filter(exp => {
-    const term = searchTerm.toLowerCase();
-    const catLabel = t.categories[exp.category] || '';
-    return (
-      exp.title?.toLowerCase().includes(term) || 
-      catLabel.toLowerCase().includes(term) || 
-      String(exp.amount || '').includes(term)
-    );
-  })
-  .sort((a, b) => {
-    if (sortBy === 'amount') {
-      // 1. تنظيف الرقم تماماً من أي مسافات، نصوص، أو فواصل خاطئة (يزيل السالب أيضاً)
-      const cleanA = String(a.amount || 0).replace(/[^0-9.]/g, '');
-      const cleanB = String(b.amount || 0).replace(/[^0-9.]/g, '');
-      
-      // 2. تحويله إلى رقم حقيقي وتجاهل إشارة السالب
-      const valA = Math.abs(Number(cleanA) || 0);
-      const valB = Math.abs(Number(cleanB) || 0);
-      
-      // 3. الترتيب من الأكبر إلى الأصغر (التنازلي)
-      return valB - valA;
-    } else {
-      // ترتيب الأحدث أولاً
-      const dateA = new Date(a.created_at || a.date || Date.now()).getTime();
-      const dateB = new Date(b.created_at || b.date || Date.now()).getTime();
-      return dateB - dateA;
+  // 🎯 الدالة المدرعة المدمجة (تم إزالة التكرار)
+  const sortedAndFilteredExpenses = useMemo(() => {
+    let list = [...safeExpenses];
+
+    // الفلترة
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter(exp => {
+        const catLabel = t.categories[exp.category] || '';
+        return (
+          (exp.title || '').toLowerCase().includes(term) || 
+          catLabel.toLowerCase().includes(term) || 
+          String(exp.amount || '').includes(term)
+        );
+      });
     }
-  });
+
+    // الترتيب
+    return list.sort((a, b) => {
+      if (sortBy === 'amount') {
+        const cleanA = String(a.amount || 0).replace(/[^0-9.]/g, '');
+        const cleanB = String(b.amount || 0).replace(/[^0-9.]/g, '');
+        const valA = Math.abs(Number(cleanA) || 0);
+        const valB = Math.abs(Number(cleanB) || 0);
+        return valB - valA;
+      } else {
+        const dateA = new Date(a.created_at || a.date || Date.now()).getTime();
+        const dateB = new Date(b.created_at || b.date || Date.now()).getTime();
+        return dateB - dateA;
+      }
+    });
+  }, [safeExpenses, searchTerm, sortBy, t.categories]);
 
   const StatCard = ({ title, value, icon: Icon, bgGradient }) => (
     <div className={`relative overflow-hidden p-6 rounded-2xl shadow-lg text-white ${bgGradient} transition-transform hover:-translate-y-1 hover:shadow-xl duration-300`}>
@@ -220,30 +221,6 @@ const sortedAndFilteredExpenses = [...safeExpenses]
       </div>
     </div>
   );
-
-  const sortedAndFilteredExpenses = useMemo(() => {
-    let list = [...(Array.isArray(expenses) ? expenses : [])];
-
-    // الفلترة
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      list = list.filter(exp => 
-        (exp.title || '').toLowerCase().includes(term) || 
-        String(exp.amount || '').includes(term)
-      );
-    }
-
-    // الترتيب
-    return list.sort((a, b) => {
-      if (sortBy === 'amount') {
-        // بما أنها أرقام موجبة الآن، الترتيب مباشر
-        return Number(b.amount || 0) - Number(a.amount || 0);
-      } else {
-        // الترتيب حسب التاريخ
-        return new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0);
-      }
-    });
-  }, [expenses, searchTerm, sortBy]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -290,7 +267,6 @@ const sortedAndFilteredExpenses = [...safeExpenses]
               </select>
             </div>
 
-            {/* ميزة رفع الوثائق أصبحت اختيارية مع توضيح ذلك في العنوان */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
                 <Paperclip size={16} className="text-gray-400"/> 
@@ -304,7 +280,6 @@ const sortedAndFilteredExpenses = [...safeExpenses]
                 ) : (
                   <><UploadCloud size={18} /> <span className="text-sm font-medium">{language === 'fr' ? 'Cliquez pour charger' : 'اضغط لرفع الوصل'}</span></>
                 )}
-                {/* حقل الإدخال لا يحتوي على required */}
                 <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept="image/png, image/jpeg, image/jpg, application/pdf" />
               </label>
             </div>
@@ -341,7 +316,6 @@ const sortedAndFilteredExpenses = [...safeExpenses]
                 <h3 className="font-black text-gray-800">{t.history}</h3> 
               </div>
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                {/* قائمة اختيار نوع الترتيب */}
                 <select 
                   value={sortBy} 
                   onChange={(e) => setSortBy(e.target.value)}
@@ -370,7 +344,6 @@ const sortedAndFilteredExpenses = [...safeExpenses]
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {/* استخدمنا المصفوفة المفلترة والمرتبة بشكل سليم */}
                     {sortedAndFilteredExpenses.map((exp) => {
                       const currentCategoryColor = categoryColorMap[exp.category] || COLORS[COLORS.length - 1];
                       return (
