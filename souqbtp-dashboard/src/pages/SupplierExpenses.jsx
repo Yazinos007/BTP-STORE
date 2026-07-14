@@ -260,10 +260,19 @@ export default function SupplierExpenses() {
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">{t.desc}</label>
-              <input type="text" list="titles-list" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 font-medium transition-all" placeholder="Ex: Achat fournitures..." autoComplete="off" />
-              <datalist id="titles-list">{titleSuggestions.map((title, i) => <option key={i} value={title} />)}</datalist>
-            </div>
+        <label className="block text-sm font-bold text-gray-700 mb-2">{t.desc}</label>
+      <input 
+        type="text" 
+        list="titles-list" 
+        required 
+        value={formData.title} 
+        onChange={(e) => setFormData({...formData, title: e.target.value})} 
+        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 font-black text-red-900 transition-all" 
+        placeholder="Ex: Achat fournitures..." 
+        autoComplete="off" 
+      />
+        <datalist id="titles-list">{titleSuggestions.map((title, i) => <option key={i} value={title} />)}</datalist>
+        </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">{t.amount}</label>
               <div className="relative">
