@@ -138,16 +138,19 @@ export default function SupplierExpenses() {
 
       if (editingId) {
         await updateExpense(editingId, payload);
+        alert(language === 'fr' ? "La charge a été modifiée avec succès." : "تم تعديل المصروف بنجاح.");
       } else {
         await addExpense(payload);
+        alert(language === 'fr' ? "La charge a été enregistrée avec succès." : "تم تسجيل المصروف بنجاح.");
       }
 
       setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
       setEditingId(null);
-      alert("تم الحفظ بنجاح");
+      // إعادة تحميل البيانات لضمان ظهور التعديلات فوراً
+      await fetchExpenses(); 
     } catch (error) {
-      console.error("خطأ الحفظ التفصيلي:", error);
-      alert("خطأ أثناء الحفظ: " + error.message);
+      console.error("Erreur:", error);
+      alert(language === 'fr' ? "Erreur lors de l'opération: " + error.message : "خطأ أثناء العملية: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -372,7 +375,8 @@ export default function SupplierExpenses() {
                           <td className="px-6 py-4 text-gray-500 font-medium text-xs">
                             {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at || exp.date || new Date()))}
                           </td>
-                          <td className="px-6 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">
+                          // استبدل السطر الموجود في الكود بالسطر التالي:
+                          <td className="px-6 py-4 text-red-800 font-black font-mono text-end text-base" dir="ltr">
                             -{Math.abs(Number(exp.amount)).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
                           </td>
                           <td className="px-6 py-4">
