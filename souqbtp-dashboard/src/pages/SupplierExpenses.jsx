@@ -375,7 +375,7 @@ export default function SupplierExpenses() {
                           <td className="px-6 py-4 text-gray-500 font-medium text-xs">
                             {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at || exp.date || new Date()))}
                           </td>
-                          // استبدل السطر الموجود في الكود بالسطر التالي:
+                          
                           <td className="px-6 py-4 text-red-800 font-black font-mono text-end text-base" dir="ltr">
                             -{Math.abs(Number(exp.amount)).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
                           </td>
