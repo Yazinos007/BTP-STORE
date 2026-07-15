@@ -6,8 +6,8 @@ import {
   FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
   Settings, Zap, Radar, Wallet, Landmark, CreditCard 
 } from 'lucide-react';
-import RawMaterialSuppliers from './RawMaterialSuppliers';
-import RawMaterialPurchases from './RawMaterialPurchases';
+import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
+import RawMaterialPurchases from './pages/RawMaterialPurchases';
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
 import SupplierAccounting from './pages/SupplierAccounting';
