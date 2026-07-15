@@ -50,6 +50,7 @@ import Purchases from './pages/Purchases';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
+import RawMaterialSuppliers from './مسار/الملف/RawMaterialSuppliers';
 
 // 🛡️ لوحة المورد الكبير المحصنة مع المستشعرات الذكية
 const WholesalerDashboard = ({ supplier, children }) => {
@@ -147,6 +148,8 @@ const WholesalerDashboard = ({ supplier, children }) => {
             <Zap size={20} className="fill-black" />
             {language === 'fr' ? 'Passer à l\'Enterprise' : 'ترقية للباقة الذهبية'}
           </Link>
+          
+          <Link to="/raw-material-suppliers">الموردين (المواد الخام)</Link>
         </div>
         <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
@@ -300,6 +303,7 @@ function App() {
                 <Route path="/tender-radar" element={<TenderRadar />} />
                 <Route path="/settings" element={<SupplierSettings />} />
                 <Route path="/subscription" element={<SupplierSubscription />} />
+                <Route path="raw-material-suppliers" element={<RawMaterialSuppliers />} />
               </Routes>
             </WholesalerDashboard>
           ) : (
