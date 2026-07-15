@@ -6,7 +6,8 @@ import {
   FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
   Settings, Zap, Radar, Wallet, Landmark, CreditCard 
 } from 'lucide-react';
-
+import RawMaterialSuppliers from './RawMaterialSuppliers';
+import RawMaterialPurchases from './RawMaterialPurchases';
 import SupplierStock from './pages/SupplierStock';
 import SupplierInvoices from './pages/SupplierInvoices';
 import SupplierAccounting from './pages/SupplierAccounting';
@@ -50,7 +51,6 @@ import Purchases from './pages/Purchases';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
-import RawMaterialSuppliers from './مسار/الملف/RawMaterialSuppliers';
 
 // 🛡️ لوحة المورد الكبير المحصنة مع المستشعرات الذكية
 const WholesalerDashboard = ({ supplier, children }) => {
@@ -119,6 +119,8 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Overview' : 'نظرة عامة' },
     { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
+    { path: '/raw-suppliers', icon: Users, label: language === 'fr' ? 'Fournisseurs Matières' : 'موردو المواد الخام' },
+    { path: '/raw-purchases', icon: Receipt, label: language === 'fr' ? 'Achats Matières' : 'مشتريات المواد الخام' },
     { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients & Dettes' : 'العملاء والديون (CRM)' }, 
     { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة', badge: pendingOrdersCount },
     { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل', badge: readyToShipCount },  
@@ -149,7 +151,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
             {language === 'fr' ? 'Passer à l\'Enterprise' : 'ترقية للباقة الذهبية'}
           </Link>
           
-          <Link to="/raw-material-suppliers">الموردين (المواد الخام)</Link>
         </div>
         <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
@@ -303,7 +304,8 @@ function App() {
                 <Route path="/tender-radar" element={<TenderRadar />} />
                 <Route path="/settings" element={<SupplierSettings />} />
                 <Route path="/subscription" element={<SupplierSubscription />} />
-                <Route path="raw-material-suppliers" element={<RawMaterialSuppliers />} />
+                <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
+                <Route path="/raw-purchases" element={<RawMaterialPurchases />} />
               </Routes>
             </WholesalerDashboard>
           ) : (
