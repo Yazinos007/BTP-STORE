@@ -111,7 +111,7 @@ export default function RawMaterialSuppliers() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <div><h2 className="text-3xl font-black text-gray-800">{t.title}</h2><p className="text-gray-500 mt-1">{t.subtitle}</p></div>
+        <div><h2 className="text-3xl font-black text-white">{t.title}</h2><p className="text-slate-300 mt-1">{t.subtitle}</p></div>
         <button onClick={() => { setEditingId(null); setFormData({ name: '', phone: '', ice: '', address: '', total_debt: '0' }); setShowModal(true); }} className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 font-bold shadow-lg shadow-blue-500/30 transition-all"><UserPlus size={20} /> {t.addBtn}</button>
       </div>
 

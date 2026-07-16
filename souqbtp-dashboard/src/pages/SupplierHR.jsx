@@ -147,8 +147,8 @@ export default function SupplierHR() {
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-black text-gray-800 tracking-tight">{t.title}</h2>
-          <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
+          <h2 className="text-3xl font-black text-white tracking-tight">{t.title}</h2>
+  <p className="text-slate-300 mt-1 font-medium">{t.subtitle}</p>
         </div>
         <button onClick={() => { handleCancel(); setShowAddForm(true); }} className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 transition-all font-bold shadow-lg hover:shadow-blue-500/30">
           <UserPlus size={20} /> {t.addBtn}

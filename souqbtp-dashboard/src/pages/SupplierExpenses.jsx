@@ -242,8 +242,8 @@ export default function SupplierExpenses() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-6">
-        <h2 className="text-3xl font-black text-gray-800 tracking-tight">{t.title}</h2>
-        <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
+        <h2 className="text-3xl font-black text-white tracking-tight">{t.title}</h2>
+  <p className="text-slate-300 mt-1 font-medium">{t.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

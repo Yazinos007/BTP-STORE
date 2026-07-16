@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useClientStore from '../store/useClientStore';
 import useSettingsStore from '../store/useSettingsStore';
+import useSupplierStore from '../store/useSupplierStore';
 import { Users, UserPlus, Phone, MapPin, CreditCard, Edit, Trash2, Search, X, Building2, AlertCircle, Banknote, Loader2, CheckCircle, MessageCircle, Calendar, UserCheck, UserX, ClipboardList, FileText } from 'lucide-react';
 
 const translations = {
@@ -36,6 +37,8 @@ const translations = {
 };
 
 export default function Clients() {
+  const { supplier } = useSupplierStore();
+  const isWholesaler = supplier?.supplier_type === 'wholesale';
   const { clients, isLoading, fetchClients, addClient, updateClient, deleteClient } = useClientStore();
   const { language } = useSettingsStore();
   const t = translations[language];
@@ -158,7 +161,14 @@ export default function Clients() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div><h2 className="text-3xl font-black text-gray-800 tracking-tight">{t.title}</h2><p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p></div>
+        <div className="mb-6">
+          <h2 className={`text-3xl font-black tracking-tight ${isWholesaler ? 'text-white' : 'text-gray-800'}`}>
+         {t.title}
+        </h2>
+          <p className={`mt-1 font-medium ${isWholesaler ? 'text-slate-300' : 'text-gray-500'}`}>
+         {t.subtitle}
+        </p>
+      </div>
         <button onClick={() => { cancelEdit(); setShowAddForm(true); }} className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 shadow-lg font-bold"><UserPlus size={20} /> {t.addClient}</button>
       </div>
 

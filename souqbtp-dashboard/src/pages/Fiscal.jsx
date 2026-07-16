@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import useFiscalStore from '../store/useFiscalStore';
 import useSettingsStore from '../store/useSettingsStore';
+import useSupplierStore from '../store/useSupplierStore';
 import { Landmark, FileCheck, Plus, TrendingUp, TrendingDown, Edit, Trash2, X, Search, Clock, CheckCircle } from 'lucide-react';
 
 const translations = {
@@ -25,6 +26,8 @@ const translations = {
 };
 
 export default function Fiscal() {
+  const { supplier } = useSupplierStore();
+  const isWholesaler = supplier?.supplier_type === 'wholesale';
   const { declarations, isLoading, fetchDeclarations, addDeclaration, updateDeclaration, deleteDeclaration } = useFiscalStore();
   const { language } = useSettingsStore();
   const t = translations[language];
@@ -98,9 +101,13 @@ export default function Fiscal() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-3xl font-black text-gray-800 tracking-tight">{t.title}</h2>
-          <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
+        <div className="mb-6">
+          <h2 className={`text-3xl font-black tracking-tight ${isWholesaler ? 'text-white' : 'text-gray-800'}`}>
+          {t.title}
+         </h2>
+          <p className={`mt-1 font-medium ${isWholesaler ? 'text-slate-300' : 'text-gray-500'}`}>
+          {t.subtitle}
+         </p>
         </div>
         <span className="bg-amber-100 text-amber-700 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border border-amber-200">
           {t.module}

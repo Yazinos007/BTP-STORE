@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import useCaisseStore from '../store/useCaisseStore';
 import useSettingsStore from '../store/useSettingsStore';
+import useSupplierStore from '../store/useSupplierStore';
 import { Wallet, Plus, Trash2, Edit, ArrowUpCircle, ArrowDownCircle, Search, X, Loader2 } from 'lucide-react';
 
 const translations = {
@@ -27,6 +28,8 @@ const translations = {
 };
 
 export default function Caisses() {
+  const { supplier } = useSupplierStore();
+  const isWholesaler = supplier?.supplier_type === 'wholesale';
   const { transactions, isLoading, fetchTransactions, addTransaction, updateTransaction, deleteTransaction } = useCaisseStore();
   const { language } = useSettingsStore();
   const t = translations[language];
@@ -111,10 +114,14 @@ export default function Caisses() {
       
       {/* 👑 الهيدر */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-black text-gray-800 tracking-tight">{t.title}</h2>
-          <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
-        </div>
+        <div className="mb-6">
+          <h2 className={`text-3xl font-black tracking-tight ${isWholesaler ? 'text-white' : 'text-gray-800'}`}>
+         {t.title}
+        </h2>
+          <p className={`mt-1 font-medium ${isWholesaler ? 'text-slate-300' : 'text-gray-500'}`}>
+         {t.subtitle}
+        </p>
+      </div>
         <button onClick={handleOpenAdd} className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 transition-all font-bold shadow-lg hover:shadow-blue-500/30">
           <Plus size={20} /> {t.addBtn}
         </button>
