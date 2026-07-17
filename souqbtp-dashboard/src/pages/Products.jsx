@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import useProductStore from '../store/useProductStore';
 import useSettingsStore from '../store/useSettingsStore';
 import { Package, Plus, Trash2, Search, Edit, AlertTriangle, Wallet, X, Box, Loader2, Scale, PackageMinus, CheckCircle } from 'lucide-react';
@@ -36,7 +37,9 @@ const translations = {
   }
 };
 
-export default function Products({ isWholesaler }) {
+export default function Products() {
+  const location = useLocation(); 
+  const isWholesaler = location.pathname.includes('/stock');
   const { products, isLoading, fetchProducts, addProduct, deleteProduct, updateProduct } = useProductStore();
   const { language } = useSettingsStore();
   const t = translations[language];
