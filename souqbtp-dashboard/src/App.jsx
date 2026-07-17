@@ -118,9 +118,9 @@ const WholesalerDashboard = ({ supplier, children }) => {
   
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Overview' : 'نظرة عامة' },
-    { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' },
     { path: '/raw-suppliers', icon: Users, label: language === 'fr' ? 'Fournisseurs Matières' : 'موردو المواد الخام' },
     { path: '/raw-purchases', icon: Receipt, label: language === 'fr' ? 'Achats Matières' : 'مشتريات المواد الخام' },
+    { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' }, 
     { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients & Dettes' : 'العملاء والديون (CRM)' }, 
     { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة', badge: pendingOrdersCount },
     { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل', badge: readyToShipCount },  

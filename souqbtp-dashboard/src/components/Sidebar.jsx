@@ -140,12 +140,12 @@ export default function Sidebar() {
   // 🎯 تم حذف زر الاشتراك من هذه القائمة أيضاً لنقله للأعلى
   const normalMenuItems = [
     { name: t.overview, icon: LayoutDashboard, path: '/', minTier: 'starter' },
+    { name: t.fournisseurs, icon: Truck, path: '/suppliers', minTier: 'starter' }, 
+    { name: t.achats, icon: ShoppingBag, path: '/purchases', minTier: 'starter' },
+    { name: t.products, icon: Package, path: '/products', minTier: 'starter' }, 
     { name: t.pos, icon: MonitorPlay, path: '/pos', minTier: 'starter' },
     { name: t.orders, icon: ShoppingCart, path: '/orders', minTier: 'starter' },
     { name: t.clients, icon: Users, path: '/clients', minTier: 'starter' },
-    { name: t.products, icon: Package, path: '/products', minTier: 'starter' },
-    { name: t.fournisseurs, icon: Truck, path: '/suppliers', minTier: 'starter' },
-    { name: t.achats, icon: ShoppingBag, path: '/purchases', minTier: 'starter' },
     { name: t.invoices, icon: FileText, path: '/invoices', minTier: 'pro' },
     { name: t.expenses, icon: Receipt, path: '/expenses', minTier: 'pro' },
     { name: t.wallet, icon: Wallet, path: '/wallet', minTier: 'pro' },
