@@ -288,7 +288,7 @@ function App() {
             <WholesalerDashboard supplier={supplier}>
               <Routes>
                 <Route path="/" element={<SupplierOverview />} />
-                <Route path="/stock" element={<SupplierStock />} />
+                <Route path="/stock" element={<SupplierStock isWholesaler={true} />} />
                 <Route path="/clients" element={<Clients isWholesaler={true} />} />
                 <Route path="/caisses" element={<Caisses isWholesaler={true} />} />
                 <Route path="/fiscal" element={<Fiscal isWholesaler={true} />} />  

@@ -36,7 +36,7 @@ const translations = {
   }
 };
 
-export default function Products() {
+export default function Products({ isWholesaler }) {
   const { products, isLoading, fetchProducts, addProduct, deleteProduct, updateProduct } = useProductStore();
   const { language } = useSettingsStore();
   const t = translations[language];
@@ -139,9 +139,13 @@ export default function Products() {
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-black text-gray-800 tracking-tight">{t.title}</h2>
-          <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
+        <div className="mb-6">
+          <h2 className={`text-3xl font-black tracking-tight flex items-center gap-2 ${isWholesaler ? 'text-white' : 'text-gray-800'}`}>
+           {t.title} 
+          </h2>
+          <p className={`mt-1 font-medium ${isWholesaler ? 'text-slate-300' : 'text-gray-500'}`}>
+           {t.subtitle}
+          </p>
         </div>
         <button onClick={handleOpenAdd} className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 transition-all font-bold shadow-lg hover:shadow-blue-500/30">
           <Plus size={20} /> {t.addBtn}
