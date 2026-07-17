@@ -116,12 +116,12 @@ export default function Caisses() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="mb-6">
           <h2 className={`text-3xl font-black tracking-tight ${isWholesaler ? 'text-white' : 'text-gray-800'}`}>
-         {t.title}
-        </h2>
+           {t.title}
+          </h2>
           <p className={`mt-1 font-medium ${isWholesaler ? 'text-slate-300' : 'text-gray-500'}`}>
-         {t.subtitle}
-        </p>
-      </div>
+           {t.subtitle}
+          </p>
+        </div>
         <button onClick={handleOpenAdd} className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 transition-all font-bold shadow-lg hover:shadow-blue-500/30">
           <Plus size={20} /> {t.addBtn}
         </button>

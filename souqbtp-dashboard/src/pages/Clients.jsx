@@ -163,12 +163,12 @@ export default function Clients() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div className="mb-6">
           <h2 className={`text-3xl font-black tracking-tight ${isWholesaler ? 'text-white' : 'text-gray-800'}`}>
-         {t.title}
-        </h2>
+            {t.title}
+          </h2>
           <p className={`mt-1 font-medium ${isWholesaler ? 'text-slate-300' : 'text-gray-500'}`}>
-         {t.subtitle}
-        </p>
-      </div>
+            {t.subtitle}
+          </p>
+        </div>
         <button onClick={() => { cancelEdit(); setShowAddForm(true); }} className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 shadow-lg font-bold"><UserPlus size={20} /> {t.addClient}</button>
       </div>
 
