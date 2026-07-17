@@ -331,7 +331,7 @@ function App() {
                   <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
                     <Routes>
                       <Route path="/" element={<Overview />} />
-                      <Route path="/products" element={<SupplierStock />} />                     
+                      <Route path="/products" element={<Products />} />                     
                       <Route path="/orders" element={<Orders />} />
                       <Route path="/wallet" element={<RetailerWallet />} />
                       <Route path="/settings" element={<RetailerSettings />} />
