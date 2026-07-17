@@ -27,9 +27,7 @@ const translations = {
   }
 };
 
-export default function Caisses() {
-  const { supplier } = useSupplierStore();
-  const isWholesaler = supplier?.supplier_type === 'wholesale';
+export default function Caisses({ isWholesaler }) {
   const { transactions, isLoading, fetchTransactions, addTransaction, updateTransaction, deleteTransaction } = useCaisseStore();
   const { language } = useSettingsStore();
   const t = translations[language];

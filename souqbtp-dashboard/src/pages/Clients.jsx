@@ -36,9 +36,7 @@ const translations = {
   }
 };
 
-export default function Clients() {
-  const { supplier } = useSupplierStore();
-  const isWholesaler = supplier?.supplier_type === 'wholesale';
+export default function Clients({ isWholesaler }) {
   const { clients, isLoading, fetchClients, addClient, updateClient, deleteClient } = useClientStore();
   const { language } = useSettingsStore();
   const t = translations[language];

@@ -25,9 +25,7 @@ const translations = {
   }
 };
 
-export default function Fiscal() {
-  const { supplier } = useSupplierStore();
-  const isWholesaler = supplier?.supplier_type === 'wholesale';
+export default function Fiscal({ isWholesaler }) {
   const { declarations, isLoading, fetchDeclarations, addDeclaration, updateDeclaration, deleteDeclaration } = useFiscalStore();
   const { language } = useSettingsStore();
   const t = translations[language];

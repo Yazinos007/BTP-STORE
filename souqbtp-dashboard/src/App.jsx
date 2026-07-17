@@ -289,9 +289,9 @@ function App() {
               <Routes>
                 <Route path="/" element={<SupplierOverview />} />
                 <Route path="/stock" element={<SupplierStock />} />
-                <Route path="/clients" element={<Clients />} /> 
-                <Route path="/caisses" element={<Caisses />} /> 
-                <Route path="/fiscal" element={<Fiscal />} />   
+                <Route path="/clients" element={<Clients isWholesaler={true} />} />
+                <Route path="/caisses" element={<Caisses isWholesaler={true} />} />
+                <Route path="/fiscal" element={<Fiscal isWholesaler={true} />} />  
                 <Route path="/orders" element={<SupplierOrders />} />
                 <Route path="/fleet" element={<Fleet />} />
                 <Route path="/contracts" element={<Contracts />} />
