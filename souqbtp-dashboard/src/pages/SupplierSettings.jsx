@@ -4,7 +4,7 @@ import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { 
   ShieldCheck, UploadCloud, FileText, CheckCircle2, 
-  AlertTriangle, Lock, Award, Building2, CreditCard, Loader2, Star, Save 
+  AlertTriangle, Lock, Award, Building2, CreditCard, Loader2, Star, Save, Camera
 } from 'lucide-react';
 
 const translations = {
@@ -57,6 +57,31 @@ const translations = {
     phone: 'Téléphone',
     address: 'Adresse',
     saveInfo: 'Enregistrer les infos'
+  },
+  en: {
+    title: 'Trust Center & Settings',
+    subtitle: 'Manage your account, certify your business, and get the SouqBTP badge.',
+    verifiedBadge: 'Certified Supplier (SouqBTP Verified)',
+    badgeDesc: 'Certified suppliers receive 300% more orders. The badge creates absolute trust.',
+    kycTitle: 'Legal Documents (KYC)',
+    kycDesc: 'Please upload these documents to verify your account.',
+    uploadRC: 'Commercial Register (RC)',
+    uploadICE: 'Tax ID Certificate (ICE)',
+    uploadCIN: 'Manager\'s ID (CIN)',
+    btnUpload: 'Choose a file',
+    statusUnverified: 'Unverified Account',
+    statusPending: 'Under Review',
+    statusVerified: 'Verified & Certified',
+    submitVerification: 'Submit for verification',
+    saving: 'Saving...',
+    subscriptionTitle: 'Current Subscription',
+    activePlan: 'Active Plan',
+    upgradeBtn: 'Upgrade to Enterprise',
+    storeInfo: 'Company Information',
+    companyName: 'Company Name',
+    phone: 'Phone',
+    address: 'Address',
+    saveInfo: 'Save Information'
   }
 };
 
@@ -220,6 +245,23 @@ export default function SupplierSettings() {
               <Building2 size={20} className="text-blue-500" /> {t.storeInfo}
             </h4>
             <div className="space-y-4">
+              {/* 📸 دائرة رفع اللوغو نضعها هنا */}
+              <div className="flex justify-center mb-6">
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-full border-4 border-slate-800 overflow-hidden bg-slate-900 flex items-center justify-center shadow-xl">
+                    {supplier?.logo_url ? (
+                      <img src={supplier.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-3xl font-black text-slate-500">{supplier?.store_name?.charAt(0) || 'S'}</span>
+                    )}
+                  </div>
+                  <label className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-full cursor-pointer transition-colors shadow-lg border-2 border-slate-800">
+                    <Camera size={16} />
+                    {/* هنا سيتم ربط دالة الرفع لاحقاً */}
+                    <input type="file" accept="image/*" className="hidden" />
+                  </label>
+                </div>
+              </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{t.companyName}</label>
                 <input type="text" value={storeData.store_name} onChange={e => setStoreData({...storeData, store_name: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />

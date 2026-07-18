@@ -146,9 +146,13 @@ const handleLanguageChange = () => {
         <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
   {/* قسم اللوغو واسم المنصة */}
   <div className="flex items-center gap-3">
-    <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-500/20 border border-white/10">
-      {supplier?.store_name?.charAt(0).toUpperCase() || 'S'}
-    </div>
+    {supplier?.logo_url ? (
+      <img src={supplier.logo_url} alt="Logo" className="w-11 h-11 shrink-0 rounded-xl object-cover shadow-lg border border-slate-700" />
+    ) : (
+      <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg border border-white/10">
+        {supplier?.store_name?.charAt(0).toUpperCase() || 'S'}
+      </div>
+    )}
     <div className="flex flex-col">
       <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">
         SouqBTP

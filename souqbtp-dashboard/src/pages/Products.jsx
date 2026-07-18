@@ -34,6 +34,22 @@ const translations = {
       'Unité': 'Unité (Pièce)', 'Kg': 'Kilogramme (Kg)', 'Quintal': 'Quintal (q)', 'Tonne': 'Tonne (T)',
       'Sac': 'Sac', 'm2': 'Mètre Carré (m²)', 'm3': 'Mètre Cube (m³)', 'ml': 'Mètre Linéaire (ml)'
     }
+  },
+  en: {
+    title: 'Products Management', subtitle: 'Add, edit, and track your stock.',
+    addBtn: 'New Product', search: 'Search...',
+    name: 'Product Name', price: 'Price', stock: 'Stock', unit: 'Unit', actions: 'Actions',
+    empty: 'No products registered.', loading: 'Loading...',
+    save: 'Save Product', cancel: 'Cancel', newProduct: 'New Product', editProduct: 'Edit Product',
+    currency: 'MAD', confirmDelete: 'Are you sure you want to delete this product?',
+    totalProducts: 'Total Products', stockValue: 'Stock Value', lowStock: 'Low Stock', outOfStock: 'Out of Stock',
+    declareLoss: 'Declare a Loss', lossQty: 'Lost Quantity', lossReason: 'Reason (Broken, Expired...)',
+    confirmLoss: 'Confirm Loss',
+    units: {
+      'Unité': 'Unit (Piece)', 'Kg': 'Kilogram (Kg)', 'Quintal': 'Quintal', 'Tonne': 'Tonne',
+      'Sac': 'Bag', 'm2': 'Square Meter (m²)', 'm3': 'Cubic Meter (m³)', 'ml': 'Linear Meter (ml)',
+      'Palette': 'Palette'
+    }
   }
 };
 
