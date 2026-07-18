@@ -2,10 +2,8 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { 
-  Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, 
-  FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
-  Settings, Zap, Radar, Wallet, Landmark, CreditCard 
-} from 'lucide-react';
+  Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
+  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe } from 'lucide-react';
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
 import RawMaterialPurchases from './pages/RawMaterialPurchases';
 import SupplierStock from './pages/SupplierStock';
@@ -54,7 +52,12 @@ import useSettingsStore from './store/useSettingsStore';
 
 // 🛡️ لوحة المورد الكبير المحصنة مع المستشعرات الذكية
 const WholesalerDashboard = ({ supplier, children }) => {
-  const { language } = useSettingsStore();
+const { language, setLanguage } = useSettingsStore();
+const handleLanguageChange = () => {
+  if (language === 'fr') setLanguage('ar');
+  else if (language === 'ar') setLanguage('en');
+  else setLanguage('fr');
+};
   
   // 🌟 حالات نبض الإشعارات
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
@@ -140,11 +143,30 @@ const WholesalerDashboard = ({ supplier, children }) => {
   return (
     <div className="flex h-screen w-full max-w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <aside className="w-72 shrink-0 h-full bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20">
-        <div className="h-20 shrink-0 flex items-center px-8 border-b border-slate-800 bg-slate-950/50">
-          <h1 className="text-2xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-            SouqBTP <span className="text-sm font-bold text-slate-500 uppercase tracking-widest ml-1">Portal</span>
-          </h1>
-        </div>
+        <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
+  {/* قسم اللوغو واسم المنصة */}
+  <div className="flex items-center gap-3">
+    <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-500/20 border border-white/10">
+      {supplier?.store_name?.charAt(0).toUpperCase() || 'S'}
+    </div>
+    <div className="flex flex-col">
+      <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">
+        SouqBTP
+      </h1>
+      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Portal</span>
+    </div>
+  </div>
+
+  {/* زر تبديل اللغة */}
+  <button 
+    onClick={handleLanguageChange}
+    className="flex flex-col items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-all text-slate-300 hover:text-white group shadow-sm hover:shadow-md"
+    title={language === 'ar' ? 'تغيير اللغة' : language === 'en' ? 'Change Language' : 'Changer la langue'}
+  >
+    <Globe size={18} className="group-hover:scale-110 transition-transform duration-300" />
+    <span className="text-[9px] font-black uppercase mt-1 tracking-wider">{language}</span>
+     </button>
+      </div>
         <div className="px-5 pt-6 pb-2 shrink-0">
           <Link to="/subscription" className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all">
             <Zap size={20} className="fill-black" />
@@ -208,7 +230,7 @@ function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  const { language } = useSettingsStore();
+  const { language, setLanguage } = useSettingsStore();
   const { supplier, fetchSupplierProfile } = useSupplierStore();
 
   const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
