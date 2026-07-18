@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import useProductStore from '../store/useProductStore';
 import useSettingsStore from '../store/useSettingsStore';
-import { Package, Plus, Trash2, Search, Edit, AlertTriangle, Wallet, X, Box, Loader2, Scale, PackageMinus, CheckCircle } from 'lucide-react';
+import { Package, Plus, Trash2, Search, Edit, AlertTriangle, Wallet, X, Box, Loader2, Scale, PackageMinus, CheckCircle, UploadCloud } from 'lucide-react';
 
 const translations = {
   ar: {
@@ -47,7 +47,7 @@ export default function Products() {
   // حالات نافذة الإضافة والتعديل
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', price: '', stock_quantity: '', unit: 'Unité' });
+  const [formData, setFormData] = useState({ name: '', price: '', stock_quantity: '', unit: 'Unité', category: 'Gros Œuvre', image: '' });
   
   // 📦 حالات نافذة الإتلاف (Casse/Perte)
   const [showLossModal, setShowLossModal] = useState(false);
@@ -171,36 +171,99 @@ export default function Products() {
               <button onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors"><X size={20}/></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.name}</label>
-                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-medium transition-all" />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">{t.price}</label>
-                  <div className="relative">
-                    <input required type="number" min="0" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className={`w-full ${language === 'ar' ? 'pr-3 pl-10' : 'pl-3 pr-10'} py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-black text-blue-600 transition-all`} />
-                    <span className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'left-2' : 'right-2'} text-[10px] font-bold text-gray-400 uppercase`}>MAD</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">{t.stock}</label>
-                  <input required type="number" min="0" value={formData.stock_quantity} onChange={e => setFormData({...formData, stock_quantity: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-black text-gray-700 transition-all" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1"><Scale size={14}/> {t.unit}</label>
-                  <select value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className="w-full px-3 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-gray-700 transition-all bg-gray-50">
-                    {Object.entries(t.units).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-3 pt-4 mt-2 border-t border-gray-100">
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">{t.cancel}</button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/30">
-                  {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : t.save}
-                </button>
-              </div>
-            </form>
+  {/* ☁️ حقل رفع الصورة */}
+  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors relative group">
+    <input 
+      type="file" 
+      accept="image/*"
+      className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+      onChange={(e) => {
+        if (e.target.files && e.target.files[0]) {
+          const reader = new FileReader();
+          reader.onload = (e) => setFormData({...formData, image: e.target.result});
+          reader.readAsDataURL(e.target.files[0]);
+        }
+      }}
+    />
+    {formData.image ? (
+      <img src={formData.image} alt="Preview" className="h-24 object-contain rounded-lg shadow-sm" />
+    ) : (
+      <>
+        <UploadCloud size={32} className="mb-2 text-blue-500 group-hover:scale-110 transition-transform" />
+        <p className="text-sm font-bold text-gray-700">{language === 'fr' ? 'Cliquez pour télécharger une image' : 'اضغط لرفع صورة المنتج'}</p>
+        <p className="text-xs text-gray-400 mt-1">PNG, JPG (Max 5MB)</p>
+      </>
+    )}
+  </div>
+
+  {/* 📝 اسم المنتج */}
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">{t.name}</label>
+    <input 
+      required type="text" 
+      placeholder={language === 'fr' ? 'Ex: Ciment Portland 45, Fer à béton...' : 'مثال: إسمنت مسلح، حديد البناء...'} 
+      value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
+      className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-medium transition-all" 
+    />
+  </div>
+
+  {/* 🗂️ التصنيف (جديد) */}
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">{language === 'fr' ? 'Catégorie' : 'التصنيف'}</label>
+    <select 
+      value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} 
+      className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-gray-700 transition-all bg-gray-50"
+    >
+      <option value="Gros Œuvre">Gros Œuvre (أشغال كبرى)</option>
+      <option value="Finition">Finition (تشطيبات)</option>
+      <option value="Plomberie">Plomberie (سباكة)</option>
+      <option value="Électricité">Électricité (كهرباء)</option>
+      <option value="Outillage">Outillage (معدات)</option>
+    </select>
+  </div>
+
+  {/* 💰 السعر والمخزون والوحدة */}
+  <div className="grid grid-cols-3 gap-3">
+    <div>
+      <label className="block text-sm font-bold text-gray-700 mb-2">{t.price}</label>
+      <div className="relative">
+        <input 
+          required type="number" min="0" step="0.01" 
+          placeholder="Ex: 65.50" 
+          value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} 
+          className={`w-full ${language === 'ar' ? 'pr-3 pl-10' : 'pl-3 pr-10'} py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-black text-blue-600 transition-all`} 
+        />
+        <span className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'left-2' : 'right-2'} text-[10px] font-bold text-gray-400 uppercase`}>MAD</span>
+      </div>
+    </div>
+    <div>
+      <label className="block text-sm font-bold text-gray-700 mb-2">{t.stock}</label>
+      <input 
+        required type="number" min="0" 
+        placeholder="Ex: 150" 
+        value={formData.stock_quantity} onChange={e => setFormData({...formData, stock_quantity: e.target.value})} 
+        className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-black text-gray-700 transition-all" 
+      />
+    </div>
+    <div>
+      <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1"><Scale size={14}/> {t.unit}</label>
+      <select 
+        value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} 
+        className="w-full px-3 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-gray-700 transition-all bg-gray-50"
+      >
+        {Object.entries(t.units).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
+      </select>
+    </div>
+  </div>
+
+  {/* أزرار الحفظ والإلغاء */}
+  <div className="flex gap-3 pt-4 mt-2 border-t border-gray-100">
+    <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">{t.cancel}</button>
+    <button type="submit" disabled={isSubmitting} className="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/30">
+      {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : t.save}
+    </button>
+  </div>
+</form>
           </div>
         </div>
       )}

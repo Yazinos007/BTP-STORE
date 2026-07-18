@@ -18,12 +18,12 @@ export default function SupplierStock() {
   const [uploading, setUploading] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   
-  // نموذج البيانات المطور (أضفنا الصورة والتصنيف)
   const [formData, setFormData] = useState({ 
     name: '', 
     category: 'gros-oeuvre',
     price: '', 
     stock_quantity: '',
+    unit: 'Unité', // 👈 تمت الإضافة
     image_url: '' 
   });
 
@@ -93,11 +93,12 @@ export default function SupplierStock() {
         category: product.category || 'gros-oeuvre',
         price: product.price, 
         stock_quantity: product.stock_quantity,
+        unit: product.unit || 'Unité', // 👈 تمت الإضافة
         image_url: product.image_url || ''
       });
     } else {
       setEditingProduct(null);
-      setFormData({ name: '', category: 'gros-oeuvre', price: '', stock_quantity: '', image_url: '' });
+      setFormData({ name: '', category: 'gros-oeuvre', price: '', stock_quantity: '', unit: 'Unité', image_url: '' }); // 👈 تمت الإضافة
     }
     setIsModalOpen(true);
   };
@@ -111,6 +112,7 @@ export default function SupplierStock() {
         category: formData.category,
         price: Number(formData.price),
         stock_quantity: Number(formData.stock_quantity),
+        unit: formData.unit, // 👈 تمت الإضافة
         image_url: formData.image_url,
         supplier_id: supplier.id
       };
@@ -290,13 +292,14 @@ export default function SupplierStock() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="md:col-span-2">
+              {/* ✅ شبكة الخانات الجديدة بثلاثة أعمدة مع الأمثلة والوحدة */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="md:col-span-3">
                   <label className="block text-sm font-bold text-slate-400 mb-2">{language === 'fr' ? 'Nom du produit' : 'اسم المنتج'}</label>
-                  <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-blue-500 font-medium" />
+                  <input required type="text" placeholder={language === 'fr' ? 'Ex: Ciment Portland 45, Fer à béton...' : 'مثال: إسمنت، حديد 10 ملم...'} value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-blue-500 font-medium placeholder-slate-600" />
                 </div>
                 
-                <div className="md:col-span-2">
+                <div className="md:col-span-3">
                   <label className="block text-sm font-bold text-slate-400 mb-2">{language === 'fr' ? 'Catégorie' : 'التصنيف'}</label>
                   <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-blue-500 font-medium appearance-none">
                     {categories.map(cat => (
@@ -307,12 +310,31 @@ export default function SupplierStock() {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-400 mb-2">{language === 'fr' ? 'Prix Gros (MAD)' : 'سعر الجملة'}</label>
-                  <input required type="number" step="0.01" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-blue-500 font-bold" />
+                  <input required type="number" step="0.01" placeholder="Ex: 50.00" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-blue-500 font-bold placeholder-slate-600" />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-bold text-slate-400 mb-2">{language === 'fr' ? 'Quantité Initiale' : 'كمية المخزون'}</label>
-                  <input required type="number" value={formData.stock_quantity} onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})} className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-emerald-500 font-bold" />
+                  <input required type="number" placeholder="Ex: 1000" value={formData.stock_quantity} onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})} className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-emerald-500 font-bold placeholder-slate-600" />
+                </div>
+
+                {/* ⚖️ خانة الوحدة الجديدة */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-400 mb-2">{language === 'fr' ? 'Unité' : 'الوحدة'}</label>
+                  <select 
+                    value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-blue-500 font-bold appearance-none"
+                  >
+                    <option value="Unité">Unité (Pièce)</option>
+                    <option value="Kg">Kilogramme (Kg)</option>
+                    <option value="Quintal">Quintal (q)</option>
+                    <option value="Tonne">Tonne (T)</option>
+                    <option value="Sac">Sac (كيس)</option>
+                    <option value="m2">Mètre Carré (m²)</option>
+                    <option value="m3">Mètre Cube (m³)</option>
+                    <option value="ml">Mètre Linéaire (ml)</option>
+                    <option value="Palette">Palette (باليت)</option>
+                  </select>
                 </div>
               </div>
 
