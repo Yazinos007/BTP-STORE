@@ -60,7 +60,7 @@ export default function Expenses() {
   const { expenses, isLoading, fetchExpenses, addExpense, updateExpense, deleteExpense } = useExpenseStore();
   const { orders, fetchOrders } = useOrderStore();
   const { language } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
   
   const [formData, setFormData] = useState({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);

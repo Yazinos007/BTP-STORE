@@ -59,7 +59,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   
   const { language, toggleLanguage } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const handleAuth = async (e) => {
     e.preventDefault();

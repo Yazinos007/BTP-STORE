@@ -31,7 +31,7 @@ export default function BL() {
   const { deliveryNotes, isLoading, fetchBLs, createBL, updateStatus } = useBLStore();
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [clientName, setClientName] = useState('');
   const [tvaRate, setTvaRate] = useState(20);

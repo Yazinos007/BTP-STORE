@@ -40,7 +40,7 @@ export default function Invoices() {
   const { suppliers, fetchSuppliers } = useExternalSupplierStore(); 
   const { supplier } = useSupplierStore();
   const { language } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('All');

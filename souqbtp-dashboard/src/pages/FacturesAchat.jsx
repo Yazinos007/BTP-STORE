@@ -31,7 +31,7 @@ export default function FacturesAchat() {
   const { purchaseInvoices, isLoading, fetchPurchaseInvoices, createPurchaseInvoice, updateStatus } = usePurchaseInvoiceStore();
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [vendorName, setVendorName] = useState('');
   const [tvaRate, setTvaRate] = useState(20);

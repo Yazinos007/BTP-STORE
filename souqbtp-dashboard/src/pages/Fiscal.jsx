@@ -28,7 +28,7 @@ const translations = {
 export default function Fiscal({ isWholesaler }) {
   const { declarations, isLoading, fetchDeclarations, addDeclaration, updateDeclaration, deleteDeclaration } = useFiscalStore();
   const { language } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [formData, setFormData] = useState({ period: '', tva_collected: '', tva_deductible: '', status: 'pending' });
   const [isSubmitting, setIsSubmitting] = useState(false);

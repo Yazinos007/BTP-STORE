@@ -40,7 +40,7 @@ const permColors = {
 export default function Settings() {
   const { supplier, updateProfile, uploadLogo, isLoading, teamMembers, fetchTeamMembers, addTeamMember, updateTeamMember, deleteTeamMember } = useSupplierStore();
   const { language, toggleLanguage } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [activeTab, setActiveTab] = useState('profile');
   const fileInputRef = useRef(null);

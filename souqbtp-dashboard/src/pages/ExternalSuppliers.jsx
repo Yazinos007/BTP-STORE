@@ -23,7 +23,7 @@ const translations = {
 export default function ExternalSuppliers() {
   const { suppliers, isLoading, fetchSuppliers, addSupplier, updateSupplier, deleteSupplier } = useExternalSupplierStore();
   const { language } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);

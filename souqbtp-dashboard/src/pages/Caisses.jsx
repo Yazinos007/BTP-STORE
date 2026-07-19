@@ -30,7 +30,7 @@ const translations = {
 export default function Caisses({ isWholesaler }) {
   const { transactions, isLoading, fetchTransactions, addTransaction, updateTransaction, deleteTransaction } = useCaisseStore();
   const { language } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);

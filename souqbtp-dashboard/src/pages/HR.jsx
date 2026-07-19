@@ -35,7 +35,7 @@ export default function HR() {
   const { employees, isLoading, fetchEmployees, addEmployee, updateEmployee, deleteEmployee } = useHRStore();
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);

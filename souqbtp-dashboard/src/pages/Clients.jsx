@@ -39,7 +39,7 @@ const translations = {
 export default function Clients({ isWholesaler }) {
   const { clients, isLoading, fetchClients, addClient, updateClient, deleteClient } = useClientStore();
   const { language } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);

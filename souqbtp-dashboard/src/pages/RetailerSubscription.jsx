@@ -118,7 +118,7 @@ const translations = {
 export default function RetailerSubscription() {
   const { language } = useSettingsStore();
   const { updateProfile } = useSupplierStore(); // 🎯 سحب دالة التحديث من المتجر
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();

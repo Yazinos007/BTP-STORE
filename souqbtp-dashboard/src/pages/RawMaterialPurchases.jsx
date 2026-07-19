@@ -48,7 +48,7 @@ export default function RawMaterialPurchases() {
   const { suppliers, fetchSuppliers, updateSupplier } = useExternalSupplierStore();
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');

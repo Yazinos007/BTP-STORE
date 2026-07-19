@@ -58,7 +58,7 @@ export default function Products() {
   const isWholesaler = location.pathname.includes('/stock');
   const { products, isLoading, fetchProducts, addProduct, deleteProduct, updateProduct } = useProductStore();
   const { language } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   // حالات نافذة الإضافة والتعديل
   const [showForm, setShowForm] = useState(false);

@@ -51,7 +51,7 @@ const translations = {
 export default function SupplierClients() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [isLoading, setIsLoading] = useState(true);
   const [clients, setClients] = useState([]);

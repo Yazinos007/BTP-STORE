@@ -32,7 +32,7 @@ export default function Accounting() {
   const { expenses, fetchExpenses } = useExpenseStore();
   const { employees, fetchEmployees } = useHRStore();
   const { language } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   useEffect(() => {
     fetchOrders(); fetchExpenses(); fetchEmployees();

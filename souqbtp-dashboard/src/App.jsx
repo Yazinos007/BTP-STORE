@@ -58,6 +58,22 @@ const handleLanguageChange = () => {
   else if (language === 'ar') setLanguage('en');
   else setLanguage('fr');
 };
+
+const tLayout = {
+    fr: {
+      upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste",
+      items: { overview: "Overview", rawSuppliers: "Fournisseurs Matières", rawPurchases: "Achats Matières", stock: "Stock Central", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", settings: "Paramètres & Confiance" }
+    },
+    ar: {
+      upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة",
+      items: { overview: "نظرة عامة", rawSuppliers: "موردو المواد الخام", rawPurchases: "مشتريات المواد الخام", stock: "المخزون المركزي", clients: "العملاء والديون (CRM)", orders: "الطلبات الواردة", fleet: "أسطول التوصيل", contracts: "المصافحة الرقمية", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", settings: "الإعدادات والتوثيق" }
+    },
+    en: {
+      upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler",
+      items: { overview: "Overview", rawSuppliers: "Raw Material Suppliers", rawPurchases: "Raw Material Purchases", stock: "Central Stock", clients: "Clients & Debts (CRM)", orders: "Received Orders", fleet: "Fleet & Deliveries", contracts: "Digital Contracts", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", settings: "Settings & Trust" }
+    }
+  };
+  const t = tLayout[language] || tLayout['fr'];
   
   // 🌟 حالات نبض الإشعارات
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
@@ -120,24 +136,24 @@ const handleLanguageChange = () => {
   }, [supplier]);
   
   const menuItems = [
-    { path: '/', icon: LayoutDashboard, label: language === 'fr' ? 'Overview' : 'نظرة عامة' },
-    { path: '/raw-suppliers', icon: Users, label: language === 'fr' ? 'Fournisseurs Matières' : 'موردو المواد الخام' },
-    { path: '/raw-purchases', icon: Receipt, label: language === 'fr' ? 'Achats Matières' : 'مشتريات المواد الخام' },
-    { path: '/stock', icon: Layers, label: language === 'fr' ? 'Stock Central' : 'المخزون المركزي' }, 
-    { path: '/clients', icon: Users, label: language === 'fr' ? 'Clients & Dettes' : 'العملاء والديون (CRM)' }, 
-    { path: '/orders', icon: Package, label: language === 'fr' ? 'Commandes Reçues' : 'الطلبات الواردة', badge: pendingOrdersCount },
-    { path: '/fleet', icon: Truck, label: language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل', badge: readyToShipCount },  
-    { path: '/contracts', icon: FileSignature, label: language === 'fr' ? 'Contrats & Signatures' : 'المصافحة الرقمية' },
-    { path: '/invoices', icon: FileText, label: language === 'fr' ? 'Factures B2B' : 'الفواتير الكبرى' },
-    { path: '/hr', icon: Users, label: language === 'fr' ? 'Ressources Humaines' : 'الموارد البشرية' },
-    { path: '/caisses', icon: Wallet, label: language === 'fr' ? 'Caisses & Banques' : 'الصناديق والحسابات' },
-    { path: '/expenses', icon: Receipt, label: language === 'fr' ? 'Gestion des Charges' : 'إدارة المصاريف' },
-    { path: '/fiscal', icon: Landmark, label: language === 'fr' ? 'Système Fiscal' : 'النظام الجبائي (TVA)' },
-    { path: '/accounting', icon: Calculator, label: language === 'fr' ? 'Comptabilité & Bilan' : 'المحاسبة والـ CPC' },
-    { path: '/analytics', icon: BarChart3, label: language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى' },
-    { path: '/ai-advisor', icon: Sparkles, label: language === 'fr' ? 'Conseiller Stratégique (IA)' : 'المستشار الذكي (IA)' },
-    { path: '/tender-radar', icon: Radar, label: language === 'fr' ? 'Radar d\'Appels d\'Offres' : 'رادار المناقصات' },
-    { path: '/settings', icon: Settings, label: language === 'fr' ? 'Paramètres & Confiance' : 'الإعدادات والتوثيق' }
+    { path: '/', icon: LayoutDashboard, label: t.items.overview },
+    { path: '/raw-suppliers', icon: Users, label: t.items.rawSuppliers },
+    { path: '/raw-purchases', icon: Receipt, label: t.items.rawPurchases },
+    { path: '/stock', icon: Layers, label: t.items.stock }, 
+    { path: '/clients', icon: Users, label: t.items.clients }, 
+    { path: '/orders', icon: Package, label: t.items.orders, badge: pendingOrdersCount },
+    { path: '/fleet', icon: Truck, label: t.items.fleet, badge: readyToShipCount },  
+    { path: '/contracts', icon: FileSignature, label: t.items.contracts },
+    { path: '/invoices', icon: FileText, label: t.items.invoices },
+    { path: '/hr', icon: Users, label: t.items.hr },
+    { path: '/caisses', icon: Wallet, label: t.items.caisses },
+    { path: '/expenses', icon: Receipt, label: t.items.expenses },
+    { path: '/fiscal', icon: Landmark, label: t.items.fiscal },
+    { path: '/accounting', icon: Calculator, label: t.items.accounting },
+    { path: '/analytics', icon: BarChart3, label: t.items.analytics },
+    { path: '/ai-advisor', icon: Sparkles, label: t.items.ai },
+    { path: '/tender-radar', icon: Radar, label: t.items.radar },
+    { path: '/settings', icon: Settings, label: t.items.settings }
   ];
 
   return (

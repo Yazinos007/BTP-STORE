@@ -34,7 +34,7 @@ const translations = {
 export default function SupplierHR() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

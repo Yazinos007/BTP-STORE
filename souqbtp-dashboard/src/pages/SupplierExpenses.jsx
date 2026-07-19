@@ -57,7 +57,7 @@ export default function SupplierExpenses() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
   const { expenses, fetchExpenses, addExpense, updateExpense, deleteExpense } = useExpenseStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
   
   const [revenue, setRevenue] = useState(0);
   const [isLoadingUI, setIsLoadingUI] = useState(true);

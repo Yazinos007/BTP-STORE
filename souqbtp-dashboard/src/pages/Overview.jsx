@@ -43,7 +43,7 @@ export default function Overview() {
   const { expenses, fetchExpenses } = useExpenseStore();
   const { employees, fetchEmployees } = useHRStore();
   const { language } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [stats, setStats] = useState({ 
     totalProducts: 0, inventoryValue: 0, activeOrders: 0, totalRevenue: 0, 

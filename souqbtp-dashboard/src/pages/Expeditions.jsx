@@ -29,7 +29,7 @@ export default function Expeditions() {
   const { shippingSlips, isLoading, fetchShippingSlips, createShippingSlip, updateStatus } = useExpeditionStore();
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [clientName, setClientName] = useState('');
   const [items, setItems] = useState([{ id: Date.now(), designation: '', qty: 1 }]);

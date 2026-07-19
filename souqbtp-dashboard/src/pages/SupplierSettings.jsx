@@ -88,7 +88,7 @@ const translations = {
 export default function SupplierSettings() {
   const { language } = useSettingsStore();
   const { supplier, updateProfile } = useSupplierStore(); // 🎯 سحبنا دالة التحديث
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
   const navigate = useNavigate();
 
   const [verificationStatus, setVerificationStatus] = useState('unverified'); 

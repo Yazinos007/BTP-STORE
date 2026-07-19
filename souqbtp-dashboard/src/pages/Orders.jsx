@@ -29,7 +29,7 @@ const translations = {
 export default function Orders() {
   const { orders, fetchOrders } = useOrderStore();
   const { language } = useSettingsStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');

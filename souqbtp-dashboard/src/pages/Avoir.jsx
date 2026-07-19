@@ -31,7 +31,7 @@ export default function Avoir() {
   const { creditNotes, isLoading, fetchAvoirs, createAvoir, updateStatus } = useAvoirStore();
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [clientName, setClientName] = useState('');
   const [tvaRate, setTvaRate] = useState(20);

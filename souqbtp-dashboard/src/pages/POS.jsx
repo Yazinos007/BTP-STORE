@@ -35,7 +35,7 @@ export default function POS() {
   const { supplier } = useSupplierStore();
   const { language } = useSettingsStore();
   const { clients, fetchClients } = useClientStore();
-  const t = translations[language];
+  const t = translations[language] || translations['fr'];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
