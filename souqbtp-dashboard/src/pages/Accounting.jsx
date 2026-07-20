@@ -14,7 +14,13 @@ const translations = {
     chartTitle: 'مقارنة المداخيل والمصاريف', revLabel: 'المداخيل', expLabel: 'المصاريف والرواتب',
     rubrique: 'البيان (Rubrique)', montant: 'المبلغ', details: 'تفاصيل العمليات',
     prodExploitation: 'عائدات الاستغلال (المبيعات)', chargesExploitation: 'تكاليف الاستغلال (المصاريف)',
-    fraisPersonnel: 'تكاليف الموظفين (الرواتب)', netTitle: 'النتيجة الصافية'
+    fraisPersonnel: 'تكاليف الموظفين (الرواتب)', netTitle: 'النتيجة الصافية',
+    // 🎯 ترجمات التصدير (CSV)
+    csvHeader: "التاريخ,نوع العملية,الوصف / الفئة,المبلغ (درهم)\n",
+    csvSale: "مبيعات / مداخيل",
+    csvOrder: "طلب رقم",
+    csvExpense: "تكلفة / مصروف",
+    csvFileName: "تصدير_للمحاسب_"
   },
   fr: {
     title: 'Comptabilité & Bilan', subtitle: 'Situation financière et CPC générés automatiquement.',
@@ -23,7 +29,28 @@ const translations = {
     chartTitle: 'Comparaison Revenus vs Charges', revLabel: 'Revenus', expLabel: 'Charges & Salaires',
     rubrique: 'Rubrique', montant: 'Montant', details: 'Détails des opérations',
     prodExploitation: 'Produits d\'Exploitation (Ventes)', chargesExploitation: 'Charges d\'Exploitation (Dépenses)',
-    fraisPersonnel: 'Frais de Personnel (Salaires)', netTitle: 'RÉSULTAT NET'
+    fraisPersonnel: 'Frais de Personnel (Salaires)', netTitle: 'RÉSULTAT NET',
+    // 🎯 ترجمات التصدير (CSV)
+    csvHeader: "Date,Type d'operation,Description / Categorie,Montant (MAD)\n",
+    csvSale: "Vente / Revenu",
+    csvOrder: "Commande n°",
+    csvExpense: "Charge / Depense",
+    csvFileName: "Export_Fiduciaire_"
+  },
+  en: {
+    title: 'Accounting & Financials', subtitle: 'Company financial position and auto-generated Income Statement (CPC).',
+    revenue: 'Total Revenue', expenses: 'Operating Expenses', payroll: 'Monthly Payroll', netResult: 'Net Result (Profit/Loss)',
+    cpcTitle: 'Income Statement (CPC)', exportBtn: 'Export for Accountant (CSV)', currency: 'MAD',
+    chartTitle: 'Revenue vs. Expenses Comparison', revLabel: 'Revenue', expLabel: 'Expenses & Payroll',
+    rubrique: 'Item (Category)', montant: 'Amount', details: 'Operation Details',
+    prodExploitation: 'Operating Revenue (Sales)', chargesExploitation: 'Operating Expenses',
+    fraisPersonnel: 'Personnel Costs (Salaries)', netTitle: 'NET RESULT',
+    // 🎯 ترجمات التصدير (CSV)
+    csvHeader: "Date,Operation Type,Description / Category,Amount (MAD)\n",
+    csvSale: "Sale / Revenue",
+    csvOrder: "Order #",
+    csvExpense: "Expense / Cost",
+    csvFileName: "Accountant_Export_"
   }
 };
 
@@ -32,6 +59,8 @@ export default function Accounting() {
   const { expenses, fetchExpenses } = useExpenseStore();
   const { employees, fetchEmployees } = useHRStore();
   const { language } = useSettingsStore();
+  
+  // 🛡️ الترياق السحري لمنع الشاشة السوداء
   const t = translations[language] || translations['fr'];
 
   useEffect(() => {
@@ -59,20 +88,24 @@ export default function Accounting() {
   ];
 
   const exportDetailedCSV = () => {
-    let csvContent = "Date,Type d'operation,Description / Categorie,Montant (MAD)\n";
+    let csvContent = t.csvHeader;
+    
     safeOrders.filter(o => o.status === 'delivered').forEach(order => {
-      const date = new Date(order.created_at).toLocaleDateString('fr-FR');
-      csvContent += `${date},Vente / Revenu,Commande #${order.id.substring(0, 8)},+${order.total_amount}\n`;
+      const date = new Date(order.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'en' ? 'en-US' : 'fr-FR');
+      csvContent += `${date},${t.csvSale},${t.csvOrder}${order.id.substring(0, 8)},+${order.total_amount}\n`;
     });
+    
     safeExpenses.forEach(expense => {
-      const date = new Date(expense.created_at).toLocaleDateString('fr-FR');
-      csvContent += `${date},Charge / Depense,${expense.category} - ${expense.description},-${expense.amount}\n`;
+      const date = new Date(expense.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'en' ? 'en-US' : 'fr-FR');
+      csvContent += `${date},${t.csvExpense},${expense.category} - ${expense.description},-${expense.amount}\n`;
     });
+    
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `Export_Fiduciaire_${new Date().toLocaleDateString('fr-FR')}.csv`);
+    const dateStr = new Date().toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'en' ? 'en-US' : 'fr-FR').replace(/\//g, '-');
+    link.setAttribute("download", `${t.csvFileName}${dateStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

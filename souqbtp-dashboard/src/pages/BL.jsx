@@ -13,7 +13,15 @@ const translations = {
     totalTVA: 'قيمة الضريبة (TVA)', totalTTC: 'الإجمالي (TTC)',
     save: 'حفظ السند', saving: 'جاري الحفظ...', history: 'سجل السندات', date: 'التاريخ',
     status: 'الحالة', actions: 'إجراءات', empty: 'لا توجد سندات مسجلة.',
-    pending: 'قيد الانتظار', delivered: 'تم التسليم', cancelled: 'ملغى', print: 'طباعة'
+    pending: 'قيد الانتظار', delivered: 'تم التسليم', cancelled: 'ملغى', print: 'طباعة',
+    clientPlaceholder: 'اسم العميل أو المستلم...', productPlaceholder: 'مثال: إسمنت، حديد...',
+    errorMsg: 'خطأ: ', loading: 'جاري التحميل...',
+    markDelivered: 'تعيين كـ "تم التسليم"', cancel: 'إلغاء',
+    printAddress: 'عنوان الشركة', printInvoiceType: "سند تسليم (BL)",
+    printDate: 'التاريخ:', printDeliveredTo: 'تم التسليم إلى:',
+    printDesignation: 'البيان', printQty: 'الكمية', printUP: 'سعر الوحدة', printTotalHT: 'الإجمالي (HT)',
+    printTotalTTC: 'الإجمالي (TTC)',
+    printSignCompany: 'توقيع وختم الشركة', printSignClient: 'توقيع العميل (إقرار بالاستلام)'
   },
   fr: {
     title: 'Bons de Livraison', subtitle: 'Créez et imprimez vos bons de livraison (BL).',
@@ -23,7 +31,33 @@ const translations = {
     totalTVA: 'TVA', totalTTC: 'Total TTC',
     save: 'Enregistrer le BL', saving: 'Enregistrement...', history: 'Historique des BL', date: 'Date',
     status: 'Statut', actions: 'Actions', empty: 'Aucun BL enregistré.',
-    pending: 'En attente', delivered: 'Livré', cancelled: 'Annulé', print: 'Imprimer'
+    pending: 'En attente', delivered: 'Livré', cancelled: 'Annulé', print: 'Imprimer',
+    clientPlaceholder: 'Nom du Client / Destinataire...', productPlaceholder: 'Ex: Ciment Portland...',
+    errorMsg: 'Erreur: ', loading: 'Chargement...',
+    markDelivered: 'Marquer Livré', cancel: 'Annuler',
+    printAddress: 'Adresse de l\'entreprise', printInvoiceType: "BON DE LIVRAISON",
+    printDate: 'Date:', printDeliveredTo: 'Livré à :',
+    printDesignation: 'Désignation', printQty: 'Qté', printUP: 'Prix U. HT', printTotalHT: 'Total HT',
+    printTotalTTC: 'Total TTC',
+    printSignCompany: 'Signature et Cachet de l\'Entreprise', printSignClient: 'Signature du Client (Accusé de réception)'
+  },
+  en: {
+    title: 'Delivery Notes (BL)', subtitle: 'Create and print delivery notes for your goods.',
+    newBL: 'Create New Delivery Note', clientName: 'Client / Recipient',
+    tvaRate: 'VAT Rate (%)', addLine: 'Add Item', designation: 'Description',
+    qty: 'Quantity', price: 'Unit Price', totalHT: 'Total (HT)',
+    totalTVA: 'VAT', totalTTC: 'Total (TTC)',
+    save: 'Save Delivery Note', saving: 'Saving...', history: 'Delivery Notes History', date: 'Date',
+    status: 'Status', actions: 'Actions', empty: 'No delivery notes registered.',
+    pending: 'Pending', delivered: 'Delivered', cancelled: 'Cancelled', print: 'Print',
+    clientPlaceholder: 'Client or Recipient Name...', productPlaceholder: 'Ex: Portland Cement...',
+    errorMsg: 'Error: ', loading: 'Loading...',
+    markDelivered: 'Mark as Delivered', cancel: 'Cancel',
+    printAddress: 'Company Address', printInvoiceType: "DELIVERY NOTE (BL)",
+    printDate: 'Date:', printDeliveredTo: 'Delivered To:',
+    printDesignation: 'Description', printQty: 'Qty', printUP: 'Unit Price', printTotalHT: 'Total HT',
+    printTotalTTC: 'Total TTC',
+    printSignCompany: 'Company Signature & Stamp', printSignClient: 'Client Signature (Acknowledgment of Receipt)'
   }
 };
 
@@ -31,6 +65,8 @@ export default function BL() {
   const { deliveryNotes, isLoading, fetchBLs, createBL, updateStatus } = useBLStore();
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
+  
+  // 🛡️ الترياق السحري موجود لحماية اللوحة
   const t = translations[language] || translations['fr'];
 
   const [clientName, setClientName] = useState('');
@@ -66,7 +102,7 @@ export default function BL() {
       setClientName('');
       setItems([{ id: Date.now(), designation: '', qty: 1, price: 0 }]);
     } else {
-      alert("Erreur: " + result.error);
+      alert(t.errorMsg + result.error);
     }
     setIsSaving(false);
   };
@@ -80,7 +116,7 @@ export default function BL() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">{t.title}</h2>
         <p className="text-gray-500 mt-1">{t.subtitle}</p>
@@ -99,7 +135,7 @@ export default function BL() {
             value={clientName} 
             onChange={(e) => setClientName(e.target.value)} 
             className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" 
-            placeholder="Nom du Client..." 
+            placeholder={t.clientPlaceholder}
             autoComplete="off"
             />
             <datalist id="clients-list">
@@ -130,7 +166,7 @@ export default function BL() {
               value={item.designation} 
               onChange={(e) => handleItemChange(item.id, 'designation', e.target.value)} 
               className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm" 
-              placeholder="Ex: Ciment Portland..." 
+              placeholder={t.productPlaceholder}
               autoComplete="off"
             />
             </div>
@@ -145,13 +181,13 @@ export default function BL() {
             </datalist>
           </div>
 
-          <div className="border-t border-gray-100 pt-4 flex flex-col items-end space-y-2">
+          <div className={`border-t border-gray-100 pt-4 flex flex-col ${language === 'ar' ? 'items-start' : 'items-end'} space-y-2`}>
             <div className="w-64 flex justify-between text-gray-600 font-medium"><span>{t.totalHT} :</span> <span>{totalHT.toFixed(2)}</span></div>
             <div className="w-64 flex justify-between text-gray-600 font-medium"><span>{t.totalTVA} :</span> <span>{tvaAmount.toFixed(2)}</span></div>
             <div className="w-64 flex justify-between text-xl font-black text-gray-900 border-t border-gray-800 pt-2 mt-2"><span>{t.totalTTC} :</span> <span>{totalTTC.toFixed(2)}</span></div>
           </div>
 
-          <div className="mt-8 flex justify-end">
+          <div className={`mt-8 flex ${language === 'ar' ? 'justify-start' : 'justify-end'}`}>
             <button onClick={handleSaveBL} disabled={!isFormValid || isSaving} className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-bold py-3 px-8 rounded-lg transition-colors">
               {isSaving ? t.saving : t.save}
             </button>
@@ -165,12 +201,12 @@ export default function BL() {
               <div key={bl.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-bold text-gray-800 text-sm truncate w-32">{bl.client_name}</h4>
-                  <span className="text-xs text-gray-400">{new Date(bl.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-gray-400">{new Date(bl.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'en' ? 'en-US' : 'fr-FR')}</span>
                 </div>
                 <div className="flex justify-between items-end">
                   {getStatusBadge(bl.status)}
                   <div className="text-end">
-                    <p className="font-black text-purple-600 text-sm">{Number(bl.total_ttc).toLocaleString()}</p>
+                    <p className="font-black text-purple-600 text-sm" dir="ltr">{Number(bl.total_ttc).toLocaleString()}</p>
                     <button onClick={() => setSelectedBL(bl)} className="text-xs text-gray-500 hover:text-gray-800 underline mt-1 flex items-center gap-1 justify-end"><Printer size={12}/> {t.print}</button>
                   </div>
                 </div>
@@ -188,8 +224,8 @@ export default function BL() {
               <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold transition-colors"><Printer size={18} /> {t.print}</button>
               {selectedBL.status === 'pending' && (
                 <>
-                  <button onClick={() => { updateStatus(selectedBL.id, 'delivered'); setSelectedBL({...selectedBL, status: 'delivered'}); }} className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold transition-colors"><CheckCircle size={18} /> Marquer Livré</button>
-                  <button onClick={() => { updateStatus(selectedBL.id, 'cancelled'); setSelectedBL({...selectedBL, status: 'cancelled'}); }} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors"><XCircle size={18} /> Annuler</button>
+                  <button onClick={() => { updateStatus(selectedBL.id, 'delivered'); setSelectedBL({...selectedBL, status: 'delivered'}); }} className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold transition-colors"><CheckCircle size={18} /> {t.markDelivered}</button>
+                  <button onClick={() => { updateStatus(selectedBL.id, 'cancelled'); setSelectedBL({...selectedBL, status: 'cancelled'}); }} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors"><XCircle size={18} /> {t.cancel}</button>
                 </>
               )}
             </div>
@@ -199,44 +235,52 @@ export default function BL() {
                 <div>
                   <h1 className="text-4xl font-black text-gray-900 mb-2 uppercase">{supplier?.store_name || 'ENTREPRISE'}</h1>
                   <p className="text-sm text-gray-500">ICE: 123456789012345</p>
-                  <p className="text-sm text-gray-500">Adresse de l'entreprise</p>
+                  <p className="text-sm text-gray-500">{t.printAddress}</p>
                 </div>
-                <div className="text-end">
-                  <h2 className="text-3xl font-light text-purple-800 uppercase tracking-widest mb-2">BON DE LIVRAISON</h2>
+                <div className={`text-${language === 'ar' ? 'start' : 'end'}`}>
+                  <h2 className="text-3xl font-light text-purple-800 uppercase tracking-widest mb-2">{t.printInvoiceType}</h2>
                   <p className="text-gray-600 font-bold">N° BL-{selectedBL.id.slice(0,6).toUpperCase()}</p>
-                  <p className="text-gray-500 text-sm">Date: {new Date(selectedBL.created_at).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-gray-500 text-sm">{t.printDate} {new Date(selectedBL.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'en' ? 'en-US' : 'fr-FR')}</p>
                 </div>
               </div>
 
-              <div className="mb-10 bg-gray-50 p-6 rounded-lg border border-gray-200 w-1/2 ml-auto text-start" dir="ltr">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Livré à :</p>
+              <div className={`mb-10 bg-gray-50 p-6 rounded-lg border border-gray-200 w-1/2 ${language === 'ar' ? 'mr-auto text-end' : 'ml-auto text-start'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t.printDeliveredTo}</p>
                 <p className="text-xl font-bold text-gray-900">{selectedBL.client_name}</p>
               </div>
 
-              <table className="w-full text-start mb-8 border-collapse" dir="ltr">
+              <table className="w-full text-start mb-8 border-collapse" dir={language === 'ar' ? 'rtl' : 'ltr'}>
                 <thead>
-                  <tr className="bg-purple-800 text-white"><th className="p-3 font-bold text-start">Désignation</th><th className="p-3 font-bold text-center">Qté</th><th className="p-3 font-bold text-end">Prix U. HT</th><th className="p-3 font-bold text-end">Total HT</th></tr>
+                  <tr className="bg-purple-800 text-white">
+                    <th className="p-3 font-bold text-start">{t.printDesignation}</th>
+                    <th className="p-3 font-bold text-center">{t.printQty}</th>
+                    <th className="p-3 font-bold text-end">{t.printUP}</th>
+                    <th className="p-3 font-bold text-end">{t.printTotalHT}</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {selectedBL.items.map((item, idx) => (
                     <tr key={idx} className="border-b border-gray-200">
-                      <td className="p-3 text-gray-800">{item.designation}</td><td className="p-3 text-center text-gray-600">{item.qty}</td><td className="p-3 text-end text-gray-600 font-mono">{Number(item.price).toFixed(2)}</td><td className="p-3 text-end text-gray-800 font-bold font-mono">{(item.qty * item.price).toFixed(2)}</td>
+                      <td className="p-3 text-gray-800 text-start">{item.designation}</td>
+                      <td className="p-3 text-center text-gray-600">{item.qty}</td>
+                      <td className="p-3 text-end text-gray-600 font-mono" dir="ltr">{Number(item.price).toFixed(2)}</td>
+                      <td className="p-3 text-end text-gray-800 font-bold font-mono" dir="ltr">{(item.qty * item.price).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <div className="flex justify-end" dir="ltr">
+              <div className={`flex ${language === 'ar' ? 'justify-start' : 'justify-end'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
                 <div className="w-72 space-y-2">
-                  <div className="flex justify-between text-gray-600"><span>Total HT</span><span className="font-mono">{Number(selectedBL.total_ht).toFixed(2)} MAD</span></div>
-                  <div className="flex justify-between text-gray-600"><span>TVA ({selectedBL.tva_rate}%)</span><span className="font-mono">{Number(selectedBL.tva_amount).toFixed(2)} MAD</span></div>
-                  <div className="flex justify-between text-xl font-black text-purple-900 border-t-2 border-purple-800 pt-2 mt-2"><span>Total TTC</span><span className="font-mono">{Number(selectedBL.total_ttc).toFixed(2)} MAD</span></div>
+                  <div className="flex justify-between text-gray-600"><span>{t.printTotalHT}</span><span className="font-mono" dir="ltr">{Number(selectedBL.total_ht).toFixed(2)} MAD</span></div>
+                  <div className="flex justify-between text-gray-600"><span>TVA ({selectedBL.tva_rate}%)</span><span className="font-mono" dir="ltr">{Number(selectedBL.tva_amount).toFixed(2)} MAD</span></div>
+                  <div className="flex justify-between text-xl font-black text-purple-900 border-t-2 border-purple-800 pt-2 mt-2"><span>{t.printTotalTTC}</span><span className="font-mono" dir="ltr">{Number(selectedBL.total_ttc).toFixed(2)} MAD</span></div>
                 </div>
               </div>
               
-              <div className="mt-20 flex justify-between text-sm text-gray-500 border-t border-gray-200 pt-4">
-                <p>Signature et Cachet de l'Entreprise</p>
-                <p>Signature du Client (Accusé de réception)</p>
+              <div className="mt-20 flex justify-between text-sm text-gray-500 border-t border-gray-200 pt-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                <p>{t.printSignCompany}</p>
+                <p>{t.printSignClient}</p>
               </div>
             </div>
           </div>

@@ -3,16 +3,55 @@ import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import { Truck, MapPin, CheckCircle, Clock, Navigation, User, Hash, Loader2, ShieldCheck } from 'lucide-react';
 
+const translations = {
+  ar: {
+    title: 'أسطول التوصيل', subtitle: 'إدارة الشاحنات وتتبع مسار التوصيل للمحلات.',
+    loading: 'جاري التحميل...', noShipments: 'لا توجد شحنات حالياً', 
+    noShipmentsDesc: 'العقود الموقعة ستظهر هنا لتعيين الشاحنات لها.',
+    readyToShip: 'جاهز للشحن', onWay: 'في الطريق 🚚', waitingConfirm: 'بانتظار تأكيد التاجر ⏳',
+    completed: 'مكتمل ✅', destination: 'الوجهة (التاجر)', amount: 'القيمة',
+    driver: 'السائق', plate: 'اللوحة', gps: 'GPS', dispatch: 'إرسال الشاحنة',
+    confirmDelivery: 'تأكيد وصول البضاعة', promptDriver: 'اسم السائق (المُوصِّل):',
+    promptPhone: 'رقم هاتف السائق:', promptPlate: 'رقم لوحة الشاحنة (Matricule):',
+    confirmArrival: 'هل تؤكد أن البضاعة تم تسليمها بنجاح؟', gpsNotAvailable: 'GPS غير متاح',
+    error: 'خطأ: '
+  },
+  fr: {
+    title: 'Flotte & Livraisons', subtitle: 'Gérez vos expéditions et suivez les camions.',
+    loading: 'Chargement...', noShipments: 'Aucune expédition', 
+    noShipmentsDesc: 'Les contrats signés apparaîtront ici pour expédition.',
+    readyToShip: 'Prêt à expédier', onWay: 'En Route 🚚', waitingConfirm: 'Attente Client ⏳',
+    completed: 'Clôturé ✅', destination: 'Destination', amount: 'Montant',
+    driver: 'Chauffeur', plate: 'Matricule', gps: 'GPS', dispatch: 'Expédier la commande',
+    confirmDelivery: 'Marquer comme Livré', promptDriver: 'Nom du chauffeur :',
+    promptPhone: 'Téléphone du chauffeur :', promptPlate: 'Matricule du véhicule :',
+    confirmArrival: 'Confirmer la livraison ?', gpsNotAvailable: 'GPS non disponible',
+    error: 'Erreur: '
+  },
+  en: {
+    title: 'Fleet & Deliveries', subtitle: 'Manage your shipments and track your trucks.',
+    loading: 'Loading...', noShipments: 'No shipments', 
+    noShipmentsDesc: 'Signed contracts will appear here for dispatch.',
+    readyToShip: 'Ready to ship', onWay: 'On the way 🚚', waitingConfirm: 'Awaiting customer confirmation ⏳',
+    completed: 'Completed ✅', destination: 'Destination', amount: 'Amount',
+    driver: 'Driver', plate: 'Vehicle ID', gps: 'GPS', dispatch: 'Dispatch Truck',
+    confirmDelivery: 'Confirm Delivery', promptDriver: 'Driver name:',
+    promptPhone: 'Driver phone:', promptPlate: 'Vehicle plate:',
+    confirmArrival: 'Confirm delivery?', gpsNotAvailable: 'GPS unavailable',
+    error: 'Error: '
+  }
+};
+
 export default function Fleet() {
   const [deliveries, setDeliveries] = useState([]);
   const [merchants, setMerchants] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const { language } = useSettingsStore();
+  const t = translations[language] || translations['fr']; // 🛡️ الترياق السحري
 
   const fetchDeliveries = async () => {
     setIsLoading(true);
     try {
-      // 🌟 جلب الطلبات الموقعة (signed)، في الطريق (shipped)، أو المكتملة (delivered)
       const { data, error } = await supabase
         .from('supply_requests')
         .select('*')
@@ -48,36 +87,35 @@ export default function Fleet() {
   }, []);
 
   const handleDispatch = async (id) => {
-    const driverName = window.prompt(language === 'fr' ? "Nom du chauffeur :" : "اسم السائق (المُوصِّل):");
+    const driverName = window.prompt(t.promptDriver);
     if (!driverName) return;
-    const driverPhone = window.prompt(language === 'fr' ? "Téléphone du chauffeur :" : "رقم هاتف السائق:");
+    const driverPhone = window.prompt(t.promptPhone);
     if (!driverPhone) return;
-    const vehiclePlate = window.prompt(language === 'fr' ? "Matricule du véhicule :" : "رقم لوحة الشاحنة (Matricule):");
+    const vehiclePlate = window.prompt(t.promptPlate);
     if (!vehiclePlate) return;
 
     try {
       const { error } = await supabase
         .from('supply_requests')
-        // 🌟 إضافة الهاتف هنا
         .update({ status: 'shipped', driver_name: driverName, vehicle_plate: vehiclePlate, driver_phone: driverPhone })
         .eq('id', id);
       if (error) throw error;
       fetchDeliveries();
-    } catch (err) { alert("Erreur: " + err.message); }
+    } catch (err) { alert(t.error + err.message); }
   };
 
   const handleMarkDelivered = async (id) => {
-    if (!window.confirm(language === 'fr' ? "Confirmer la livraison ?" : "هل تؤكد أن البضاعة تم تسليمها بنجاح؟")) return;
+    if (!window.confirm(t.confirmArrival)) return;
     try {
       const { error } = await supabase.from('supply_requests').update({ status: 'delivered' }).eq('id', id);
       if (error) throw error;
       fetchDeliveries();
-    } catch (err) { alert("Erreur: " + err.message); }
+    } catch (err) { alert(t.error + err.message); }
   };
 
   const openGoogleMaps = (location) => {
-    if (!location || !location.lat) return alert("GPS non disponible");
-    window.open(`https://www.google.com/maps?q=$${location.lat},${location.lng}`, '_blank');
+    if (!location || !location.lat) return alert(t.gpsNotAvailable);
+    window.open(`https://www.google.com/maps?q=${location.lat},${location.lng}`, '_blank');
   };
 
   return (
@@ -86,11 +124,9 @@ export default function Fleet() {
         <div>
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
             <Truck className="text-emerald-500" size={32} />
-            {language === 'fr' ? 'Flotte & Livraisons' : 'أسطول التوصيل'}
+            {t.title}
           </h2>
-          <p className="text-slate-400 mt-1 font-medium">
-            {language === 'fr' ? 'Gérez vos expéditions et suivez les camions.' : 'إدارة الشاحنات وتتبع مسار التوصيل للمحلات.'}
-          </p>
+          <p className="text-slate-400 mt-1 font-medium">{t.subtitle}</p>
         </div>
       </div>
 
@@ -99,8 +135,8 @@ export default function Fleet() {
       ) : deliveries.length === 0 ? (
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-16 text-center">
           <ShieldCheck size={48} className="text-slate-500 mx-auto mb-4 opacity-50" />
-          <h3 className="text-xl font-bold text-white mb-2">{language === 'fr' ? 'Aucune expédition' : 'لا توجد شحنات حالياً'}</h3>
-          <p className="text-slate-400">{language === 'fr' ? 'Les contrats signés apparaîtront ici pour expédition.' : 'العقود الموقعة ستظهر هنا لتعيين الشاحنات لها.'}</p>
+          <h3 className="text-xl font-bold text-white mb-2">{t.noShipments}</h3>
+          <p className="text-slate-400">{t.noShipmentsDesc}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -112,50 +148,42 @@ export default function Fleet() {
 
             return (
               <div key={req.id} className={`bg-slate-800/80 backdrop-blur-xl border ${isShipped ? 'border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'border-slate-700'} rounded-2xl overflow-hidden transition-all`}>
-                
                 <div className="p-4 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400"><ShieldCheck size={20} /></div>
                     <div>
                       <h4 className="text-white font-bold text-lg">PO #{req.id.split('-')[0].toUpperCase()}</h4>
-                      {req.digital_signature && req.digital_signature.startsWith('data:image') ? (
-                    <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs">✍️</span>
-                    <img src={req.digital_signature} alt="Signature" className="h-6 object-contain bg-white/10 rounded px-1" />
-                  </div>
-                ) : (
-                <p className="text-xs text-emerald-400 font-bold">✍️ {req.digital_signature}</p>
-                )}
+                      {req.digital_signature && (
+                        <p className="text-xs text-emerald-400 font-bold">✍️ {req.digital_signature.startsWith('data:image') ? 'Signature' : req.digital_signature}</p>
+                      )}
                     </div>
                   </div>
-                  
-                  {isSigned && <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Prêt à expédier' : 'جاهز للشحن'}</span>}
-                  {isShipped && <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'En Route 🚚' : 'في الطريق 🚚'}</span>}
-                  {isDelivered && <span className="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-xs font-black animate-pulse">{language === 'fr' ? 'Attente Client ⏳' : 'بانتظار تأكيد التاجر ⏳'}</span>}
-                  {req.status === 'completed' && <span className="bg-slate-700 text-slate-300 px-3 py-1 rounded-full text-xs font-black">{language === 'fr' ? 'Clôturé ✅' : 'مكتمل ✅'}</span>}
+                  {isSigned && <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-xs font-black">{t.readyToShip}</span>}
+                  {isShipped && <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-black animate-pulse">{t.onWay}</span>}
+                  {isDelivered && <span className="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-xs font-black animate-pulse">{t.waitingConfirm}</span>}
+                  {req.status === 'completed' && <span className="bg-slate-700 text-slate-300 px-3 py-1 rounded-full text-xs font-black">{t.completed}</span>}
                 </div>
 
                 <div className="p-6">
                   <div className="flex justify-between mb-4">
                     <div>
-                      <p className="text-sm font-bold text-slate-500">{language === 'fr' ? 'Destination' : 'الوجهة (التاجر)'}</p>
+                      <p className="text-sm font-bold text-slate-500">{t.destination}</p>
                       <h3 className="text-xl font-black text-white">{merchantInfo.store_name}</h3>
                     </div>
                     <div className="text-end">
-                      <p className="text-sm font-bold text-slate-500">{language === 'fr' ? 'Montant' : 'القيمة'}</p>
-                      <h3 className="text-xl font-black text-white">{Number(req.total_amount).toLocaleString()} DH</h3>
+                      <p className="text-sm font-bold text-slate-500">{t.amount}</p>
+                      <h3 className="text-xl font-black text-white">{Number(req.total_amount).toLocaleString()} {t.currency || 'DH'}</h3>
                     </div>
                   </div>
 
-                  {/* معلومات السائق تظهر إذا تم الشحن */}
                   {(isShipped || isDelivered) && (
                     <div className="bg-blue-900/20 border border-blue-500/20 rounded-xl p-4 mb-6 flex gap-4">
                       <div className="flex-1">
-                        <p className="text-xs text-blue-400 font-bold mb-1 flex items-center gap-1"><User size={14}/> {language === 'fr' ? 'Chauffeur' : 'السائق'}</p>
+                        <p className="text-xs text-blue-400 font-bold mb-1 flex items-center gap-1"><User size={14}/> {t.driver}</p>
                         <p className="text-white font-medium">{req.driver_name}</p>
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs text-blue-400 font-bold mb-1 flex items-center gap-1"><Hash size={14}/> {language === 'fr' ? 'Matricule' : 'اللوحة'}</p>
+                        <p className="text-xs text-blue-400 font-bold mb-1 flex items-center gap-1"><Hash size={14}/> {t.plate}</p>
                         <p className="text-white font-medium">{req.vehicle_plate}</p>
                       </div>
                     </div>
@@ -163,18 +191,16 @@ export default function Fleet() {
 
                   <div className="flex gap-3 mt-6">
                     <button onClick={() => openGoogleMaps(req.location_data)} className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold flex justify-center items-center gap-2">
-                      <Navigation size={18}/> GPS
+                      <Navigation size={18}/> {t.gps}
                     </button>
-                    
                     {isSigned && (
                       <button onClick={() => handleDispatch(req.id)} className="flex-[2] py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex justify-center items-center gap-2 shadow-lg shadow-emerald-600/20">
-                        <Truck size={18}/> {language === 'fr' ? 'Expédier la commande' : 'إرسال الشاحنة'}
+                        <Truck size={18}/> {t.dispatch}
                       </button>
                     )}
-                    
                     {isShipped && (
                       <button onClick={() => handleMarkDelivered(req.id)} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black flex justify-center items-center gap-2 shadow-lg shadow-blue-600/20">
-                        <CheckCircle size={18}/> {language === 'fr' ? 'Marquer comme Livré' : 'تأكيد وصول البضاعة'}
+                        <CheckCircle size={18}/> {t.confirmDelivery}
                       </button>
                     )}
                   </div>

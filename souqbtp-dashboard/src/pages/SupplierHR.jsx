@@ -15,7 +15,10 @@ const translations = {
     loading: 'جاري التحميل...', empty: 'لا يوجد موظفون مسجلون حالياً.', currency: 'درهم',
     statusActive: 'نشط', statusLeave: 'في إجازة', statusTerminated: 'منهي العقد',
     payslip: 'قسيمة الراتب', printBtn: 'طباعة القسيمة', closeBtn: 'إغلاق', month: 'الشهر',
-    confirmDelete: 'هل أنت متأكد من حذف هذا الموظف نهائياً؟', searchPlaceholder: 'ابحث بالاسم، CIN، أو المنصب...'
+    confirmDelete: 'هل أنت متأكد من حذف هذا الموظف نهائياً؟', searchPlaceholder: 'ابحث بالاسم، CIN، أو المنصب...',
+    designation: 'البيان', amount: 'المبلغ', netToPay: 'صافي الأجر للاستلام',
+    employerSign: 'توقيع المشغل', employeeSign: 'توقيع الموظف', docInternal: 'مستند داخلي - الأجور',
+    deleteTooltip: 'حذف', editTooltip: 'تعديل'
   },
   fr: {
     title: 'Ressources Humaines', subtitle: 'Gestion des employés et de la paie de l\'entreprise.',
@@ -27,13 +30,33 @@ const translations = {
     loading: 'Chargement...', empty: 'Aucun employé enregistré.', currency: 'MAD',
     statusActive: 'Actif', statusLeave: 'En congé', statusTerminated: 'Résilié',
     payslip: 'Fiche de Paie', printBtn: 'Imprimer', closeBtn: 'Fermer', month: 'Mois',
-    confirmDelete: 'Voulez-vous vraiment supprimer cet employé ?', searchPlaceholder: 'Rechercher par nom, CIN, ou poste...'
+    confirmDelete: 'Voulez-vous vraiment supprimer cet employé ?', searchPlaceholder: 'Rechercher par nom, CIN, ou poste...',
+    designation: 'Désignation', amount: 'Montant', netToPay: 'Net à Payer',
+    employerSign: 'Signature de l\'Employeur', employeeSign: 'Signature de l\'Employé', docInternal: 'Document Interne - Paie',
+    deleteTooltip: 'Supprimer', editTooltip: 'Modifier'
+  },
+  en: {
+    title: 'Human Resources', subtitle: 'Manage company employees and payroll.',
+    addBtn: 'New Employee', totalEmp: 'Total Employees', activeEmp: 'Active Employees',
+    payroll: 'Monthly Payroll', newEmp: 'New Employee Details', editEmp: 'Edit Employee Details', name: 'Full Name',
+    position: 'Position / Role', salary: 'Base Salary', cin: 'ID Number (CIN)', phone: 'Phone Number',
+    primes: 'Bonuses / Advances', retenues: 'Deductions (Tax/Insurance)',
+    save: 'Save', cancel: 'Cancel', date: 'Hire Date', status: 'Status', actions: 'Actions',
+    loading: 'Loading...', empty: 'No employees registered yet.', currency: 'MAD',
+    statusActive: 'Active', statusLeave: 'On Leave', statusTerminated: 'Terminated',
+    payslip: 'Payslip', printBtn: 'Print Payslip', closeBtn: 'Close', month: 'Month',
+    confirmDelete: 'Are you sure you want to permanently delete this employee?', searchPlaceholder: 'Search by name, CIN, or position...',
+    designation: 'Description', amount: 'Amount', netToPay: 'Net Pay',
+    employerSign: 'Employer Signature', employeeSign: 'Employee Signature', docInternal: 'Internal Document - Payroll',
+    deleteTooltip: 'Delete', editTooltip: 'Edit'
   }
 };
 
 export default function SupplierHR() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
+  
+  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
 
   const [employees, setEmployees] = useState([]);
@@ -72,7 +95,7 @@ export default function SupplierHR() {
       primes_avances: parseFloat(formData.primes || 0),
       retenues: parseFloat(formData.retenues || 0),
       status: formData.status,
-      supplier_id: targetId // 🎯 الربط بالمورد
+      supplier_id: targetId 
     };
 
     if (editingId) {
@@ -121,7 +144,7 @@ export default function SupplierHR() {
     terminated: { label: t.statusTerminated, color: 'bg-red-100 text-red-700', icon: XCircle }
   };
 
-  const currentMonth = new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'ar-MA', { month: 'long', year: 'numeric' });
+  const currentMonth = new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { month: 'long', year: 'numeric' });
   const defaultRoles = ["Directeur", "Manager", "Comptable", "Vendeur", "Chauffeur", "Magasinier", "Ouvrier", "Technicien", "Secrétaire"];
   const roleSuggestions = [...new Set([...defaultRoles, ...employees.map(emp => emp.role).filter(Boolean)])];
 
@@ -137,7 +160,7 @@ export default function SupplierHR() {
         <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md border border-white/10"><Icon size={24} className="text-white" /></div>
         <div>
           <p className="text-sm font-medium text-white/80 mb-1">{title}</p>
-          <h4 className="text-3xl font-black tracking-tight">{value} <span className="text-sm font-normal text-white/70">{valueSuffix}</span></h4>
+          <h4 className="text-3xl font-black tracking-tight" dir="ltr">{value} <span className="text-sm font-normal text-white/70">{valueSuffix}</span></h4>
         </div>
       </div>
     </div>
@@ -148,7 +171,7 @@ export default function SupplierHR() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black text-white tracking-tight">{t.title}</h2>
-  <p className="text-slate-300 mt-1 font-medium">{t.subtitle}</p>
+          <p className="text-slate-300 mt-1 font-medium">{t.subtitle}</p>
         </div>
         <button onClick={() => { handleCancel(); setShowAddForm(true); }} className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 transition-all font-bold shadow-lg hover:shadow-blue-500/30">
           <UserPlus size={20} /> {t.addBtn}
@@ -162,7 +185,7 @@ export default function SupplierHR() {
       </div>
 
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-2xl w-full max-w-4xl animate-slide-up">
             <div className="flex justify-between items-center mb-6 pb-2 border-b">
               <h3 className="font-black text-gray-800 text-xl">{editingId ? t.editEmp : t.newEmp}</h3>
@@ -170,13 +193,13 @@ export default function SupplierHR() {
             </div>
             
             <form onSubmit={handleSaveEmployee} className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
-              <div><label className="block text-sm font-bold text-gray-700 mb-2">{t.name}</label><input type="text" required value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-gray-50 transition-all" /></div>
-              <div><label className="block text-sm font-bold text-gray-700 mb-2">{t.cin}</label><input type="text" value={formData.cin} onChange={e => setFormData({...formData, cin: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-gray-50 transition-all" /></div>
-              <div><label className="block text-sm font-bold text-gray-700 mb-2">{t.phone}</label><input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-gray-50 transition-all" /></div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-2">{t.name}</label><input type="text" required value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-gray-50 transition-all font-medium text-gray-800" /></div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-2">{t.cin}</label><input type="text" value={formData.cin} onChange={e => setFormData({...formData, cin: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-gray-50 transition-all font-medium text-gray-800" /></div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-2">{t.phone}</label><input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-gray-50 transition-all font-medium text-gray-800" /></div>
               
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">{t.position}</label>
-                <input type="text" list="roles-list" required value={formData.position} onChange={e => setFormData({...formData, position: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-gray-50 transition-all" autoComplete="off" />
+                <input type="text" list="roles-list" required value={formData.position} onChange={e => setFormData({...formData, position: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-gray-50 transition-all font-medium text-gray-800" autoComplete="off" />
                 <datalist id="roles-list">{roleSuggestions.map((role, i) => <option key={i} value={role} />)}</datalist>
               </div>
 
@@ -253,13 +276,13 @@ export default function SupplierHR() {
                         {Number(emp.base_salary).toLocaleString()} <span className="text-[10px] font-bold text-gray-400 uppercase">{t.currency}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black border ${statusConfig[empStatus].color.replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50')} border-${statusConfig[empStatus].color.split(' ')[0].replace('bg-', '')}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black border ${statusConfig[empStatus].color}`}>
                           <StatusIcon size={14} />{statusConfig[empStatus].label}
                         </span>
                       </td>
                       <td className="px-6 py-4 flex items-center justify-center gap-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleEditClick(emp)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title={t.editEmp}><Edit size={18} /></button>
-                        <button onClick={() => handleDeleteClick(emp.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Supprimer"><Trash2 size={18} /></button>
+                        <button onClick={() => handleEditClick(emp)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title={t.editTooltip}><Edit size={18} /></button>
+                        <button onClick={() => handleDeleteClick(emp.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title={t.deleteTooltip}><Trash2 size={18} /></button>
                         <div className="w-px h-6 bg-gray-200 mx-1"></div>
                         <button onClick={() => setSelectedEmployee(emp)} className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors">
                           <FileText size={16} /> {t.payslip}
@@ -276,7 +299,7 @@ export default function SupplierHR() {
 
       {selectedEmployee && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center overflow-y-auto py-10 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-          <div className="bg-white w-[700px] shadow-2xl p-10 relative print-area rounded-2xl animate-slide-up">
+          <div className="bg-white text-gray-800 w-[700px] shadow-2xl p-10 relative print-area rounded-2xl animate-slide-up">
             <div className="absolute top-4 right-4 flex gap-2 no-print" dir="ltr">
               <button onClick={() => setSelectedEmployee(null)} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors" title={t.closeBtn}><X size={20} /></button>
               <button onClick={() => window.print()} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors shadow-lg"><Printer size={18} /> {t.printBtn}</button>
@@ -286,7 +309,7 @@ export default function SupplierHR() {
               <div className="flex justify-between items-start border-b-2 border-gray-800 pb-6 mb-6">
                 <div>
                   <h1 className="text-3xl font-black text-gray-900 mb-1 uppercase">{supplier?.store_name || 'ENTREPRISE'}</h1>
-                  <p className="text-sm text-gray-500 font-mono">Document Interne - Paie</p>
+                  <p className="text-sm text-gray-500 font-mono">{t.docInternal}</p>
                 </div>
                 <div className="text-end">
                   <h2 className="text-2xl font-bold text-gray-800 uppercase tracking-widest">{t.payslip}</h2>
@@ -303,26 +326,38 @@ export default function SupplierHR() {
 
               <table className="w-full text-start mb-8 border-collapse border border-gray-300">
                 <thead>
-                  <tr className="bg-gray-100"><th className="border border-gray-300 p-3 font-bold text-gray-700">Désignation</th><th className="border border-gray-300 p-3 font-bold text-gray-700 text-center">Montant</th></tr>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 p-3 font-bold text-gray-700 text-start">{t.designation}</th>
+                    <th className="border border-gray-300 p-3 font-bold text-gray-700 text-center">{t.amount}</th>
+                  </tr>
                 </thead>
                 <tbody>
-                  <tr><td className="border border-gray-300 p-3 font-bold text-gray-800">Salaire de Base</td><td className="border border-gray-300 p-3 text-center font-mono font-bold" dir="ltr">{Number(selectedEmployee.base_salary).toLocaleString()} MAD</td></tr>
-                  <tr><td className="border border-gray-300 p-3 text-gray-600 font-medium">Primes / Avances</td><td className="border border-gray-300 p-3 text-center font-mono text-green-600 font-bold" dir="ltr">+{Number(selectedEmployee.primes_avances || 0).toLocaleString()} MAD</td></tr>
-                  <tr><td className="border border-gray-300 p-3 text-gray-600 font-medium">Retenues (CNSS, AMO)</td><td className="border border-gray-300 p-3 text-center font-mono text-red-600 font-bold" dir="ltr">-{Number(selectedEmployee.retenues || 0).toLocaleString()} MAD</td></tr>
+                  <tr>
+                    <td className="border border-gray-300 p-3 font-bold text-gray-800">{t.salary}</td>
+                    <td className="border border-gray-300 p-3 text-center font-mono font-bold" dir="ltr">{Number(selectedEmployee.base_salary).toLocaleString()} {t.currency}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 p-3 text-gray-600 font-medium">{t.primes}</td>
+                    <td className="border border-gray-300 p-3 text-center font-mono text-green-600 font-bold" dir="ltr">+{Number(selectedEmployee.primes_avances || 0).toLocaleString()} {t.currency}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 p-3 text-gray-600 font-medium">{t.retenues}</td>
+                    <td className="border border-gray-300 p-3 text-center font-mono text-red-600 font-bold" dir="ltr">-{Number(selectedEmployee.retenues || 0).toLocaleString()} {t.currency}</td>
+                  </tr>
                 </tbody>
               </table>
 
               <div className="flex justify-end">
                 <div className="w-80 bg-gray-50 border-2 border-gray-800 p-5 rounded-xl text-center shadow-inner">
-                  <span className="block text-sm text-gray-500 uppercase tracking-widest mb-2 font-bold">Net à Payer</span>
+                  <span className="block text-sm text-gray-500 uppercase tracking-widest mb-2 font-bold">{t.netToPay}</span>
                   <span className="text-3xl font-black text-gray-900 font-mono" dir="ltr">
-                    {(Number(selectedEmployee.base_salary) + Number(selectedEmployee.primes_avances || 0) - Number(selectedEmployee.retenues || 0)).toLocaleString()} <span className="text-sm">MAD</span>
+                    {(Number(selectedEmployee.base_salary) + Number(selectedEmployee.primes_avances || 0) - Number(selectedEmployee.retenues || 0)).toLocaleString()} <span className="text-sm">{t.currency}</span>
                   </span>
                 </div>
               </div>
 
               <div className="mt-12 pt-6 border-t-2 border-dashed border-gray-200 flex justify-between text-sm font-bold text-gray-500">
-                <p>Signature de l'Employeur</p><p>Signature de l'Employé</p>
+                <p>{t.employerSign}</p><p>{t.employeeSign}</p>
               </div>
             </div>
           </div>

@@ -13,7 +13,9 @@ const translations = {
     language: 'لغة النظام', langDesc: 'تغيير لغة الواجهة.',
     addUser: 'إضافة مستخدم', name: 'الاسم الكامل', email: 'البريد الإلكتروني',
     perms: { sales: 'المبيعات والطلبات', products: 'المخزون والمنتجات', purchases: 'المشتريات والموردين', invoices: 'إدارة الفواتير', accounting: 'المحاسبة والصناديق', hr: 'الموارد البشرية' },
-    statusActive: 'نشط', statusInactive: 'موقوف'
+    statusActive: 'نشط', statusInactive: 'موقوف',
+    owner: 'المالك (Propriétaire)', confirmDeleteUser: 'هل أنت متأكد من حذف هذا المستخدم؟',
+    saveSuccess: '✅ تم حفظ البيانات بنجاح!', saveError: 'حدث خطأ أثناء الحفظ.'
   },
   fr: {
     title: 'Paramètres et Accès', subtitle: 'Gérez les infos de l\'entreprise et les permissions de l\'équipe.',
@@ -24,7 +26,22 @@ const translations = {
     language: 'Langue du Système', langDesc: 'Changer la langue de l\'interface.',
     addUser: 'Nouvel Utilisateur', name: 'Nom Complet', email: 'Email',
     perms: { sales: 'Ventes & Commandes', products: 'Stock & Produits', purchases: 'Achats & Fournisseurs', invoices: 'Facturation', accounting: 'Comptabilité & Caisses', hr: 'Ressources Humaines' },
-    statusActive: 'Actif', statusInactive: 'Suspendu'
+    statusActive: 'Actif', statusInactive: 'Suspendu',
+    owner: 'Propriétaire', confirmDeleteUser: 'Voulez-vous vraiment supprimer cet utilisateur ?',
+    saveSuccess: '✅ Enregistré avec succès !', saveError: 'Erreur lors de la sauvegarde.'
+  },
+  en: {
+    title: 'Settings & Permissions', subtitle: 'Manage company info and team permissions.',
+    permsPanelTitle: 'Permissions Control Panel',
+    tabProfile: 'Company Profile', tabUsers: 'Users & Access', tabPrefs: 'Preferences',
+    storeName: 'Company Name', phone: 'Phone', address: 'Address', ice: 'ICE Number',
+    save: 'Save Changes', saving: 'Saving...', changeLogo: 'Change Logo',
+    language: 'System Language', langDesc: 'Change interface language.',
+    addUser: 'Add User', name: 'Full Name', email: 'Email Address',
+    perms: { sales: 'Sales & Orders', products: 'Inventory & Products', purchases: 'Purchases & Suppliers', invoices: 'Invoicing', accounting: 'Accounting & Cashier', hr: 'Human Resources' },
+    statusActive: 'Active', statusInactive: 'Suspended',
+    owner: 'Owner', confirmDeleteUser: 'Are you sure you want to delete this user?',
+    saveSuccess: '✅ Saved successfully!', saveError: 'Error while saving.'
   }
 };
 
@@ -40,6 +57,8 @@ const permColors = {
 export default function Settings() {
   const { supplier, updateProfile, uploadLogo, isLoading, teamMembers, fetchTeamMembers, addTeamMember, updateTeamMember, deleteTeamMember } = useSupplierStore();
   const { language, toggleLanguage } = useSettingsStore();
+  
+  // 🛡️ الترياق السحري
   const t = translations[language] || translations['fr'];
 
   const [activeTab, setActiveTab] = useState('profile');
@@ -72,10 +91,10 @@ export default function Settings() {
     setIsSaving(true);
     try {
       await updateProfile(formData);
-      alert(language === 'fr' ? '✅ Enregistré avec succès !' : '✅ تم حفظ البيانات بنجاح!');
+      alert(t.saveSuccess);
     } catch (err) {
       console.error(err);
-      alert(language === 'fr' ? 'Erreur lors de la sauvegarde.' : 'حدث خطأ أثناء الحفظ.');
+      alert(t.saveError);
     } finally {
       setIsSaving(false);
     }
@@ -100,16 +119,16 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-6">
         <h2 className="text-3xl font-black text-gray-800 tracking-tight">{t.title}</h2>
         <p className="text-gray-500 mt-1 font-medium">{t.subtitle}</p>
       </div>
 
-      <div className="flex gap-2 border-b border-gray-200 pb-px">
-        <button onClick={() => setActiveTab('profile')} className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-colors flex items-center gap-2 ${activeTab === 'profile' ? 'bg-white text-blue-600 border-t border-x border-gray-200 border-b-transparent' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}><Building2 size={16}/> {t.tabProfile}</button>
-        <button onClick={() => setActiveTab('users')} className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-colors flex items-center gap-2 ${activeTab === 'users' ? 'bg-white text-blue-600 border-t border-x border-gray-200 border-b-transparent' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}><Shield size={16}/> {t.tabUsers}</button>
-        <button onClick={() => setActiveTab('prefs')} className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-colors flex items-center gap-2 ${activeTab === 'prefs' ? 'bg-white text-blue-600 border-t border-x border-gray-200 border-b-transparent' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}><Globe size={16}/> {t.tabPrefs}</button>
+      <div className="flex gap-2 border-b border-gray-200 pb-px overflow-x-auto">
+        <button onClick={() => setActiveTab('profile')} className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'profile' ? 'bg-white text-blue-600 border-t border-x border-gray-200 border-b-transparent' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}><Building2 size={16}/> {t.tabProfile}</button>
+        <button onClick={() => setActiveTab('users')} className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'users' ? 'bg-white text-blue-600 border-t border-x border-gray-200 border-b-transparent' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}><Shield size={16}/> {t.tabUsers}</button>
+        <button onClick={() => setActiveTab('prefs')} className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'prefs' ? 'bg-white text-blue-600 border-t border-x border-gray-200 border-b-transparent' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}><Globe size={16}/> {t.tabPrefs}</button>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-b-2xl rounded-tr-2xl shadow-sm p-6">
@@ -127,13 +146,13 @@ export default function Settings() {
 
             <form onSubmit={handleProfileSubmit} className="space-y-5">
               <div><label className="block text-sm font-medium text-gray-700 mb-1">{t.storeName}</label><input type="text" required value={formData.store_name} onChange={e => setFormData({...formData, store_name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 outline-none bg-gray-50 font-bold" /></div>
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">{t.phone}</label><input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 outline-none bg-gray-50" /></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">{t.ice}</label><input type="text" value={formData.ice} onChange={e => setFormData({...formData, ice: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 outline-none bg-gray-50 font-mono" /></div>
               </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">{t.address}</label><input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 outline-none bg-gray-50" /></div>
               <div className="pt-4 flex justify-end">
-                <button type="submit" disabled={isSaving} className="bg-blue-600 text-white px-8 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 font-bold disabled:opacity-70">
+                <button type="submit" disabled={isSaving} className="bg-blue-600 text-white px-8 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 font-bold disabled:opacity-70 shadow-lg shadow-blue-500/20">
                   {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {isSaving ? t.saving : t.save}
                 </button>
               </div>
@@ -141,19 +160,18 @@ export default function Settings() {
           </div>
         )}
 
-        {/* ... باقي الأكواد أسفل هذا القسم بدون تغيير (users و prefs) ... */}
         {activeTab === 'users' && (
           <div className="animate-fade-in space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2"><Shield className="text-blue-600"/> {t.permsPanelTitle}</h3>
-              <button onClick={() => setShowUserForm(!showUserForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-blue-700"><UserPlus size={16}/> {t.addUser}</button>
+              <button onClick={() => setShowUserForm(!showUserForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-blue-700 shadow-md"><UserPlus size={16}/> {t.addUser}</button>
             </div>
 
             {showUserForm && (
               <form onSubmit={handleUserSubmit} className="bg-blue-50 border border-blue-100 p-6 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.name}</label><input type="text" required value={userForm.full_name} onChange={e => setUserForm({...userForm, full_name: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none" /></div>
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.email}</label><input type="email" required value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none" /></div>
-                <div className="md:col-span-2 flex justify-end"><button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">{t.save}</button></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.name}</label><input type="text" required value={userForm.full_name} onChange={e => setUserForm({...userForm, full_name: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none bg-white font-medium" /></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.email}</label><input type="email" required value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none bg-white font-medium" /></div>
+                <div className="md:col-span-2 flex justify-end"><button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700">{t.save}</button></div>
               </form>
             )}
 
@@ -161,12 +179,12 @@ export default function Settings() {
               <table className="w-full text-start text-sm border-collapse">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-4 py-3 text-gray-600 font-bold">{language === 'fr' ? 'Utilisateur' : 'المستخدم'}</th>
+                    <th className="px-4 py-3 text-gray-600 font-bold">{language === 'fr' ? 'Utilisateur' : language === 'en' ? 'User' : 'المستخدم'}</th>
                     {Object.keys(permColors).map(key => (
-                      <th key={key} className={`px-4 py-3 font-black text-center ${permColors[key].text}`}>{t.perms[key]}</th>
+                      <th key={key} className={`px-4 py-3 font-black text-center whitespace-nowrap ${permColors[key].text}`}>{t.perms[key]}</th>
                     ))}
-                    <th className="px-4 py-3 text-gray-600 font-bold text-center">{language === 'fr' ? 'Statut' : 'حالة الحساب'}</th>
-                    <th className="px-4 py-3 text-gray-600 font-bold text-center">{language === 'fr' ? 'Supprimer' : 'إزالة'}</th>
+                    <th className="px-4 py-3 text-gray-600 font-bold text-center">{language === 'fr' ? 'Statut' : language === 'en' ? 'Status' : 'حالة الحساب'}</th>
+                    <th className="px-4 py-3 text-gray-600 font-bold text-center">{language === 'fr' ? 'Supprimer' : language === 'en' ? 'Delete' : 'إزالة'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -177,7 +195,7 @@ export default function Settings() {
                         <div className={`mx-auto w-7 h-7 rounded-full flex items-center justify-center ${permColors[key].activeBg} ${permColors[key].activeText}`}><Check size={14} strokeWidth={3}/></div>
                       </td>
                     ))}
-                    <td className="px-4 py-4 text-center"><span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded font-bold uppercase">Propriétaire</span></td>
+                    <td className="px-4 py-4 text-center"><span className="bg-emerald-100 text-emerald-700 text-xs px-2.5 py-1 rounded-md font-bold uppercase">{t.owner}</span></td>
                     <td className="px-4 py-4 text-center">-</td>
                   </tr>
                   
@@ -196,7 +214,7 @@ export default function Settings() {
                           {user.status === 'active' ? <ToggleRight size={28} className="text-emerald-500"/> : <ToggleLeft size={28} className="text-gray-400"/>}
                         </button>
                       </td>
-                      <td className="px-4 py-4 text-center"><button onClick={() => { if(window.confirm('Supprimer cet utilisateur ?')) deleteTeamMember(user.id); }} className="text-red-400 hover:text-red-600"><Trash2 size={18}/></button></td>
+                      <td className="px-4 py-4 text-center"><button onClick={() => { if(window.confirm(t.confirmDeleteUser)) deleteTeamMember(user.id); }} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={18}/></button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -207,10 +225,10 @@ export default function Settings() {
 
         {activeTab === 'prefs' && (
           <div className="max-w-md animate-fade-in space-y-4">
-            <h3 className="font-bold text-gray-800 mb-4">{t.language}</h3>
+            <h3 className="font-bold text-gray-800 mb-2">{t.language}</h3>
             <p className="text-sm text-gray-500 mb-4">{t.langDesc}</p>
             <button onClick={toggleLanguage} className="w-full flex justify-between items-center bg-gray-50 border border-gray-200 hover:border-purple-300 hover:bg-purple-50 p-4 rounded-xl transition-all">
-              <span className="font-bold text-gray-700">{language === 'fr' ? 'Français' : 'العربية'}</span>
+              <span className="font-bold text-gray-700">{language === 'fr' ? 'Français' : language === 'en' ? 'English' : 'العربية'}</span>
               <span className="text-xs bg-white border border-gray-200 px-3 py-1 rounded shadow-sm text-gray-600 font-bold uppercase">{language}</span>
             </button>
           </div>

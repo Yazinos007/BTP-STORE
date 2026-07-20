@@ -20,12 +20,22 @@ const translations = {
     cpcTitle: 'Compte de Produits et Charges (CPC)', prodExploitation: "Produits d'Exploitation",
     chargesExploitation: "Charges d'Exploitation", fraisPersonnel: 'Frais de Personnel',
     netTitle: 'RÉSULTAT NET', currency: 'MAD'
+  },
+  en: {
+    title: 'Accounting & Financials', subtitle: 'Financial position and automatically generated income statement (CPC).',
+    exportBtn: 'Export for Accountant (CSV)', revenue: 'Total Revenue', opsCosts: 'Operating Expenses',
+    payroll: 'Payroll', netResult: 'Net Profit', comparison: 'Revenue vs Expenses Comparison',
+    cpcTitle: 'Income & Cost Statement (CPC)', prodExploitation: 'Operating Revenue',
+    chargesExploitation: 'Operating Expenses', fraisPersonnel: 'Personnel Costs',
+    netTitle: 'NET RESULT', currency: 'MAD'
   }
 };
 
 export default function SupplierAccounting() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
+  
+  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
   
   const [isLoading, setIsLoading] = useState(true);
@@ -69,8 +79,7 @@ export default function SupplierAccounting() {
       });
       setOperatingCosts(opsCosts);
 
-      // 🎯 3. جلب الرواتب من الموارد البشرية مع المعادلة الدقيقة!
-      // قمت بإضافة primes_avances و retenues للـ select
+      // 3. جلب الرواتب من الموارد البشرية مع المعادلة الدقيقة
       const { data: employees, error: empError } = await supabase
         .from('employees')
         .select('base_salary, primes_avances, retenues, status')
@@ -97,6 +106,26 @@ export default function SupplierAccounting() {
     }
   };
 
+  // 📊 دالة تصدير البيانات إلى ملف CSV للمحاسب
+  const handleExportCSV = () => {
+    const csvRows = [
+      ['Metric', 'Amount (' + t.currency + ')'],
+      [t.revenue, revenue],
+      [t.opsCosts, operatingCosts],
+      [t.payroll, salaries],
+      [t.netResult, revenue - operatingCosts - salaries]
+    ];
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.e.map(e => e.join(',')).join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `bilan_comptable_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const netResult = revenue - operatingCosts - salaries;
   const isProfitable = netResult >= 0;
   const maxChartValue = Math.max(revenue, operatingCosts + salaries) || 1;
@@ -118,7 +147,7 @@ export default function SupplierAccounting() {
           <p className="text-slate-400 mt-1 font-medium">{t.subtitle}</p>
         </div>
         
-        <button className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-emerald-500/20">
+        <button onClick={handleExportCSV} className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-emerald-500/20">
           <Download size={18}/> {t.exportBtn}
         </button>
       </div>
@@ -127,25 +156,25 @@ export default function SupplierAccounting() {
         <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl relative overflow-hidden group">
           <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform"><TrendingUp size={100}/></div>
           <p className="text-emerald-400 font-bold text-sm mb-1">{t.revenue}</p>
-          <h3 className="text-3xl font-black text-white">{revenue.toLocaleString()} <span className="text-sm">{t.currency}</span></h3>
+          <h3 className="text-3xl font-black text-white" dir="ltr">{revenue.toLocaleString()} <span className="text-sm">{t.currency}</span></h3>
         </div>
 
         <div className="bg-orange-500/10 border border-orange-500/20 p-6 rounded-3xl relative overflow-hidden group">
           <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform"><TrendingDown size={100}/></div>
           <p className="text-orange-400 font-bold text-sm mb-1">{t.opsCosts}</p>
-          <h3 className="text-3xl font-black text-white">{operatingCosts.toLocaleString()} <span className="text-sm">{t.currency}</span></h3>
+          <h3 className="text-3xl font-black text-white" dir="ltr">{operatingCosts.toLocaleString()} <span className="text-sm">{t.currency}</span></h3>
         </div>
 
         <div className="bg-purple-500/10 border border-purple-500/20 p-6 rounded-3xl relative overflow-hidden group">
           <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform"><Scale size={100}/></div>
           <p className="text-purple-400 font-bold text-sm mb-1">{t.payroll}</p>
-          <h3 className="text-3xl font-black text-white">{salaries.toLocaleString()} <span className="text-sm">{t.currency}</span></h3>
+          <h3 className="text-3xl font-black text-white" dir="ltr">{salaries.toLocaleString()} <span className="text-sm">{t.currency}</span></h3>
         </div>
 
         <div className={`${isProfitable ? 'bg-blue-600' : 'bg-red-600'} p-6 rounded-3xl relative overflow-hidden shadow-xl group`}>
           <div className="absolute -right-4 -top-4 opacity-20 group-hover:scale-110 transition-transform"><Calculator size={100}/></div>
           <p className="text-white/80 font-bold text-sm mb-1">{t.netResult}</p>
-          <h3 className="text-3xl font-black text-white">{netResult.toLocaleString()} <span className="text-sm">{t.currency}</span></h3>
+          <h3 className="text-3xl font-black text-white" dir="ltr">{netResult.toLocaleString()} <span className="text-sm">{t.currency}</span></h3>
         </div>
       </div>
 
@@ -160,10 +189,10 @@ export default function SupplierAccounting() {
               <div className="border-t border-slate-500 w-full"></div>
             </div>
             <div className="w-24 bg-emerald-500 rounded-t-xl relative group flex justify-center transition-all duration-1000 ease-out" style={{ height: revenueHeight, minHeight: '10%' }}>
-              <span className="absolute -top-8 text-emerald-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">{revenue.toLocaleString()}</span>
+              <span className="absolute -top-8 text-emerald-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity" dir="ltr">{revenue.toLocaleString()}</span>
             </div>
             <div className="w-24 bg-orange-500 rounded-t-xl relative group flex justify-center transition-all duration-1000 ease-out" style={{ height: expensesHeight, minHeight: '10%' }}>
-              <span className="absolute -top-8 text-orange-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">{(operatingCosts + salaries).toLocaleString()}</span>
+              <span className="absolute -top-8 text-orange-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity" dir="ltr">{(operatingCosts + salaries).toLocaleString()}</span>
             </div>
           </div>
           <div className="flex justify-center gap-12 mt-4 text-sm font-bold">
@@ -179,22 +208,22 @@ export default function SupplierAccounting() {
           <div className="space-y-4">
             <div className="flex justify-between items-center p-4 bg-slate-900/50 rounded-xl border border-slate-700/50">
               <span className="font-bold text-slate-300 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>{t.prodExploitation}</span>
-              <span className="font-black text-emerald-400">{revenue.toLocaleString()}</span>
+              <span className="font-black text-emerald-400" dir="ltr">{revenue.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center p-4 bg-slate-900/50 rounded-xl border border-slate-700/50">
               <span className="font-bold text-slate-300 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-orange-500"></span>{t.chargesExploitation}</span>
-              <span className="font-black text-orange-400">-{operatingCosts.toLocaleString()}</span>
+              <span className="font-black text-orange-400" dir="ltr">-{operatingCosts.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center p-4 bg-slate-900/50 rounded-xl border border-slate-700/50">
               <span className="font-bold text-slate-300 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-purple-500"></span>{t.fraisPersonnel}</span>
-              <span className="font-black text-purple-400">-{salaries.toLocaleString()}</span>
+              <span className="font-black text-purple-400" dir="ltr">-{salaries.toLocaleString()}</span>
             </div>
             <div className={`flex justify-between items-center p-5 rounded-xl border mt-6 ${isProfitable ? 'bg-blue-600/20 border-blue-500/30' : 'bg-red-600/20 border-red-500/30'}`}>
               <span className="font-black text-white uppercase tracking-widest flex items-center gap-2">
                 <TrendingUp size={20} className={isProfitable ? 'text-blue-400' : 'text-red-400'}/>
                 {t.netTitle}
               </span>
-              <span className={`text-2xl font-black ${isProfitable ? 'text-blue-400' : 'text-red-400'}`}>
+              <span className={`text-2xl font-black ${isProfitable ? 'text-blue-400' : 'text-red-400'}`} dir="ltr">
                 {netResult.toLocaleString()} <span className="text-sm">{t.currency}</span>
               </span>
             </div>

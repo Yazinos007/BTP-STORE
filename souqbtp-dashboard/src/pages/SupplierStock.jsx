@@ -16,10 +16,11 @@ const translations = {
     placeholderName: 'مثال: إسمنت، حديد 10 ملم...',
     category: 'التصنيف', qtyInit: 'كمية المخزون', unit: 'الوحدة',
     cancel: 'إلغاء', save: 'حفظ المنتج ونشره', stockAlerts: 'تنبيهات نقص المخزون',
-    optimalStock: 'جميع المواد بمستوى مخزون ممتاز.', outOfStock: 'نفذت الكمية',
+    optimalStock: 'جميع المواد بمستوى مخزون ممتاز.', outOfStock: 'نفدست الكمية',
     left: 'متبقي:', deleteConfirm: 'هل أنت متأكد من حذف هذا المنتج؟',
     errorSave: 'خطأ أثناء الحفظ', errorUpload: 'خطأ أثناء رفع الصورة', loading: 'جاري التحميل...',
     currency: 'MAD', imgFormat: 'PNG, JPG (Max 5MB)',
+    deleteTooltip: 'حذف', editTooltip: 'تعديل',
     cats: { 'gros-oeuvre': 'مواد البناء الأساسية', 'electricite': 'الكهرباء', 'plomberie': 'السباكة', 'outillage': 'المعدات والأدوات' },
     units: { 'Unité': 'قطعة (Unité)', 'Kg': 'كيلوغرام (Kg)', 'Quintal': 'قنطار (q)', 'Tonne': 'طن (T)', 'Sac': 'كيس (Sac)', 'm2': 'متر مربع (m²)', 'm3': 'متر مكعب (m³)', 'ml': 'متر طولي (ml)', 'Palette': 'باليت (Palette)' }
   },
@@ -38,6 +39,7 @@ const translations = {
     left: 'Reste:', deleteConfirm: 'Supprimer ce produit ?',
     errorSave: 'Erreur lors de l\'enregistrement', errorUpload: 'Erreur lors du téléchargement de l\'image', loading: 'Chargement...',
     currency: 'MAD', imgFormat: 'PNG, JPG (Max 5MB)',
+    deleteTooltip: 'Supprimer', editTooltip: 'Modifier',
     cats: { 'gros-oeuvre': 'Gros Œuvre', 'electricite': 'Électricité', 'plomberie': 'Plomberie', 'outillage': 'Outillage' },
     units: { 'Unité': 'Unité (Pièce)', 'Kg': 'Kilogramme (Kg)', 'Quintal': 'Quintal (q)', 'Tonne': 'Tonne (T)', 'Sac': 'Sac', 'm2': 'Mètre Carré (m²)', 'm3': 'Mètre Cube (m³)', 'ml': 'Mètre Linéaire (ml)', 'Palette': 'Palette' }
   },
@@ -56,6 +58,7 @@ const translations = {
     left: 'Left:', deleteConfirm: 'Are you sure you want to delete this product?',
     errorSave: 'Error saving', errorUpload: 'Error uploading image', loading: 'Loading...',
     currency: 'MAD', imgFormat: 'PNG, JPG (Max 5MB)',
+    deleteTooltip: 'Delete', editTooltip: 'Edit',
     cats: { 'gros-oeuvre': 'Heavy Construction', 'electricite': 'Electricity', 'plomberie': 'Plumbing', 'outillage': 'Tools & Equipment' },
     units: { 'Unité': 'Unit (Piece)', 'Kg': 'Kilogram (Kg)', 'Quintal': 'Quintal (q)', 'Tonne': 'Tonne (T)', 'Sac': 'Bag', 'm2': 'Square Meter (m²)', 'm3': 'Cubic Meter (m³)', 'ml': 'Linear Meter (ml)', 'Palette': 'Palette' }
   }
@@ -64,7 +67,8 @@ const translations = {
 export default function SupplierStock() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  // 🎯 استدعاء الترجمة بأمان تام
+  
+  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
   
   const [products, setProducts] = useState([]);
@@ -195,7 +199,7 @@ export default function SupplierStock() {
           <div className="bg-emerald-500/10 p-3 rounded-xl"><Package className="text-emerald-400" size={24}/></div>
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t.stockValue}</p>
-            <p className="text-2xl font-black text-white">{totalStockValue.toLocaleString()} <span className="text-sm text-emerald-400">{t.currency}</span></p>
+            <p className="text-2xl font-black text-white" dir="ltr">{totalStockValue.toLocaleString()} <span className="text-sm text-emerald-400 uppercase">{t.currency}</span></p>
           </div>
         </div>
       </div>
@@ -219,7 +223,7 @@ export default function SupplierStock() {
             <thead>
               <tr className="bg-slate-900/80 border-b border-slate-700 text-slate-400 text-sm uppercase tracking-wider">
                 <th className="p-5 font-black w-16 text-center">{t.image}</th>
-                <th className="p-5 font-black">{t.prodCat}</th>
+                <th className="p-5 font-black text-start">{t.prodCat}</th>
                 <th className="p-5 font-black text-center">{t.quantity}</th>
                 <th className="p-5 font-black text-end">{t.wholesalePrice}</th>
                 <th className="p-5 font-black text-end">{t.value}</th>
@@ -230,7 +234,7 @@ export default function SupplierStock() {
               {isLoading ? (
                 <tr><td colSpan="6" className="p-10 text-center"><Loader2 size={30} className="animate-spin text-blue-500 mx-auto"/></td></tr>
               ) : filteredProducts.length === 0 ? (
-                <tr><td colSpan="6" className="p-10 text-center text-slate-500 font-medium"><AlertCircle size={30} className="mx-auto mb-2 opacity-50"/> {t.noProducts}</td></tr>
+                <tr><td colSpan="6" className="p-10 text-center text-slate-500 font-bold"><AlertCircle size={30} className="mx-auto mb-2 opacity-50"/> {t.noProducts}</td></tr>
               ) : (
                 filteredProducts.map(product => (
                   <tr key={product.id} className="hover:bg-slate-700/30 transition-colors group">
@@ -241,7 +245,7 @@ export default function SupplierStock() {
                         <div className="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center mx-auto text-slate-600 border border-slate-700"><ImageIcon size={20} /></div>
                       )}
                     </td>
-                    <td className="p-5">
+                    <td className="p-5 text-start">
                       <p className="font-bold text-white text-lg">{product.name}</p>
                       <p className="text-xs text-blue-400 font-bold mt-1">{categories.find(c => c.id === product.category)?.name || product.category}</p>
                     </td>
@@ -251,15 +255,15 @@ export default function SupplierStock() {
                       </span>
                     </td>
                     <td className="p-5 text-end font-bold text-blue-400" dir="ltr">
-                      {product.price.toLocaleString()} {t.currency}
+                      {product.price.toLocaleString()} <span className="text-[10px] opacity-70 uppercase">{t.currency}</span>
                     </td>
                     <td className="p-5 text-end font-black text-slate-300" dir="ltr">
-                      {(product.price * product.stock_quantity).toLocaleString()} {t.currency}
+                      {(product.price * product.stock_quantity).toLocaleString()} <span className="text-[10px] opacity-70 uppercase">{t.currency}</span>
                     </td>
-                    <td className="p-5">
+                    <td className="p-5 text-center">
                       <div className="flex items-center justify-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleOpenModal(product)} className="p-2 bg-blue-500/10 hover:bg-blue-500 text-blue-400 hover:text-white rounded-lg transition-all" title={t.editProduct}><Edit2 size={16} /></button>
-                        <button onClick={() => handleDelete(product.id)} className="p-2 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white rounded-lg transition-all" title="Supprimer"><Trash2 size={16} /></button>
+                        <button onClick={() => handleOpenModal(product)} className="p-2 bg-blue-500/10 hover:bg-blue-500 text-blue-400 hover:text-white rounded-lg transition-all" title={t.editTooltip}><Edit2 size={16} /></button>
+                        <button onClick={() => handleDelete(product.id)} className="p-2 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white rounded-lg transition-all" title={t.deleteTooltip}><Trash2 size={16} /></button>
                       </div>
                     </td>
                   </tr>
@@ -271,8 +275,8 @@ export default function SupplierStock() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-slate-800 border border-slate-700 rounded-3xl p-8 w-full max-w-3xl shadow-2xl animate-slide-up my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="bg-slate-800 border border-slate-700 rounded-3xl p-8 w-full max-w-3xl shadow-2xl animate-slide-up my-8 text-start">
             <h3 className="text-2xl font-black text-white mb-6 border-b border-slate-700 pb-4">
               {editingProduct ? t.editProduct : t.newProduct}
             </h3>
@@ -349,8 +353,8 @@ export default function SupplierStock() {
         </div>
       )}
 
-      <div className="bg-slate-800 border border-red-900/30 p-6 rounded-3xl shadow-lg relative overflow-hidden mt-6">
-        <div className="absolute right-0 top-0 w-24 h-24 bg-red-500/10 rounded-bl-full pointer-events-none"></div>
+      <div className="bg-slate-800 border border-red-900/30 p-6 rounded-3xl shadow-lg relative overflow-hidden mt-6 text-start">
+        <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} top-0 w-24 h-24 bg-red-500/10 rounded-bl-full pointer-events-none`}></div>
         <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
           <span className="text-red-500">⚠️</span> {t.stockAlerts}
         </h3>

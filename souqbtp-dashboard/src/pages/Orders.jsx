@@ -9,26 +9,39 @@ const translations = {
   ar: {
     title: 'إدارة الطلبات (التتبع الآلي)', subtitle: 'تتبع مسار الشاحنة من التحضير حتى تسليم العميل.',
     all: 'الكل', pending: 'قيد التحضير', shipped: 'في الطريق', delivered: 'تم التسليم',
-    search: 'ابحث برقم الطلب...', orderNo: 'الطلب والورش', date: 'التاريخ',
+    search: 'ابحث برقم الطلب أو الورش...', orderNo: 'الطلب والورش', date: 'التاريخ',
     total: 'المجموع', journey: 'مسار الطلبية', actions: 'إجراءات',
     sendToTruck: 'شحن الطلبية', markDelivered: 'تأكيد الاستلام', delete: 'حذف',
     deleteConfirm: 'هل أنت متأكد من حذف هذا الطلب نهائياً؟', currency: 'درهم', empty: 'لا توجد طلبات هنا.',
-    orderDetails: 'تفاصيل الطلبية', close: 'إغلاق', price: 'السعر', qty: 'الكمية', chantier: 'الورش'
+    orderDetails: 'تفاصيل الطلبية', close: 'إغلاق', price: 'السعر', qty: 'الكمية', chantier: 'الورش',
+    error: 'حدث خطأ. يرجى المحاولة لاحقاً.', detailsTooltip: 'التفاصيل'
   },
   fr: {
     title: 'Gestion des Commandes', subtitle: 'Suivez le trajet du camion jusqu\'à la livraison.',
     all: 'Toutes', pending: 'Préparation', shipped: 'En Route', delivered: 'Livré',
-    search: 'Rechercher N°...', orderNo: 'Commande & Chantier', date: 'Date',
+    search: 'Rechercher N° ou Chantier...', orderNo: 'Commande & Chantier', date: 'Date',
     total: 'Total', journey: 'Trajet', actions: 'Actions',
     sendToTruck: 'Expédier', markDelivered: 'Valider Livraison', delete: 'Supprimer',
     deleteConfirm: 'Voulez-vous vraiment supprimer cette commande ?', currency: 'MAD', empty: 'Aucune commande trouvée.',
-    orderDetails: 'Détails de la Commande', close: 'Fermer', price: 'Prix', qty: 'Qté', chantier: 'Chantier'
+    orderDetails: 'Détails de la Commande', close: 'Fermer', price: 'Prix', qty: 'Qté', chantier: 'Chantier',
+    error: 'Une erreur s\'est produite. Veuillez réessayer.', detailsTooltip: 'Détails'
+  },
+  en: {
+    title: 'Order Management', subtitle: 'Track the truck journey from preparation to delivery.',
+    all: 'All', pending: 'Preparation', shipped: 'In Transit', delivered: 'Delivered',
+    search: 'Search by Order No or Project...', orderNo: 'Order & Project', date: 'Date',
+    total: 'Total', journey: 'Journey', actions: 'Actions',
+    sendToTruck: 'Dispatch', markDelivered: 'Confirm Delivery', delete: 'Delete',
+    deleteConfirm: 'Are you sure you want to permanently delete this order?', currency: 'MAD', empty: 'No orders found.',
+    orderDetails: 'Order Details', close: 'Close', price: 'Price', qty: 'Qty', chantier: 'Project',
+    error: 'An error occurred. Please try again.', detailsTooltip: 'Details'
   }
 };
 
 export default function Orders() {
   const { orders, fetchOrders } = useOrderStore();
   const { language } = useSettingsStore();
+  // 🛡️ الترياق السحري
   const t = translations[language] || translations['fr'];
 
   const [filter, setFilter] = useState('all');
@@ -51,7 +64,7 @@ export default function Orders() {
       if (error) throw error;
       fetchOrders(); 
       if (newStatus === 'delivered') triggerConfetti();
-    } catch (error) { alert('Erreur'); } finally { setProcessingId(null); }
+    } catch (error) { alert(t.error); } finally { setProcessingId(null); }
   };
 
   const triggerConfetti = () => {
@@ -68,12 +81,12 @@ export default function Orders() {
     if (!window.confirm(t.deleteConfirm)) return;
     setProcessingId(id);
     try { await supabase.from('orders').delete().eq('id', id); fetchOrders(); } 
-    catch (error) { alert('Erreur'); } finally { setProcessingId(null); }
+    catch (error) { alert(t.error); } finally { setProcessingId(null); }
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    return new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(dateString));
+    return new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(dateString));
   };
 
   const OrderJourney = ({ status }) => {
@@ -139,7 +152,12 @@ export default function Orders() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600 font-medium">{formatDate(order.created_at)}</td>
-                    <td className="px-6 py-4"><div className="flex items-baseline gap-1" dir="ltr"><span className="font-black text-blue-600 text-base">{Number(order.total_amount).toLocaleString()}</span><span className="text-xs font-bold text-blue-400">{t.currency}</span></div></td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-baseline gap-1" dir="ltr">
+                        <span className="font-black text-blue-600 text-base">{Number(order.total_amount).toLocaleString()}</span>
+                        <span className="text-xs font-bold text-blue-400">{t.currency}</span>
+                      </div>
+                    </td>
                     <td className="px-6 py-4"><OrderJourney status={order.status} /></td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
@@ -149,8 +167,8 @@ export default function Orders() {
                             {order.status === 'pending' ? t.sendToTruck : t.markDelivered}
                           </button>
                         )}
-                        <button onClick={() => setSelectedOrder(order)} className="p-2 bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 rounded-lg transition-colors" title="Détails"><Eye size={18} /></button>
-                        <button onClick={() => deleteOrder(order.id)} disabled={processingId === order.id} className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"><Trash2 size={18} /></button>
+                        <button onClick={() => setSelectedOrder(order)} className="p-2 bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 rounded-lg transition-colors" title={t.detailsTooltip}><Eye size={18} /></button>
+                        <button onClick={() => deleteOrder(order.id)} disabled={processingId === order.id} className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50" title={t.delete}><Trash2 size={18} /></button>
                       </div>
                     </td>
                   </tr>
@@ -163,7 +181,7 @@ export default function Orders() {
 
       {/* 👁️ النافذة المنبثقة: تفاصيل الطلبية */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-lg animate-slide-up overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100 shrink-0">
               <div>
@@ -178,7 +196,7 @@ export default function Orders() {
                   )}
                 </div>
               </div>
-              <button onClick={() => setSelectedOrder(null)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"><X size={20}/></button>
+              <button onClick={() => setSelectedOrder(null)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" title={t.close}><X size={20}/></button>
             </div>
             
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
@@ -188,7 +206,7 @@ export default function Orders() {
                     <div className="p-3 bg-white rounded-xl shadow-sm text-blue-500"><Package size={20} /></div>
                     <div>
                       <p className="font-bold text-gray-800">{item.name}</p>
-                      <p className="text-xs font-medium text-gray-500 mt-0.5">{t.price}: {item.price} {t.currency}</p>
+                      <p className="text-xs font-medium text-gray-500 mt-0.5">{t.price}: <span dir="ltr">{item.price} {t.currency}</span></p>
                     </div>
                   </div>
                   <div className="text-end"><p className="font-black text-lg text-gray-800" dir="ltr">x{item.quantity}</p></div>

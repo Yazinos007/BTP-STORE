@@ -41,13 +41,31 @@ const translations = {
     errorMsg: 'Veuillez vérifier vos informations.',
     regSuccess: '✅ Compte créé avec succès ! Connexion...',
     rights: 'Tous droits réservés © SouqBTP 2026'
+  },
+  en: {
+    welcomeLogin: 'Welcome Back', 
+    welcomeRegister: 'Create New Account',
+    subtitle: 'Access portal to the smart SouqBTP ecosystem.',
+    retailer: 'Retailer (Store)', 
+    wholesaler: 'Wholesaler (Company)',
+    storeName: 'Company / Store Name',
+    phone: 'Phone Number (Optional)',
+    email: 'Email Address', emailPH: 'name@company.com',
+    password: 'Password', passwordPH: '••••••••',
+    loginBtn: 'Login', 
+    registerBtn: 'Create Account',
+    loggingIn: 'Processing...',
+    noAccount: "Don't have an account?", registerLink: 'Register Now',
+    hasAccount: 'Already have an account?', loginLink: 'Login',
+    errorMsg: 'Please check the entered data.',
+    regSuccess: '✅ Account created successfully! Logging in...',
+    rights: 'All rights reserved © SouqBTP 2026'
   }
 };
 
 export default function Login() {
-  // 🌟 حالات جديدة لإدارة نوع الحساب ووضع التسجيل
   const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState('retailer'); // 'retailer' | 'wholesaler'
+  const [role, setRole] = useState('retailer'); 
   
   const [storeName, setStoreName] = useState('');
   const [phone, setPhone] = useState('');
@@ -68,17 +86,14 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        // 🔐 تسجيل الدخول
         const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
         if (loginError) throw loginError;
         
       } else {
-        // 📝 إنشاء حساب جديد (حسب نوع الـ Role)
         const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
         if (signUpError) throw signUpError;
 
         if (data?.user) {
-          // تسجيل الملف الشخصي في قاعدة البيانات مع الصلاحية
           const { error: profileError } = await supabase.from('suppliers').upsert([{
             id: data.user.id,
             store_name: storeName,
@@ -91,7 +106,6 @@ export default function Login() {
           alert(t.regSuccess);
         }
       }
-      // إذا نجح الدخول، فإن App.jsx سينقلك للوحة القيادة
     } catch (err) {
       console.error(err);
       setError(t.errorMsg);
@@ -100,7 +114,6 @@ export default function Login() {
     }
   };
 
-  // 🌟 ألوان ديناميكية حسب نوع الحساب (أزرق للتاجر، أسود فخم للمورد)
   const isWholesaler = role === 'wholesaler';
   const themeGradients = isWholesaler 
     ? "from-slate-900 via-gray-800 to-black" 
@@ -118,7 +131,7 @@ export default function Login() {
 
       {/* زر تغيير اللغة */}
       <button onClick={toggleLanguage} className="absolute top-6 right-6 lg:right-10 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full flex items-center gap-2 transition-all text-sm font-bold shadow-lg z-20">
-        <Globe size={16} /> {language === 'fr' ? 'العربية' : 'Français'}
+        <Globe size={16} /> {language === 'fr' ? 'العربية' : language === 'ar' ? 'English' : 'Français'}
       </button>
 
       <div className="w-full max-w-md px-6 z-10 py-10">
@@ -138,7 +151,6 @@ export default function Login() {
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
           <div className="p-8">
             
-            {/* 🌟 مفتاح التبديل بين التاجر والمورد */}
             <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
               <button
                 type="button"
@@ -164,21 +176,24 @@ export default function Login() {
 
             <form onSubmit={handleAuth} className="space-y-5">
               
-              {/* 🌟 حقول إضافية تظهر فقط في حالة التسجيل */}
               {!isLogin && (
                 <>
                   <div className="space-y-1.5 animate-fade-in">
                     <label className="block text-sm font-bold text-gray-700">{t.storeName}</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors"><User size={18} /></div>
-                      <input type="text" required value={storeName} onChange={(e) => setStoreName(e.target.value)} className="block w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all font-medium" />
+                      <div className={`absolute inset-y-0 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors ${language === 'ar' ? 'right-0 pr-4' : 'left-0 pl-4'}`}>
+                        <User size={18} />
+                      </div>
+                      <input type="text" required value={storeName} onChange={(e) => setStoreName(e.target.value)} className={`block w-full py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all font-medium ${language === 'ar' ? 'pr-11 pl-4' : 'pl-11 pr-4'}`} />
                     </div>
                   </div>
                   <div className="space-y-1.5 animate-fade-in">
                     <label className="block text-sm font-bold text-gray-700">{t.phone}</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors"><Phone size={18} /></div>
-                      <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="block w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all font-medium" dir="ltr" />
+                      <div className={`absolute inset-y-0 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors ${language === 'ar' ? 'right-0 pr-4' : 'left-0 pl-4'}`}>
+                        <Phone size={18} />
+                      </div>
+                      <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`block w-full py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all font-medium ${language === 'ar' ? 'pr-11 pl-4' : 'pl-11 pr-4'}`} dir="ltr" />
                     </div>
                   </div>
                 </>
@@ -187,21 +202,21 @@ export default function Login() {
               <div className="space-y-1.5">
                 <label className="block text-sm font-bold text-gray-700">{t.email}</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                  <div className={`absolute inset-y-0 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors ${language === 'ar' ? 'right-0 pr-4' : 'left-0 pl-4'}`}>
                     <Mail size={18} />
                   </div>
-                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all font-medium" placeholder={t.emailPH} dir="ltr" />
+                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={`block w-full py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all font-medium ${language === 'ar' ? 'pr-11 pl-4' : 'pl-11 pr-4'}`} placeholder={t.emailPH} dir="ltr" />
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-bold text-gray-700">{t.password}</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                  <div className={`absolute inset-y-0 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors ${language === 'ar' ? 'right-0 pr-4' : 'left-0 pl-4'}`}>
                     <Lock size={18} />
                   </div>
-                  <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="block w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all font-medium" placeholder={t.passwordPH} dir="ltr" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors outline-none">
+                  <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className={`block w-full py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all font-medium ${language === 'ar' ? 'pr-11 pl-12' : 'pl-11 pr-12'}`} placeholder={t.passwordPH} dir="ltr" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className={`absolute inset-y-0 flex items-center text-gray-400 hover:text-gray-600 transition-colors outline-none ${language === 'ar' ? 'left-0 pl-4' : 'right-0 pr-4'}`}>
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
@@ -212,7 +227,6 @@ export default function Login() {
               </button>
             </form>
 
-            {/* 🌟 التبديل بين الدخول والتسجيل */}
             <div className="mt-6 text-center text-sm font-bold text-gray-600">
               {isLogin ? (
                 <p>{t.noAccount} <button onClick={() => setIsLogin(false)} className={`hover:underline ${isWholesaler ? 'text-slate-800' : 'text-blue-600'}`}>{t.registerLink}</button></p>

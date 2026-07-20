@@ -14,7 +14,8 @@ const translations = {
     category: 'التصنيف', paymentMethod: 'طريقة الدفع', save: 'إضافة المصروف', saving: 'جاري التسجيل...',
     cancel: 'إلغاء', actions: 'إجراءات', confirmDelete: 'هل أنت متأكد من حذف هذا المصروف؟',
     history: 'سجل المصاريف', date: 'التاريخ', empty: 'لا توجد مصاريف مسجلة.', currency: 'درهم',
-    recentFirst: 'الأحدث أولاً', highestFirst: 'الأعلى مبلغاً',
+    recentFirst: 'الأحدث أولاً', highestFirst: 'الأعلى مبلغاً', editMode: 'وضع التعديل',
+    receiptLoaded: 'تم رفع الوصل بنجاح', clickToUpload: 'اضغط لرفع الوصل', viewDoc: 'عرض الوثيقة',
     categories: { 
       achats: 'شراء السلع/المواد', carburant: 'المحروقات والطريق السيار',
       transport: 'النقل واللوجستيك', loyer: 'الكراء / الإيجار', 
@@ -35,7 +36,8 @@ const translations = {
     category: 'Catégorie', paymentMethod: 'Mode de Paiement', save: 'Ajouter la charge', saving: 'Enregistrement...',
     cancel: 'Annuler', actions: 'Actions', confirmDelete: 'Voulez-vous vraiment supprimer cette charge ?',
     history: 'Historique des charges', date: 'Date', empty: 'Aucune charge enregistrée.', currency: 'MAD',
-    recentFirst: 'Plus récent', highestFirst: 'Montant le plus élevé',
+    recentFirst: 'Plus récent', highestFirst: 'Montant le plus élevé', editMode: 'Mode Édition',
+    receiptLoaded: 'Reçu chargé', clickToUpload: 'Cliquez pour charger', viewDoc: 'Voir document',
     categories: { 
       achats: 'Achat de marchandises', carburant: 'Carburant & Péage',
       transport: 'Transport & Logistique', loyer: 'Loyer & Charges locatives', 
@@ -48,6 +50,28 @@ const translations = {
     },
     methods: { cash: 'Espèces', cheque: 'Chèque', transfer: 'Virement', card: 'Carte Bancaire' },
     analytics: 'Analyse des Charges', searchPlaceholder: 'Rechercher par description, catégorie...'
+  },
+  en: {
+    title: 'Expenses & Net Result Management', subtitle: 'Accurately track your business expenses and get detailed analytics.',
+    revenue: 'Total Sales (Collected)', expenses: 'Total Expenses', netProfit: 'Net Profit',
+    addExpense: 'Record New Expense', editExpense: 'Edit Expense', desc: 'Description / Reason', amount: 'Amount',
+    category: 'Category', paymentMethod: 'Payment Method', save: 'Add Expense', saving: 'Saving...',
+    cancel: 'Cancel', actions: 'Actions', confirmDelete: 'Are you sure you want to delete this expense?',
+    history: 'Expense History', date: 'Date', empty: 'No expenses recorded.', currency: 'MAD',
+    recentFirst: 'Newest First', highestFirst: 'Highest Amount', editMode: 'Edit Mode',
+    receiptLoaded: 'Receipt uploaded', clickToUpload: 'Click to upload receipt', viewDoc: 'View Document',
+    categories: { 
+      achats: 'Goods/Materials Purchase', carburant: 'Fuel & Tolls',
+      transport: 'Transport & Logistics', loyer: 'Rent & Facilities', 
+      utilities: 'Water & Electricity', telecom: 'Phone & Internet',
+      fournitures: 'Office Supplies', maintenance: 'Maintenance & Repair', 
+      salaries: 'Salaries & Bonuses', taxes: 'Taxes & Social Security',
+      assurance: 'Insurance', banque: 'Bank Fees',
+      honoraires: 'Professional Fees (Accountant/Lawyer)', marketing: 'Marketing & Advertising',
+      other: 'Other' 
+    },
+    methods: { cash: 'Cash', cheque: 'Cheque', transfer: 'Bank Transfer', card: 'Credit Card' },
+    analytics: 'Financial Expense Analysis', searchPlaceholder: 'Search by description or category...'
   }
 };
 
@@ -57,6 +81,8 @@ export default function SupplierExpenses() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
   const { expenses, fetchExpenses, addExpense, updateExpense, deleteExpense } = useExpenseStore();
+  
+  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
   
   const [revenue, setRevenue] = useState(0);
@@ -66,8 +92,6 @@ export default function SupplierExpenses() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // 🎯 تعديل: جعل الترتيب التنازلي بالمبالغ هو الافتراضي فور فتح الصفحة
   const [sortBy, setSortBy] = useState('amount'); 
 
   useEffect(() => {
@@ -114,7 +138,7 @@ export default function SupplierExpenses() {
       
     } catch (err) {
       console.error('Error uploading:', err.message);
-      alert(language === 'fr' ? `Erreur de téléchargement: ${err.message}` : `فشل رفع الملف: ${err.message}`);
+      alert(language === 'fr' ? `Erreur de téléchargement: ${err.message}` : language === 'en' ? `Upload error: ${err.message}` : `فشل رفع الملف: ${err.message}`);
     } finally {
       setIsUploading(false);
     }
@@ -127,8 +151,6 @@ export default function SupplierExpenses() {
     try {
       const finalAmount = Math.abs(parseFloat(String(formData.amount || 0).replace(/[^0-9.]/g, '')));
 
-      // تحضير البيانات - تأكد أن الأسماء (title, amount, category, payment_method) 
-      // تطابق تماماً أسماء الأعمدة في قاعدة بيانات Supabase
       const payload = { 
         title: formData.title, 
         amount: finalAmount, 
@@ -136,24 +158,20 @@ export default function SupplierExpenses() {
         payment_method: formData.payment_method
       };
       
-      // لا ترسل receipt_url إذا كان فارغاً لتجنب خطأ قاعدة البيانات
       if (formData.receipt_url) {
         payload.receipt_url = formData.receipt_url;
       }
 
       if (editingId) {
         await updateExpense(editingId, payload);
-        alert(language === 'fr' ? "La charge a été modifiée avec succès." : "تم تعديل المصروف بنجاح.");
+        alert(language === 'fr' ? "La charge a été modifiée avec succès." : language === 'en' ? "Expense updated successfully." : "تم تعديل المصروف بنجاح.");
       } else {
         await addExpense(payload);
-        alert(language === 'fr' ? "La charge a été enregistrée avec succès." : "تم تسجيل المصروف بنجاح.");
+        alert(language === 'fr' ? "La charge a été enregistrée avec succès." : language === 'en' ? "Expense recorded successfully." : "تم تسجيل المصروف بنجاح.");
       }
 
-      // تنظيف الفورم
       setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
       setEditingId(null);
-      
-      // تحديث البيانات فوراً
       await fetchExpenses();
     } catch (error) {
       console.error("خطأ الحفظ:", error);
@@ -164,17 +182,17 @@ export default function SupplierExpenses() {
   };
 
   const handleEdit = (exp) => {
-  const safeAmount = String(exp.amount || 0).replace(/[^0-9.-]/g, '');  
-  setFormData({ 
-    title: exp.title, 
-    amount: Math.abs(Number(safeAmount) || 0), 
-    category: exp.category, 
-    payment_method: exp.payment_method, 
-    receipt_url: exp.receipt_url || ''
-  });
-  setEditingId(exp.id);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
+    const safeAmount = String(exp.amount || 0).replace(/[^0-9.-]/g, '');  
+    setFormData({ 
+      title: exp.title, 
+      amount: Math.abs(Number(safeAmount) || 0), 
+      category: exp.category, 
+      payment_method: exp.payment_method, 
+      receipt_url: exp.receipt_url || ''
+    });
+    setEditingId(exp.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleDelete = async (id) => { if (window.confirm(t.confirmDelete)) await deleteExpense(id); };
   const cancelEdit = () => { setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' }); setEditingId(null); };
@@ -193,11 +211,9 @@ export default function SupplierExpenses() {
   const categoryColorMap = sortedCategoryKeys.reduce((map, key, index) => { map[key] = COLORS[index % COLORS.length]; return map; }, {});
   const chartData = sortedCategoryKeys.map(key => ({ name: t.categories[key] || t.categories.other, value: expensesByCategoryKey[key], fill: categoryColorMap[key] }));
 
-  // 🎯 الدالة المدرعة المدمجة للفلترة والترتيب التنازلي التلقائي
   const sortedAndFilteredExpenses = useMemo(() => {
     let list = [...safeExpenses];
 
-    // الفلترة
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       list = list.filter(exp => {
@@ -210,7 +226,6 @@ export default function SupplierExpenses() {
       });
     }
 
-    // الترتيب
     return list.sort((a, b) => {
       if (sortBy === 'amount') {
         const cleanA = String(a.amount || 0).replace(/[^0-9.]/g, '');
@@ -233,7 +248,7 @@ export default function SupplierExpenses() {
         <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md border border-white/10"><Icon size={24} className="text-white" /></div>
         <div>
           <p className="text-sm font-medium text-white/80 mb-1">{title}</p>
-          <h4 className="text-2xl font-black tracking-tight">{value} <span className="text-sm font-normal text-white/70">{t.currency}</span></h4>
+          <h4 className="text-2xl font-black tracking-tight" dir="ltr">{value} <span className="text-sm font-normal text-white/70">{t.currency}</span></h4>
         </div>
       </div>
     </div>
@@ -243,7 +258,7 @@ export default function SupplierExpenses() {
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-6">
         <h2 className="text-3xl font-black text-white tracking-tight">{t.title}</h2>
-  <p className="text-slate-300 mt-1 font-medium">{t.subtitle}</p>
+        <p className="text-slate-300 mt-1 font-medium">{t.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -254,30 +269,30 @@ export default function SupplierExpenses() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm h-fit relative">
-          {editingId && <div className="absolute top-4 right-4 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md animate-pulse">Mode Édition</div>}
+          {editingId && <div className="absolute top-4 right-4 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md animate-pulse">{t.editMode}</div>}
           <h3 className="text-lg font-bold mb-6 text-gray-800 flex items-center gap-2 border-b border-gray-100 pb-4">
             {editingId ? <Edit size={18} className="text-blue-600" /> : <Plus size={18} className="text-blue-600" />} {editingId ? t.editExpense : t.addExpense}
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-        <label className="block text-sm font-bold text-gray-700 mb-2">{t.desc}</label>
-      <input 
-        type="text" 
-        list="titles-list" 
-        required 
-        value={formData.title} 
-        onChange={(e) => setFormData({...formData, title: e.target.value})} 
-        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 font-black text-red-900 transition-all" 
-        placeholder="Ex: Achat fournitures..." 
-        autoComplete="off" 
-      />
-        <datalist id="titles-list">{titleSuggestions.map((title, i) => <option key={i} value={title} />)}</datalist>
-        </div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">{t.desc}</label>
+              <input 
+                type="text" 
+                list="titles-list" 
+                required 
+                value={formData.title} 
+                onChange={(e) => setFormData({...formData, title: e.target.value})} 
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 font-black text-red-900 transition-all" 
+                placeholder="Ex: Achat fournitures..." 
+                autoComplete="off" 
+              />
+              <datalist id="titles-list">{titleSuggestions.map((title, i) => <option key={i} value={title} />)}</datalist>
+            </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">{t.amount}</label>
               <div className="relative">
                 <input type="number" required min="1" step="0.01" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} className={`w-full ${language === 'ar' ? 'pr-4 pl-12' : 'pl-4 pr-12'} py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 font-black text-red-600 transition-all`} />
-                <span className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'left-4' : 'right-4'} text-xs font-bold text-gray-400`}>{t.currency}</span>
+                <span className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'left-4' : 'right-4'} text-xs font-bold text-gray-400 uppercase`}>{t.currency}</span>
               </div>
             </div>
             <div>
@@ -296,15 +311,15 @@ export default function SupplierExpenses() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
                 <Paperclip size={16} className="text-gray-400"/> 
-                {language === 'fr' ? 'Justificatif / Reçu (Optionnel)' : 'الوثيقة الثبوتية / الوصل (اختياري)'}
+                {language === 'fr' ? 'Justificatif / Reçu (Optionnel)' : language === 'en' ? 'Receipt (Optional)' : 'الوثيقة الثبوتية / الوصل (اختياري)'}
               </label>
               <label className={`w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed rounded-xl cursor-pointer transition-all ${formData.receipt_url ? 'border-green-400 bg-green-50 text-green-600' : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
                 {isUploading ? (
                   <Loader2 size={18} className="animate-spin text-blue-500" />
                 ) : formData.receipt_url ? (
-                  <><CheckCircle size={18} className="text-green-500" /> <span className="text-sm font-bold">{language === 'fr' ? 'Reçu chargé' : 'تم رفع الوصل بنجاح'}</span></>
+                  <><CheckCircle size={18} className="text-green-500" /> <span className="text-sm font-bold">{t.receiptLoaded}</span></>
                 ) : (
-                  <><UploadCloud size={18} /> <span className="text-sm font-medium">{language === 'fr' ? 'Cliquez pour charger' : 'اضغط لرفع الوصل'}</span></>
+                  <><UploadCloud size={18} /> <span className="text-sm font-medium">{t.clickToUpload}</span></>
                 )}
                 <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept="image/png, image/jpeg, image/jpg, application/pdf" />
               </label>
@@ -351,7 +366,7 @@ export default function SupplierExpenses() {
                   <option value="date">{t.recentFirst}</option>
                 </select>
                 <div className="relative w-full sm:w-72">
-                  <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'right-3' : 'left-3'} text-gray-400`} />
+                  <Search size={18} className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-gray-400`} />
                   <input type="text" placeholder={t.searchPlaceholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full ${language === 'ar' ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm font-medium bg-white transition-all`} />
                 </div>
               </div>
@@ -375,14 +390,14 @@ export default function SupplierExpenses() {
                       return (
                         <tr key={exp.id} className={`hover:bg-blue-50/30 transition-colors group ${editingId === exp.id ? 'bg-blue-50' : ''}`}>
                           
-                      <td className="px-6 py-4 text-red-900 font-bold">
-                      <div className="flex items-center gap-2">
-                      {exp.title}
-                      {exp.receipt_url && (
-                      <a href={exp.receipt_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 inline-flex items-center" title="عرض الوثيقة"><Paperclip size={14} /></a>
-                      )}
-                      </div>
-                      </td>
+                          <td className="px-6 py-4 text-red-900 font-bold">
+                            <div className="flex items-center gap-2">
+                              {exp.title}
+                              {exp.receipt_url && (
+                                <a href={exp.receipt_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 inline-flex items-center" title={t.viewDoc}><Paperclip size={14} /></a>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-6 py-4">
                             <span className="px-3 py-1.5 rounded-lg text-xs font-black inline-flex items-center gap-1.5 border" style={{ backgroundColor: `${currentCategoryColor}10`, borderColor: `${currentCategoryColor}40`, color: currentCategoryColor }}>
                               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentCategoryColor }}></span>
@@ -390,7 +405,7 @@ export default function SupplierExpenses() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-gray-500 font-medium text-xs">
-                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at || exp.date || new Date()))}
+                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA').format(new Date(exp.created_at || exp.date || new Date()))}
                           </td>
 
                           <td className="px-6 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">

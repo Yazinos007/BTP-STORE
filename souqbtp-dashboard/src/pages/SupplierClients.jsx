@@ -3,8 +3,8 @@ import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { 
-  Users, UserCheck, UserX, UserMinus, Search, MessageSquare, 
-  TrendingUp, Calendar, DollarSign, Loader2, MessageCircle, Eye 
+  Users, UserCheck, UserX, UserMinus, Search, 
+  Calendar, Loader2, MessageCircle 
 } from 'lucide-react';
 
 const translations = {
@@ -25,6 +25,7 @@ const translations = {
     currency: 'درهم',
     pulseTitle: 'نبض العميل والمستندات الأخيرة',
     close: 'إغلاق',
+    chatBtn: 'مراسلة ذكية',
     segments: { all: 'الكل', vip: 'VIP نشط', dormant: 'نائم (+60 يوم)', lead: 'متردد (عرض سعر)' }
   },
   fr: {
@@ -44,18 +45,40 @@ const translations = {
     currency: 'MAD',
     pulseTitle: 'Profil & Pulsation du Client',
     close: 'Fermer',
+    chatBtn: 'Relancer',
     segments: { all: 'Tous', vip: 'VIP Actif', dormant: 'Dormant (+60j)', lead: 'Prospect (Devis)' }
+  },
+  en: {
+    title: 'B2B CRM & Clients',
+    subtitle: 'Track merchant activity, smart segmentation, and re-engage for higher sales.',
+    totalClients: 'Total Clients',
+    vipClients: 'Active VIP Clients',
+    dormantClients: 'Dormant Clients',
+    leadsClients: 'Leads (Pending Quotes)',
+    searchPlaceholder: 'Search by store name or phone...',
+    clientName: 'Store / Client',
+    segment: 'Segmentation',
+    totalSpent: 'Total Volume',
+    lastActive: 'Last Activity',
+    actions: 'Quick Re-engagement',
+    empty: 'No clients found in this category.',
+    currency: 'MAD',
+    pulseTitle: 'Client Profile & Activity',
+    close: 'Close',
+    chatBtn: 'Smart Chat',
+    segments: { all: 'All', vip: 'Active VIP', dormant: 'Dormant (+60 days)', lead: 'Lead (Quote)' }
   }
 };
 
 export default function SupplierClients() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
+  
+  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
 
   const [isLoading, setIsLoading] = useState(true);
   const [clients, setClients] = useState([]);
-  const [selectedClient, setSelectedClient] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
 
@@ -85,7 +108,6 @@ export default function SupplierClients() {
       const crmList = (allMerchants || []).map(merchant => {
         const merchantDocs = myDocs.filter(d => d.client_id === merchant.id || d.owner_id === merchant.id);
         const invoices = merchantDocs.filter(d => d.type === 'Facture');
-        const quotes = merchantDocs.filter(d => d.type === 'Devis' || d.type === 'Facture Proforma');
 
         const totalSpent = invoices.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
         
@@ -122,22 +144,28 @@ export default function SupplierClients() {
     }
   };
 
-  // دالة توليد رسائل الواتساب الذكية الديناميكية وطرد التردد
+  // دالة توليد رسائل الواتساب الذكية الديناميكية
   const getWhatsAppLink = (client) => {
     const cleanPhone = (client.phone || '').replace(/[^0-9]/g, '');
     let message = '';
 
     if (client.segment === 'vip') {
       message = language === 'fr' 
-        ? `Bonjour ${client.store_name}, merci لثقتكم المستمرة. عروضنا الجديدة لشهر مايو جاهزة لكم خصيصاً بشحن تفضيلي.` 
+        ? `Bonjour ${client.store_name}, merci pour votre confiance continue. Nos nouveaux arrivages du mois sont disponibles avec une livraison prioritaire.` 
+        : language === 'en'
+        ? `Hello ${client.store_name}, thank you for your continued trust. Our new arrivals CPC are now ready for you with priority shipping.`
         : `مرحباً ${client.store_name}، نشكركم على ثقتكم المستمرة في سلعنا. قمنا بتخصيص عرض تفضيلي لطلبيتكم القادمة مع شحن سريع.`;
     } else if (client.segment === 'dormant') {
       message = language === 'fr'
-        ? `Bonjour ${client.store_name}, غبتم عنا مؤخراً! Nous دار تواصل للاطمئنان عليكم وتقديم خصم 5% على أول طلبية استرداد.`
+        ? `Bonjour ${client.store_name}, nous espérons que vous allez bien ! Profitez d'une remise de 5% sur votre prochaine commande de réapprovisionnement.`
+        : language === 'en'
+        ? `Hello ${client.store_name}, we hope you're doing well! Enjoy a 5% discount on your next restocking order this week.`
         : `مرحباً ${client.store_name}، لاحظنا غيابكم عن المركز مؤخراً ونأمل أن تكونوا بخير! قمنا بتوفير قسيمة خصم بقيمة 5% لتحديث مخزونكم هذا الأسبوع.`;
     } else {
       message = language === 'fr'
-        ? `Bonjour ${client.store_name}, بخصوص طلب السعر الأخير، هل لديكم أي استفسار لتأكيد الطلبية وتجهيز الشاحنة؟`
+        ? `Bonjour ${client.store_name}, concernant votre dernier devis, avez-vous des questions pour confirmer la commande ?`
+        : language === 'en'
+        ? `Hello ${client.store_name}, regarding your recent quote request, do you have any questions before we pack and ship your order?`
         : `مرحباً ${client.store_name}، بخصوص عرض السعر الأخير الذي طلبتموه، السلع متوفرة في المخزن المركزي وجاهزة للشحن فور تأكيدكم.`;
     }
 
@@ -201,16 +229,16 @@ export default function SupplierClients() {
       {/* 🔍 شريط البحث والفلترة */}
       <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between shadow-xl">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+          <Search className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-slate-500`} size={18} />
           <input 
             type="text" 
             placeholder={t.searchPlaceholder}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl outline-none focus:border-blue-500 w-full text-sm"
+            className={`w-full ${language === 'ar' ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 bg-slate-900 border border-slate-700 rounded-xl outline-none focus:border-blue-500 text-sm`}
           />
         </div>
-        <div className="flex gap-2 w-full md:w-auto overflow-x-auto">
+        <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
           {Object.entries(t.segments).map(([key, value]) => (
             <button 
               key={key} 
@@ -226,13 +254,13 @@ export default function SupplierClients() {
       {/* 📋 جدول علاقات العملاء */}
       <div className="bg-slate-800 border border-slate-700 rounded-3xl overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-start">
             <thead>
               <tr className="bg-slate-900/50 border-b border-slate-700 text-slate-400 text-xs uppercase font-black">
-                <th className="p-5">{t.clientName}</th>
-                <th className="p-5">{t.segment}</th>
-                <th className="p-5 text-right">{t.totalSpent}</th>
-                <th className="p-5">{t.lastActive}</th>
+                <th className="p-5 text-start">{t.clientName}</th>
+                <th className="p-5 text-start">{t.segment}</th>
+                <th className="p-5 text-end">{t.totalSpent}</th>
+                <th className="p-5 text-start">{t.lastActive}</th>
                 <th className="p-5 text-center">{t.actions}</th>
               </tr>
             </thead>
@@ -264,15 +292,15 @@ export default function SupplierClients() {
                         {t.segments[client.segment]}
                       </span>
                     </td>
-                    <td className="p-5 text-right font-black text-lg text-white">
-                      {client.totalSpent.toLocaleString()} <span className="text-xs text-slate-500 font-bold">{t.currency}</span>
+                    <td className="p-5 text-end font-black text-lg text-white" dir="ltr">
+                      {client.totalSpent.toLocaleString()} <span className="text-xs text-slate-500 font-bold uppercase">{t.currency}</span>
                     </td>
                     <td className="p-5 text-slate-400 text-sm font-medium">
                       {client.lastActive ? (
                         <span className="flex items-center gap-1.5"><Calendar size={14}/>{client.lastActive.toLocaleDateString()}</span>
                       ) : '---'}
                     </td>
-                    <td className="p-5">
+                    <td className="p-5 text-center">
                       <div className="flex justify-center items-center gap-2">
                         <a 
                           href={getWhatsAppLink(client)} 
@@ -281,7 +309,7 @@ export default function SupplierClients() {
                           className="p-2.5 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-xl transition-all shadow-lg border border-emerald-500/20 flex items-center gap-1.5 text-xs font-bold"
                         >
                           <MessageCircle size={16} />
-                          {language === 'fr' ? 'Relancer' : 'مراسلة ذكية'}
+                          {t.chatBtn}
                         </a>
                       </div>
                     </td>

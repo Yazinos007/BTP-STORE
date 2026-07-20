@@ -13,7 +13,15 @@ const translations = {
     totalTVA: 'قيمة الضريبة (TVA)', totalTTC: 'الإجمالي (TTC)',
     save: 'حفظ أمر الشراء', saving: 'جاري الحفظ...', history: 'سجل أوامر الشراء', date: 'التاريخ',
     status: 'الحالة', actions: 'إجراءات', empty: 'لا توجد أوامر شراء مسجلة.',
-    pending: 'قيد الانتظار', validated: 'مُعتمد', cancelled: 'ملغى', print: 'طباعة'
+    pending: 'قيد الانتظار', validated: 'مُعتمد', cancelled: 'ملغى', print: 'طباعة',
+    clientPlaceholder: 'اسم المورد أو العميل...', productPlaceholder: 'مثال: إسمنت، حديد...',
+    errorMsg: 'خطأ: ', loading: 'جاري التحميل...',
+    validate: 'اعتماد (Valider)', cancel: 'إلغاء',
+    printAddress: 'عنوان الشركة', printInvoiceType: "أمر شراء (BC)",
+    printDate: 'التاريخ:', printDestinataire: 'الموجه إليه (المرسل إليه):',
+    printDesignation: 'البيان', printQty: 'الكمية', printUP: 'سعر الوحدة', printTotalHT: 'الإجمالي (HT)',
+    printTotalTTC: 'الإجمالي (TTC)',
+    printSignBuyer: 'توقيع المشتري', printSignSupplier: 'توقيع المورد'
   },
   fr: {
     title: 'Bons de Commande', subtitle: 'Créez et imprimez vos bons de commande (BC).',
@@ -23,7 +31,33 @@ const translations = {
     totalTVA: 'TVA', totalTTC: 'Total TTC',
     save: 'Enregistrer le BC', saving: 'Enregistrement...', history: 'Historique des BC', date: 'Date',
     status: 'Statut', actions: 'Actions', empty: 'Aucun BC enregistré.',
-    pending: 'En attente', validated: 'Validé', cancelled: 'Annulé', print: 'Imprimer'
+    pending: 'En attente', validated: 'Validé', cancelled: 'Annulé', print: 'Imprimer',
+    clientPlaceholder: 'Nom du Fournisseur / Client...', productPlaceholder: 'Ex: Ciment Portland...',
+    errorMsg: 'Erreur: ', loading: 'Chargement...',
+    validate: 'Valider', cancel: 'Annuler',
+    printAddress: 'Adresse de l\'entreprise', printInvoiceType: "BON DE COMMANDE",
+    printDate: 'Date:', printDestinataire: 'Destinataire :',
+    printDesignation: 'Désignation', printQty: 'Qté', printUP: 'Prix U. HT', printTotalHT: 'Total HT',
+    printTotalTTC: 'Total TTC',
+    printSignBuyer: 'Signature de l\'Acheteur', printSignSupplier: 'Signature du Fournisseur'
+  },
+  en: {
+    title: 'Purchase Orders (BC)', subtitle: 'Create and print your purchase orders.',
+    newBC: 'Create New PO', clientName: 'Supplier / Client',
+    tvaRate: 'VAT Rate (%)', addLine: 'Add Item', designation: 'Description',
+    qty: 'Quantity', price: 'Unit Price', totalHT: 'Total (HT)',
+    totalTVA: 'VAT', totalTTC: 'Total (TTC)',
+    save: 'Save Purchase Order', saving: 'Saving...', history: 'PO History', date: 'Date',
+    status: 'Status', actions: 'Actions', empty: 'No purchase orders registered.',
+    pending: 'Pending', validated: 'Validated', cancelled: 'Cancelled', print: 'Print',
+    clientPlaceholder: 'Supplier / Client Name...', productPlaceholder: 'Ex: Portland Cement...',
+    errorMsg: 'Error: ', loading: 'Loading...',
+    validate: 'Validate', cancel: 'Cancel',
+    printAddress: 'Company Address', printInvoiceType: "PURCHASE ORDER",
+    printDate: 'Date:', printDestinataire: 'To:',
+    printDesignation: 'Description', printQty: 'Qty', printUP: 'Unit Price', printTotalHT: 'Total HT',
+    printTotalTTC: 'Total TTC',
+    printSignBuyer: 'Buyer Signature', printSignSupplier: 'Supplier Signature'
   }
 };
 
@@ -31,6 +65,8 @@ export default function BC() {
   const { purchaseOrders, isLoading, fetchBCs, createBC, updateStatus } = useBCStore();
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
+  
+  // 🛡️ الترياق السحري موجود لحماية اللوحة
   const t = translations[language] || translations['fr'];
 
   const [clientName, setClientName] = useState('');
@@ -66,7 +102,7 @@ export default function BC() {
       setClientName('');
       setItems([{ id: Date.now(), designation: '', qty: 1, price: 0 }]);
     } else {
-      alert("Erreur: " + result.error);
+      alert(t.errorMsg + result.error);
     }
     setIsSaving(false);
   };
@@ -80,7 +116,7 @@ export default function BC() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">{t.title}</h2>
         <p className="text-gray-500 mt-1">{t.subtitle}</p>
@@ -99,7 +135,7 @@ export default function BC() {
                 value={clientName} 
                 onChange={(e) => setClientName(e.target.value)} 
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" 
-                placeholder="Nom du Client..." 
+                placeholder={t.clientPlaceholder}
                 autoComplete="off"
               />
               <datalist id="clients-list">
@@ -123,17 +159,17 @@ export default function BC() {
             </div>
             {items.map((item) => (
               <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-6">
-              <input 
-                type="text" 
-                list="products-list" 
-                value={item.designation} 
-                onChange={(e) => handleItemChange(item.id, 'designation', e.target.value)} 
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm" 
-                placeholder="Ex: Ciment Portland..." 
-                autoComplete="off"
-              />
-            </div>
+                <div className="col-span-6">
+                  <input 
+                    type="text" 
+                    list="products-list" 
+                    value={item.designation} 
+                    onChange={(e) => handleItemChange(item.id, 'designation', e.target.value)} 
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm" 
+                    placeholder={t.productPlaceholder}
+                    autoComplete="off"
+                  />
+                </div>
                 <div className="col-span-2"><input type="number" min="1" value={item.qty} onChange={(e) => handleItemChange(item.id, 'qty', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-teal-500 text-center text-sm" /></div>
                 <div className="col-span-3"><input type="number" min="0" step="0.01" value={item.price} onChange={(e) => handleItemChange(item.id, 'price', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-teal-500 text-center text-sm" /></div>
                 <div className="col-span-1 text-center"><button onClick={() => handleRemoveItem(item.id)} className="text-red-400 hover:text-red-600 p-2"><Trash2 size={16}/></button></div>
@@ -145,13 +181,13 @@ export default function BC() {
             </datalist>
           </div>
 
-          <div className="border-t border-gray-100 pt-4 flex flex-col items-end space-y-2">
+          <div className={`border-t border-gray-100 pt-4 flex flex-col ${language === 'ar' ? 'items-start' : 'items-end'} space-y-2`}>
             <div className="w-64 flex justify-between text-gray-600 font-medium"><span>{t.totalHT} :</span> <span>{totalHT.toFixed(2)}</span></div>
             <div className="w-64 flex justify-between text-gray-600 font-medium"><span>{t.totalTVA} :</span> <span>{tvaAmount.toFixed(2)}</span></div>
             <div className="w-64 flex justify-between text-xl font-black text-gray-900 border-t border-gray-800 pt-2 mt-2"><span>{t.totalTTC} :</span> <span>{totalTTC.toFixed(2)}</span></div>
           </div>
 
-          <div className="mt-8 flex justify-end">
+          <div className={`mt-8 flex ${language === 'ar' ? 'justify-start' : 'justify-end'}`}>
             <button onClick={handleSaveBC} disabled={!isFormValid || isSaving} className="bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-bold py-3 px-8 rounded-lg transition-colors">
               {isSaving ? t.saving : t.save}
             </button>
@@ -165,12 +201,12 @@ export default function BC() {
               <div key={bc.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-bold text-gray-800 text-sm truncate w-32">{bc.client_name}</h4>
-                  <span className="text-xs text-gray-400">{new Date(bc.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-gray-400">{new Date(bc.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'en' ? 'en-US' : 'fr-FR')}</span>
                 </div>
                 <div className="flex justify-between items-end">
                   {getStatusBadge(bc.status)}
                   <div className="text-end">
-                    <p className="font-black text-teal-600 text-sm">{Number(bc.total_ttc).toLocaleString()}</p>
+                    <p className="font-black text-teal-600 text-sm" dir="ltr">{Number(bc.total_ttc).toLocaleString()}</p>
                     <button onClick={() => setSelectedBC(bc)} className="text-xs text-gray-500 hover:text-gray-800 underline mt-1 flex items-center gap-1 justify-end"><Printer size={12}/> {t.print}</button>
                   </div>
                 </div>
@@ -188,8 +224,8 @@ export default function BC() {
               <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold transition-colors"><Printer size={18} /> {t.print}</button>
               {selectedBC.status === 'pending' && (
                 <>
-                  <button onClick={() => { updateStatus(selectedBC.id, 'validated'); setSelectedBC({...selectedBC, status: 'validated'}); }} className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold transition-colors"><CheckCircle size={18} /> Valider</button>
-                  <button onClick={() => { updateStatus(selectedBC.id, 'cancelled'); setSelectedBC({...selectedBC, status: 'cancelled'}); }} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors"><XCircle size={18} /> Annuler</button>
+                  <button onClick={() => { updateStatus(selectedBC.id, 'validated'); setSelectedBC({...selectedBC, status: 'validated'}); }} className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold transition-colors"><CheckCircle size={18} /> {t.validate}</button>
+                  <button onClick={() => { updateStatus(selectedBC.id, 'cancelled'); setSelectedBC({...selectedBC, status: 'cancelled'}); }} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors"><XCircle size={18} /> {t.cancel}</button>
                 </>
               )}
             </div>
@@ -199,44 +235,52 @@ export default function BC() {
                 <div>
                   <h1 className="text-4xl font-black text-gray-900 mb-2 uppercase">{supplier?.store_name || 'ENTREPRISE'}</h1>
                   <p className="text-sm text-gray-500">ICE: 123456789012345</p>
-                  <p className="text-sm text-gray-500">Adresse de l'entreprise</p>
+                  <p className="text-sm text-gray-500">{t.printAddress}</p>
                 </div>
-                <div className="text-end">
-                  <h2 className="text-3xl font-light text-teal-800 uppercase tracking-widest mb-2">BON DE COMMANDE</h2>
+                <div className={`text-${language === 'ar' ? 'start' : 'end'}`}>
+                  <h2 className="text-3xl font-light text-teal-800 uppercase tracking-widest mb-2">{t.printInvoiceType}</h2>
                   <p className="text-gray-600 font-bold">N° BC-{selectedBC.id.slice(0,6).toUpperCase()}</p>
-                  <p className="text-gray-500 text-sm">Date: {new Date(selectedBC.created_at).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-gray-500 text-sm">{t.printDate} {new Date(selectedBC.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'en' ? 'en-US' : 'fr-FR')}</p>
                 </div>
               </div>
 
-              <div className="mb-10 bg-gray-50 p-6 rounded-lg border border-gray-200 w-1/2 ml-auto text-start" dir="ltr">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Destinataire :</p>
+              <div className={`mb-10 bg-gray-50 p-6 rounded-lg border border-gray-200 w-1/2 ${language === 'ar' ? 'mr-auto text-end' : 'ml-auto text-start'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t.printDestinataire}</p>
                 <p className="text-xl font-bold text-gray-900">{selectedBC.client_name}</p>
               </div>
 
-              <table className="w-full text-start mb-8 border-collapse" dir="ltr">
+              <table className="w-full text-start mb-8 border-collapse" dir={language === 'ar' ? 'rtl' : 'ltr'}>
                 <thead>
-                  <tr className="bg-teal-800 text-white"><th className="p-3 font-bold text-start">Désignation</th><th className="p-3 font-bold text-center">Qté</th><th className="p-3 font-bold text-end">Prix U. HT</th><th className="p-3 font-bold text-end">Total HT</th></tr>
+                  <tr className="bg-teal-800 text-white">
+                    <th className="p-3 font-bold text-start">{t.printDesignation}</th>
+                    <th className="p-3 font-bold text-center">{t.printQty}</th>
+                    <th className="p-3 font-bold text-end">{t.printUP}</th>
+                    <th className="p-3 font-bold text-end">{t.printTotalHT}</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {selectedBC.items.map((item, idx) => (
                     <tr key={idx} className="border-b border-gray-200">
-                      <td className="p-3 text-gray-800">{item.designation}</td><td className="p-3 text-center text-gray-600">{item.qty}</td><td className="p-3 text-end text-gray-600 font-mono">{Number(item.price).toFixed(2)}</td><td className="p-3 text-end text-gray-800 font-bold font-mono">{(item.qty * item.price).toFixed(2)}</td>
+                      <td className="p-3 text-gray-800 text-start">{item.designation}</td>
+                      <td className="p-3 text-center text-gray-600">{item.qty}</td>
+                      <td className="p-3 text-end text-gray-600 font-mono" dir="ltr">{Number(item.price).toFixed(2)}</td>
+                      <td className="p-3 text-end text-gray-800 font-bold font-mono" dir="ltr">{(item.qty * item.price).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <div className="flex justify-end" dir="ltr">
+              <div className={`flex ${language === 'ar' ? 'justify-start' : 'justify-end'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
                 <div className="w-72 space-y-2">
-                  <div className="flex justify-between text-gray-600"><span>Total HT</span><span className="font-mono">{Number(selectedBC.total_ht).toFixed(2)} MAD</span></div>
-                  <div className="flex justify-between text-gray-600"><span>TVA ({selectedBC.tva_rate}%)</span><span className="font-mono">{Number(selectedBC.tva_amount).toFixed(2)} MAD</span></div>
-                  <div className="flex justify-between text-xl font-black text-teal-900 border-t-2 border-teal-800 pt-2 mt-2"><span>Total TTC</span><span className="font-mono">{Number(selectedBC.total_ttc).toFixed(2)} MAD</span></div>
+                  <div className="flex justify-between text-gray-600"><span>{t.printTotalHT}</span><span className="font-mono" dir="ltr">{Number(selectedBC.total_ht).toFixed(2)} MAD</span></div>
+                  <div className="flex justify-between text-gray-600"><span>TVA ({selectedBC.tva_rate}%)</span><span className="font-mono" dir="ltr">{Number(selectedBC.tva_amount).toFixed(2)} MAD</span></div>
+                  <div className="flex justify-between text-xl font-black text-teal-900 border-t-2 border-teal-800 pt-2 mt-2"><span>{t.printTotalTTC}</span><span className="font-mono" dir="ltr">{Number(selectedBC.total_ttc).toFixed(2)} MAD</span></div>
                 </div>
               </div>
               
-              <div className="mt-20 flex justify-between text-sm text-gray-500 border-t border-gray-200 pt-4">
-                <p>Signature de l'Acheteur</p>
-                <p>Signature du Fournisseur</p>
+              <div className="mt-20 flex justify-between text-sm text-gray-500 border-t border-gray-200 pt-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                <p>{t.printSignBuyer}</p>
+                <p>{t.printSignSupplier}</p>
               </div>
             </div>
           </div>

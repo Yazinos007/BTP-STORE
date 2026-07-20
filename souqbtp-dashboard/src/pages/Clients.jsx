@@ -18,7 +18,12 @@ const translations = {
     empty: 'لا يوجد عملاء في هذا التصنيف حالياً.', currency: 'درهم', searchPlaceholder: 'ابحث بالاسم، الهاتف، أو ICE...',
     payDebtTitle: 'تسديد دفعة من الدين', payAmount: 'المبلغ المسدد', confirmPayment: 'تأكيد التسديد',
     segments: { all: 'الكل', vip: 'VIP (نشط)', debtor: 'عليه دين', dormant: 'نائم (+60 يوم)' },
-    lastActive: 'آخر عملية:', historyTitle: 'سجل المعاملات والفواتير', historyEmpty: 'لا توجد معاملات مسجلة لهذا العميل.'
+    lastActive: 'آخر عملية:', historyTitle: 'سجل المعاملات والفواتير', historyEmpty: 'لا توجد معاملات مسجلة لهذا العميل.',
+    contact: 'جهة الاتصال', new: 'جديد', settled: 'مسدد', historyBtn: 'سجل المعاملات', deleteBtn: 'حذف',
+    clientLabel: 'العميل', currentDebt: 'الدين الحالي:',
+    waDebt: 'مرحباً {name}، تذكير بوجود مبلغ مستحق بقيمة {debt} {currency}.',
+    waVip: 'مرحباً {name}، زبوننا الوفي! لدينا عروض جديدة لك.',
+    waDormant: 'مرحباً {name}، اشتقنا لزيارتكم! لدينا عروض جديدة.'
   },
   fr: {
     title: 'Gestion des Clients & Dettes (CRM)', subtitle: 'Suivez vos clients, segmentez-les et relancez vos impayés intelligemment.',
@@ -32,13 +37,39 @@ const translations = {
     empty: 'Aucun client dans cette catégorie.', currency: 'MAD', searchPlaceholder: 'Rechercher par nom, tél ou ICE...',
     payDebtTitle: 'Règlement de Créance', payAmount: 'Montant réglé', confirmPayment: 'Valider le paiement',
     segments: { all: 'Tous', vip: 'VIP Actif', debtor: 'Débiteurs', dormant: 'Dormants (+60j)' },
-    lastActive: 'Dernière act.:', historyTitle: 'Historique des Transactions', historyEmpty: 'Aucune transaction enregistrée.'
+    lastActive: 'Dernière act.:', historyTitle: 'Historique des Transactions', historyEmpty: 'Aucune transaction enregistrée.',
+    contact: 'Contact', new: 'Nouveau', settled: 'Réglé', historyBtn: 'Historique', deleteBtn: 'Supprimer',
+    clientLabel: 'Client', currentDebt: 'Dette actuelle :',
+    waDebt: 'Bonjour {name}, rappel amical concernant un solde impayé de {debt} {currency}.',
+    waVip: 'Bonjour {name}, de nouveaux articles sont disponibles pour nos clients fidèles !',
+    waDormant: 'Bonjour {name}, venez découvrir nos nouvelles offres.'
+  },
+  en: {
+    title: 'Client & Debt Management (CRM)', subtitle: 'Track your clients, segment them smartly, and recover debts via direct messaging.',
+    addClient: 'Add New Client', editClient: 'Edit Client',
+    totalClients: 'Total Clients', totalDebt: 'Total Market Debt', clientsWithDebt: 'Debtors',
+    vipClients: 'Loyal Clients (VIP)',
+    name: 'Full Name / Company Name', phone: 'Phone Number', address: 'Address',
+    ice: 'Tax ID (ICE)', debt: 'Accumulated Debt', status: 'Status & Activity',
+    save: 'Save Client', saving: 'Saving...', cancel: 'Cancel', actions: 'Actions',
+    confirmDelete: 'Are you sure you want to delete this client?',
+    empty: 'No clients found in this category.', currency: 'MAD', searchPlaceholder: 'Search by name, phone, or ICE...',
+    payDebtTitle: 'Settle Debt Payment', payAmount: 'Paid Amount', confirmPayment: 'Confirm Payment',
+    segments: { all: 'All', vip: 'VIP (Active)', debtor: 'Debtors', dormant: 'Dormant (+60d)' },
+    lastActive: 'Last active:', historyTitle: 'Transactions & Invoices History', historyEmpty: 'No transactions recorded for this client.',
+    contact: 'Contact', new: 'New', settled: 'Settled', historyBtn: 'Transaction History', deleteBtn: 'Delete',
+    clientLabel: 'Client', currentDebt: 'Current Debt:',
+    waDebt: 'Hello {name}, friendly reminder regarding an unpaid balance of {debt} {currency}.',
+    waVip: 'Hello {name}, our loyal customer! We have new offers for you.',
+    waDormant: 'Hello {name}, we miss you! Come check out our new deals.'
   }
 };
 
 export default function Clients({ isWholesaler }) {
   const { clients, isLoading, fetchClients, addClient, updateClient, deleteClient } = useClientStore();
   const { language } = useSettingsStore();
+  
+  // 🛡️ الترياق السحري موجود لحماية اللوحة
   const t = translations[language] || translations['fr'];
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -69,7 +100,7 @@ export default function Clients({ isWholesaler }) {
         const stats = {};
         clients.forEach(c => {
           const cDocs = docs.filter(d => d.client_id === c.id);
-          let segment = 'nouveau';
+          let segment = 'new';
           let lastActive = null;
           if (cDocs.length > 0) {
             const dates = cDocs.map(d => new Date(d.created_at).getTime());
@@ -128,13 +159,19 @@ export default function Clients({ isWholesaler }) {
     } finally { setIsSubmitting(false); }
   };
 
+  // 🎯 الرسائل الذكية عبر الواتساب أصبحت مدعومة باللغات ومتغيرة ديناميكياً
   const getWhatsAppLink = (client) => {
     const cleanPhone = (client.phone || '').replace(/[^0-9]/g, '');
-    let message = Number(client.total_debt) > 0 
-      ? (language === 'fr' ? `Bonjour ${client.full_name}, rappel amical concernant un solde impayé de ${client.total_debt} MAD.` : `مرحباً ${client.full_name}، تذكير بوجود مبلغ مستحق بقيمة ${client.total_debt} درهم.`)
-      : (clientStats[client.id]?.segment === 'vip' 
-        ? (language === 'fr' ? `Bonjour ${client.full_name}, de nouveaux articles sont disponibles !` : `مرحباً ${client.full_name}، زبوننا الوفي! لدينا عروض جديدة لك.`)
-        : (language === 'fr' ? `Bonjour ${client.full_name}, venez découvrir nos nouvelles offres.` : `مرحباً ${client.full_name}، اشتقنا لزيارتكم!`));
+    let message = '';
+    
+    if (Number(client.total_debt) > 0) {
+      message = t.waDebt.replace('{name}', client.full_name).replace('{debt}', client.total_debt).replace('{currency}', t.currency);
+    } else if (clientStats[client.id]?.segment === 'vip') {
+      message = t.waVip.replace('{name}', client.full_name);
+    } else {
+      message = t.waDormant.replace('{name}', client.full_name);
+    }
+    
     return `https://wa.me/${cleanPhone || '212'}/?text=${encodeURIComponent(message)}`;
   };
 
@@ -205,7 +242,13 @@ export default function Clients({ isWholesaler }) {
               <div className="overflow-x-auto">
                 <table className="w-full text-start text-sm">
                   <thead className="border-b bg-gray-50/50">
-                    <tr><th className="px-6 py-4 text-gray-500 font-black text-start">{t.name}</th><th className="px-6 py-4 text-gray-500 font-black text-start">Contact</th><th className="px-6 py-4 text-gray-500 font-black text-end">{t.debt}</th><th className="px-6 py-4 text-gray-500 font-black text-start">{t.status}</th><th className="px-6 py-4 text-gray-500 font-black text-center">{t.actions}</th></tr>
+                    <tr>
+                      <th className="px-6 py-4 text-gray-500 font-black text-start">{t.name}</th>
+                      <th className="px-6 py-4 text-gray-500 font-black text-start">{t.contact}</th>
+                      <th className="px-6 py-4 text-gray-500 font-black text-end">{t.debt}</th>
+                      <th className="px-6 py-4 text-gray-500 font-black text-start">{t.status}</th>
+                      <th className="px-6 py-4 text-gray-500 font-black text-center">{t.actions}</th>
+                    </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {filteredClients.map((client) => {
@@ -214,19 +257,27 @@ export default function Clients({ isWholesaler }) {
                         <tr key={client.id} className="hover:bg-blue-50/30 transition-colors group">
                           <td className="px-6 py-4"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black">{client.full_name.slice(0, 2)}</div><div><p className="font-bold text-gray-800">{client.full_name}</p></div></div></td>
                           <td className="px-6 py-4 space-y-1.5"><p className="text-gray-600 text-xs font-bold flex items-center gap-1"><Phone size={12}/> {client.phone}</p></td>
-                          <td className="px-6 py-4 text-end">{Number(client.total_debt) > 0 ? <span className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-black border border-red-100 inline-block">{Number(client.total_debt).toLocaleString()} {t.currency}</span> : <span className="text-emerald-500 font-bold text-xs"><CheckCircle size={14} className="inline"/> Réglé</span>}</td>
-                          <td className="px-6 py-4"><span className="bg-gray-100 text-gray-500 px-2 py-1 rounded text-[10px] font-black uppercase">{stat?.segment || 'Nouveau'}</span></td>
+                          <td className="px-6 py-4 text-end">
+                            {Number(client.total_debt) > 0 ? (
+                              <span className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-black border border-red-100 inline-block" dir="ltr">
+                                {Number(client.total_debt).toLocaleString()} {t.currency}
+                              </span>
+                            ) : (
+                              <span className="text-emerald-500 font-bold text-xs"><CheckCircle size={14} className="inline"/> {t.settled}</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="bg-gray-100 text-gray-500 px-2 py-1 rounded text-[10px] font-black uppercase">
+                              {stat?.segment === 'vip' ? t.segments.vip : stat?.segment === 'dormant' ? t.segments.dormant : t.new}
+                            </span>
+                          </td>
                           <td className="px-6 py-4">
                             <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <a href={getWhatsAppLink(client)} target="_blank" rel="noopener noreferrer" className="p-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg"><MessageCircle size={16}/></a>
-                              <button onClick={() => handleViewHistory(client)} className="p-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 rounded-lg" title="سجل المعاملات"><ClipboardList size={16}/></button>
+                              <button onClick={() => handleViewHistory(client)} className="p-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 rounded-lg" title={t.historyBtn}><ClipboardList size={16}/></button>
                               {Number(client.total_debt) > 0 && <button onClick={() => { setPaymentClient(client); setShowPaymentModal(true); }} className="p-2 bg-slate-800 text-white rounded-lg"><Banknote size={16}/></button>}
                               <button onClick={() => handleEdit(client)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Edit size={16}/></button>
-                              
-                              {/* 🎯 ها هو زر الحذف عاد لمكانه بقوة! */}
-                              <button onClick={() => handleDelete(client.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Supprimer">
-                                <Trash2 size={16}/>
-                              </button>
+                              <button onClick={() => handleDelete(client.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title={t.deleteBtn}><Trash2 size={16}/></button>
                             </div>
                           </td>
                         </tr>
@@ -270,9 +321,9 @@ export default function Clients({ isWholesaler }) {
                         </div>
                       </div>
                       <div className="text-end">
-                        <p className="font-black text-gray-900 font-mono">{Number(doc.total_amount).toLocaleString()} <span className="text-xs text-gray-400">{t.currency}</span></p>
+                        <p className="font-black text-gray-900 font-mono" dir="ltr">{Number(doc.total_amount).toLocaleString()} <span className="text-xs text-gray-400">{t.currency}</span></p>
                         <p className="text-xs font-medium text-gray-400 mt-0.5">
-                          {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(doc.created_at))}
+                          {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(doc.created_at))}
                         </p>
                       </div>
                     </div>
@@ -285,7 +336,7 @@ export default function Clients({ isWholesaler }) {
       )}
 
       {showPaymentModal && paymentClient && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-slide-up">
             <div className="p-6 border-b flex justify-between items-center bg-slate-800">
               <h3 className="font-black text-white text-lg flex items-center gap-2"><Banknote size={20}/> {t.payDebtTitle}</h3>
@@ -293,13 +344,15 @@ export default function Clients({ isWholesaler }) {
             </div>
             <form onSubmit={handlePaymentSubmit} className="p-6 space-y-4">
               <div className="text-center mb-4">
-                <p className="text-sm text-gray-500">العميل</p>
+                <p className="text-sm text-gray-500">{t.clientLabel}</p>
                 <p className="font-black text-gray-800 text-lg">{paymentClient.full_name}</p>
-                <div className="mt-2 inline-block bg-red-50 text-red-600 px-3 py-1 rounded-full border border-red-100 text-sm font-bold">الدين الحالي: {Number(paymentClient.total_debt).toLocaleString()} MAD</div>
+                <div className="mt-2 inline-block bg-red-50 text-red-600 px-3 py-1 rounded-full border border-red-100 text-sm font-bold" dir="ltr">
+                  {t.currentDebt} {Number(paymentClient.total_debt).toLocaleString()} {t.currency}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">{t.payAmount}</label>
-                <input required type="number" min="1" max={paymentClient.total_debt} step="0.01" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} className="w-full px-4 py-3 border border-blue-200 rounded-xl outline-none font-black text-blue-600 text-xl" autoFocus />
+                <input required type="number" min="1" max={paymentClient.total_debt} step="0.01" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} className="w-full px-4 py-3 border border-blue-200 rounded-xl outline-none font-black text-blue-600 text-xl text-center" autoFocus dir="ltr" />
               </div>
               <button type="submit" disabled={isSubmitting || !paymentAmount} className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 flex justify-center items-center gap-2 disabled:opacity-50">
                 {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle size={18}/> {t.confirmPayment}</>}

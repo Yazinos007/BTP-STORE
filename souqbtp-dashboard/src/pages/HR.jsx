@@ -15,7 +15,10 @@ const translations = {
     loading: 'جاري التحميل...', empty: 'لا يوجد موظفون مسجلون حالياً.', currency: 'درهم',
     statusActive: 'نشط', statusLeave: 'في إجازة', statusTerminated: 'منهي العقد',
     payslip: 'قسيمة الراتب', printBtn: 'طباعة القسيمة', closeBtn: 'إغلاق', month: 'الشهر',
-    confirmDelete: 'هل أنت متأكد من حذف هذا الموظف نهائياً؟', searchPlaceholder: 'ابحث بالاسم، CIN، أو المنصب...'
+    confirmDelete: 'هل أنت متأكد من حذف هذا الموظف نهائياً؟', searchPlaceholder: 'ابحث بالاسم، CIN، أو المنصب...',
+    designation: 'البيان', amount: 'المبلغ', errorMsg: "خطأ في التسجيل: ",
+    printCompany: 'شركتنا', printDocType: 'مستند داخلي - راتب', 
+    printNetPay: 'الصافي للأداء', printEmpSign: 'توقيع الموظف', printEmployerSign: 'توقيع المشغل'
   },
   fr: {
     title: 'Ressources Humaines', subtitle: 'Gestion des employés et de la paie de l\'entreprise.',
@@ -27,7 +30,25 @@ const translations = {
     loading: 'Chargement...', empty: 'Aucun employé enregistré.', currency: 'MAD',
     statusActive: 'Actif', statusLeave: 'En congé', statusTerminated: 'Résilié',
     payslip: 'Fiche de Paie', printBtn: 'Imprimer', closeBtn: 'Fermer', month: 'Mois',
-    confirmDelete: 'Voulez-vous vraiment supprimer cet employé ?', searchPlaceholder: 'Rechercher par nom, CIN, ou poste...'
+    confirmDelete: 'Voulez-vous vraiment supprimer cet employé ?', searchPlaceholder: 'Rechercher par nom, CIN, ou poste...',
+    designation: 'Désignation', amount: 'Montant', errorMsg: "Erreur d'enregistrement: ",
+    printCompany: 'NOTRE ENTREPRISE', printDocType: 'Document Interne - Paie', 
+    printNetPay: 'Net à Payer', printEmpSign: 'Signature de l\'Employé', printEmployerSign: 'Signature de l\'Employeur'
+  },
+  en: {
+    title: 'Human Resources', subtitle: 'Manage company employees and payroll tracking.',
+    addBtn: 'Add Employee', totalEmp: 'Total Employees', activeEmp: 'Active Employees',
+    payroll: 'Monthly Payroll', newEmp: 'New Employee Details', editEmp: 'Edit Employee Details', name: 'Full Name',
+    position: 'Position / Role', salary: 'Base Salary', cin: 'National ID (CIN)', phone: 'Phone Number',
+    primes: 'Bonuses / Advances', retenues: 'Deductions (CNSS/AMO)',
+    save: 'Save', cancel: 'Cancel', date: 'Hiring Date', status: 'Status', actions: 'Actions',
+    loading: 'Loading...', empty: 'No employees currently registered.', currency: 'MAD',
+    statusActive: 'Active', statusLeave: 'On Leave', statusTerminated: 'Terminated',
+    payslip: 'Payslip', printBtn: 'Print Payslip', closeBtn: 'Close', month: 'Month',
+    confirmDelete: 'Are you sure you want to permanently delete this employee?', searchPlaceholder: 'Search by name, CIN, or position...',
+    designation: 'Description', amount: 'Amount', errorMsg: "Registration error: ",
+    printCompany: 'OUR COMPANY', printDocType: 'Internal Document - Payroll', 
+    printNetPay: 'Net Pay', printEmpSign: 'Employee Signature', printEmployerSign: 'Employer Signature'
   }
 };
 
@@ -67,7 +88,7 @@ export default function HR() {
       setEditingId(null);
       setShowAddForm(false);
     } else {
-      alert("Erreur d'enregistrement: " + (result?.error?.message || result?.error || "Erreur inconnue"));
+      alert(t.errorMsg + (result?.error?.message || result?.error || "Unknown Error"));
     }
   };
 
@@ -102,7 +123,7 @@ export default function HR() {
     terminated: { label: t.statusTerminated, color: 'bg-red-100 text-red-700', icon: XCircle }
   };
 
-  const currentMonth = new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'ar-MA', { month: 'long', year: 'numeric' });
+  const currentMonth = new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { month: 'long', year: 'numeric' });
 
   const defaultRoles = ["Directeur", "Manager", "Comptable", "Vendeur", "Chauffeur", "Magasinier", "Ouvrier", "Technicien", "Secrétaire"];
   const roleSuggestions = [...new Set([...defaultRoles, ...employees.map(emp => emp.role).filter(Boolean)])];
@@ -273,44 +294,44 @@ export default function HR() {
             <div className="border-2 border-gray-800 p-8 mt-4 rounded-xl">
               <div className="flex justify-between items-start border-b-2 border-gray-800 pb-6 mb-6">
                 <div>
-                  <h1 className="text-3xl font-black text-gray-900 mb-1 uppercase">{supplier?.store_name || 'ENTREPRISE'}</h1>
-                  <p className="text-sm text-gray-500 font-mono">Document Interne - Paie</p>
+                  <h1 className="text-3xl font-black text-gray-900 mb-1 uppercase">{supplier?.store_name || t.printCompany}</h1>
+                  <p className="text-sm text-gray-500 font-mono">{t.printDocType}</p>
                 </div>
-                <div className="text-end">
-                  <h2 className="text-2xl font-bold text-gray-800 uppercase tracking-widest">{t.payslip}</h2>
+                <div className={`text-${language === 'ar' ? 'start' : 'end'}`}>
+                  <h2 className="text-2xl font-bold text-gray-800 uppercase tracking-widest">{t.printPayslip}</h2>
                   <p className="text-gray-600 mt-2 font-mono bg-gray-100 px-3 py-1 rounded-lg inline-block">{t.month}: <strong>{currentMonth}</strong></p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-8 mb-8">
+              <div className="grid grid-cols-2 gap-8 mb-8" dir={language === 'ar' ? 'rtl' : 'ltr'}>
                 <div><p className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-bold">{t.name}</p><p className="text-lg font-black text-gray-900">{selectedEmployee.full_name}</p></div>
                 <div><p className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-bold">{t.position}</p><p className="text-lg font-black text-gray-900">{selectedEmployee.role}</p></div>
                 <div><p className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-bold">{t.cin}</p><p className="text-base font-bold text-gray-800">{selectedEmployee.cin || '---'}</p></div>
-                <div><p className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-bold">{t.date}</p><p className="text-base font-bold text-gray-800">{new Date(selectedEmployee.created_at).toLocaleDateString()}</p></div>
+                <div><p className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-bold">{t.date}</p><p className="text-base font-bold text-gray-800">{new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA').format(new Date(selectedEmployee.created_at))}</p></div>
               </div>
 
-              <table className="w-full text-start mb-8 border-collapse border border-gray-300">
+              <table className="w-full text-start mb-8 border-collapse border border-gray-300" dir={language === 'ar' ? 'rtl' : 'ltr'}>
                 <thead>
-                  <tr className="bg-gray-100"><th className="border border-gray-300 p-3 font-bold text-gray-700">Désignation</th><th className="border border-gray-300 p-3 font-bold text-gray-700 text-center">Montant</th></tr>
+                  <tr className="bg-gray-100"><th className="border border-gray-300 p-3 font-bold text-gray-700 text-start">{t.designation}</th><th className="border border-gray-300 p-3 font-bold text-gray-700 text-center w-40">{t.amount}</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td className="border border-gray-300 p-3 font-bold text-gray-800">Salaire de Base</td><td className="border border-gray-300 p-3 text-center font-mono font-bold" dir="ltr">{Number(selectedEmployee.base_salary).toLocaleString()} MAD</td></tr>
-                  <tr><td className="border border-gray-300 p-3 text-gray-600 font-medium">Primes / Avances</td><td className="border border-gray-300 p-3 text-center font-mono text-green-600 font-bold" dir="ltr">+{Number(selectedEmployee.primes_avances || 0).toLocaleString()} MAD</td></tr>
-                  <tr><td className="border border-gray-300 p-3 text-gray-600 font-medium">Retenues (CNSS, AMO)</td><td className="border border-gray-300 p-3 text-center font-mono text-red-600 font-bold" dir="ltr">-{Number(selectedEmployee.retenues || 0).toLocaleString()} MAD</td></tr>
+                  <tr><td className="border border-gray-300 p-3 font-bold text-gray-800 text-start">{t.salary}</td><td className="border border-gray-300 p-3 text-center font-mono font-bold" dir="ltr">{Number(selectedEmployee.base_salary).toLocaleString()} {t.currency}</td></tr>
+                  <tr><td className="border border-gray-300 p-3 text-gray-600 font-medium text-start">{t.primes}</td><td className="border border-gray-300 p-3 text-center font-mono text-green-600 font-bold" dir="ltr">+{Number(selectedEmployee.primes_avances || 0).toLocaleString()} {t.currency}</td></tr>
+                  <tr><td className="border border-gray-300 p-3 text-gray-600 font-medium text-start">{t.retenues}</td><td className="border border-gray-300 p-3 text-center font-mono text-red-600 font-bold" dir="ltr">-{Number(selectedEmployee.retenues || 0).toLocaleString()} {t.currency}</td></tr>
                 </tbody>
               </table>
 
-              <div className="flex justify-end">
+              <div className={`flex ${language === 'ar' ? 'justify-start' : 'justify-end'}`}>
                 <div className="w-80 bg-gray-50 border-2 border-gray-800 p-5 rounded-xl text-center shadow-inner">
-                  <span className="block text-sm text-gray-500 uppercase tracking-widest mb-2 font-bold">Net à Payer</span>
+                  <span className="block text-sm text-gray-500 uppercase tracking-widest mb-2 font-bold">{t.printNetPay}</span>
                   <span className="text-3xl font-black text-gray-900 font-mono" dir="ltr">
-                    {(Number(selectedEmployee.base_salary) + Number(selectedEmployee.primes_avances || 0) - Number(selectedEmployee.retenues || 0)).toLocaleString()} <span className="text-sm">MAD</span>
+                    {(Number(selectedEmployee.base_salary) + Number(selectedEmployee.primes_avances || 0) - Number(selectedEmployee.retenues || 0)).toLocaleString()} <span className="text-sm">{t.currency}</span>
                   </span>
                 </div>
               </div>
 
-              <div className="mt-12 pt-6 border-t-2 border-dashed border-gray-200 flex justify-between text-sm font-bold text-gray-500">
-                <p>Signature de l'Employeur</p><p>Signature de l'Employé</p>
+              <div className="mt-12 pt-6 border-t-2 border-dashed border-gray-200 flex justify-between text-sm font-bold text-gray-500" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                <p>{t.printEmployerSign}</p><p>{t.printEmpSign}</p>
               </div>
             </div>
           </div>

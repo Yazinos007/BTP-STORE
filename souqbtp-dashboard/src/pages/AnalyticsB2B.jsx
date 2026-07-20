@@ -4,9 +4,75 @@ import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { DollarSign, Package, Users, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
 
+const translations = {
+  ar: {
+    title: 'التحليلات الكبرى B2B',
+    subtitle: 'تتبع أداءك ومبيعاتك في الوقت الفعلي بناءً على بياناتك الحقيقية.',
+    revenue: 'رقم المعاملات',
+    live: 'مباشر 🟢',
+    orders: 'طلبات التزويد',
+    totalProcessed: 'الإجمالي المعالج',
+    clients: 'العملاء النشطون',
+    merchants: 'تجار',
+    topProducts: 'المنتجات الأكثر طلباً',
+    noData: 'لا توجد بيانات كافية بعد',
+    units: 'وحدة',
+    aiAdvice: 'نصيحة استراتيجية (الذكاء الاصطناعي)',
+    aiPart1: 'بناءً على طلباتك الأخيرة',
+    aiPart2: 'نلاحظ إقبالاً كبيراً على',
+    aiPart3: 'ننصحك بزيادة مخزون هذا المنتج للأسبوع القادم.',
+    aiStart: 'ابدأ في استقبال الطلبات لكي يحلل الذكاء الاصطناعي أداءك.',
+    fullReport: 'عرض التقرير المفصل',
+    currency: 'DH'
+  },
+  fr: {
+    title: 'Analytiques B2B',
+    subtitle: 'Suivez vos performances et vos ventes en temps réel.',
+    revenue: "Chiffre d'Affaires",
+    live: 'En direct 🟢',
+    orders: 'Commandes B2B',
+    totalProcessed: 'Total traité',
+    clients: 'Clients Actifs',
+    merchants: 'Commerçants',
+    topProducts: 'Produits les Plus Demandés',
+    noData: 'Pas assez de données',
+    units: 'Unités',
+    aiAdvice: 'Conseil Stratégique (IA)',
+    aiPart1: 'Basé sur vos',
+    aiPart2: 'dernières commandes, nous remarquons une forte demande sur',
+    aiPart3: 'Prévoyez une augmentation de stock pour ce produit.',
+    aiStart: "Commencez à recevoir des commandes pour obtenir des conseils de l'IA.",
+    fullReport: 'Voir le rapport complet',
+    currency: 'MAD'
+  },
+  en: {
+    title: 'B2B Analytics',
+    subtitle: 'Track your performance and sales in real time based on actual data.',
+    revenue: 'Total Revenue',
+    live: 'Live 🟢',
+    orders: 'B2B Orders',
+    totalProcessed: 'Total processed',
+    clients: 'Active Clients',
+    merchants: 'Merchants',
+    topProducts: 'Top Requested Products',
+    noData: 'Not enough data yet',
+    units: 'Units',
+    aiAdvice: 'Strategic Advice (AI)',
+    aiPart1: 'Based on your',
+    aiPart2: 'recent orders, we notice high demand for',
+    aiPart3: 'Consider increasing stock for this product next week.',
+    aiStart: 'Start receiving orders for the AI to analyze your performance.',
+    fullReport: 'View full report',
+    currency: 'MAD'
+  }
+};
+
 export default function AnalyticsB2B() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
+  
+  // 🛡️ الترياق السحري
+  const t = translations[language] || translations['fr'];
   
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ revenue: 0, ordersCount: 0, clientsCount: 0 });
@@ -81,33 +147,33 @@ export default function AnalyticsB2B() {
       <div>
         <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
           <TrendingUp className="text-blue-500" size={32} />
-          {language === 'fr' ? 'Analytiques B2B' : 'التحليلات الكبرى B2B'}
+          {t.title}
         </h2>
         <p className="text-slate-400 mt-1 font-medium">
-          {language === 'fr' ? 'Suivez vos performances et vos ventes en temps réel.' : 'تتبع أداءك ومبيعاتك في الوقت الفعلي بناءً على بياناتك الحقيقية.'}
+          {t.subtitle}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-slate-800 border border-slate-700 p-6 rounded-3xl relative overflow-hidden shadow-lg">
           <div className="absolute right-6 top-6 bg-emerald-500/20 p-3 rounded-full"><DollarSign className="text-emerald-400"/></div>
-          <p className="text-slate-400 font-bold text-sm mb-1">{language === 'fr' ? "Chiffre d'Affaires" : 'رقم المعاملات'}</p>
-          <h3 className="text-3xl font-black text-white mb-3">{stats.revenue.toLocaleString()} <span className="text-sm">DH</span></h3>
-          <span className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded text-xs font-bold">En direct 🟢</span>
+          <p className="text-slate-400 font-bold text-sm mb-1">{t.revenue}</p>
+          <h3 className="text-3xl font-black text-white mb-3">{stats.revenue.toLocaleString()} <span className="text-sm">{t.currency}</span></h3>
+          <span className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded text-xs font-bold">{t.live}</span>
         </div>
 
         <div className="bg-slate-800 border border-slate-700 p-6 rounded-3xl relative overflow-hidden shadow-lg">
           <div className="absolute right-6 top-6 bg-blue-500/20 p-3 rounded-full"><Package className="text-blue-400"/></div>
-          <p className="text-slate-400 font-bold text-sm mb-1">{language === 'fr' ? 'Commandes B2B' : 'طلبات التزويد'}</p>
+          <p className="text-slate-400 font-bold text-sm mb-1">{t.orders}</p>
           <h3 className="text-3xl font-black text-white mb-3">{stats.ordersCount}</h3>
-          <span className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded text-xs font-bold">Total traité</span>
+          <span className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded text-xs font-bold">{t.totalProcessed}</span>
         </div>
 
         <div className="bg-slate-800 border border-slate-700 p-6 rounded-3xl relative overflow-hidden shadow-lg">
           <div className="absolute right-6 top-6 bg-purple-500/20 p-3 rounded-full"><Users className="text-purple-400"/></div>
-          <p className="text-slate-400 font-bold text-sm mb-1">{language === 'fr' ? 'Clients Actifs' : 'العملاء النشطون'}</p>
+          <p className="text-slate-400 font-bold text-sm mb-1">{t.clients}</p>
           <h3 className="text-3xl font-black text-white mb-3">{stats.clientsCount}</h3>
-          <span className="bg-purple-500/10 text-purple-400 px-2 py-1 rounded text-xs font-bold">Commerçants</span>
+          <span className="bg-purple-500/10 text-purple-400 px-2 py-1 rounded text-xs font-bold">{t.merchants}</span>
         </div>
       </div>
 
@@ -115,17 +181,17 @@ export default function AnalyticsB2B() {
         <div className="lg:col-span-2 bg-slate-800 border border-slate-700 p-6 rounded-3xl shadow-lg">
           <h3 className="text-lg font-black text-white mb-6 flex items-center gap-2">
             <TrendingUp className="text-emerald-500" size={20}/> 
-            {language === 'fr' ? 'Produits les Plus Demandés' : 'المنتجات الأكثر طلباً'}
+            {t.topProducts}
           </h3>
           <div className="space-y-5">
             {topProducts.length === 0 ? (
-              <p className="text-slate-500 italic text-center py-10">{language === 'fr' ? 'Pas assez de données' : 'لا توجد بيانات كافية بعد'}</p>
+              <p className="text-slate-500 italic text-center py-10">{t.noData}</p>
             ) : (
               topProducts.map((prod, index) => (
                 <div key={index}>
                   <div className="flex justify-between text-sm font-bold mb-2">
                     <span className="text-slate-200">{prod.name}</span>
-                    <span className="text-slate-400">{prod.quantity} {language === 'fr' ? 'Unités' : 'وحدة'}</span>
+                    <span className="text-slate-400">{prod.quantity} {t.units}</span>
                   </div>
                   <div className="w-full bg-slate-900 rounded-full h-2.5">
                     <div 
@@ -147,19 +213,15 @@ export default function AnalyticsB2B() {
             <Sparkles className="text-white" size={24} />
           </div>
           <h3 className="text-2xl font-black text-white mb-4">
-            {language === 'fr' ? 'Conseil Stratégique (IA)' : 'نصيحة استراتيجية (الذكاء الاصطناعي)'}
+            {t.aiAdvice}
           </h3>
           <p className="text-indigo-100 font-medium leading-relaxed mb-8 text-sm">
-            {language === 'fr' 
-              ? topProducts.length > 0 
-                ? `Basé sur vos ${stats.ordersCount} dernières commandes, nous remarquons une forte demande sur "${topProducts[0].name}". Prévoyez une augmentation de stock pour ce produit.` 
-                : "Commencez à recevoir des commandes pour obtenir des conseils de l'IA."
-              : topProducts.length > 0
-                ? `بناءً على طلباتك الأخيرة (${stats.ordersCount})، نلاحظ إقبالاً كبيراً على "${topProducts[0].name}". ننصحك بزيادة مخزون هذا المنتج للأسبوع القادم.`
-                : "ابدأ في استقبال الطلبات لكي يحلل الذكاء الاصطناعي أداءك."}
+            {topProducts.length > 0 
+              ? `${t.aiPart1} ${language === 'ar' ? `(${stats.ordersCount})،` : stats.ordersCount} ${t.aiPart2} "${topProducts[0].name}". ${t.aiPart3}`
+              : t.aiStart}
           </p>
           <button className="bg-white text-indigo-700 font-black py-3 px-6 rounded-xl hover:bg-indigo-50 transition-colors w-fit shadow-lg">
-            {language === 'fr' ? 'Voir le rapport complet' : 'عرض التقرير المفصل'}
+            {t.fullReport}
           </button>
         </div>
       </div>

@@ -14,7 +14,14 @@ const translations = {
     currency: 'درهم', confirmDelete: 'هل أنت متأكد من حذف هذا المنتج نهائياً؟',
     totalProducts: 'إجمالي المنتجات', stockValue: 'قيمة المخزون', lowStock: 'مخزون منخفض', outOfStock: 'نفد من المخزون',
     declareLoss: 'تسجيل إتلاف / ضياع', lossQty: 'الكمية التالفة', lossReason: 'السبب (كسر، انتهاء صلاحية...)',
-    confirmLoss: 'تأكيد الإتلاف',
+    confirmLoss: 'تأكيد الإتلاف', errorSave: 'حدث خطأ أثناء الحفظ.', error: 'حدث خطأ.',
+    qtyExceedsStock: 'الكمية التالفة أكبر من المخزون المتوفر!', category: 'التصنيف',
+    uploadImg: 'اضغط لرفع صورة المنتج', productLabel: 'المنتج', currentStock: 'المخزون الحالي:',
+    lossReasonPH: 'مثال: كسر، انتهاء صلاحية...', deleteTooltip: 'حذف', editTooltip: 'تعديل',
+    categories: {
+      'Gros Œuvre': 'أشغال كبرى (Gros Œuvre)', 'Finition': 'تشطيبات (Finition)',
+      'Plomberie': 'سباكة (Plomberie)', 'Électricité': 'كهرباء (Électricité)', 'Outillage': 'معدات (Outillage)'
+    },
     units: {
       'Unité': 'قطعة (Unité)', 'Kg': 'كيلوغرام (Kg)', 'Quintal': 'قنطار (Quintal)', 'Tonne': 'طن (Tonne)',
       'Sac': 'كيس (Sac)', 'm2': 'متر مربع (m²)', 'm3': 'متر مكعب (m³)', 'ml': 'متر طولي (ml)'
@@ -29,7 +36,13 @@ const translations = {
     currency: 'MAD', confirmDelete: 'Voulez-vous vraiment supprimer ce produit ?',
     totalProducts: 'Total Produits', stockValue: 'Valeur du Stock', lowStock: 'Stock Faible', outOfStock: 'Rupture de Stock',
     declareLoss: 'Signaler une Perte (Casse)', lossQty: 'Quantité perdue', lossReason: 'Motif (Casse, Vol, Périmé...)',
-    confirmLoss: 'Valider la perte',
+    confirmLoss: 'Valider la perte', errorSave: 'Erreur lors de l\'enregistrement.', error: 'Une erreur s\'est produite.',
+    qtyExceedsStock: 'La quantité perdue est supérieure au stock disponible !', category: 'Catégorie',
+    uploadImg: 'Cliquez pour télécharger une image', productLabel: 'Produit', currentStock: 'Stock actuel :',
+    lossReasonPH: 'Ex: Cassé, Périmé...', deleteTooltip: 'Supprimer', editTooltip: 'Modifier',
+    categories: {
+      'Gros Œuvre': 'Gros Œuvre', 'Finition': 'Finition', 'Plomberie': 'Plomberie', 'Électricité': 'Électricité', 'Outillage': 'Outillage'
+    },
     units: {
       'Unité': 'Unité (Pièce)', 'Kg': 'Kilogramme (Kg)', 'Quintal': 'Quintal (q)', 'Tonne': 'Tonne (T)',
       'Sac': 'Sac', 'm2': 'Mètre Carré (m²)', 'm3': 'Mètre Cube (m³)', 'ml': 'Mètre Linéaire (ml)'
@@ -44,11 +57,16 @@ const translations = {
     currency: 'MAD', confirmDelete: 'Are you sure you want to delete this product?',
     totalProducts: 'Total Products', stockValue: 'Stock Value', lowStock: 'Low Stock', outOfStock: 'Out of Stock',
     declareLoss: 'Declare a Loss', lossQty: 'Lost Quantity', lossReason: 'Reason (Broken, Expired...)',
-    confirmLoss: 'Confirm Loss',
+    confirmLoss: 'Confirm Loss', errorSave: 'Error saving product.', error: 'An error occurred.',
+    qtyExceedsStock: 'Lost quantity exceeds available stock!', category: 'Category',
+    uploadImg: 'Click to upload an image', productLabel: 'Product', currentStock: 'Current Stock:',
+    lossReasonPH: 'Ex: Broken, Expired...', deleteTooltip: 'Delete', editTooltip: 'Edit',
+    categories: {
+      'Gros Œuvre': 'Heavy Construction', 'Finition': 'Finishing', 'Plomberie': 'Plumbing', 'Électricité': 'Electricity', 'Outillage': 'Tools'
+    },
     units: {
       'Unité': 'Unit (Piece)', 'Kg': 'Kilogram (Kg)', 'Quintal': 'Quintal', 'Tonne': 'Tonne',
-      'Sac': 'Bag', 'm2': 'Square Meter (m²)', 'm3': 'Cubic Meter (m³)', 'ml': 'Linear Meter (ml)',
-      'Palette': 'Palette'
+      'Sac': 'Bag', 'm2': 'Square Meter (m²)', 'm3': 'Cubic Meter (m³)', 'ml': 'Linear Meter (ml)'
     }
   }
 };
@@ -60,12 +78,10 @@ export default function Products() {
   const { language } = useSettingsStore();
   const t = translations[language] || translations['fr'];
 
-  // حالات نافذة الإضافة والتعديل
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: '', price: '', stock_quantity: '', unit: 'Unité', category: 'Gros Œuvre', image: '' });
   
-  // 📦 حالات نافذة الإتلاف (Casse/Perte)
   const [showLossModal, setShowLossModal] = useState(false);
   const [lossData, setLossData] = useState({ id: null, name: '', qty: '', reason: '', current_stock: 0, unit: '' });
 
@@ -81,14 +97,14 @@ export default function Products() {
 
   const handleOpenAdd = () => {
     setEditingId(null);
-    setFormData({ name: '', price: '', stock_quantity: '', unit: 'Unité' });
+    setFormData({ name: '', price: '', stock_quantity: '', unit: 'Unité', category: 'Gros Œuvre', image: '' });
     setShowForm(true);
   };
 
   const handleOpenEdit = (product) => {
     setEditingId(product.id);
     setFormData({ 
-      name: product.name, price: product.price, stock_quantity: product.stock_quantity, unit: product.unit || 'Unité' 
+      name: product.name, price: product.price, stock_quantity: product.stock_quantity, unit: product.unit || 'Unité', category: product.category || 'Gros Œuvre', image: product.image_url || ''
     });
     setShowForm(true);
   };
@@ -98,13 +114,13 @@ export default function Products() {
     setIsSubmitting(true);
     try {
       const payload = { 
-        name: formData.name, price: parseFloat(formData.price), stock_quantity: parseInt(formData.stock_quantity), unit: formData.unit
+        name: formData.name, price: parseFloat(formData.price), stock_quantity: parseInt(formData.stock_quantity), unit: formData.unit, category: formData.category, image_url: formData.image
       };
       if (editingId) await updateProduct(editingId, payload);
       else await addProduct(payload);
       setShowForm(false);
       fetchProducts();
-    } catch (error) { alert("حدث خطأ أثناء الحفظ"); } 
+    } catch (error) { alert(t.errorSave); } 
     finally { setIsSubmitting(false); }
   };
 
@@ -112,14 +128,13 @@ export default function Products() {
     if (window.confirm(t.confirmDelete)) { await deleteProduct(id); fetchProducts(); }
   };
 
-  // 📦 دالة تأكيد الإتلاف وخصم المخزون
   const handleLossSubmit = async (e) => {
     e.preventDefault();
     const lostQty = parseInt(lossData.qty);
     
     if (isNaN(lostQty) || lostQty <= 0) return;
     if (lostQty > lossData.current_stock) {
-      alert(language === 'ar' ? "الكمية التالفة أكبر من المخزون المتوفر!" : "La quantité perdue est supérieure au stock disponible!");
+      alert(t.qtyExceedsStock);
       return;
     }
 
@@ -128,12 +143,10 @@ export default function Products() {
       const newQty = lossData.current_stock - lostQty;
       await updateProduct(lossData.id, { stock_quantity: newQty });
       
-      // هنا يمكننا مستقبلاً إضافة كود لحفظ "السبب" في جدول خاص بالتقارير (Reports)
-      
       setShowLossModal(false);
       fetchProducts();
     } catch (error) {
-      alert("Erreur");
+      alert(t.error);
     } finally {
       setIsSubmitting(false);
     }
@@ -187,104 +200,92 @@ export default function Products() {
               <button onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors"><X size={20}/></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
-  {/* ☁️ حقل رفع الصورة */}
-  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors relative group">
-    <input 
-      type="file" 
-      accept="image/*"
-      className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-      onChange={(e) => {
-        if (e.target.files && e.target.files[0]) {
-          const reader = new FileReader();
-          reader.onload = (e) => setFormData({...formData, image: e.target.result});
-          reader.readAsDataURL(e.target.files[0]);
-        }
-      }}
-    />
-    {formData.image ? (
-      <img src={formData.image} alt="Preview" className="h-24 object-contain rounded-lg shadow-sm" />
-    ) : (
-      <>
-        <UploadCloud size={32} className="mb-2 text-blue-500 group-hover:scale-110 transition-transform" />
-        <p className="text-sm font-bold text-gray-700">{language === 'fr' ? 'Cliquez pour télécharger une image' : 'اضغط لرفع صورة المنتج'}</p>
-        <p className="text-xs text-gray-400 mt-1">PNG, JPG (Max 5MB)</p>
-      </>
-    )}
-  </div>
+              <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors relative group">
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => setFormData({...formData, image: e.target.result});
+                      reader.readAsDataURL(e.target.files[0]);
+                    }
+                  }}
+                />
+                {formData.image ? (
+                  <img src={formData.image} alt="Preview" className="h-24 object-contain rounded-lg shadow-sm" />
+                ) : (
+                  <>
+                    <UploadCloud size={32} className="mb-2 text-blue-500 group-hover:scale-110 transition-transform" />
+                    <p className="text-sm font-bold text-gray-700">{t.uploadImg}</p>
+                    <p className="text-xs text-gray-400 mt-1">PNG, JPG (Max 5MB)</p>
+                  </>
+                )}
+              </div>
 
-  {/* 📝 اسم المنتج */}
-  <div>
-    <label className="block text-sm font-bold text-gray-700 mb-2">{t.name}</label>
-    <input 
-      required type="text" 
-      placeholder={language === 'fr' ? 'Ex: Ciment Portland 45, Fer à béton...' : 'مثال: إسمنت مسلح، حديد البناء...'} 
-      value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
-      className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-medium transition-all" 
-    />
-  </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t.name}</label>
+                <input 
+                  required type="text" 
+                  value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-medium transition-all" 
+                />
+              </div>
 
-  {/* 🗂️ التصنيف (جديد) */}
-  <div>
-    <label className="block text-sm font-bold text-gray-700 mb-2">{language === 'fr' ? 'Catégorie' : 'التصنيف'}</label>
-    <select 
-      value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} 
-      className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-gray-700 transition-all bg-gray-50"
-    >
-      <option value="Gros Œuvre">Gros Œuvre (أشغال كبرى)</option>
-      <option value="Finition">Finition (تشطيبات)</option>
-      <option value="Plomberie">Plomberie (سباكة)</option>
-      <option value="Électricité">Électricité (كهرباء)</option>
-      <option value="Outillage">Outillage (معدات)</option>
-    </select>
-  </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t.category}</label>
+                <select 
+                  value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} 
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-gray-700 transition-all bg-gray-50"
+                >
+                  {Object.entries(t.categories).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
+                </select>
+              </div>
 
-  {/* 💰 السعر والمخزون والوحدة */}
-  <div className="grid grid-cols-3 gap-3">
-    <div>
-      <label className="block text-sm font-bold text-gray-700 mb-2">{t.price}</label>
-      <div className="relative">
-        <input 
-          required type="number" min="0" step="0.01" 
-          placeholder="Ex: 65.50" 
-          value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} 
-          className={`w-full ${language === 'ar' ? 'pr-3 pl-10' : 'pl-3 pr-10'} py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-black text-blue-600 transition-all`} 
-        />
-        <span className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'left-2' : 'right-2'} text-[10px] font-bold text-gray-400 uppercase`}>MAD</span>
-      </div>
-    </div>
-    <div>
-      <label className="block text-sm font-bold text-gray-700 mb-2">{t.stock}</label>
-      <input 
-        required type="number" min="0" 
-        placeholder="Ex: 150" 
-        value={formData.stock_quantity} onChange={e => setFormData({...formData, stock_quantity: e.target.value})} 
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-black text-gray-700 transition-all" 
-      />
-    </div>
-    <div>
-      <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1"><Scale size={14}/> {t.unit}</label>
-      <select 
-        value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} 
-        className="w-full px-3 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-gray-700 transition-all bg-gray-50"
-      >
-        {Object.entries(t.units).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
-      </select>
-    </div>
-  </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t.price}</label>
+                  <div className="relative">
+                    <input 
+                      required type="number" min="0" step="0.01" 
+                      value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} 
+                      className={`w-full ${language === 'ar' ? 'pr-3 pl-10' : 'pl-3 pr-10'} py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-black text-blue-600 transition-all`} 
+                    />
+                    <span className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'left-2' : 'right-2'} text-[10px] font-bold text-gray-400 uppercase`}>MAD</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t.stock}</label>
+                  <input 
+                    required type="number" min="0" 
+                    value={formData.stock_quantity} onChange={e => setFormData({...formData, stock_quantity: e.target.value})} 
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-black text-gray-700 transition-all" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1"><Scale size={14}/> {t.unit}</label>
+                  <select 
+                    value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} 
+                    className="w-full px-3 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-gray-700 transition-all bg-gray-50"
+                  >
+                    {Object.entries(t.units).map(([key, value]) => (<option key={key} value={value}>{value}</option>))}
+                  </select>
+                </div>
+              </div>
 
-  {/* أزرار الحفظ والإلغاء */}
-  <div className="flex gap-3 pt-4 mt-2 border-t border-gray-100">
-    <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">{t.cancel}</button>
-    <button type="submit" disabled={isSubmitting} className="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/30">
-      {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : t.save}
-    </button>
-  </div>
-</form>
+              <div className="flex gap-3 pt-4 mt-2 border-t border-gray-100">
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">{t.cancel}</button>
+                <button type="submit" disabled={isSubmitting} className="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/30">
+                  {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : t.save}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* 📦 نافذة تسجيل إتلاف المخزون (Casse/Perte) */}
+      {/* 📦 نافذة تسجيل إتلاف المخزون */}
       {showLossModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-slide-up">
@@ -295,24 +296,24 @@ export default function Products() {
             
             <form onSubmit={handleLossSubmit} className="p-6 space-y-4">
               <div className="text-center mb-4">
-                <p className="text-sm font-medium text-gray-500">المنتج</p>
+                <p className="text-sm font-medium text-gray-500">{t.productLabel}</p>
                 <p className="font-black text-gray-800 text-lg">{lossData.name}</p>
                 <div className="mt-2 inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100 text-sm font-bold">
-                  المخزون الحالي: <span dir="ltr">{lossData.current_stock} {lossData.unit}</span>
+                  {t.currentStock} <span dir="ltr">{lossData.current_stock} {t.units[lossData.unit] || lossData.unit}</span>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">{t.lossQty}</label>
                 <div className="relative">
-                  <input required type="number" min="1" max={lossData.current_stock} value={lossData.qty} onChange={(e) => setLossData({...lossData, qty: e.target.value})} className="w-full pr-12 pl-4 py-3 border border-orange-200 rounded-xl outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 font-black text-orange-600 transition-all text-xl" autoFocus />
-                  <span className="absolute top-1/2 -translate-y-1/2 right-4 font-bold text-orange-400 text-sm uppercase">{lossData.unit}</span>
+                  <input required type="number" min="1" max={lossData.current_stock} value={lossData.qty} onChange={(e) => setLossData({...lossData, qty: e.target.value})} className={`w-full ${language === 'ar' ? 'pr-4 pl-12' : 'pl-4 pr-12'} py-3 border border-orange-200 rounded-xl outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 font-black text-orange-600 transition-all text-xl`} autoFocus />
+                  <span className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'left-4' : 'right-4'} font-bold text-orange-400 text-xs uppercase`}>{lossData.unit}</span>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">{t.lossReason}</label>
-                <input required type="text" value={lossData.reason} onChange={(e) => setLossData({...lossData, reason: e.target.value})} placeholder="Ex: Cassé, Périmé..." className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 font-medium transition-all bg-gray-50" />
+                <input required type="text" value={lossData.reason} onChange={(e) => setLossData({...lossData, reason: e.target.value})} placeholder={t.lossReasonPH} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 font-medium transition-all bg-gray-50" />
               </div>
 
               <div className="pt-2">
@@ -357,22 +358,21 @@ export default function Products() {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <span className={`px-3 py-1.5 rounded-lg text-sm font-black inline-flex items-center gap-1 ${p.stock_quantity === 0 ? 'bg-red-50 text-red-600 border border-red-100' : p.stock_quantity <= 5 ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'text-emerald-600'}`}>
-                      {p.stock_quantity} <span className="text-[10px] uppercase font-bold opacity-70">{p.unit || 'Unité'}</span>
+                      {p.stock_quantity} <span className="text-[10px] uppercase font-bold opacity-70">{t.units[p.unit] || p.unit || 'Unité'}</span>
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center font-black font-mono text-blue-600 text-base" dir="ltr">
-                    {Number(p.price).toLocaleString()} <span className="text-xs font-bold text-gray-400">{t.currency} / {p.unit || 'Unité'}</span>
+                    {Number(p.price).toLocaleString()} <span className="text-xs font-bold text-gray-400">{t.currency} / {t.units[p.unit] || p.unit || 'Unité'}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      {/* 📦 الزر الجديد لتسجيل التالف */}
                       {p.stock_quantity > 0 && (
                         <button onClick={() => { setLossData({id: p.id, name: p.name, current_stock: p.stock_quantity, unit: p.unit || 'Unité', qty: '', reason: ''}); setShowLossModal(true); }} className="p-2 bg-orange-50 text-orange-500 hover:bg-orange-100 rounded-lg transition-colors" title={t.declareLoss}>
                           <PackageMinus size={18}/>
                         </button>
                       )}
-                      <button onClick={() => handleOpenEdit(p)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title={t.editProduct}><Edit size={18}/></button>
-                      <button onClick={() => handleDelete(p.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Supprimer"><Trash2 size={18}/></button>
+                      <button onClick={() => handleOpenEdit(p)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title={t.editTooltip}><Edit size={18}/></button>
+                      <button onClick={() => handleDelete(p.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title={t.deleteTooltip}><Trash2 size={18}/></button>
                     </div>
                   </td>
                 </tr>

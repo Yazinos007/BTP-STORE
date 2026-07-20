@@ -31,7 +31,10 @@ const translations = {
     companyName: 'اسم الشركة',
     phone: 'رقم الهاتف',
     address: 'العنوان',
-    saveInfo: 'حفظ التعديلات'
+    saveInfo: 'حفظ التعديلات',
+    successVerify: '✅ تم إرسال ملفاتك بنجاح! فريق الإدارة سيقوم بمراجعتها قريباً.',
+    successSave: '✅ تم تحديث بيانات الشركة بنجاح!',
+    errorSave: 'حدث خطأ أثناء الحفظ.'
   },
   fr: {
     title: 'Centre de Confiance & Paramètres',
@@ -56,7 +59,10 @@ const translations = {
     companyName: 'Nom de l\'entreprise',
     phone: 'Téléphone',
     address: 'Adresse',
-    saveInfo: 'Enregistrer les infos'
+    saveInfo: 'Enregistrer les infos',
+    successVerify: '✅ Documents envoyés avec succès pour examen !',
+    successSave: '✅ Informations enregistrées !',
+    errorSave: 'Erreur lors de la sauvegarde.'
   },
   en: {
     title: 'Trust Center & Settings',
@@ -81,13 +87,18 @@ const translations = {
     companyName: 'Company Name',
     phone: 'Phone',
     address: 'Address',
-    saveInfo: 'Save Information'
+    saveInfo: 'Save Information',
+    successVerify: '✅ Documents successfully sent for review!',
+    successSave: '✅ Information successfully saved!',
+    errorSave: 'Error while saving.'
   }
 };
 
 export default function SupplierSettings() {
   const { language } = useSettingsStore();
-  const { supplier, updateProfile } = useSupplierStore(); // 🎯 سحبنا دالة التحديث
+  const { supplier, updateProfile, uploadLogo, isLoading } = useSupplierStore();
+  
+  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
   const navigate = useNavigate();
 
@@ -95,7 +106,6 @@ export default function SupplierSettings() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState({ rc: null, ice: null, cin: null });
   
-  // 🎯 إضافة State لحفظ بيانات المتجر
   const [storeData, setStoreData] = useState({ store_name: '', phone: '', address: '' });
   const [isSavingInfo, setIsSavingInfo] = useState(false);
 
@@ -114,27 +124,31 @@ export default function SupplierSettings() {
     if (file) setFiles(prev => ({ ...prev, [type]: file.name }));
   };
 
+  const handleLogoChange = async (e) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    await uploadLogo(e.target.files[0]);
+  };
+
   const handleSubmitVerification = (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
       setVerificationStatus('pending');
-      alert(language === 'fr' ? '✅ Documents envoyés avec succès pour examen !' : '✅ تم إرسال ملفاتك بنجاح! فريق الإدارة سيقوم بمراجعتها قريباً.');
+      alert(t.successVerify);
     }, 2000);
   };
 
-  // 🎯 دالة حفظ بيانات الشركة
   const handleSaveStoreInfo = async () => {
     setIsSavingInfo(true);
     try {
       if (updateProfile) {
         await updateProfile(storeData);
-        alert(language === 'fr' ? '✅ Informations enregistrées !' : '✅ تم تحديث بيانات الشركة بنجاح!');
+        alert(t.successSave);
       }
     } catch (err) {
       console.error(err);
-      alert(language === 'fr' ? 'Erreur lors de la sauvegarde.' : 'حدث خطأ أثناء الحفظ.');
+      alert(t.errorSave);
     } finally {
       setIsSavingInfo(false);
     }
@@ -142,7 +156,7 @@ export default function SupplierSettings() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in text-slate-300" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="flex justify-between items-start border-b border-slate-800 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
         <div>
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
             <ShieldCheck className="text-blue-500" size={32} />
@@ -166,7 +180,7 @@ export default function SupplierSettings() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/30 rounded-3xl p-8 relative overflow-hidden shadow-[0_0_40px_rgba(245,158,11,0.1)]">
-            <div className="absolute -right-10 -top-10 text-amber-500/10 pointer-events-none">
+            <div className={`absolute ${language === 'ar' ? '-left-10' : '-right-10'} -top-10 text-amber-500/10 pointer-events-none`}>
               <Award size={250} />
             </div>
             
@@ -245,11 +259,13 @@ export default function SupplierSettings() {
               <Building2 size={20} className="text-blue-500" /> {t.storeInfo}
             </h4>
             <div className="space-y-4">
-              {/* 📸 دائرة رفع اللوغو نضعها هنا */}
+              
               <div className="flex justify-center mb-6">
                 <div className="relative group">
                   <div className="w-24 h-24 rounded-full border-4 border-slate-800 overflow-hidden bg-slate-900 flex items-center justify-center shadow-xl">
-                    {supplier?.logo_url ? (
+                    {isLoading ? (
+                      <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                    ) : supplier?.logo_url ? (
                       <img src={supplier.logo_url} alt="Logo" className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-3xl font-black text-slate-500">{supplier?.store_name?.charAt(0) || 'S'}</span>
@@ -257,11 +273,11 @@ export default function SupplierSettings() {
                   </div>
                   <label className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-full cursor-pointer transition-colors shadow-lg border-2 border-slate-800">
                     <Camera size={16} />
-                    {/* هنا سيتم ربط دالة الرفع لاحقاً */}
-                    <input type="file" accept="image/*" className="hidden" />
+                    <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                   </label>
                 </div>
               </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{t.companyName}</label>
                 <input type="text" value={storeData.store_name} onChange={e => setStoreData({...storeData, store_name: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
@@ -275,7 +291,6 @@ export default function SupplierSettings() {
                 <input type="text" value={storeData.address} onChange={e => setStoreData({...storeData, address: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-2.5 rounded-xl outline-none focus:border-blue-500 font-medium" />
               </div>
               
-              {/* 🎯 إضافة الدالة وحالة التحميل للزر */}
               <button onClick={handleSaveStoreInfo} disabled={isSavingInfo} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 mt-2 flex justify-center items-center gap-2 disabled:opacity-70">
                 {isSavingInfo ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {isSavingInfo ? t.saving : t.saveInfo}
               </button>

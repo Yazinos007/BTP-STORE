@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Search, Trash2, Plus, Minus, CheckCircle, CreditCard, Printer, ShoppingCart, Loader2, X, HardHat, FileText, User } from 'lucide-react';
+import { Search, Trash2, Plus, Minus, CheckCircle, CreditCard, Printer, ShoppingCart, Loader2, X, HardHat, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import useProductStore from '../store/useProductStore';
 import useSupplierStore from '../store/useSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
 import useClientStore from '../store/useClientStore';
-import confetti from 'canvas-confetti'; 
+import confetti from 'canvas-confetti';
 
 const translations = {
   ar: {
@@ -13,10 +13,16 @@ const translations = {
     outOfStock: 'نفد', cart: 'السلة', emptyCart: 'السلة فارغة', total: 'المجموع :', currency: 'درهم',
     cash: 'دفع نقداً', credit: 'بيع بالآجل', successCash: '✅ تم البيع! تم إرسال الطلبية وحفظ الفاتورة تلقائياً.',
     successCredit: '⏳ تم البيع بالآجل! تم إرسال الطلبية وحفظ BL تلقائياً.', error: 'حدث خطأ أثناء العملية.',
-    noStock: 'عذراً، هذا المنتج غير متوفر!', selectClient: 'اختر العميل (الزبون)', cancel: 'إلغاء', confirm: 'تأكيد',
+    noStock: 'عذراً، هذا المنتج غير متوفر في المخزون!', selectClient: 'اختر العميل (الزبون)', cancel: 'إلغاء', confirm: 'تأكيد',
     chantier: 'اسم الورش (اختياري)', genDoc: 'إصدار Devis/BC', docType: 'نوع المستند',
     successDoc: '✅ تم إصدار المستند بنجاح! السلة لازالت ممتلئة إذا أردت إتمام البيع.',
-    optionalClient: '-- زبون عابر (اختياري) --'
+    optionalClient: '-- زبون عابر (اختياري) --',
+    printA4: 'طباعة A4', details: 'تفاصيل', delete: 'حذف', emptyCartConfirm: 'إفراغ السلة؟',
+    emptyCartBtn: 'إفراغ',
+    docDevis: 'Devis (عرض سعر)', docBC: 'Bon de Commande (أمر شراء)',
+    chantierPlaceholder: 'مثال: فيلا طريق إيموزار', amountTotal: 'الإجمالي:',
+    thanks: 'شكراً لك!',
+    printLabels: { designation: 'البيان', qty: 'الكمية', unit: 'الوحدة', pu: 'السعر', amount: 'المبلغ', totalHT: 'الإجمالي HT', tva: 'الضريبة (20%)', totalTTC: 'الإجمالي TTC' }
   },
   fr: {
     title: 'Point de Vente (POS)', search: 'Rechercher un produit...', stock: 'Stock:',
@@ -26,7 +32,29 @@ const translations = {
     noStock: 'Produit indisponible !', selectClient: 'Sélectionner le client', cancel: 'Annuler', confirm: 'Confirmer',
     chantier: 'Nom du Chantier (Optionnel)', genDoc: 'Générer Devis/BC', docType: 'Type de Document',
     successDoc: '✅ Document généré ! Le panier est conservé pour la vente.',
-    optionalClient: '-- Client de passage (Optionnel) --'
+    optionalClient: '-- Client de passage (Optionnel) --',
+    printA4: 'Imprimer A4', details: 'Détails', delete: 'Supprimer', emptyCartConfirm: 'Vider le panier ?',
+    emptyCartBtn: 'Vider',
+    docDevis: 'Devis', docBC: 'Bon de Commande',
+    chantierPlaceholder: 'Ex: Villa Route Imouzzer', amountTotal: 'Total :',
+    thanks: 'Merci !',
+    printLabels: { designation: 'Désignation', qty: 'Qté', unit: 'Unité', pu: 'P.U', amount: 'Montant', totalHT: 'Total HT', tva: 'TVA (20%)', totalTTC: 'Total TTC' }
+  },
+  en: {
+    title: 'Point of Sale (POS)', search: 'Search product...', stock: 'Stock:',
+    outOfStock: 'Out', cart: 'Cart', emptyCart: 'Cart is empty', total: 'Total :', currency: 'MAD',
+    cash: 'Pay (Cash)', credit: 'Credit Sale', successCash: '✅ Sale validated! Invoice generated automatically.',
+    successCredit: '⏳ Credit sale recorded! Delivery note generated.', error: 'An error occurred.',
+    noStock: 'Product unavailable!', selectClient: 'Select client', cancel: 'Cancel', confirm: 'Confirm',
+    chantier: 'Project Name (Optional)', genDoc: 'Generate Quote/Order', docType: 'Document Type',
+    successDoc: '✅ Document generated! Cart kept for sale.',
+    optionalClient: '-- Walk-in Client (Optional) --',
+    printA4: 'Print A4', details: 'Details', delete: 'Delete', emptyCartConfirm: 'Empty cart?',
+    emptyCartBtn: 'Clear',
+    docDevis: 'Quote (Devis)', docBC: 'Purchase Order (BC)',
+    chantierPlaceholder: 'Ex: Villa Imouzzer Road', amountTotal: 'Total:',
+    thanks: 'Thank you!',
+    printLabels: { designation: 'Description', qty: 'Qty', unit: 'Unit', pu: 'Price', amount: 'Amount', totalHT: 'Total HT', tva: 'VAT (20%)', totalTTC: 'Total TTC' }
   }
 };
 
@@ -79,27 +107,154 @@ export default function POS() {
 
   const handleBlur = (id, currentQty) => { if (currentQty === '' || Number(currentQty) < 1) updateQuantity(id, 1); };
   const removeFromCart = (id) => setCart(prev => prev.filter(item => item.id !== id));
-  const clearCart = () => { if(window.confirm('Vider le panier ?')) setCart([]); };
+  const clearCart = () => { if(window.confirm(t.emptyCartConfirm)) setCart([]); };
   
   const total = cart.reduce((sum, item) => sum + (Number(item.price) * (Number(item.quantity) || 0)), 0);
 
+  // 🖨️ طباعة التذكرة الصغيرة (Ticket)
   const handlePrintTicket = () => {
     if (cart.length === 0) return;
     const storeName = supplier?.store_name || 'SouqBTP';
-    const date = new Date().toLocaleString(language === 'fr' ? 'fr-FR' : 'ar-MA');
-    const clientNameText = selectedClientId ? `<p style="margin:5px 0;">Client: ${clients.find(c => c.id === selectedClientId)?.full_name}</p>` : '';
+    const date = new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { dateStyle: 'short', timeStyle: 'short' }).format(new Date());
+    const clientNameText = selectedClientId ? `<p style="margin:5px 0;">${t.selectClient.split(' ')[0]}: ${clients.find(c => c.id === selectedClientId)?.full_name}</p>` : '';
     
-    const ticketHtml = `<html><head><title>Ticket</title><style>@page{margin:0;}body{font-family:monospace;font-size:13px;padding:15px;max-width:320px;margin:0 auto;}.center{text-align:center;}.bold{font-weight:bold;}.divider{border-bottom:1px dashed #000;margin:10px 0;}.flex-between{display:flex;justify-content:space-between;margin-bottom:6px;}.total-section{border-top:2px dashed #000;margin-top:15px;padding-top:10px;font-size:16px;font-weight:bold;}</style></head><body><div class="center"><h2 style="margin:0;">${storeName}</h2><p style="margin:5px 0;">${date}</p>${clientNameText}</div><div class="divider"></div><div class="flex-between bold"><span>Article</span><span>Montant</span></div><div class="divider"></div>${cart.map(item => `<div class="flex-between"><span>${item.quantity}x ${item.name}</span><span class="bold">${(item.quantity * item.price).toLocaleString()}</span></div>`).join('')}<div class="total-section flex-between"><span>TOTAL :</span><span>${total.toLocaleString()} MAD</span></div><div class="divider"></div><div class="center">Merci !</div></body></html>`;
-    const iframe = document.createElement('iframe'); iframe.style.display = 'none'; document.body.appendChild(iframe); iframe.contentDocument.write(ticketHtml); iframe.contentDocument.close(); setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => document.body.removeChild(iframe), 1000); }, 300);
+    const ticketHtml = `
+      <html>
+        <head>
+          <title>Ticket</title>
+          <style>
+            @page { margin: 0; }
+            body { font-family: monospace; font-size: 13px; padding: 15px; max-width: 320px; margin: 0 auto; direction: ${language === 'ar' ? 'rtl' : 'ltr'}; }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
+            .flex-between { display: flex; justify-content: space-between; margin-bottom: 6px; }
+            .total-section { border-top: 2px dashed #000; margin-top: 15px; padding-top: 10px; font-size: 16px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            <h2 style="margin:0;">${storeName}</h2>
+            <p style="margin:5px 0;">${date}</p>
+            ${clientNameText}
+          </div>
+          <div class="divider"></div>
+          <div class="flex-between bold">
+            <span>${t.printLabels.designation}</span>
+            <span>${t.printLabels.amount}</span>
+          </div>
+          <div class="divider"></div>
+          ${cart.map(item => `
+            <div class="flex-between">
+              <span>${item.quantity}x ${item.name}</span>
+              <span class="bold" dir="ltr">${(item.quantity * item.price).toLocaleString()}</span>
+            </div>
+          `).join('')}
+          <div class="total-section flex-between">
+            <span>${t.total.replace(':', '')} :</span>
+            <span dir="ltr">${total.toLocaleString()} ${t.currency}</span>
+          </div>
+          <div class="divider"></div>
+          <div class="center">${t.thanks}</div>
+        </body>
+      </html>
+    `;
+    const iframe = document.createElement('iframe'); 
+    iframe.style.display = 'none'; 
+    document.body.appendChild(iframe); 
+    iframe.contentDocument.write(ticketHtml); 
+    iframe.contentDocument.close(); 
+    setTimeout(() => { 
+      iframe.contentWindow.focus(); 
+      iframe.contentWindow.print(); 
+      setTimeout(() => document.body.removeChild(iframe), 1000); 
+    }, 300);
   };
 
+  // 🖨️ طباعة مستند A4
   const printA4Document = (refNumber, clientName) => {
+    const isRTL = language === 'ar';
+    const alignStart = isRTL ? 'right' : 'left';
+    const alignEnd = isRTL ? 'left' : 'right';
     const storeName = supplier?.store_name || 'ENTREPRISE SOUQBTP';
-    const date = new Date().toLocaleDateString('fr-FR');
+    const date = new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA').format(new Date());
+    const { printLabels } = t;
+
     const docHtml = `
-      <html><head><title>${docType} - ${refNumber}</title><style>body{font-family:'Arial',sans-serif;padding:40px;color:#333;}.header{display:flex;justify-content:space-between;border-bottom:3px solid #1e3a8a;padding-bottom:20px;margin-bottom:30px;}.company h1{color:#1e3a8a;margin:0 0 10px 0;text-transform:uppercase;font-size:28px;}.doc-info h2{margin:0 0 10px 0;color:#333;text-transform:uppercase;font-size:24px;letter-spacing:2px;}.client-box{background:#f9fafb;padding:20px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:30px;}table{width:100%;border-collapse:collapse;margin-bottom:30px;}th{background:#1e3a8a;color:white;padding:12px;text-align:left;font-size:14px;text-transform:uppercase;}td{padding:12px;border-bottom:1px solid #e5e7eb;}.total-box{float:right;width:300px;border:2px solid #1e3a8a;border-radius:8px;padding:15px;}.total-row{display:flex;justify-content:space-between;margin-bottom:10px;font-size:14px;}.total-final{display:flex;justify-content:space-between;font-size:20px;font-weight:bold;color:#1e3a8a;border-top:1px solid #e5e7eb;padding-top:10px;margin-top:10px;}.footer{margin-top:80px;text-align:center;font-size:12px;color:#6b7280;border-top:1px solid #e5e7eb;padding-top:20px;}</style></head><body><div class="header"><div class="company"><h1>${storeName}</h1><p>Négoce de Matériaux de Construction</p></div><div class="doc-info" style="text-align:right;"><h2>${docType}</h2><p><strong>N°:</strong> ${refNumber}<br/><strong>Date:</strong> ${date}</p></div></div><div class="client-box"><p style="margin:0 0 5px 0; font-size:18px;"><strong>Client:</strong> ${clientName}</p>${chantier ? `<p style="margin:5px 0 0 0; color:#d97706; font-weight:bold;">Chantier: ${chantier}</p>` : ''}</div><table><thead><tr><th>Désignation</th><th style="text-align:center">Qté</th><th style="text-align:center">Unité</th><th style="text-align:right">P.U (MAD)</th><th style="text-align:right">Montant (MAD)</th></tr></thead><tbody>${cart.map(item => `<tr><td><strong>${item.name}</strong></td><td style="text-align:center">${item.quantity}</td><td style="text-align:center">${item.unit || 'U'}</td><td style="text-align:right">${item.price}</td><td style="text-align:right; font-weight:bold;">${(item.quantity * item.price).toLocaleString()}</td></tr>`).join('')}</tbody></table><div class="total-box"><div class="total-row"><span>Total HT:</span><span>${(total * 0.8).toLocaleString()}</span></div><div class="total-row"><span>TVA (20%):</span><span>${(total * 0.2).toLocaleString()}</span></div><div class="total-final"><span>Total TTC:</span><span>${total.toLocaleString()} MAD</span></div></div><div style="clear:both;"></div><div class="footer"><p>Document généré par SouqBTP ERP.</p></div></body></html>
+      <html dir="${isRTL ? 'rtl' : 'ltr'}">
+        <head>
+          <title>${docType} - ${refNumber}</title>
+          <style>
+            body{font-family:'Arial',sans-serif;padding:40px;color:#333; direction: ${isRTL ? 'rtl' : 'ltr'};}
+            .header{display:flex;justify-content:space-between;border-bottom:3px solid #1e3a8a;padding-bottom:20px;margin-bottom:30px;}
+            .company h1{color:#1e3a8a;margin:0 0 10px 0;text-transform:uppercase;font-size:28px;}
+            .doc-info h2{margin:0 0 10px 0;color:#333;text-transform:uppercase;font-size:24px;letter-spacing:2px;}
+            .client-box{background:#f9fafb;padding:20px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:30px;}
+            table{width:100%;border-collapse:collapse;margin-bottom:30px;}
+            th{background:#1e3a8a;color:white;padding:12px;text-align:${alignStart};font-size:14px;text-transform:uppercase;}
+            td{padding:12px;border-bottom:1px solid #e5e7eb;text-align:${alignStart};}
+            .total-box{float:${alignEnd};width:300px;border:2px solid #1e3a8a;border-radius:8px;padding:15px;}
+            .total-row{display:flex;justify-content:space-between;margin-bottom:10px;font-size:14px;}
+            .total-final{display:flex;justify-content:space-between;font-size:20px;font-weight:bold;color:#1e3a8a;border-top:1px solid #e5e7eb;padding-top:10px;margin-top:10px;}
+            .footer{margin-top:80px;text-align:center;font-size:12px;color:#6b7280;border-top:1px solid #e5e7eb;padding-top:20px;}
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company">
+              <h1>${storeName}</h1>
+            </div>
+            <div class="doc-info" style="text-align:${alignEnd};">
+              <h2>${docType}</h2>
+              <p><strong>N°:</strong> ${refNumber}<br/><strong>Date:</strong> ${date}</p>
+            </div>
+          </div>
+          <div class="client-box">
+            <p style="margin:0 0 5px 0; font-size:18px;"><strong>Client:</strong> ${clientName}</p>
+            ${chantier ? `<p style="margin:5px 0 0 0; color:#d97706; font-weight:bold;">${t.chantier.split(' ')[0]}: ${chantier}</p>` : ''}
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>${printLabels.designation}</th>
+                <th style="text-align:center">${printLabels.qty}</th>
+                <th style="text-align:center">${printLabels.unit}</th>
+                <th style="text-align:${alignEnd}">${printLabels.pu} (${t.currency})</th>
+                <th style="text-align:${alignEnd}">${printLabels.amount} (${t.currency})</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${cart.map(item => `
+                <tr>
+                  <td><strong>${item.name}</strong></td>
+                  <td style="text-align:center">${item.quantity}</td>
+                  <td style="text-align:center">${item.unit || 'U'}</td>
+                  <td style="text-align:${alignEnd}" dir="ltr">${item.price}</td>
+                  <td style="text-align:${alignEnd}; font-weight:bold;" dir="ltr">${(item.quantity * item.price).toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="total-box">
+            <div class="total-row"><span>${printLabels.totalHT}:</span><span dir="ltr">${(total * 0.8).toLocaleString()}</span></div>
+            <div class="total-row"><span>${printLabels.tva}:</span><span dir="ltr">${(total * 0.2).toLocaleString()}</span></div>
+            <div class="total-final"><span>${printLabels.totalTTC}:</span><span dir="ltr">${total.toLocaleString()} ${t.currency}</span></div>
+          </div>
+          <div style="clear:both;"></div>
+          <div class="footer"><p>Document généré par SouqBTP ERP.</p></div>
+        </body>
+      </html>
     `;
-    const iframe = document.createElement('iframe'); iframe.style.display = 'none'; document.body.appendChild(iframe); iframe.contentDocument.write(docHtml); iframe.contentDocument.close(); setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => document.body.removeChild(iframe), 1000); }, 500);
+    const iframe = document.createElement('iframe'); 
+    iframe.style.display = 'none'; 
+    document.body.appendChild(iframe); 
+    iframe.contentDocument.write(docHtml); 
+    iframe.contentDocument.close(); 
+    setTimeout(() => { 
+      iframe.contentWindow.focus(); 
+      iframe.contentWindow.print(); 
+      setTimeout(() => document.body.removeChild(iframe), 1000); 
+    }, 500);
   };
 
   const generateDocument = async (e) => {
@@ -163,7 +318,7 @@ export default function POS() {
       alert(paymentMethod === 'Espèces' ? t.successCash : t.successCredit);
     } catch (error) { 
       console.error("Erreur POS Détaillée:", error);
-      alert(`Erreur détaillée:\n${error.message || error}`); 
+      alert(t.error); 
     } finally { 
       setIsProcessing(false); 
     }
@@ -211,13 +366,13 @@ export default function POS() {
       <div className="w-[360px] bg-[#2d2252] rounded-2xl shadow-xl flex flex-col text-white shrink-0 h-auto max-h-full">
         <div className="p-5 bg-white/5 border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3"><ShoppingCart className="text-blue-400" /><h2 className="text-xl font-black">{t.cart}</h2></div>
-          {cart.length > 0 && <button onClick={clearCart} className="text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 bg-red-400/10 rounded">Vider</button>}
+          {cart.length > 0 && <button onClick={clearCart} className="text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 bg-red-400/10 rounded">{t.emptyCartBtn}</button>}
         </div>
-        <div className="overflow-y-auto p-4 space-y-3 custom-scrollbar" dir="ltr">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar" dir="ltr">
           {cart.length === 0 ? <div className="py-8 flex flex-col items-center text-white/30 space-y-4"><ShoppingCart size={40} className="opacity-20" /><p className="font-medium text-sm">{t.emptyCart}</p></div> : cart.map(item => (
             <div key={item.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3 group relative">
               <div className="flex justify-between items-start">
-                <div className="pr-6"><h4 className="font-bold text-white text-sm">{item.name}</h4><p className="text-xs font-medium text-blue-300 mt-0.5">{item.price} MAD</p></div>
+                <div className="pr-6"><h4 className="font-bold text-white text-sm">{item.name}</h4><p className="text-xs font-medium text-blue-300 mt-0.5">{item.price} {t.currency}</p></div>
                 <button onClick={() => removeFromCart(item.id)} className="absolute top-3 right-3 text-white/30 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
               </div>
               <div className="flex items-center justify-between bg-black/20 rounded-lg p-1">
@@ -233,7 +388,6 @@ export default function POS() {
           
           <div className="space-y-2">
             <div className="flex gap-2">
-              {/* 🌟 الزر الأخضر (كاش) يفتح نافذة الـ Checkout */}
               <button 
                 disabled={cart.length === 0 || isProcessing} 
                 onClick={() => { setCheckoutMethod('Espèces'); setShowCheckoutModal(true); }} 
@@ -241,7 +395,6 @@ export default function POS() {
               >
                 <CheckCircle size={16} /> {t.cash}
               </button>
-              {/* 🌟 زر الكريدي يفتح نفس النافذة */}
               <button 
                 disabled={cart.length === 0 || isProcessing} 
                 onClick={() => { setCheckoutMethod('Crédit'); setShowCheckoutModal(true); }} 
@@ -261,7 +414,6 @@ export default function POS() {
         </div>
       </div>
 
-      {/* 🌟 نافذة الـ Checkout (للدفع النقدي والكريدي) */}
       {showCheckoutModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
           <div className={`bg-white rounded-3xl shadow-2xl p-6 w-[450px] animate-slide-up border-t-8 ${checkoutMethod === 'Espèces' ? 'border-emerald-500' : 'border-orange-500'}`}>
@@ -286,11 +438,11 @@ export default function POS() {
               </div>
               <div>
                 <label className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><HardHat size={16} className="text-gray-400"/> {t.chantier}</label>
-                <input type="text" value={chantier} onChange={(e) => setChantier(e.target.value)} placeholder="مثال: فيلا طريق إيموزار" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-gray-500/20 font-medium" />
+                <input type="text" value={chantier} onChange={(e) => setChantier(e.target.value)} placeholder={t.chantierPlaceholder} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-gray-500/20 font-medium" />
               </div>
               <div className={`p-4 rounded-xl border flex justify-between items-center ${checkoutMethod === 'Espèces' ? 'bg-emerald-50 border-emerald-100' : 'bg-orange-50 border-orange-100'}`}>
-                <span className={`font-medium text-sm ${checkoutMethod === 'Espèces' ? 'text-emerald-800' : 'text-orange-800'}`}>الإجمالي:</span>
-                <span className={`font-black text-xl ${checkoutMethod === 'Espèces' ? 'text-emerald-600' : 'text-orange-600'}`} dir="ltr">{total.toLocaleString()} MAD</span>
+                <span className={`font-medium text-sm ${checkoutMethod === 'Espèces' ? 'text-emerald-800' : 'text-orange-800'}`}>{t.amountTotal}</span>
+                <span className={`font-black text-xl ${checkoutMethod === 'Espèces' ? 'text-emerald-600' : 'text-orange-600'}`} dir="ltr">{total.toLocaleString()} {t.currency}</span>
               </div>
               <div className="flex gap-3 pt-2 border-t border-gray-100">
                 <button onClick={() => setShowCheckoutModal(false)} className="w-1/3 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl">{t.cancel}</button>
@@ -307,7 +459,6 @@ export default function POS() {
         </div>
       )}
 
-      {/* نافذة Devis (بدون تغيير) */}
       {showDocModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl p-6 w-[450px] animate-slide-up border-t-8 border-blue-600">
@@ -319,8 +470,8 @@ export default function POS() {
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">{t.docType}</label>
                 <select value={docType} onChange={(e) => setDocType(e.target.value)} className="w-full px-4 py-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-black text-lg text-center shadow-inner cursor-pointer">
-                  <option value="Devis">Devis (عرض سعر)</option>
-                  <option value="Bon de Commande">Bon de Commande (أمر شراء)</option>
+                  <option value="Devis">{t.docDevis}</option>
+                  <option value="Bon de Commande">{t.docBC}</option>
                 </select>
               </div>
               <div>
@@ -332,12 +483,12 @@ export default function POS() {
               </div>
               <div>
                 <label className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><HardHat size={16} className="text-orange-500"/> {t.chantier}</label>
-                <input type="text" value={chantier} onChange={(e) => setChantier(e.target.value)} placeholder="مثال: فيلا طريق إيموزار" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 font-medium" />
+                <input type="text" value={chantier} onChange={(e) => setChantier(e.target.value)} placeholder={t.chantierPlaceholder} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 font-medium" />
               </div>
               <div className="flex gap-3 pt-4 border-t border-gray-100">
                 <button type="button" onClick={() => setShowDocModal(false)} className="w-1/3 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl">{t.cancel}</button>
                 <button type="submit" disabled={isProcessing} className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex justify-center items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/30">
-                  {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <><Printer size={18}/> طباعة A4</>}
+                  {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <><Printer size={18}/> {t.printA4}</>}
                 </button>
               </div>
             </form>

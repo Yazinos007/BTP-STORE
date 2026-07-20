@@ -26,7 +26,12 @@ const translations = {
       other: 'أخرى' 
     },
     methods: { cash: 'نقداً (Espèces)', cheque: 'شيك (Chèque)', transfer: 'تحويل (Virement)', card: 'بطاقة (Carte)' },
-    analytics: 'التحليل المالي للشهر', searchPlaceholder: 'ابحث بالوصف أو التصنيف...'
+    analytics: 'التحليل المالي للشهر', searchPlaceholder: 'ابحث بالوصف أو التصنيف...',
+    editMode: 'وضع التعديل', placeholderDesc: 'مثال: شراء أدوات مكتبية...',
+    viewReceipt: 'عرض الوثيقة', delete: 'حذف',
+    uploadError: 'فشل رفع الملف: ', saveError: 'خطأ أثناء الحفظ: ',
+    receiptUploaded: 'تم رفع الوصل بنجاح', clickToUpload: 'اضغط لرفع الوصل',
+    optionalReceipt: 'الوثيقة الثبوتية / الوصل (اختياري)'
   },
   fr: {
     title: 'Gestion des Charges et Résultat', subtitle: 'Suivez les dépenses de votre entreprise avec précision.',
@@ -47,7 +52,38 @@ const translations = {
       other: 'Autre' 
     },
     methods: { cash: 'Espèces', cheque: 'Chèque', transfer: 'Virement', card: 'Carte Bancaire' },
-    analytics: 'Analyse Mensuelle', searchPlaceholder: 'Rechercher par description, catégorie...'
+    analytics: 'Analyse Mensuelle', searchPlaceholder: 'Rechercher par description, catégorie...',
+    editMode: 'Mode Édition', placeholderDesc: 'Ex: Achat fournitures...',
+    viewReceipt: 'Voir le reçu', delete: 'Supprimer',
+    uploadError: 'Erreur de téléchargement: ', saveError: 'Erreur lors de l\'enregistrement: ',
+    receiptUploaded: 'Reçu chargé', clickToUpload: 'Cliquez pour charger',
+    optionalReceipt: 'Justificatif / Reçu (Optionnel)'
+  },
+  en: {
+    title: 'Expenses & Net Profit', subtitle: 'Accurately track your company expenses and get detailed analytics.',
+    revenue: 'Total Revenue (Collected)', expenses: 'Monthly Expenses', netProfit: 'Net Profit',
+    addExpense: 'Record New Expense', editExpense: 'Edit Expense', desc: 'Description / Motif', amount: 'Amount',
+    category: 'Category', paymentMethod: 'Payment Method', save: 'Add Expense', saving: 'Saving...',
+    cancel: 'Cancel', actions: 'Actions', confirmDelete: 'Are you sure you want to delete this expense?',
+    history: 'Expense History', date: 'Date', empty: 'No expenses recorded this month.', currency: 'MAD',
+    recentFirst: 'Newest First', highestFirst: 'Highest Amount',
+    categories: { 
+      achats: 'Purchases / Goods', carburant: 'Fuel & Tolls',
+      transport: 'Transport & Logistics', loyer: 'Rent & Utilities', 
+      utilities: 'Water & Electricity', telecom: 'Phone & Internet',
+      fournitures: 'Office Supplies', maintenance: 'Maintenance & Repair', 
+      salaries: 'Salaries & Bonuses', taxes: 'Social Security & Taxes',
+      assurance: 'Insurance', banque: 'Bank Fees',
+      honoraires: 'Accountant/Lawyer Fees', marketing: 'Marketing & Advertising',
+      other: 'Other' 
+    },
+    methods: { cash: 'Cash', cheque: 'Check', transfer: 'Bank Transfer', card: 'Credit Card' },
+    analytics: 'Monthly Financial Analysis', searchPlaceholder: 'Search by description or category...',
+    editMode: 'Edit Mode', placeholderDesc: 'Ex: Office supplies purchase...',
+    viewReceipt: 'View Receipt', delete: 'Delete',
+    uploadError: 'Upload failed: ', saveError: 'Error while saving: ',
+    receiptUploaded: 'Receipt uploaded', clickToUpload: 'Click to upload receipt',
+    optionalReceipt: 'Receipt / Proof (Optional)'
   }
 };
 
@@ -60,6 +96,7 @@ export default function Expenses() {
   const { expenses, isLoading, fetchExpenses, addExpense, updateExpense, deleteExpense } = useExpenseStore();
   const { orders, fetchOrders } = useOrderStore();
   const { language } = useSettingsStore();
+  // 🛡️ الترياق السحري لمنع الشاشة السوداء
   const t = translations[language] || translations['fr'];
   
   const [formData, setFormData] = useState({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
@@ -97,7 +134,7 @@ export default function Expenses() {
       
     } catch (err) {
       console.error('Error uploading:', err.message);
-      alert(language === 'fr' ? `Erreur de téléchargement: ${err.message}` : `فشل رفع الملف: ${err.message}`);
+      alert(t.uploadError + err.message);
     } finally {
       setIsUploading(false);
     }
@@ -127,7 +164,7 @@ export default function Expenses() {
       setFormData({ title: '', amount: '', category: 'achats', payment_method: 'cash', receipt_url: '' });
       setEditingId(null);
     } catch (error) {
-      alert("خطأ أثناء الحفظ: " + error.message);
+      alert(t.saveError + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -179,7 +216,7 @@ export default function Expenses() {
     fill: categoryColorMap[key]
   }));
 
-  // 🎯 الدالة المدرعة للترتيب التنازلي الإجباري والفلترة (تم إصلاحها بـ useMemo)
+  // 🎯 الدالة المدرعة للترتيب التنازلي الإجباري والفلترة
   const sortedAndFilteredExpenses = useMemo(() => {
     let list = [...currentMonthExpenses];
 
@@ -250,14 +287,14 @@ export default function Expenses() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm h-fit relative">
-          {editingId && <div className="absolute top-4 right-4 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md animate-pulse">Mode Édition</div>}
+          {editingId && <div className="absolute top-4 right-4 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md animate-pulse">{t.editMode}</div>}
           <h3 className="text-lg font-bold mb-6 text-gray-800 flex items-center gap-2 border-b border-gray-100 pb-4">
             {editingId ? <Edit size={18} className="text-blue-600" /> : <Plus size={18} className="text-blue-600" />} {editingId ? t.editExpense : t.addExpense}
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">{t.desc}</label>
-              <input type="text" list="titles-list" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 font-medium transition-all" placeholder="Ex: Achat fournitures..." autoComplete="off" />
+              <input type="text" list="titles-list" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 font-medium transition-all" placeholder={t.placeholderDesc} autoComplete="off" />
               <datalist id="titles-list">{titleSuggestions.map((title, i) => <option key={i} value={title} />)}</datalist>
             </div>
             <div>
@@ -284,15 +321,15 @@ export default function Expenses() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
                 <Paperclip size={16} className="text-gray-400"/> 
-                {language === 'fr' ? 'Justificatif / Reçu (Optionnel)' : 'الوثيقة الثبوتية / الوصل (اختياري)'}
+                {t.optionalReceipt}
               </label>
               <label className={`w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed rounded-xl cursor-pointer transition-all ${formData.receipt_url ? 'border-green-400 bg-green-50 text-green-600' : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
                 {isUploading ? (
                   <Loader2 size={18} className="animate-spin text-blue-500" />
                 ) : formData.receipt_url ? (
-                  <><CheckCircle size={18} className="text-green-500" /> <span className="text-sm font-bold">{language === 'fr' ? 'Reçu chargé' : 'تم رفع الوصل بنجاح'}</span></>
+                  <><CheckCircle size={18} className="text-green-500" /> <span className="text-sm font-bold">{t.receiptUploaded}</span></>
                 ) : (
-                  <><UploadCloud size={18} /> <span className="text-sm font-medium">{language === 'fr' ? 'Cliquez pour charger' : 'اضغط لرفع الوصل'}</span></>
+                  <><UploadCloud size={18} /> <span className="text-sm font-medium">{t.clickToUpload}</span></>
                 )}
                 <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept="image/png, image/jpeg, image/jpg, application/pdf" />
               </label>
@@ -327,7 +364,7 @@ export default function Expenses() {
             <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-2"> 
                 <Receipt size={20} className="text-gray-400" /> 
-                <h3 className="font-black text-gray-800">{t.history}</h3> 
+                <h3 className="font-bold text-gray-800">{t.history}</h3> 
               </div>
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                 {/* 🎯 قائمة اختيار نوع الترتيب */}
@@ -369,7 +406,7 @@ export default function Expenses() {
                               {exp.title}
                               {/* 🎯 أيقونة فتح الوصل إذا كان موجوداً */}
                               {exp.receipt_url && (
-                                <a href={exp.receipt_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 inline-flex items-center" title="عرض الوثيقة"><Paperclip size={14} /></a>
+                                <a href={exp.receipt_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 inline-flex items-center" title={t.viewReceipt}><Paperclip size={14} /></a>
                               )}
                             </div>
                           </td>
@@ -387,7 +424,7 @@ export default function Expenses() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-gray-500 font-medium text-xs">
-                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(exp.created_at || exp.date))}
+                            {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA').format(new Date(exp.created_at || exp.date))}
                           </td>
                           <td className="px-6 py-4 text-red-600 font-black font-mono text-end text-base" dir="ltr">
                             -{Math.abs(Number(exp.amount)).toLocaleString()} <span className="text-[10px] font-bold opacity-70 uppercase">{t.currency}</span>
@@ -395,7 +432,7 @@ export default function Expenses() {
                           <td className="px-6 py-4">
                             <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <button onClick={() => handleEdit(exp)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title={t.editExpense}><Edit size={16}/></button>
-                              <button onClick={() => handleDelete(exp.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Supprimer"><Trash2 size={16}/></button>
+                              <button onClick={() => handleDelete(exp.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title={t.delete}><Trash2 size={16}/></button>
                             </div>
                           </td>
                         </tr>

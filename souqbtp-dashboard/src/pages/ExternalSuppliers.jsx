@@ -7,16 +7,35 @@ const translations = {
   ar: {
     title: 'إدارة الموردين', subtitle: 'تتبع ديون الموردين وبيانات التواصل معهم.',
     addBtn: 'إضافة مورد', totalDebt: 'إجمالي ديون الموردين', count: 'عدد الموردين',
-    name: 'اسم المورد / الشركة', phone: 'الهاتف', ice: 'ICE', debt: 'الديون المستحقة له',
+    name: 'اسم المورد / الشركة', contactInfo: 'التواصل و ICE', phone: 'الهاتف', ice: 'ICE', debt: 'الديون المستحقة',
     save: 'حفظ المورد', cancel: 'إلغاء', actions: 'إجراءات', empty: 'لا يوجد موردون مسجلون.',
-    payDebtTitle: 'تسديد دفعة للمورد', payAmount: 'المبلغ المسدد', confirmPayment: 'تأكيد التسديد'
+    payDebtTitle: 'تسديد دفعة للمورد', payAmount: 'المبلغ المسدد', confirmPayment: 'تأكيد التسديد',
+    search: 'ابحث عن مورد...', overDebtMsg: 'المبلغ المدخل أكبر من الدين الفعلي للمورد!',
+    paymentError: 'حدث خطأ أثناء تسجيل الدفعة.', deleteConfirm: 'هل أنت متأكد من حذف هذا المورد؟',
+    editSupplier: 'تعديل بيانات المورد', newSupplier: 'مورد جديد',
+    initialDebt: 'الدين الأولي (درهم)', supplierLabel: 'المورد', currentDebt: 'الدين الحالي:'
   },
   fr: {
     title: 'Gestion des Fournisseurs', subtitle: 'Suivez vos dettes fournisseurs et contacts.',
     addBtn: 'Nouveau Fournisseur', totalDebt: 'Total Dettes Fournisseurs', count: 'Nombre de Fournisseurs',
-    name: 'Nom Fournisseur / Société', phone: 'Téléphone', ice: 'ICE', debt: 'Dette à régler',
+    name: 'Nom Fournisseur / Société', contactInfo: 'Contact & ICE', phone: 'Téléphone', ice: 'ICE', debt: 'Dette à régler',
     save: 'Enregistrer', cancel: 'Annuler', actions: 'Actions', empty: 'Aucun fournisseur enregistré.',
-    payDebtTitle: 'Règlement Fournisseur', payAmount: 'Montant réglé', confirmPayment: 'Valider le paiement'
+    payDebtTitle: 'Règlement Fournisseur', payAmount: 'Montant réglé', confirmPayment: 'Valider le paiement',
+    search: 'Rechercher...', overDebtMsg: 'Le montant saisi est supérieur à la dette réelle !',
+    paymentError: 'Une erreur s\'est produite lors du paiement.', deleteConfirm: 'Voulez-vous vraiment supprimer ?',
+    editSupplier: 'Modifier Fournisseur', newSupplier: 'Nouveau Fournisseur',
+    initialDebt: 'Dette Initiale (MAD)', supplierLabel: 'Fournisseur', currentDebt: 'Dette actuelle :'
+  },
+  en: {
+    title: 'Supplier Management', subtitle: 'Track your supplier debts and contacts.',
+    addBtn: 'New Supplier', totalDebt: 'Total Supplier Debt', count: 'Number of Suppliers',
+    name: 'Supplier Name / Company', contactInfo: 'Contact & ICE', phone: 'Phone', ice: 'ICE', debt: 'Outstanding Debt',
+    save: 'Save', cancel: 'Cancel', actions: 'Actions', empty: 'No suppliers registered.',
+    payDebtTitle: 'Supplier Payment', payAmount: 'Amount Paid', confirmPayment: 'Confirm Payment',
+    search: 'Search...', overDebtMsg: 'The entered amount is greater than the actual debt!',
+    paymentError: 'An error occurred while saving the payment.', deleteConfirm: 'Are you sure you want to delete?',
+    editSupplier: 'Edit Supplier', newSupplier: 'New Supplier',
+    initialDebt: 'Initial Debt (MAD)', supplierLabel: 'Supplier', currentDebt: 'Current Debt:'
   }
 };
 
@@ -55,7 +74,7 @@ export default function ExternalSuppliers() {
     if (isNaN(paidAmount) || paidAmount <= 0) return;
 
     if (paidAmount > paymentSupplier.total_debt) {
-      alert("المبلغ المدخل أكبر من الدين الفعلي للمورد!");
+      alert(t.overDebtMsg);
       return;
     }
 
@@ -67,7 +86,7 @@ export default function ExternalSuppliers() {
       setPaymentAmount('');
       fetchSuppliers(); // تحديث البيانات
     } catch (error) {
-      alert("حدث خطأ أثناء تسجيل الدفعة.");
+      alert(t.paymentError);
     } finally {
       setIsSubmittingPayment(false);
     }
@@ -102,7 +121,7 @@ export default function ExternalSuppliers() {
         <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
            <div className="relative w-80">
               <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'right-3' : 'left-3'} text-gray-400`} />
-              <input type="text" placeholder="Rechercher..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full ${language === 'ar' ? 'pr-10' : 'pl-10'} py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm`} />
+              <input type="text" placeholder={t.search} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full ${language === 'ar' ? 'pr-10' : 'pl-10'} py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm`} />
            </div>
         </div>
         <div className="overflow-x-auto">
@@ -110,7 +129,7 @@ export default function ExternalSuppliers() {
             <thead className="bg-white border-b border-gray-100">
               <tr>
                 <th className="px-6 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.name}</th>
-                <th className="px-6 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">Contact & ICE</th>
+                <th className="px-6 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.contactInfo}</th>
                 <th className="px-6 py-4 text-gray-400 font-black text-end uppercase tracking-wider text-xs">{t.debt}</th>
                 <th className="px-6 py-4 text-gray-400 font-black text-center uppercase tracking-wider text-xs">{t.actions}</th>
               </tr>
@@ -134,12 +153,12 @@ export default function ExternalSuppliers() {
                     <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       {/* 💸 زر تسديد ديون المورد (يظهر إذا كان له دين علينا) */}
                       {Number(s.total_debt) > 0 && (
-                        <button onClick={() => { setPaymentSupplier(s); setShowPaymentModal(true); }} className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors" title="Règlement Fournisseur">
+                        <button onClick={() => { setPaymentSupplier(s); setShowPaymentModal(true); }} className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors" title={t.payDebtTitle}>
                           <Banknote size={18}/>
                         </button>
                       )}
                       <button onClick={() => { setEditingId(s.id); setFormData(s); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit size={18}/></button>
-                      <button onClick={() => { if(window.confirm('Supprimer?')) deleteSupplier(s.id); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={18}/></button>
+                      <button onClick={() => { if(window.confirm(t.deleteConfirm)) deleteSupplier(s.id); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={18}/></button>
                     </div>
                   </td>
                 </tr>
@@ -154,16 +173,16 @@ export default function ExternalSuppliers() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up">
              <div className="p-6 border-b flex justify-between items-center bg-gray-50">
-               <h3 className="font-black text-gray-800 text-lg">{editingId ? 'Modifier Fournisseur' : 'Nouveau Fournisseur'}</h3>
+               <h3 className="font-black text-gray-800 text-lg">{editingId ? t.editSupplier : t.newSupplier}</h3>
                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
              </div>
              <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">Nom / Société</label><input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" /></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.name}</label><input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" /></div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-sm font-bold text-gray-700 mb-1">Téléphone</label><input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2.5 border rounded-xl outline-none" /></div>
+                  <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.phone}</label><input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2.5 border rounded-xl outline-none" /></div>
                   <div><label className="block text-sm font-bold text-gray-700 mb-1">ICE</label><input type="text" value={formData.ice} onChange={e => setFormData({...formData, ice: e.target.value})} className="w-full px-4 py-2.5 border rounded-xl outline-none" /></div>
                 </div>
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">Dette Initiale (MAD)</label><input type="number" step="0.01" value={formData.total_debt} onChange={e => setFormData({...formData, total_debt: e.target.value})} className="w-full px-4 py-2.5 border border-red-200 bg-red-50 rounded-xl outline-none font-bold text-red-600" /></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.initialDebt}</label><input type="number" step="0.01" value={formData.total_debt} onChange={e => setFormData({...formData, total_debt: e.target.value})} className="w-full px-4 py-2.5 border border-red-200 bg-red-50 rounded-xl outline-none font-bold text-red-600" /></div>
                 <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-all mt-4">{t.save}</button>
              </form>
           </div>
@@ -181,10 +200,10 @@ export default function ExternalSuppliers() {
             
             <form onSubmit={handlePaymentSubmit} className="p-6 space-y-4">
               <div className="text-center mb-4">
-                <p className="text-sm font-medium text-gray-500">المورد</p>
+                <p className="text-sm font-medium text-gray-500">{t.supplierLabel}</p>
                 <p className="font-black text-gray-800 text-lg">{paymentSupplier.name}</p>
                 <div className="mt-2 inline-flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-full border border-red-100 text-sm font-bold">
-                  الدين الحالي: <span dir="ltr">{Number(paymentSupplier.total_debt).toLocaleString()} MAD</span>
+                  {t.currentDebt} <span dir="ltr">{Number(paymentSupplier.total_debt).toLocaleString()} MAD</span>
                 </div>
               </div>
 

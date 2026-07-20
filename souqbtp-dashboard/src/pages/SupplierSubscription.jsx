@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSettingsStore from '../store/useSettingsStore';
-import { ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, Minus, Loader2, Gavel } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, Minus, Loader2 } from 'lucide-react';
 
 const translations = {
   ar: {
@@ -16,6 +16,7 @@ const translations = {
     currentPlan: 'باقتك الحالية',
     upgradeBtn: 'الترقية الآن',
     contactSales: 'تواصل مع المبيعات',
+    successMsg: '🌟 تم تفعيل الباقة وتحديث صلاحيات النظام بنجاح!',
     plans: {
       starter: {
         name: 'Starter B2B',
@@ -70,6 +71,7 @@ const translations = {
     currentPlan: 'Votre plan actuel',
     upgradeBtn: 'Mettre à niveau',
     contactSales: 'Contacter les ventes',
+    successMsg: '🌟 Plan mis à jour avec succès et permissions activées !',
     plans: {
       starter: {
         name: 'Starter B2B',
@@ -111,17 +113,74 @@ const translations = {
         missing: []
       }
     }
+  },
+  en: {
+    title: 'Empire B2B Subscriptions',
+    subtitle: 'Invest in the system that multiplies your sales and protects your margins. Choose excellence.',
+    monthly: 'Monthly',
+    annual: 'Annual',
+    save20: 'Save 20%',
+    currency: 'MAD',
+    mo: '/ month',
+    yr: '/ year',
+    currentPlan: 'Your current plan',
+    upgradeBtn: 'Upgrade Now',
+    contactSales: 'Contact Sales',
+    successMsg: '🌟 Plan successfully updated and permissions enabled!',
+    plans: {
+      starter: {
+        name: 'Starter B2B',
+        desc: 'Ideal for starting, organizing inventory, and issuing legal invoices.',
+        features: [
+          'Centralized inventory management',
+          'Unlimited B2B invoicing',
+          'Up to 50 clients in the system',
+          'Simple analytics dashboard',
+        ],
+        missing: ['Advanced Accounting & CPC', 'Smart Client CRM', 'Live Tenders Radar']
+      },
+      pro: {
+        name: 'Pro ERP',
+        desc: 'Complete system to manage major trade, accounting, CRM, and contracts.',
+        badge: 'Most Popular',
+        features: [
+          'Everything in Starter',
+          'Automated accounting & CPC system',
+          'Smart CRM (Segmentation)',
+          'WhatsApp reminders for collection',
+          'Shared Logistics Optimizer',
+          'Unlimited clients and documents'
+        ],
+        missing: ['SouqBTP Verified Gold Badge', 'Live Tenders Radar']
+      },
+      enterprise: {
+        name: 'Enterprise (Verified)',
+        desc: 'AI power and geographic tender capture for major suppliers.',
+        badge: 'SouqBTP Verified 🛡️',
+        features: [
+          'Everything in Pro ERP',
+          'Gold "Certified Supplier" badge',
+          'Live Geo-localized Tenders Radar',
+          'Proactive Price Prediction Radar',
+          'Dedicated Account Manager & Accountant',
+          'Absolute priority visibility for merchants'
+        ],
+        missing: []
+      }
+    }
   }
 };
 
 export default function SupplierSubscription() {
   const { language } = useSettingsStore();
+  
+  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
+  
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  // الأسعار الاستراتيجية بعد خصم الـ 20%
   const prices = {
     starter: { monthly: 0, annual: 0 },
     pro: { monthly: 499, annual: 4790 },
@@ -132,18 +191,16 @@ export default function SupplierSubscription() {
     setIsSubmitting(true);
     console.log(`تم اختيار الباقة الاستراتيجية: ${tier}`);
     
-    // محاكاة الاتصال ببوابة الدفع أو تحديث حالة الاشتراك
     setTimeout(() => {
       setIsSubmitting(false);
-      alert(language === 'fr' ? '🌟 Plan mis à jour avec succès !' : '🌟 تم تفعيل الباقة وتحديث صلاحيات النظام بنجاح!');
-      navigate('/'); // التوجيه الفوري لمركز القيادة الرئيسي بعد الدفع
+      alert(t.successMsg);
+      navigate('/'); 
     }, 1500);
   };
 
   return (
     <div className="max-w-7xl mx-auto space-y-12 animate-fade-in text-slate-300 pb-10" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 👑 الهيدر الفخم وزر التبديل الذكي */}
       <div className="text-center space-y-6 max-w-3xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight flex justify-center items-center gap-3">
           <Zap className="text-blue-500 animate-pulse" size={40} />
@@ -151,7 +208,6 @@ export default function SupplierSubscription() {
         </h2>
         <p className="text-lg text-slate-400 font-medium leading-relaxed">{t.subtitle}</p>
 
-        {/* زر التبديل شهري/سنوي السلس */}
         <div className="flex items-center justify-center mt-8">
           <div className="bg-slate-900 border border-slate-800 p-1.5 rounded-2xl inline-flex items-center relative select-none">
             <button 
@@ -169,24 +225,23 @@ export default function SupplierSubscription() {
                 {t.save20}
               </span>
             </button>
-            {/* المؤشر الميكانيكي */}
+            
             <div 
               className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-blue-600 rounded-xl transition-all duration-300 ease-out shadow-lg"
-              style={{ left: isAnnual ? 'calc(50% + 3px)' : '6px' }}
+              style={{ [language === 'ar' ? 'right' : 'left']: isAnnual ? 'calc(50% + 3px)' : '6px' }}
             ></div>
           </div>
         </div>
       </div>
 
-      {/* 💳 مصفوفة بطاقات الأسعار الحية */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start mt-12">
         
-        {/* باقة Starter */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 hover:border-slate-700 transition-all duration-300 relative shadow-xl">
+        {/* Starter */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 hover:border-slate-700 transition-all duration-300 relative shadow-xl text-start">
           <h3 className="text-2xl font-black text-white mb-2">{t.plans.starter.name}</h3>
           <p className="text-sm text-slate-400 font-medium h-12 mb-6 leading-relaxed">{t.plans.starter.desc}</p>
           <div className="mb-8">
-            <span className="text-5xl font-black text-white">0</span>
+            <span className="text-5xl font-black text-white" dir="ltr">0</span>
             <span className="text-slate-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
           <button disabled className="w-full py-3.5 bg-slate-800 text-slate-400 font-black rounded-xl cursor-not-allowed border border-slate-700 mb-8 text-sm">
@@ -208,15 +263,15 @@ export default function SupplierSubscription() {
           </div>
         </div>
 
-        {/* باقة Pro ERP */}
-        <div className="bg-slate-900 border-2 border-blue-600 rounded-3xl p-8 relative transform md:-translate-y-4 shadow-2xl shadow-blue-950/40 transition-all duration-300">
+        {/* Pro ERP */}
+        <div className="bg-slate-900 border-2 border-blue-600 rounded-3xl p-8 relative transform md:-translate-y-4 shadow-2xl shadow-blue-950/40 transition-all duration-300 text-start">
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md">
             {t.plans.pro.badge}
           </div>
           <h3 className="text-2xl font-black text-white mb-2">{t.plans.pro.name}</h3>
           <p className="text-sm text-slate-400 font-medium h-12 mb-6 leading-relaxed">{t.plans.pro.desc}</p>
           <div className="mb-8">
-            <span className="text-5xl font-black text-white">
+            <span className="text-5xl font-black text-white" dir="ltr">
               {isAnnual ? prices.pro.annual.toLocaleString() : prices.pro.monthly.toLocaleString()}
             </span>
             <span className="text-slate-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
@@ -244,8 +299,8 @@ export default function SupplierSubscription() {
           </div>
         </div>
 
-        {/* باقة Enterprise (Verified 🛡️) */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/50 rounded-3xl p-8 relative overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.1)] group hover:border-amber-400 transition-all duration-300">
+        {/* Enterprise */}
+        <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/50 rounded-3xl p-8 relative overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.1)] group hover:border-amber-400 transition-all duration-300 text-start">
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none"></div>
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-400 text-black px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-lg shadow-amber-500/20">
             <ShieldCheck size={14} /> {t.plans.enterprise.badge}
@@ -254,7 +309,7 @@ export default function SupplierSubscription() {
           <h3 className="text-2xl font-black text-amber-400 mb-2">{t.plans.enterprise.name}</h3>
           <p className="text-sm text-slate-300 font-medium h-12 mb-6 leading-relaxed relative z-10">{t.plans.enterprise.desc}</p>
           <div className="mb-8 relative z-10">
-            <span className="text-5xl font-black text-white">
+            <span className="text-5xl font-black text-white" dir="ltr">
               {isAnnual ? prices.enterprise.annual.toLocaleString() : prices.enterprise.monthly.toLocaleString()}
             </span>
             <span className="text-slate-400 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>

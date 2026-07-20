@@ -13,7 +13,11 @@ const translations = {
     typeIncome: 'مدخول (+)', typeExpense: 'مصروف (-)',
     empty: 'لا توجد عمليات مالية مسجلة.', loading: 'جاري التحميل...',
     save: 'حفظ العملية', cancel: 'إلغاء', newTransaction: 'عملية مالية جديدة', editTransaction: 'تعديل العملية',
-    currency: 'درهم', confirmDelete: 'هل أنت متأكد من حذف هذه العملية؟'
+    currency: 'درهم', confirmDelete: 'هل أنت متأكد من حذف هذه العملية؟',
+    errorMsg: 'حدث خطأ أثناء الحفظ', placeholderDesignation: 'مثال: مبيعات نقدية، شراء...',
+    delete: 'حذف',
+    statBalance: 'الرصيد الحالي', statIncome: 'إجمالي المداخيل', statExpense: 'إجمالي المصاريف',
+    suggestions: ["مبيعات نقدية", "دفعة من عميل", "سلفة موظف", "راتب", "فاتورة كهرباء", "فاتورة إنترنت", "مصاريف نقل", "شراء مستلزمات", "إيداع بنكي", "سحب بنكي"]
   },
   fr: {
     title: 'Gestion des Caisses', subtitle: 'Suivez les flux de trésorerie, entrées et sorties.',
@@ -23,13 +27,32 @@ const translations = {
     typeIncome: 'Entrée (+)', typeExpense: 'Sortie (-)',
     empty: 'Aucune opération enregistrée.', loading: 'Chargement...',
     save: 'Enregistrer', cancel: 'Annuler', newTransaction: 'Nouvelle Opération', editTransaction: 'Modifier l\'Opération',
-    currency: 'MAD', confirmDelete: 'Voulez-vous vraiment supprimer cette opération ?'
+    currency: 'MAD', confirmDelete: 'Voulez-vous vraiment supprimer cette opération ?',
+    errorMsg: 'Une erreur s\'est produite lors de l\'enregistrement', placeholderDesignation: 'Ex: Vente comptoir, Achat...',
+    delete: 'Supprimer',
+    statBalance: 'SOLDE ACTUEL', statIncome: 'TOTAL ENTRÉES', statExpense: 'TOTAL SORTIES',
+    suggestions: ["Vente Espèce", "Paiement Client", "Avance Employé", "Salaire", "Facture Électricité", "Facture Internet", "Frais de Transport", "Achat Fournitures", "Versement Bancaire", "Retrait Bancaire"]
+  },
+  en: {
+    title: 'Cash Management (Caisses)', subtitle: 'Track cash flow, income, and expenses.',
+    addBtn: 'New Transaction', search: 'Search transaction...',
+    balance: 'Current Balance', income: 'Total Income', expense: 'Total Expenses',
+    designation: 'Description', amount: 'Amount', type: 'Type', date: 'Date', actions: 'Actions',
+    typeIncome: 'Income (+)', typeExpense: 'Expense (-)',
+    empty: 'No transactions recorded.', loading: 'Loading...',
+    save: 'Save Transaction', cancel: 'Cancel', newTransaction: 'New Transaction', editTransaction: 'Edit Transaction',
+    currency: 'MAD', confirmDelete: 'Are you sure you want to delete this transaction?',
+    errorMsg: 'An error occurred while saving', placeholderDesignation: 'Ex: Cash sale, Purchase...',
+    delete: 'Delete',
+    statBalance: 'CURRENT BALANCE', statIncome: 'TOTAL INCOME', statExpense: 'TOTAL EXPENSES',
+    suggestions: ["Cash Sale", "Client Payment", "Employee Advance", "Salary", "Electricity Bill", "Internet Bill", "Transport Fees", "Office Supplies", "Bank Deposit", "Bank Withdrawal"]
   }
 };
 
 export default function Caisses({ isWholesaler }) {
   const { transactions, isLoading, fetchTransactions, addTransaction, updateTransaction, deleteTransaction } = useCaisseStore();
   const { language } = useSettingsStore();
+  // 🛡️ الترياق السحري
   const t = translations[language] || translations['fr'];
 
   const [showModal, setShowModal] = useState(false);
@@ -47,11 +70,7 @@ export default function Caisses({ isWholesaler }) {
   const balance = totalIncome - totalExpense;
   
   const historicalDesignations = safeTransactions.map(tr => tr.designation);
-  const defaultSuggestions = [
-    "Vente Espèce", "Paiement Client", "Avance Employé", "Salaire",
-    "Facture Électricité", "Facture Internet", "Frais de Transport", 
-    "Achat Fournitures", "Versement Bancaire", "Retrait Bancaire"
-  ];
+  const defaultSuggestions = t.suggestions;
   const allSuggestions = [...new Set([...defaultSuggestions, ...historicalDesignations])];
 
   const handleOpenAdd = () => {
@@ -85,7 +104,7 @@ export default function Caisses({ isWholesaler }) {
       setShowModal(false);
       fetchTransactions();
     } catch (error) {
-      alert("حدث خطأ أثناء الحفظ");
+      alert(t.errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -127,9 +146,9 @@ export default function Caisses({ isWholesaler }) {
 
       {/* 🚀 بطاقات الإحصائيات المالية الملونة */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title={language === 'fr' ? 'SOLDE ACTUEL' : 'الرصيد الحالي'} value={balance.toLocaleString()} valueSuffix={t.currency} icon={Wallet} bgGradient={balance >= 0 ? "bg-gradient-to-br from-blue-700 to-blue-500" : "bg-gradient-to-br from-red-600 to-rose-500"} />
-        <StatCard title={language === 'fr' ? 'TOTAL ENTRÉES' : 'إجمالي المداخيل'} value={totalIncome.toLocaleString()} valueSuffix={t.currency} icon={ArrowUpCircle} bgGradient="bg-gradient-to-br from-emerald-500 to-teal-400" />
-        <StatCard title={language === 'fr' ? 'TOTAL SORTIES' : 'إجمالي المصاريف'} value={totalExpense.toLocaleString()} valueSuffix={t.currency} icon={ArrowDownCircle} bgGradient="bg-gradient-to-br from-red-600 to-rose-500" />
+        <StatCard title={t.statBalance} value={balance.toLocaleString()} valueSuffix={t.currency} icon={Wallet} bgGradient={balance >= 0 ? "bg-gradient-to-br from-blue-700 to-blue-500" : "bg-gradient-to-br from-red-600 to-rose-500"} />
+        <StatCard title={t.statIncome} value={totalIncome.toLocaleString()} valueSuffix={t.currency} icon={ArrowUpCircle} bgGradient="bg-gradient-to-br from-emerald-500 to-teal-400" />
+        <StatCard title={t.statExpense} value={totalExpense.toLocaleString()} valueSuffix={t.currency} icon={ArrowDownCircle} bgGradient="bg-gradient-to-br from-red-600 to-rose-500" />
       </div>
 
       {/* 🪟 نافذة إضافة / تعديل */}
@@ -146,7 +165,7 @@ export default function Caisses({ isWholesaler }) {
                 <input 
                   required type="text" list="suggestions" value={formData.designation} onChange={e => setFormData({...formData, designation: e.target.value})} 
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-medium transition-all" 
-                  placeholder="Ex: Vente comptoir, Achat..." autoComplete="off"
+                  placeholder={t.placeholderDesignation} autoComplete="off"
                 />
                 <datalist id="suggestions">
                   {allSuggestions.map((suggestion, index) => (<option key={index} value={suggestion} />))}
@@ -217,7 +236,7 @@ export default function Caisses({ isWholesaler }) {
               ) : filteredTransactions.map(tr => (
                 <tr key={tr.id} className="hover:bg-blue-50/30 transition-colors group">
                   <td className="px-6 py-4 text-gray-500 font-medium text-xs">
-                    {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'ar-MA').format(new Date(tr.date_transaction))}
+                    {new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA').format(new Date(tr.date_transaction))}
                   </td>
                   <td className="px-6 py-4 font-bold text-gray-800">{tr.designation}</td>
                   <td className="px-6 py-4 text-center">
@@ -232,7 +251,7 @@ export default function Caisses({ isWholesaler }) {
                   <td className="px-6 py-4">
                     <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <button onClick={() => handleOpenEdit(tr)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title={t.editTransaction}><Edit size={18}/></button>
-                      <button onClick={() => handleDelete(tr.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Supprimer"><Trash2 size={18}/></button>
+                      <button onClick={() => handleDelete(tr.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title={t.delete}><Trash2 size={18}/></button>
                     </div>
                   </td>
                 </tr>

@@ -4,6 +4,69 @@ import useSettingsStore from '../store/useSettingsStore';
 import { PackageSearch, CheckCircle, XCircle, Clock, Truck, FileSignature, Loader2, Calendar } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
+const translations = {
+  ar: {
+    title: 'الطلبيات الواردة (B2B)',
+    subtitle: 'إدارة طلبات التزويد الواردة من تجار التجزئة.',
+    pendingColumn: 'طلبيات جديدة',
+    confirmedColumn: 'بانتظار التوقيع',
+    signedColumn: 'جاهز للشحن',
+    articles: 'منتجات',
+    client: 'العميل (التاجر)',
+    acceptBtn: 'قبول الطلبية',
+    rejectBtn: 'رفض وإلغاء هذه الطلبية',
+    waitingSignature: 'بانتظار توقيع التاجر',
+    readyToShip: 'موقع - جاهز للشحن',
+    confirmAccept: 'هل أنت متأكد من قبول هذه الطلبية؟',
+    confirmReject: 'هل تريد رفض وإلغاء هذه الطلبية؟',
+    noPending: 'لا توجد طلبات جديدة',
+    noConfirmed: 'لا توجد طلبات قيد الانتظار',
+    noSigned: 'لا توجد عقود جاهزة',
+    currency: 'DH',
+    loading: 'جاري التحميل...'
+  },
+  fr: {
+    title: 'Commandes Reçues (B2B)',
+    subtitle: 'Gérez les demandes d\'approvisionnement de vos détaillants.',
+    pendingColumn: 'Nouvelles Commandes',
+    confirmedColumn: 'Attente Signature',
+    signedColumn: 'Prêt à l\'Expédition',
+    articles: 'Articles',
+    client: 'Client (Détaillant)',
+    acceptBtn: 'Accepter la commande',
+    rejectBtn: 'Rejeter la commande',
+    waitingSignature: 'En attente de signature client',
+    readyToShip: 'Contrat Signé - Prêt à expédier',
+    confirmAccept: 'Accepter cette commande ?',
+    confirmReject: 'Rejeter cette commande ?',
+    noPending: 'Aucune nouvelle commande',
+    noConfirmed: 'Aucune commande en attente',
+    noSigned: 'Aucun contrat signé',
+    currency: 'DH',
+    loading: 'Chargement...'
+  },
+  en: {
+    title: 'Received Orders (B2B)',
+    subtitle: 'Manage supply requests from your retailers.',
+    pendingColumn: 'New Orders',
+    confirmedColumn: 'Awaiting Signature',
+    signedColumn: 'Ready to Ship',
+    articles: 'Items',
+    client: 'Client (Retailer)',
+    acceptBtn: 'Accept Order',
+    rejectBtn: 'Reject Order',
+    waitingSignature: 'Awaiting client signature',
+    readyToShip: 'Signed - Ready to Ship',
+    confirmAccept: 'Accept this order?',
+    confirmReject: 'Reject and cancel this order?',
+    noPending: 'No new orders',
+    noConfirmed: 'No pending orders',
+    noSigned: 'No ready contracts',
+    currency: 'DH',
+    loading: 'Loading...'
+  }
+};
+
 export default function SupplierOrders() {
   const [orders, setOrders] = useState([]);
   const [merchants, setMerchants] = useState({});
@@ -11,6 +74,9 @@ export default function SupplierOrders() {
   const [processingId, setProcessingId] = useState(null);
   
   const { language } = useSettingsStore();
+  
+  // 🛡️ الترياق السحري للترجمة
+  const t = translations[language] || translations['fr'];
 
   useEffect(() => {
     fetchOrders();
@@ -60,9 +126,8 @@ export default function SupplierOrders() {
     if (data) setMerchants(prev => ({ ...prev, [id]: data }));
   };
 
-  // 🌟 دالة الموافقة على الطلب (تغيير الحالة إلى confirmed)
   const handleApprove = async (id) => {
-    if (!window.confirm(language === 'fr' ? 'Accepter cette commande ?' : 'هل أنت متأكد من قبول هذه الطلبية؟')) return;
+    if (!window.confirm(t.confirmAccept)) return;
     setProcessingId(id);
     try {
       await supabase.from('supply_requests').update({ status: 'confirmed' }).eq('id', id);
@@ -76,9 +141,8 @@ export default function SupplierOrders() {
     }
   };
 
-  // دالة الرفض
   const handleReject = async (id) => {
-    if (!window.confirm(language === 'fr' ? 'Rejeter cette commande ?' : 'هل تريد رفض وإلغاء هذه الطلبية؟')) return;
+    if (!window.confirm(t.confirmReject)) return;
     setProcessingId(id);
     try {
       await supabase.from('supply_requests').update({ status: 'rejected' }).eq('id', id);
@@ -90,72 +154,73 @@ export default function SupplierOrders() {
     }
   };
 
-  // تقسيم الطلبات حسب الحالة
   const pendingOrders = orders.filter(o => o.status === 'pending');
   const confirmedOrders = orders.filter(o => o.status === 'confirmed');
   const signedOrders = orders.filter(o => o.status === 'signed');
 
   const OrderCard = ({ req, type }) => {
     const merchant = merchants[req.merchant_id] || { store_name: '...', phone: '...' };
-    const date = new Date(req.created_at).toLocaleString();
+    const date = new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', {
+      dateStyle: 'short', timeStyle: 'short'
+    }).format(new Date(req.created_at));
 
     return (
-      <div className="bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-2xl p-5 transition-all shadow-lg">
+      <div className="bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-2xl p-5 transition-all shadow-lg text-start">
         <div className="flex justify-between items-start mb-4 border-b border-slate-700 pb-3">
           <div>
-            <h4 className="text-white font-black text-lg">PO #{req.id.split('-')[0].toUpperCase()}</h4>
+            <h4 className="text-white font-black text-lg" dir="ltr">PO #{req.id.split('-')[0].toUpperCase()}</h4>
             <p className="text-xs text-slate-400 font-medium flex items-center gap-1 mt-1"><Calendar size={12}/> {date}</p>
           </div>
-          <div className="text-right">
-            <p className="text-emerald-400 font-black text-xl">{Number(req.total_amount).toLocaleString()} DH</p>
-            <p className="text-xs text-slate-400 font-bold mt-1">{req.items.length} {language === 'fr' ? 'Articles' : 'منتجات'}</p>
+          <div className="text-end">
+            <p className="text-emerald-400 font-black text-xl" dir="ltr">{Number(req.total_amount).toLocaleString()} {t.currency}</p>
+            <p className="text-xs text-slate-400 font-bold mt-1">{req.items.length} {t.articles}</p>
           </div>
         </div>
 
         <div className="mb-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{language === 'fr' ? 'Client (Détaillant)' : 'العميل (التاجر)'}</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t.client}</p>
           <p className="text-white font-bold">{merchant.store_name}</p>
-          <p className="text-slate-400 text-sm">{merchant.phone}</p>
+          <p className="text-slate-400 text-sm" dir="ltr">{merchant.phone}</p>
         </div>
 
         <div className="bg-slate-900/50 rounded-xl p-3 mb-4 max-h-32 overflow-y-auto custom-scrollbar">
           {req.items.map((item, idx) => (
             <div key={idx} className="flex justify-between items-center text-sm mb-1.5 last:mb-0">
               <span className="text-slate-300 font-medium">{item.name}</span>
-              <span className="text-blue-400 font-bold">{item.quantity} U</span>
+              <span className="text-blue-400 font-bold" dir="ltr">{item.quantity} U</span>
             </div>
           ))}
         </div>
 
-        {/* الأزرار حسب الحالة */}
         {type === 'pending' && (
           <div className="flex gap-2">
             <button 
               onClick={() => handleReject(req.id)}
               disabled={processingId === req.id}
               className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl font-bold transition-all flex items-center justify-center"
+              title={t.rejectBtn}
             >
               <XCircle size={20}/>
             </button>
             <button 
               onClick={() => handleApprove(req.id)}
               disabled={processingId === req.id}
-              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-500/20"
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-500/20 text-sm"
             >
-              {processingId === req.id ? <Loader2 className="animate-spin" size={18}/> : <><CheckCircle size={18}/> {language === 'fr' ? 'Accepter la commande' : 'قبول الطلبية'}</>}
+              {processingId === req.id ? <Loader2 className="animate-spin" size={18}/> : <><CheckCircle size={18}/> {t.acceptBtn}</>}
             </button>
           </div>
         )}
 
         {type === 'confirmed' && (
           <div className="w-full py-2.5 bg-orange-500/10 text-orange-400 rounded-xl font-bold flex justify-center items-center gap-2 border border-orange-500/20 text-sm">
-            <Clock size={16}/> {language === 'fr' ? 'En attente de signature client' : 'بانتظار توقيع التاجر'}
+            <Clock size={16}/> {t.waitingSignature}
           </div>
         )}
 
         {type === 'signed' && (
           <div className="w-full py-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl font-bold flex justify-center items-center gap-2 border border-emerald-500/20 text-sm">
-            <FileSignature size={16}/> {language === 'fr' ? 'Contrat Signé - Prêt à expédier' : 'موقع - جاهز للشحن'}
+            <FileSignature size={16}/> {t.readyToShip}
           </div>
         )}
       </div>
@@ -167,10 +232,10 @@ export default function SupplierOrders() {
       <div className="mb-8">
         <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
           <PackageSearch className="text-blue-500" size={32} />
-          {language === 'fr' ? 'Commandes Reçues (B2B)' : 'الطلبيات الواردة (B2B)'}
+          {t.title}
         </h2>
         <p className="text-slate-400 mt-1 font-medium">
-          {language === 'fr' ? 'Gérez les demandes d\'approvisionnement de vos détaillants.' : 'إدارة طلبات التزويد الواردة من تجار التجزئة.'}
+          {t.subtitle}
         </p>
       </div>
 
@@ -179,42 +244,39 @@ export default function SupplierOrders() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* العمود 1: طلبات جديدة */}
           <div className="bg-slate-800/30 rounded-3xl p-5 border border-slate-700/50">
             <h3 className="text-lg font-black text-white flex items-center gap-2 mb-4">
               <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-              {language === 'fr' ? 'Nouvelles Commandes' : 'طلبيات جديدة'}
+              {t.pendingColumn}
               <span className="ml-auto bg-slate-700 text-xs px-2 py-1 rounded-full">{pendingOrders.length}</span>
             </h3>
             <div className="space-y-4">
               {pendingOrders.map(req => <OrderCard key={req.id} req={req} type="pending" />)}
-              {pendingOrders.length === 0 && <p className="text-slate-500 text-sm text-center py-4">{language === 'fr' ? 'Aucune nouvelle commande' : 'لا توجد طلبات جديدة'}</p>}
+              {pendingOrders.length === 0 && <p className="text-slate-500 text-sm text-center py-4">{t.noPending}</p>}
             </div>
           </div>
 
-          {/* العمود 2: بانتظار التوقيع */}
           <div className="bg-slate-800/30 rounded-3xl p-5 border border-slate-700/50">
             <h3 className="text-lg font-black text-white flex items-center gap-2 mb-4">
               <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-              {language === 'fr' ? 'Attente Signature' : 'بانتظار التوقيع'}
+              {t.confirmedColumn}
               <span className="ml-auto bg-slate-700 text-xs px-2 py-1 rounded-full">{confirmedOrders.length}</span>
             </h3>
             <div className="space-y-4">
               {confirmedOrders.map(req => <OrderCard key={req.id} req={req} type="confirmed" />)}
-              {confirmedOrders.length === 0 && <p className="text-slate-500 text-sm text-center py-4">{language === 'fr' ? 'Aucune commande en attente' : 'لا توجد طلبات قيد الانتظار'}</p>}
+              {confirmedOrders.length === 0 && <p className="text-slate-500 text-sm text-center py-4">{t.noConfirmed}</p>}
             </div>
           </div>
 
-          {/* العمود 3: جاهز للشحن */}
           <div className="bg-slate-800/30 rounded-3xl p-5 border border-slate-700/50">
             <h3 className="text-lg font-black text-white flex items-center gap-2 mb-4">
               <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-              {language === 'fr' ? 'Prêt à l\'Expédition' : 'جاهز للشحن'}
+              {t.signedColumn}
               <span className="ml-auto bg-slate-700 text-xs px-2 py-1 rounded-full">{signedOrders.length}</span>
             </h3>
             <div className="space-y-4">
               {signedOrders.map(req => <OrderCard key={req.id} req={req} type="signed" />)}
-              {signedOrders.length === 0 && <p className="text-slate-500 text-sm text-center py-4">{language === 'fr' ? 'Aucun contrat signé' : 'لا توجد عقود جاهزة'}</p>}
+              {signedOrders.length === 0 && <p className="text-slate-500 text-sm text-center py-4">{t.noSigned}</p>}
             </div>
           </div>
 

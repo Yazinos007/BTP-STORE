@@ -12,7 +12,8 @@ const translations = {
     save: 'حفظ التصريح', saving: 'جاري التسجيل...', cancel: 'إلغاء', actions: 'إجراءات', confirmDelete: 'حذف هذا التصريح نهائياً؟',
     history: 'سجل التصاريح الجبائية', empty: 'لا توجد تصاريح مسجلة.', currency: 'درهم', loading: 'جاري التحميل...',
     status: 'الحالة', statusPending: 'قيد الانتظار', statusPaid: 'تم الأداء', searchPlaceholder: 'ابحث بالفترة...',
-    module: 'وحدة المحاسبة', tvaColShort: 'TVA المحصلة', tvaDedShort: 'TVA قابلة للخصم', netPay: 'الصافي للأداء'
+    module: 'وحدة المحاسبة', tvaColShort: 'TVA المحصلة', tvaDedShort: 'TVA قابلة للخصم', netPay: 'الصافي للأداء',
+    editMode: 'وضع التعديل', placeholderPeriod: 'مثال: T1 - 2026'
   },
   fr: {
     title: 'Système Fiscal', subtitle: 'Gestion et suivi des déclarations de TVA.',
@@ -21,7 +22,18 @@ const translations = {
     save: 'Enregistrer', saving: 'Enregistrement...', cancel: 'Annuler', actions: 'Actions', confirmDelete: 'Supprimer cette déclaration ?',
     history: 'Historique des Déclarations', empty: 'Aucune déclaration enregistrée.', currency: 'MAD', loading: 'Chargement...',
     status: 'Statut', statusPending: 'En attente', statusPaid: 'Payé', searchPlaceholder: 'Rechercher par période...',
-    module: 'Module Comptable', tvaColShort: 'TVA Collectée', tvaDedShort: 'TVA Récup.', netPay: 'Net à Payer'
+    module: 'Module Comptable', tvaColShort: 'TVA Collectée', tvaDedShort: 'TVA Récup.', netPay: 'Net à Payer',
+    editMode: 'Mode Édition', placeholderPeriod: 'Ex: T1 - 2026'
+  },
+  en: {
+    title: 'Fiscal System', subtitle: 'Manage and track VAT declarations.',
+    tvaCollected: 'VAT Collected (Sales)', tvaDeductible: 'VAT Deductible (Purchases)', tvaDue: 'VAT Due (To Pay)',
+    addDec: 'New Declaration', editDec: 'Edit Declaration', period: 'Period (Month/Quarter)', 
+    save: 'Save', saving: 'Saving...', cancel: 'Cancel', actions: 'Actions', confirmDelete: 'Delete this declaration?',
+    history: 'Declarations History', empty: 'No declarations recorded.', currency: 'MAD', loading: 'Loading...',
+    status: 'Status', statusPending: 'Pending', statusPaid: 'Paid', searchPlaceholder: 'Search by period...',
+    module: 'Accounting Module', tvaColShort: 'VAT Collected', tvaDedShort: 'VAT Deduct.', netPay: 'Net to Pay',
+    editMode: 'Edit Mode', placeholderPeriod: 'Ex: Q1 - 2026'
   }
 };
 
@@ -120,7 +132,7 @@ export default function Fiscal({ isWholesaler }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm h-fit relative">
-          {editingId && <div className="absolute top-4 right-4 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md animate-pulse">Mode Édition</div>}
+          {editingId && <div className={`absolute top-4 ${language === 'ar' ? 'left-4' : 'right-4'} text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md animate-pulse`}>{t.editMode}</div>}
           <h3 className="text-lg font-bold mb-6 text-gray-800 flex items-center gap-2 border-b pb-3">
             {editingId ? <Edit size={18} className="text-blue-600" /> : <Plus size={18} className="text-blue-600" />} 
             {editingId ? t.editDec : t.addDec}
@@ -128,7 +140,7 @@ export default function Fiscal({ isWholesaler }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t.period}</label>
-              <input type="text" list="periods-list" required value={formData.period} onChange={(e) => setFormData({...formData, period: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 transition-all" placeholder="Ex: T1 - 2026" autoComplete="off" />
+              <input type="text" list="periods-list" required value={formData.period} onChange={(e) => setFormData({...formData, period: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-gray-50 transition-all" placeholder={t.placeholderPeriod} autoComplete="off" />
               <datalist id="periods-list">{periodSuggestions.map((p, i) => <option key={i} value={p} />)}</datalist>
             </div>
             
@@ -162,9 +174,9 @@ export default function Fiscal({ isWholesaler }) {
             <div className="p-4 bg-gray-50 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-2"><FileCheck size={18} className="text-gray-500" /><h3 className="font-bold text-gray-800">{t.history}</h3></div>
               <div className="relative w-full sm:w-64">
-                <Search size={16} className="absolute top-2.5 left-3 text-gray-400" />
-                <input type="text" placeholder={t.searchPlaceholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm bg-white" />
-              </div>
+              <Search size={16} className={`absolute top-2.5 ${language === 'ar' ? 'right-3' : 'left-3'} text-gray-400`} />
+              <input type="text" placeholder={t.searchPlaceholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full ${language === 'ar' ? 'pr-9 pl-4' : 'pl-9 pr-4'} py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm bg-white`} />
+             </div>
             </div>
             
             {isLoading ? ( <div className="p-8 text-center text-gray-500">{t.loading}</div> ) : filteredDeclarations.length === 0 ? ( <div className="p-12 text-center text-gray-400">{t.empty}</div> ) : (

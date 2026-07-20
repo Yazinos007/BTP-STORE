@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSettingsStore from '../store/useSettingsStore';
-import useSupplierStore from '../store/useSupplierStore'; // 🎯 استيراد متجر المورد للوصول لدالة التحديث
-import { Store, CheckCircle2, Zap, ArrowRight, Minus, Loader2, CreditCard, Shield } from 'lucide-react';
+import useSupplierStore from '../store/useSupplierStore';
+import { Store, CheckCircle2, Zap, ArrowRight, Minus, Loader2, Shield } from 'lucide-react';
 
 const translations = {
   ar: {
@@ -17,6 +17,9 @@ const translations = {
     currentPlan: 'باقتك الحالية',
     upgradeBtn: 'اشترك الآن',
     contactSales: 'تواصل معنا',
+    successMsg: '🌟 تهانينا! تم تفعيل الباقة بنجاح، جميع الأقسام الاحترافية مفتوحة الآن.',
+    errorActivation: 'حدث خطأ أثناء التفعيل، يرجى المحاولة لاحقاً.',
+    errorConnection: 'خطأ في الاتصال بالخادم.',
     plans: {
       basic: {
         name: 'البداية (Basic)',
@@ -71,6 +74,9 @@ const translations = {
     currentPlan: 'Votre plan actuel',
     upgradeBtn: 'S\'abonner',
     contactSales: 'Nous contacter',
+    successMsg: '🌟 Félicitations ! Votre abonnement a été activé avec succès. Toutes les fonctionnalités sont débloquées.',
+    errorActivation: 'Erreur lors de l\'activation. Veuillez réessayer plus tard.',
+    errorConnection: 'Erreur de connexion au serveur.',
     plans: {
       basic: {
         name: 'Basic POS',
@@ -112,12 +118,69 @@ const translations = {
         missing: []
       }
     }
+  },
+  en: {
+    title: 'Take Your Store to the Next Level',
+    subtitle: 'Move from traditional to smart digital management. Choose the plan that multiplies your sales and secures your money.',
+    monthly: 'Monthly',
+    annual: 'Annually',
+    save20: 'Save 20%',
+    currency: 'MAD',
+    mo: '/ month',
+    yr: '/ year',
+    currentPlan: 'Your current plan',
+    upgradeBtn: 'Subscribe Now',
+    contactSales: 'Contact Us',
+    successMsg: '🌟 Congratulations! Your subscription has been successfully activated. All pro features are now unlocked.',
+    errorActivation: 'Error during activation. Please try again later.',
+    errorConnection: 'Connection error to the server.',
+    plans: {
+      basic: {
+        name: 'Basic POS',
+        desc: 'Ideal for small shops to manage daily sales simply.',
+        features: [
+          'Fast Point of Sale (POS)',
+          'Basic inventory management',
+          'Register up to 50 clients',
+          'Print invoices and receipts',
+        ],
+        missing: ['Credit management', 'Smart CRM (WhatsApp)', 'Multi-Caisses']
+      },
+      premium: {
+        name: 'Premium Shop',
+        badge: 'Most Popular',
+        desc: 'The complete solution to manage credits, clients, and multiply profits.',
+        features: [
+          'All Basic features',
+          'Precise credit tracking',
+          'CRM System (Segmentation)',
+          'Automated WhatsApp reminders',
+          'Daily expenses management',
+          'Unlimited clients and products'
+        ],
+        missing: ['Advanced tax reports', 'Human Resources (HR)']
+      },
+      pro: {
+        name: 'Pro Retailer',
+        badge: 'For Large Stores',
+        desc: 'A complete ERP system for high-traffic stores.',
+        features: [
+          'All Premium features',
+          'Accounting and Taxation',
+          'HR management and employee advances',
+          'Multi-Caisses management',
+          'Direct export for Accountant',
+          'Priority 24/7 support'
+        ],
+        missing: []
+      }
+    }
   }
 };
 
 export default function RetailerSubscription() {
   const { language } = useSettingsStore();
-  const { updateProfile } = useSupplierStore(); // 🎯 سحب دالة التحديث من المتجر
+  const { updateProfile } = useSupplierStore();
   const t = translations[language] || translations['fr'];
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,26 +192,20 @@ export default function RetailerSubscription() {
     pro: { monthly: 299, annual: 2870 } 
   };
 
-  // 🎯 الدالة الحقيقية لترقية الحساب
   const handleSubscribe = async (tier) => {
     setIsSubmitting(true);
     try {
-      // إرسال طلب الترقية لقاعدة البيانات (تغيير نوع الباقة)
       const result = await updateProfile({ tier: tier });
       
       if (result.success) {
-        alert(language === 'fr' 
-          ? '🌟 Félicitations ! Votre abonnement a été activé avec succès. Toutes les fonctionnalités sont débloquées.' 
-          : '🌟 تهانينا! تم تفعيل الباقة بنجاح، جميع الأقسام الاحترافية مفتوحة الآن.');
-        
-        // إعادة التوجيه للصفحة الرئيسية ليرى الأقسام الجديدة
+        alert(t.successMsg);
         navigate('/'); 
       } else {
-        alert(language === 'fr' ? 'Erreur lors de l\'activation.' : 'حدث خطأ أثناء التفعيل، يرجى المحاولة لاحقاً.');
+        alert(t.errorActivation);
       }
     } catch (error) {
       console.error(error);
-      alert(language === 'fr' ? 'Erreur de connexion.' : 'خطأ في الاتصال بالخادم.');
+      alert(t.errorConnection);
     } finally {
       setIsSubmitting(false);
     }
@@ -172,12 +229,14 @@ export default function RetailerSubscription() {
               {t.annual}
               <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${isAnnual ? 'bg-emerald-500 text-white shadow-sm' : 'bg-emerald-100 text-emerald-600'}`}>{t.save20}</span>
             </button>
-            <div className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white border border-gray-200 rounded-xl transition-all duration-300 ease-out shadow-sm" style={{ left: isAnnual ? 'calc(50% + 3px)' : '6px' }}></div>
+            {/* 🎯 تعديل اتجاه التبديل ليتوافق مع اللغة العربية RTL */}
+            <div className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white border border-gray-200 rounded-xl transition-all duration-300 ease-out shadow-sm" style={{ [language === 'ar' ? 'right' : 'left']: isAnnual ? 'calc(50% + 3px)' : '6px' }}></div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start mt-12">
+        {/* Basic Plan */}
         <div className="bg-white border border-gray-200 rounded-3xl p-8 hover:shadow-lg transition-all duration-300 relative">
           <h3 className="text-2xl font-black text-gray-900 mb-2">{t.plans.basic.name}</h3>
           <p className="text-sm text-gray-500 font-medium h-12 mb-6 leading-relaxed">{t.plans.basic.desc}</p>
@@ -196,6 +255,7 @@ export default function RetailerSubscription() {
           </div>
         </div>
 
+        {/* Premium Plan */}
         <div className="bg-white border-2 border-blue-600 rounded-3xl p-8 relative transform md:-translate-y-4 shadow-2xl shadow-blue-900/10 transition-all duration-300">
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md">{t.plans.premium.badge}</div>
           <h3 className="text-2xl font-black text-gray-900 mb-2 flex items-center gap-2">{t.plans.premium.name}</h3>
@@ -204,7 +264,6 @@ export default function RetailerSubscription() {
             <span className="text-5xl font-black text-blue-600">{isAnnual ? prices.premium.annual.toLocaleString() : prices.premium.monthly.toLocaleString()}</span>
             <span className="text-gray-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
-          {/* 🎯 ربط زر Premium بالدالة */}
           <button onClick={() => handleSubscribe('pro')} disabled={isSubmitting} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm">
             {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <><Zap size={18} className="fill-white" /> {t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} /></>}
           </button>
@@ -218,6 +277,7 @@ export default function RetailerSubscription() {
           </div>
         </div>
 
+        {/* Pro Plan */}
         <div className="bg-gray-50 border border-gray-200 rounded-3xl p-8 relative hover:shadow-xl transition-all duration-300">
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md">{t.plans.pro.badge}</div>
           <h3 className="text-2xl font-black text-gray-900 mb-2">{t.plans.pro.name}</h3>
@@ -226,9 +286,8 @@ export default function RetailerSubscription() {
             <span className="text-5xl font-black text-gray-900">{isAnnual ? prices.pro.annual.toLocaleString() : prices.pro.monthly.toLocaleString()}</span>
             <span className="text-gray-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
-          {/* 🎯 ربط زر Pro (Enterprise) بالدالة */}
           <button onClick={() => handleSubscribe('enterprise')} disabled={isSubmitting} className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black rounded-xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 text-sm">
-            {isSubmitting ? <Loader2 size={18} className="animate-spin text-white" /> : <><Shield size={16} /> {t.contactSales} (S'abonner)</>}
+            {isSubmitting ? <Loader2 size={18} className="animate-spin text-white" /> : <><Shield size={16} /> {t.upgradeBtn}</>}
           </button>
           <div className="space-y-4">
             {t.plans.pro.features.map((feat, i) => (

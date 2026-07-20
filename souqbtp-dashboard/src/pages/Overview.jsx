@@ -20,7 +20,8 @@ const translations = {
     payroll: 'كتلة الأجور', cashBalance: 'رصيد الصناديق', netProfit: 'النتيجة الصافية',
     chartTitle: 'تطور المبيعات (الـ 6 أشهر الأخيرة)', stockAlerts: 'تنبيهات المخزون', outOfStock: 'نفد تماماً',
     lowStock: 'باقي', perfectStock: 'مخزونك في حالة ممتازة!',
-    upgradeTitle: 'ارتقِ بمتجرك إلى مستوى Enterprise 🚀', upgradeDesc: 'افتح جميع الميزات الاحترافية: المحاسبة، إدارة الموارد البشرية، وتعدد الصناديق.', upgradeBtn: 'الترقية الآن'
+    upgradeTitle: 'ارتقِ بمتجرك إلى مستوى Enterprise 🚀', upgradeDesc: 'افتح جميع الميزات الاحترافية: المحاسبة، إدارة الموارد البشرية، وتعدد الصناديق.', upgradeBtn: 'الترقية الآن',
+    salesLabel: 'مبيعات'
   },
   fr: {
     title: 'Tableau de Bord', subtitle: 'Analyses, prévisions intelligentes et performances.',
@@ -30,7 +31,19 @@ const translations = {
     payroll: 'Masse Salariale', cashBalance: 'Solde des Caisses', netProfit: 'Résultat Net',
     chartTitle: 'Évolution des Ventes (6 derniers mois)', stockAlerts: 'Alertes de Stock', outOfStock: 'Rupture',
     lowStock: 'Reste', perfectStock: 'Votre stock est en parfait état !',
-    upgradeTitle: 'Passez au niveau Enterprise 🚀', upgradeDesc: 'Débloquez toutes les fonctionnalités : Comptabilité, RH, et Multi-caisses.', upgradeBtn: 'Passer à l\'Enterprise'
+    upgradeTitle: 'Passez au niveau Enterprise 🚀', upgradeDesc: 'Débloquez toutes les fonctionnalités : Comptabilité, RH, et Multi-caisses.', upgradeBtn: 'Passer à l\'Enterprise',
+    salesLabel: 'Ventes'
+  },
+  en: {
+    title: 'Dashboard', subtitle: 'Analytics, smart forecasts, and store performance summary.',
+    activeProds: 'Active Products', prodUnit: 'Products', inventory: 'Inventory Value', currency: 'MAD',
+    activeOrders: 'Pending Orders', orderUnit: 'Orders', revenue: 'Total Sales',
+    debts: 'Customer Debts', expenses: 'Total Expenses', hr: 'Active Employees', empUnit: 'Employees',
+    payroll: 'Payroll', cashBalance: 'Cash Balance', netProfit: 'Net Profit',
+    chartTitle: 'Sales Evolution (Last 6 Months)', stockAlerts: 'Stock Alerts', outOfStock: 'Out of stock',
+    lowStock: 'Remaining', perfectStock: 'Your stock is in perfect condition!',
+    upgradeTitle: 'Upgrade to Enterprise 🚀', upgradeDesc: 'Unlock all pro features: Accounting, HR, and Multi-Cashier.', upgradeBtn: 'Upgrade Now',
+    salesLabel: 'Sales'
   }
 };
 
@@ -110,6 +123,8 @@ export default function Overview() {
   const dynamicChartData = useMemo(() => {
     const monthsAr = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
     const monthsFr = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; // ✅ إضافة أسماء الأشهر بالإنجليزية
+    
     const safeOrders = Array.isArray(orders) ? orders : [];
     const data = [];
 
@@ -127,10 +142,15 @@ export default function Overview() {
         })
         .reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
 
-      data.push({ nameAr: monthsAr[mIndex], nameFr: monthsFr[mIndex], مبيعات: monthRevenue });
+      data.push({ 
+        nameAr: monthsAr[mIndex], 
+        nameFr: monthsFr[mIndex], 
+        nameEn: monthsEn[mIndex], // ✅ استخدام مصفوفة الإنجليزية
+        [t.salesLabel]: monthRevenue 
+      });
     }
     return data;
-  }, [orders]);
+  }, [orders, language]); // ✅ أضفنا language لضمان تحديث الرسم عند تغيير اللغة
 
   const safeProducts = Array.isArray(products) ? products : [];
   const criticalStock = safeProducts.filter(p => p.stock_quantity <= 5 && p.stock_quantity > 0);
@@ -220,10 +240,16 @@ export default function Overview() {
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={dynamicChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey={language === 'ar' ? 'nameAr' : 'nameFr'} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 13, fontWeight: 600 }} dy={10} />
+                  <XAxis 
+                    dataKey={language === 'ar' ? 'nameAr' : language === 'en' ? 'nameEn' : 'nameFr'} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 13, fontWeight: 600 }} 
+                    dy={10} 
+                  />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                   <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                  <Bar dataKey="مبيعات" fill="url(#colorUv)" radius={[6, 6, 0, 0]} barSize={45} />
+                  <Bar dataKey={t.salesLabel} fill="url(#colorUv)" radius={[6, 6, 0, 0]} barSize={45} />
                   <defs>
                     <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#2563EB" stopOpacity={1}/>

@@ -13,7 +13,15 @@ const translations = {
     totalTVA: 'قيمة الضريبة (TVA)', totalTTC: 'الإجمالي (TTC)',
     save: 'حفظ المستند', saving: 'جاري الحفظ...', history: 'سجل سندات الإرجاع', date: 'التاريخ',
     status: 'الحالة', actions: 'إجراءات', empty: 'لا توجد سندات إرجاع مسجلة.',
-    pending: 'قيد الانتظار', refunded: 'تم الإرجاع', cancelled: 'ملغى', print: 'طباعة'
+    pending: 'قيد الانتظار', refunded: 'تم الإرجاع', cancelled: 'ملغى', print: 'طباعة',
+    clientPlaceholder: 'اسم العميل...', productPlaceholder: 'مثال: إسمنت، حديد...',
+    errorMsg: 'خطأ: ', loading: 'جاري التحميل...',
+    markRefunded: 'تعيين كـ "تم الإرجاع"', cancel: 'إلغاء',
+    printAddress: 'عنوان الشركة', printInvoiceType: "سند إرجاع (AVOIR)",
+    printDate: 'التاريخ:', printAvoirFor: 'سند إرجاع لصالح:',
+    printDesignation: 'البيان', printQty: 'الكمية', printUP: 'سعر الوحدة', printTotalHT: 'الإجمالي (HT)',
+    printNet: 'الصافي للخصم (TTC)',
+    printFooter: 'هذا المستند يلغي ويعوض الفاتورة السابقة للمواد المذكورة.'
   },
   fr: {
     title: 'Avoirs (Factures d\'Avoir)', subtitle: 'Créez et imprimez vos avoirs clients.',
@@ -23,7 +31,33 @@ const translations = {
     totalTVA: 'TVA', totalTTC: 'Total TTC',
     save: 'Enregistrer l\'Avoir', saving: 'Enregistrement...', history: 'Historique des Avoirs', date: 'Date',
     status: 'Statut', actions: 'Actions', empty: 'Aucun avoir enregistré.',
-    pending: 'En attente', refunded: 'Remboursé / Déduit', cancelled: 'Annulé', print: 'Imprimer'
+    pending: 'En attente', refunded: 'Remboursé / Déduit', cancelled: 'Annulé', print: 'Imprimer',
+    clientPlaceholder: 'Nom du Client...', productPlaceholder: 'Ex: Ciment Portland...',
+    errorMsg: 'Erreur: ', loading: 'Chargement...',
+    markRefunded: 'Marquer Remboursé', cancel: 'Annuler',
+    printAddress: 'Adresse de l\'entreprise', printInvoiceType: "FACTURE D'AVOIR",
+    printDate: 'Date:', printAvoirFor: 'Avoir pour :',
+    printDesignation: 'Désignation', printQty: 'Qté', printUP: 'Prix U. HT', printTotalHT: 'Total HT',
+    printNet: 'Net à déduire TTC',
+    printFooter: 'Ce document annule et remplace la facturation précédente pour les articles mentionnés.'
+  },
+  en: {
+    title: 'Credit Notes (Avoir)', subtitle: 'Create and print credit notes for your clients.',
+    newAvoir: 'Create New Credit Note', clientName: 'Client Name',
+    tvaRate: 'VAT Rate (%)', addLine: 'Add Item', designation: 'Description',
+    qty: 'Quantity', price: 'Unit Price', totalHT: 'Total (HT)',
+    totalTVA: 'VAT Amount', totalTTC: 'Total (TTC)',
+    save: 'Save Document', saving: 'Saving...', history: 'Credit Notes History', date: 'Date',
+    status: 'Status', actions: 'Actions', empty: 'No credit notes registered.',
+    pending: 'Pending', refunded: 'Refunded / Deducted', cancelled: 'Cancelled', print: 'Print',
+    clientPlaceholder: 'Client Name...', productPlaceholder: 'Ex: Portland Cement...',
+    errorMsg: 'Error: ', loading: 'Loading...',
+    markRefunded: 'Mark as Refunded', cancel: 'Cancel',
+    printAddress: 'Company Address', printInvoiceType: "CREDIT NOTE (AVOIR)",
+    printDate: 'Date:', printAvoirFor: 'Credit Note for:',
+    printDesignation: 'Description', printQty: 'Qty', printUP: 'Unit Price', printTotalHT: 'Total HT',
+    printNet: 'Net to Deduct TTC',
+    printFooter: 'This document cancels and replaces the previous invoice for the mentioned items.'
   }
 };
 
@@ -31,6 +65,7 @@ export default function Avoir() {
   const { creditNotes, isLoading, fetchAvoirs, createAvoir, updateStatus } = useAvoirStore();
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
+  // 🛡️ الترياق السحري
   const t = translations[language] || translations['fr'];
 
   const [clientName, setClientName] = useState('');
@@ -66,7 +101,7 @@ export default function Avoir() {
       setClientName('');
       setItems([{ id: Date.now(), designation: '', qty: 1, price: 0 }]);
     } else {
-      alert("Erreur: " + result.error);
+      alert(t.errorMsg + result.error);
     }
     setIsSaving(false);
   };
@@ -80,7 +115,7 @@ export default function Avoir() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">{t.title}</h2>
         <p className="text-gray-500 mt-1">{t.subtitle}</p>
@@ -90,22 +125,22 @@ export default function Avoir() {
         <div className="lg:col-span-2 bg-white border border-gray-100 rounded-xl shadow-sm p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-4"><FileText size={20} className="text-rose-600"/> {t.newAvoir}</h3>
           
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">{t.clientName}</label>
-          <input 
-            type="text" 
-            list="clients-list" 
-            value={clientName} 
-            onChange={(e) => setClientName(e.target.value)} 
-            className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" 
-            placeholder="Nom du Client..." 
-            autoComplete="off"
-          />
-          <datalist id="clients-list">
-            {clientSuggestions.map((name, i) => <option key={i} value={name} />)}
-          </datalist>
-        </div>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">{t.clientName}</label>
+              <input 
+                type="text" 
+                list="clients-list" 
+                value={clientName} 
+                onChange={(e) => setClientName(e.target.value)} 
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" 
+                placeholder={t.clientPlaceholder}
+                autoComplete="off"
+              />
+              <datalist id="clients-list">
+                {clientSuggestions.map((name, i) => <option key={i} value={name} />)}
+              </datalist>
+            </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1">{t.tvaRate}</label>
               <select value={tvaRate} onChange={(e) => setTvaRate(Number(e.target.value))} className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-rose-500 bg-white">
@@ -123,17 +158,17 @@ export default function Avoir() {
             </div>
             {items.map((item) => (
               <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-6">
-            <input 
-              type="text" 
-              list="products-list" 
-              value={item.designation} 
-              onChange={(e) => handleItemChange(item.id, 'designation', e.target.value)} 
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm" 
-              placeholder="Ex: Ciment Portland..." 
-              autoComplete="off"
-            />
-            </div>
+                <div className="col-span-6">
+                  <input 
+                    type="text" 
+                    list="products-list" 
+                    value={item.designation} 
+                    onChange={(e) => handleItemChange(item.id, 'designation', e.target.value)} 
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm" 
+                    placeholder={t.productPlaceholder}
+                    autoComplete="off"
+                  />
+                </div>
                 <div className="col-span-2"><input type="number" min="1" value={item.qty} onChange={(e) => handleItemChange(item.id, 'qty', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-rose-500 text-center text-sm" /></div>
                 <div className="col-span-3"><input type="number" min="0" step="0.01" value={item.price} onChange={(e) => handleItemChange(item.id, 'price', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-rose-500 text-center text-sm" /></div>
                 <div className="col-span-1 text-center"><button onClick={() => handleRemoveItem(item.id)} className="text-red-400 hover:text-red-600 p-2"><Trash2 size={16}/></button></div>
@@ -141,17 +176,17 @@ export default function Avoir() {
             ))}
             <button onClick={handleAddItem} className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:text-rose-800 mt-2"><Plus size={16}/> {t.addLine}</button>
             <datalist id="products-list">
-            {productSuggestions.map((prod, i) => <option key={i} value={prod} />)}
+              {productSuggestions.map((prod, i) => <option key={i} value={prod} />)}
             </datalist>
           </div>
 
-          <div className="border-t border-gray-100 pt-4 flex flex-col items-end space-y-2">
+          <div className={`border-t border-gray-100 pt-4 flex flex-col ${language === 'ar' ? 'items-start' : 'items-end'} space-y-2`}>
             <div className="w-64 flex justify-between text-gray-600 font-medium"><span>{t.totalHT} :</span> <span>-{totalHT.toFixed(2)}</span></div>
             <div className="w-64 flex justify-between text-gray-600 font-medium"><span>{t.totalTVA} :</span> <span>-{tvaAmount.toFixed(2)}</span></div>
             <div className="w-64 flex justify-between text-xl font-black text-rose-600 border-t border-gray-800 pt-2 mt-2"><span>{t.totalTTC} :</span> <span>-{totalTTC.toFixed(2)}</span></div>
           </div>
 
-          <div className="mt-8 flex justify-end">
+          <div className={`mt-8 flex ${language === 'ar' ? 'justify-start' : 'justify-end'}`}>
             <button onClick={handleSaveAvoir} disabled={!isFormValid || isSaving} className="bg-rose-600 hover:bg-rose-700 disabled:bg-gray-400 text-white font-bold py-3 px-8 rounded-lg transition-colors">
               {isSaving ? t.saving : t.save}
             </button>
@@ -165,12 +200,12 @@ export default function Avoir() {
               <div key={avoir.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-bold text-gray-800 text-sm truncate w-32">{avoir.client_name}</h4>
-                  <span className="text-xs text-gray-400">{new Date(avoir.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-gray-400">{new Date(avoir.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'en' ? 'en-US' : 'fr-FR')}</span>
                 </div>
                 <div className="flex justify-between items-end">
                   {getStatusBadge(avoir.status)}
                   <div className="text-end">
-                    <p className="font-black text-rose-600 text-sm">-{Number(avoir.total_ttc).toLocaleString()}</p>
+                    <p className="font-black text-rose-600 text-sm" dir="ltr">-{Number(avoir.total_ttc).toLocaleString()}</p>
                     <button onClick={() => setSelectedAvoir(avoir)} className="text-xs text-gray-500 hover:text-gray-800 underline mt-1 flex items-center gap-1 justify-end"><Printer size={12}/> {t.print}</button>
                   </div>
                 </div>
@@ -188,8 +223,8 @@ export default function Avoir() {
               <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold transition-colors"><Printer size={18} /> {t.print}</button>
               {selectedAvoir.status === 'pending' && (
                 <>
-                  <button onClick={() => { updateStatus(selectedAvoir.id, 'refunded'); setSelectedAvoir({...selectedAvoir, status: 'refunded'}); }} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors"><CheckCircle size={18} /> Marquer Remboursé</button>
-                  <button onClick={() => { updateStatus(selectedAvoir.id, 'cancelled'); setSelectedAvoir({...selectedAvoir, status: 'cancelled'}); }} className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-bold transition-colors"><XCircle size={18} /> Annuler</button>
+                  <button onClick={() => { updateStatus(selectedAvoir.id, 'refunded'); setSelectedAvoir({...selectedAvoir, status: 'refunded'}); }} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors"><CheckCircle size={18} /> {t.markRefunded}</button>
+                  <button onClick={() => { updateStatus(selectedAvoir.id, 'cancelled'); setSelectedAvoir({...selectedAvoir, status: 'cancelled'}); }} className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-bold transition-colors"><XCircle size={18} /> {t.cancel}</button>
                 </>
               )}
             </div>
@@ -199,43 +234,51 @@ export default function Avoir() {
                 <div>
                   <h1 className="text-4xl font-black text-gray-900 mb-2 uppercase">{supplier?.store_name || 'ENTREPRISE'}</h1>
                   <p className="text-sm text-gray-500">ICE: 123456789012345</p>
-                  <p className="text-sm text-gray-500">Adresse de l'entreprise</p>
+                  <p className="text-sm text-gray-500">{t.printAddress}</p>
                 </div>
-                <div className="text-end">
-                  <h2 className="text-3xl font-light text-rose-800 uppercase tracking-widest mb-2">FACTURE D'AVOIR</h2>
+                <div className={`text-${language === 'ar' ? 'start' : 'end'}`}>
+                  <h2 className="text-3xl font-light text-rose-800 uppercase tracking-widest mb-2">{t.printInvoiceType}</h2>
                   <p className="text-gray-600 font-bold">N° AV-{selectedAvoir.id.slice(0,6).toUpperCase()}</p>
-                  <p className="text-gray-500 text-sm">Date: {new Date(selectedAvoir.created_at).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-gray-500 text-sm">{t.printDate} {new Date(selectedAvoir.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'en' ? 'en-US' : 'fr-FR')}</p>
                 </div>
               </div>
 
-              <div className="mb-10 bg-gray-50 p-6 rounded-lg border border-gray-200 w-1/2 ml-auto text-start" dir="ltr">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Avoir pour :</p>
+              <div className={`mb-10 bg-gray-50 p-6 rounded-lg border border-gray-200 w-1/2 ${language === 'ar' ? 'mr-auto text-end' : 'ml-auto text-start'} `} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t.printAvoirFor}</p>
                 <p className="text-xl font-bold text-gray-900">{selectedAvoir.client_name}</p>
               </div>
 
-              <table className="w-full text-start mb-8 border-collapse" dir="ltr">
+              <table className="w-full text-start mb-8 border-collapse" dir={language === 'ar' ? 'rtl' : 'ltr'}>
                 <thead>
-                  <tr className="bg-rose-800 text-white"><th className="p-3 font-bold text-start">Désignation</th><th className="p-3 font-bold text-center">Qté</th><th className="p-3 font-bold text-end">Prix U. HT</th><th className="p-3 font-bold text-end">Total HT</th></tr>
+                  <tr className="bg-rose-800 text-white">
+                    <th className="p-3 font-bold text-start">{t.printDesignation}</th>
+                    <th className="p-3 font-bold text-center">{t.printQty}</th>
+                    <th className="p-3 font-bold text-end">{t.printUP}</th>
+                    <th className="p-3 font-bold text-end">{t.printTotalHT}</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {selectedAvoir.items.map((item, idx) => (
                     <tr key={idx} className="border-b border-gray-200">
-                      <td className="p-3 text-gray-800">{item.designation}</td><td className="p-3 text-center text-gray-600">{item.qty}</td><td className="p-3 text-end text-gray-600 font-mono">{Number(item.price).toFixed(2)}</td><td className="p-3 text-end text-gray-800 font-bold font-mono">{(item.qty * item.price).toFixed(2)}</td>
+                      <td className="p-3 text-gray-800 text-start">{item.designation}</td>
+                      <td className="p-3 text-center text-gray-600">{item.qty}</td>
+                      <td className="p-3 text-end text-gray-600 font-mono" dir="ltr">{Number(item.price).toFixed(2)}</td>
+                      <td className="p-3 text-end text-gray-800 font-bold font-mono" dir="ltr">{(item.qty * item.price).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <div className="flex justify-end" dir="ltr">
+              <div className={`flex ${language === 'ar' ? 'justify-start' : 'justify-end'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
                 <div className="w-72 space-y-2">
-                  <div className="flex justify-between text-gray-600"><span>Total HT</span><span className="font-mono">-{Number(selectedAvoir.total_ht).toFixed(2)} MAD</span></div>
-                  <div className="flex justify-between text-gray-600"><span>TVA ({selectedAvoir.tva_rate}%)</span><span className="font-mono">-{Number(selectedAvoir.tva_amount).toFixed(2)} MAD</span></div>
-                  <div className="flex justify-between text-xl font-black text-rose-900 border-t-2 border-rose-800 pt-2 mt-2"><span>Net à déduire TTC</span><span className="font-mono">-{Number(selectedAvoir.total_ttc).toFixed(2)} MAD</span></div>
+                  <div className="flex justify-between text-gray-600"><span>{t.printTotalHT}</span><span className="font-mono" dir="ltr">-{Number(selectedAvoir.total_ht).toFixed(2)} MAD</span></div>
+                  <div className="flex justify-between text-gray-600"><span>TVA ({selectedAvoir.tva_rate}%)</span><span className="font-mono" dir="ltr">-{Number(selectedAvoir.tva_amount).toFixed(2)} MAD</span></div>
+                  <div className="flex justify-between text-xl font-black text-rose-900 border-t-2 border-rose-800 pt-2 mt-2"><span>{t.printNet}</span><span className="font-mono" dir="ltr">-{Number(selectedAvoir.total_ttc).toFixed(2)} MAD</span></div>
                 </div>
               </div>
               
               <div className="mt-20 text-center text-sm text-gray-500">
-                <p>Ce document annule et remplace la facturation précédente pour les articles mentionnés.</p>
+                <p>{t.printFooter}</p>
               </div>
             </div>
           </div>

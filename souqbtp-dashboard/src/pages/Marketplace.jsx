@@ -3,17 +3,82 @@ import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import { Search, ShoppingCart, Star, MapPin, Package, Zap, Droplets, PenTool, ArrowRight, Loader2, Store } from 'lucide-react';
 
-// التصنيفات الأساسية
-const categories = [
-  { id: 'all', name: 'الكل', nameFr: 'Tous', icon: <Package size={20} /> },
-  { id: 'gros-oeuvre', name: 'مواد البناء الأساسية', nameFr: 'Gros Œuvre', icon: <Package size={20} /> },
-  { id: 'electricite', name: 'الكهرباء', nameFr: 'Électricité', icon: <Zap size={20} /> },
-  { id: 'plomberie', name: 'السباكة', nameFr: 'Plomberie', icon: <Droplets size={20} /> },
-  { id: 'outillage', name: 'المعدات والأدوات', nameFr: 'Outillage', icon: <PenTool size={20} /> },
-];
+const translations = {
+  ar: {
+    storeNotSpecified: 'لم يتم تحديد المتجر بشكل صحيح.',
+    fetchError: 'تعذر جلب بيانات المتجر أو المورد.',
+    outOfStockAlert: 'عذراً، هذا المنتج غير متوفر في المخزون حالياً!',
+    addedToCart: 'تمت إضافة {product} للسلة!',
+    backToMarket: 'العودة لسوق المهنيين',
+    defaultStore: 'متجر مواد البناء',
+    defaultCity: 'المغرب',
+    wholesaler: 'مورد جملة (B2B)',
+    retailer: 'تاجر تجزئة',
+    searchPlaceholder: 'ابحث في منتجات المتجر...',
+    outOfStock: 'نفذ من المخزون',
+    stock: 'المخزون:',
+    noProducts: 'لا توجد سلع متوفرة حالياً في هذا القسم.',
+    currency: 'درهم',
+    categories: {
+      all: 'الكل',
+      grosOeuvre: 'مواد البناء الأساسية',
+      electricite: 'الكهرباء',
+      plomberie: 'السباكة',
+      outillage: 'المعدات والأدوات'
+    }
+  },
+  fr: {
+    storeNotSpecified: 'Boutique non spécifiée.',
+    fetchError: 'Erreur lors du chargement de la boutique.',
+    outOfStockAlert: 'Ce produit est en rupture de stock !',
+    addedToCart: '{product} ajouté au panier !',
+    backToMarket: 'Retour au marché',
+    defaultStore: 'Magasin de Matériaux',
+    defaultCity: 'Maroc',
+    wholesaler: 'Grossiste B2B',
+    retailer: 'Détaillant',
+    searchPlaceholder: 'Chercher un produit...',
+    outOfStock: 'Rupture',
+    stock: 'Stock:',
+    noProducts: 'Aucun produit disponible dans cette catégorie.',
+    currency: 'MAD',
+    categories: {
+      all: 'Tous',
+      grosOeuvre: 'Gros Œuvre',
+      electricite: 'Électricité',
+      plomberie: 'Plomberie',
+      outillage: 'Outillage'
+    }
+  },
+  en: {
+    storeNotSpecified: 'Store not specified correctly.',
+    fetchError: 'Error loading store data.',
+    outOfStockAlert: 'Sorry, this product is currently out of stock!',
+    addedToCart: '{product} added to cart!',
+    backToMarket: 'Back to Marketplace',
+    defaultStore: 'Building Materials Store',
+    defaultCity: 'Morocco',
+    wholesaler: 'Wholesaler (B2B)',
+    retailer: 'Retailer',
+    searchPlaceholder: 'Search for products...',
+    outOfStock: 'Out of Stock',
+    stock: 'Stock:',
+    noProducts: 'No products currently available in this category.',
+    currency: 'MAD',
+    categories: {
+      all: 'All',
+      grosOeuvre: 'Heavy Construction',
+      electricite: 'Electricity',
+      plomberie: 'Plumbing',
+      outillage: 'Tools & Hardware'
+    }
+  }
+};
 
 export default function Marketplace() {
   const { language } = useSettingsStore();
+  // 🛡️ الترياق السحري
+  const t = translations[language] || translations['fr'];
   const isArabic = language === 'ar';
   
   const [activeCategory, setActiveCategory] = useState('all');
@@ -27,6 +92,15 @@ export default function Marketplace() {
   const [error, setError] = useState(null);
   const [cart, setCart] = useState([]);
 
+  // التصنيفات مبنية داخل المكون لتدعم الترجمة الديناميكية
+  const categories = [
+    { id: 'all', name: t.categories.all, icon: <Package size={20} /> },
+    { id: 'gros-oeuvre', name: t.categories.grosOeuvre, icon: <Package size={20} /> },
+    { id: 'electricite', name: t.categories.electricite, icon: <Zap size={20} /> },
+    { id: 'plomberie', name: t.categories.plomberie, icon: <Droplets size={20} /> },
+    { id: 'outillage', name: t.categories.outillage, icon: <PenTool size={20} /> },
+  ];
+
   useEffect(() => {
     // 1. قراءة معرف المورد من الرابط (URL)
     const queryParams = new URLSearchParams(window.location.search);
@@ -36,17 +110,16 @@ export default function Marketplace() {
       setVendorId(vId);
       fetchVendorStore(vId);
     } else {
-      setError(isArabic ? 'لم يتم تحديد المتجر بشكل صحيح.' : 'Boutique non spécifiée.');
+      setError(t.storeNotSpecified);
       setLoading(false);
     }
-  }, []);
+  }, [language]); // أضفنا language لتحديث الـ error إن تغيرت اللغة
 
   const fetchVendorStore = async (vId) => {
     try {
       setLoading(true);
       setError(null);
       
-      // جلب معلومات المورد الحقيقية من جدول suppliers
       const { data: vendorData, error: vendorError } = await supabase
         .from('suppliers')
         .select('*')
@@ -56,7 +129,6 @@ export default function Marketplace() {
       if (vendorError) throw vendorError;
       setVendorInfo(vendorData);
 
-      // جلب منتجات هذا المورد الحقيقية من جدول products
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
@@ -67,23 +139,21 @@ export default function Marketplace() {
 
     } catch (err) {
       console.error("Error fetching store data:", err);
-      setError(isArabic ? 'تعذر جلب بيانات المتجر أو المورد.' : 'Erreur lors du chargement de la boutique.');
+      setError(t.fetchError);
     } finally {
       setLoading(false);
     }
   };
 
   const addToCart = (product) => {
-    // التحقق من توفر كمية في المخزون قبل الإضافة للسلة
     if (product.stock_quantity <= 0) {
-      alert(isArabic ? 'عذراً، هذا المنتج غير متوفر في المخزون حالياً!' : 'Ce produit est en rupture de stock!');
+      alert(t.outOfStockAlert);
       return;
     }
     setCart([...cart, product]);
-    alert(isArabic ? `تمت إضافة ${product.name} للسلة!` : `${product.name} ajouté au panier!`);
+    alert(t.addedToCart.replace('{product}', product.name));
   };
 
-  // تصفية المنتجات حسب البحث والتصنيف المختار
   const filteredProducts = products.filter(p => {
     const matchesCategory = activeCategory === 'all' || p.category === activeCategory;
     const matchesSearch = p.name?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -100,18 +170,18 @@ export default function Marketplace() {
 
   if (error && !vendorInfo) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4" dir={isArabic ? 'rtl' : 'ltr'}>
         <Store size={64} className="text-gray-300" />
         <h2 className="text-xl font-bold text-gray-700">{error}</h2>
-        <a href="https://souqbtp.ma/app/marketplace.php" className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold">
-          {isArabic ? 'العودة للسوق الأب' : 'Retour au marché'}
+        <a href="https://souqbtp.ma/app/marketplace.php" className="px-6 py-3 bg-blue-600 hover:bg-blue-700 transition-colors text-white rounded-xl font-bold">
+          {t.backToMarket}
         </a>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen bg-slate-50 font-sans ${isArabic ? 'dir-rtl' : 'dir-ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen bg-slate-50 font-sans`} dir={isArabic ? 'rtl' : 'ltr'}>
       
       {/* الهيدر الخاص بمتجر المورد الديناميكي */}
       <div className="bg-gradient-to-r from-[#1e1b4b] via-[#2d2252] to-[#4338ca] pt-8 pb-16 px-6 lg:px-12 relative overflow-hidden shadow-lg">
@@ -120,7 +190,7 @@ export default function Marketplace() {
         <div className="max-w-7xl mx-auto mb-6 relative z-20 flex justify-between items-center">
           <a href="https://souqbtp.ma/app/marketplace.php" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm text-sm font-bold">
              <ArrowRight size={16} className={isArabic ? '' : 'rotate-180'} />
-             {isArabic ? 'العودة لسوق المهنيين' : 'Retour au marché'}
+             {t.backToMarket}
           </a>
 
           <div className="relative bg-white/10 p-3 rounded-full text-white cursor-pointer hover:bg-white/20 transition-all">
@@ -135,17 +205,17 @@ export default function Marketplace() {
 
         {/* عرض بيانات المورد المستخرجة من جدول suppliers */}
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center text-center">
-          <div className="w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center text-4xl font-black text-blue-600 mb-4 border-4 border-white/20 overflow-hidden">
-             {vendorInfo?.store_name ? vendorInfo.store_name.charAt(0).toUpperCase() : 'M'}
+          <div className="w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center text-4xl font-black text-blue-600 mb-4 border-4 border-white/20 overflow-hidden uppercase">
+             {vendorInfo?.store_name ? vendorInfo.store_name.charAt(0) : 'M'}
           </div>
           <h1 className="text-3xl md:text-5xl font-black text-white mb-2 tracking-tight">
-            {vendorInfo?.store_name || 'متجر مواد البناء'}
+            {vendorInfo?.store_name || t.defaultStore}
           </h1>
           <div className="flex items-center gap-4 text-blue-100 font-medium bg-black/20 px-6 py-2 rounded-full">
-            <span className="flex items-center gap-1"><MapPin size={16} /> {vendorInfo?.city || 'المغرب'}</span>
+            <span className="flex items-center gap-1"><MapPin size={16} /> {vendorInfo?.city || t.defaultCity}</span>
             <span>•</span>
             <span className="font-bold">
-              {vendorInfo?.supplier_type === 'wholesale' ? (isArabic ? 'مورد جملة (B2B)' : 'Grossiste B2B') : (isArabic ? 'تاجر تجزئة' : 'Détaillant')}
+              {vendorInfo?.supplier_type === 'wholesale' ? t.wholesaler : t.retailer}
             </span>
           </div>
         </div>
@@ -168,7 +238,7 @@ export default function Marketplace() {
                 }`}
               >
                 {cat.icon}
-                {isArabic ? cat.name : cat.nameFr}
+                {cat.name}
               </button>
             ))}
           </div>
@@ -176,25 +246,25 @@ export default function Marketplace() {
           <div className="relative w-full lg:w-80">
             <input 
               type="text" 
-              placeholder={isArabic ? "ابحث في منتجات المتجر..." : "Chercher un produit..."}
-              className="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+              placeholder={t.searchPlaceholder}
+              className={`w-full bg-slate-50 border border-gray-200 rounded-xl py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition-all ${isArabic ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+            <Search className={`absolute top-3 text-gray-400 ${isArabic ? 'right-3' : 'left-3'}`} size={20} />
           </div>
         </div>
 
         {/* شبكة المنتجات الحقيقية المستخرجة */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative">
+            <div key={product.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative group">
               
               <div className="relative h-48 rounded-2xl overflow-hidden mb-4 bg-gray-100 border border-gray-50 flex items-center justify-center">
                 {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 ) : (
-                  <Package size={40} className="text-slate-300" />
+                  <Package size={40} className="text-slate-300 transition-transform duration-500 group-hover:scale-110" />
                 )}
                 
                 <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold text-yellow-600 shadow-sm flex items-center gap-1">
@@ -203,9 +273,9 @@ export default function Marketplace() {
 
                 {/* قناع حماية في حال نفاد المخزون */}
                 {product.stock_quantity <= 0 && (
-                  <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center">
-                    <span className="bg-red-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg">
-                      {isArabic ? 'نفذ من المخزون' : 'Rupture'}
+                  <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center">
+                    <span className="bg-red-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg border border-red-400">
+                      {t.outOfStock}
                     </span>
                   </div>
                 )}
@@ -218,21 +288,21 @@ export default function Marketplace() {
                 
                 <div className="mt-auto flex items-end justify-between pt-4 border-t border-gray-50">
                   <div>
-                    <p className="text-2xl font-black text-blue-600 leading-none">
-                      {product.price} <span className="text-sm font-bold text-gray-500">MAD</span>
+                    <p className="text-2xl font-black text-blue-600 leading-none font-mono" dir="ltr">
+                      {Number(product.price).toLocaleString()} <span className="text-sm font-bold text-gray-500 uppercase">{t.currency}</span>
                     </p>
                     <p className="text-[11px] font-bold text-slate-400 mt-1">
-                      {isArabic ? `المخزون: ${product.stock_quantity}` : `Stock: ${product.stock_quantity}`}
+                      {t.stock} {product.stock_quantity}
                     </p>
                   </div>
                   
                   <button 
                     onClick={() => addToCart(product)}
                     disabled={product.stock_quantity <= 0}
-                    className={`p-3 rounded-xl transition-colors shadow-md ${
+                    className={`p-3 rounded-xl transition-all ${
                       product.stock_quantity <= 0 
-                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
-                        : 'bg-slate-900 hover:bg-blue-600 text-white'
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                        : 'bg-slate-900 hover:bg-blue-600 text-white shadow-lg hover:shadow-blue-500/30'
                     }`}
                   >
                     <ShoppingCart size={20} />
@@ -244,10 +314,10 @@ export default function Marketplace() {
         </div>
 
         {filteredProducts.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-3xl border border-gray-100">
+          <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
             <Package size={54} className="mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500 font-bold text-lg">
-              {isArabic ? 'لا توجد سلع متوفرة حالياً في هذا القسم.' : 'Aucun produit disponible dans cette catégorie.'}
+              {t.noProducts}
             </p>
           </div>
         )}
