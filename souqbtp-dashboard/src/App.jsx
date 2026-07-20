@@ -63,7 +63,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
     fr: {
       upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste",
       unauthorizedTitle: "Accès Non Autorisé", unauthorizedDesc: "Veuillez vous connecter via le portail principal.", backPortal: "Retour au portail",
-      items: { overview: "Overview", rawSuppliers: "Fournisseurs Matières", rawPurchases: "Achats Matières", stock: "Stock Central", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", settings: "Paramètres & Confiance" }
+      items: { overview: "Aperçu", rawSuppliers: "Fournisseurs Matières", rawPurchases: "Achats Matières", stock: "Stock Central", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", settings: "Paramètres & Confiance" }
     },
     ar: {
       upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة",
