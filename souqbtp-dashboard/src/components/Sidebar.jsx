@@ -69,7 +69,12 @@ const translations = {
 
 export default function Sidebar() {
   const { supplier, isLoading } = useSupplierStore();
-  const { language, toggleLanguage } = useSettingsStore();
+  const { language, setLanguage } = useSettingsStore();
+  const handleLanguageChange = () => {
+  if (language === 'fr') setLanguage('ar');
+  else if (language === 'ar') setLanguage('en');
+  else setLanguage('fr');
+};
   const location = useLocation();
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState({});
@@ -205,11 +210,15 @@ export default function Sidebar() {
             </div>
           </div>
 
-          <button onClick={toggleLanguage} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white flex flex-col items-center justify-center min-w-[48px] cursor-pointer" title={t.changeLangTitle}>
-            <Globe size={20} />
-            <span className="text-[11px] font-bold mt-1 uppercase">{language}</span>
+          <button 
+        onClick={handleLanguageChange}
+        className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white flex flex-col items-center justify-center min-w-[48px] cursor-pointer"
+        title={language === 'ar' ? 'تغيير لغة النظام' : language === 'en' ? 'Change System Language' : 'Changer la langue'}
+        >
+        <Globe size={20} />
+        <span className="text-[11px] font-bold mt-1 uppercase">{language}</span>
           </button>
-        </div>
+            </div>
 
         {supplier?.is_founding_partner && (
           <div className="flex items-center justify-center gap-3 px-4 py-3 mt-1 rounded-xl bg-gradient-to-r from-amber-500/10 via-yellow-500/15 to-orange-500/10 border border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)] relative overflow-hidden group w-full">
