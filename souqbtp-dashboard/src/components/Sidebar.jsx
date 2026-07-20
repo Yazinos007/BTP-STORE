@@ -30,7 +30,7 @@ const translations = {
     changeLangTitle: 'تغيير لغة النظام'
   },
   fr: {
-    overview: 'Vue d\'ensemble', pos: 'Point de Vente (POS)', products: 'Produits',
+    overview: 'Aperçu', pos: 'Point de Vente (POS)', products: 'Produits',
     clients: 'Gestion des Clients',
     orders: 'Commandes', invoices: 'Éditer Factures', expenses: 'Charges et Résultat', wallet: 'Portefeuille', settings: 'Paramètres',
     dashboard: 'Tableau de bord', gestionVentes: 'GESTION DES VENTES', gestionProduits: 'GESTION DES PRODUITS',
