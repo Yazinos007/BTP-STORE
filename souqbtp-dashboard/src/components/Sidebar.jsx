@@ -103,11 +103,10 @@ export default function Sidebar() {
   const enterpriseMenu = [
     { name: t.dashboard, icon: LayoutDashboard, path: '/', alwaysShow: true },
     {
-      group: t.gestionVentes, icon: ShoppingCart, requiredPermission: 'sales',
+      group: t.gestionAchats, icon: Truck, requiredPermission: 'products',
       subItems: [
-        { name: t.pos, path: '/pos' },
-        { name: t.orders, path: '/orders' },
-        { name: t.clients, path: '/clients' }
+        { name: t.fournisseurs, path: '/suppliers' },
+        { name: t.achats, path: '/purchases' }
       ]
     },
     {
@@ -117,10 +116,11 @@ export default function Sidebar() {
       ]
     },
     {
-      group: t.gestionAchats, icon: Truck, requiredPermission: 'products',
+      group: t.gestionVentes, icon: ShoppingCart, requiredPermission: 'sales',
       subItems: [
-        { name: t.fournisseurs, path: '/suppliers' },
-        { name: t.achats, path: '/purchases' }
+        { name: t.pos, path: '/pos' },
+        { name: t.orders, path: '/orders' },
+        { name: t.clients, path: '/clients' }
       ]
     },
     {
@@ -136,20 +136,20 @@ export default function Sidebar() {
       ]
     },
     {
-      group: t.gestionCaisses, icon: Wallet, requiredPermission: 'accounting',
-      subItems: [{ name: t.caisses, path: '/caisses' }]
-    },
-    {
       group: t.rh, icon: Briefcase, requiredPermission: 'hr',
       subItems: [{ name: t.gestionEmployes, path: '/hr' }]
     },
     {
-      group: t.fiscal, icon: Landmark, requiredPermission: 'accounting',
-      subItems: [{ name: t.decTva, path: '/fiscal' }]
+      group: t.gestionCaisses, icon: Wallet, requiredPermission: 'accounting',
+      subItems: [{ name: t.caisses, path: '/caisses' }]
     },
     {
       group: t.chargesEnt, icon: CreditCard, requiredPermission: 'accounting',
       subItems: [{ name: t.gestionCharges, path: '/expenses' }]
+    },
+    {
+      group: t.fiscal, icon: Landmark, requiredPermission: 'accounting',
+      subItems: [{ name: t.decTva, path: '/fiscal' }]
     },
     {
       group: t.accounting, icon: Calculator, requiredPermission: 'accounting',
