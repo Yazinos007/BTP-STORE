@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { 
   Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
-  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe } from 'lucide-react';
+  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart } from 'lucide-react';
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
 import RawMaterialPurchases from './pages/RawMaterialPurchases';
 import SupplierStock from './pages/SupplierStock';
