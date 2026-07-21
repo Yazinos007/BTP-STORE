@@ -204,11 +204,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
             </Link>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-800 shrink-0">
-          <button onClick={() => supabase.auth.signOut()} className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-all cursor-pointer">
-            <LogOut size={20} /> {t.logout}
-          </button>
-        </div>
       </aside>
       <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
