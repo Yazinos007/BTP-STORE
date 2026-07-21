@@ -244,64 +244,53 @@ function App() {
   const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
 
   useEffect(() => {
-    let mounted = true; // 🛡️ لمنع تسرب الذاكرة وتداخل الحالة
-
     const initializeApp = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
         const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token'); // 👈 يجب جلب التوكن الحقيقي للتجديد
+        const refreshToken = params.get('refresh_token'); // جلب الـ refresh token إن وجد في الرابط
 
         if (accessToken) {
-          // بناء إعدادات الجلسة بشكل صحيح
-          const authParams = { access_token: accessToken };
-          if (refreshToken) authParams.refresh_token = refreshToken;
+          // 🚀 السحر هنا: تنظيف الرابط فوراً! إزالة التوكن من الـ URL حتى لا يُعاد استخدامه وهو منتهي عند تحديث الصفحة
+          window.history.replaceState({}, document.title, window.location.pathname);
 
-          const { data, error } = await supabase.auth.setSession(authParams);
+          const { data } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || accessToken 
+          });
           
-          if (error) throw error;
-
           if (data?.session) {
-            if (mounted) setSession(data.session);
+            setSession(data.session);
             await fetchSupplierProfile(data.session.user.id);
           }
-
-          // 🧹 تنظيف الرابط بعد نجاح الدخول (حذف التوكن من الـ URL)
-          // هذا يمنع تسجيل الخروج العشوائي عند تحديث الصفحة (F5)
-          window.history.replaceState({}, document.title, window.location.pathname);
-          
         } else {
-          // جلب الجلسة المحفوظة من المتصفح (localStorage)
+          // استرجاع الجلسة المحفوظة محلياً بثبات
           const { data: { session: currentSession } } = await supabase.auth.getSession();
-          if (mounted) setSession(currentSession);
           if (currentSession?.user) {
+            setSession(currentSession);
             await fetchSupplierProfile(currentSession.user.id);
           }
         }
       } catch (error) {
-        console.error("Session initialization error:", error);
-        if (mounted) setSession(null);
+        console.error("Session Error:", error);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     };
 
     initializeApp();
 
-    // 📡 الاستماع الذكي لتغيرات الجلسة في الخلفية
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      if (mounted) {
+    // 🚀 استماع ذكي للأحداث: لا نغلق الجلسة أبداً إلا إذا كان الحدث 'تسجيل خروج صريح'
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+      } else if (currentSession) {
         setSession(currentSession);
-        if (currentSession?.user) {
-          fetchSupplierProfile(currentSession.user.id);
-        }
+        if (currentSession?.user) fetchSupplierProfile(currentSession.user.id);
       }
     });
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [fetchSupplierProfile]);
   
   if (isStorePage) {
