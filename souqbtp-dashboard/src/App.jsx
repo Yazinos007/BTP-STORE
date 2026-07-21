@@ -46,6 +46,8 @@ import Clients from './pages/Clients';
 import Accounting from './pages/Accounting';
 import ExternalSuppliers from './pages/ExternalSuppliers';
 import Purchases from './pages/Purchases';
+import SupplierPOS from './pages/SupplierPOS';
+import SupplierTeam from './pages/SupplierTeam';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
@@ -63,17 +65,17 @@ const WholesalerDashboard = ({ supplier, children }) => {
     fr: {
       upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste",
       unauthorizedTitle: "Accès Non Autorisé", unauthorizedDesc: "Veuillez vous connecter via le portail principal.", backPortal: "Retour au portail",
-      items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs Matières", rawPurchases: "Achats Matières", stock: "Stock Central", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", settings: "Paramètres & Confiance" }
+      items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs Matières", rawPurchases: "Achats Matières", stock: "Stock Central",posB2B: "Ventes Directes (POS)", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres",team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance", }
     },
     ar: {
       upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة",
       unauthorizedTitle: "الدخول غير مصرح", unauthorizedDesc: "يرجى تسجيل الدخول عبر البوابة الرئيسية.", backPortal: "العودة للمنصة الرئيسية",
-      items: { overview: "لوحة القيادة", rawSuppliers: "موردو المواد الخام", rawPurchases: "مشتريات المواد الخام", stock: "المخزون المركزي", clients: "العملاء والديون (CRM)", orders: "الطلبات الواردة", fleet: "أسطول التوصيل", contracts: "المصافحة الرقمية", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", settings: "الإعدادات والتوثيق" }
+      items: { overview: "لوحة القيادة", rawSuppliers: "موردو المواد الخام", rawPurchases: "مشتريات المواد الخام", stock: "المخزون المركزي",posB2B: "المبيعات المباشرة (POS)", clients: "العملاء والديون (CRM)", orders: "الطلبات الواردة", fleet: "أسطول التوصيل", contracts: "المصافحة الرقمية", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات",team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق", }
     },
     en: {
       upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler",
       unauthorizedTitle: "Unauthorized Access", unauthorizedDesc: "Please log in via the main portal.", backPortal: "Back to Main Portal",
-      items: { overview: "Dashboard", rawSuppliers: "Raw Material Suppliers", rawPurchases: "Raw Material Purchases", stock: "Central Stock", clients: "Clients & Debts (CRM)", orders: "Received Orders", fleet: "Fleet & Deliveries", contracts: "Digital Contracts", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", settings: "Settings & Trust" }
+      items: { overview: "Dashboard", rawSuppliers: "Raw Material Suppliers", rawPurchases: "Raw Material Purchases", stock: "Central Stock",posB2B: "Direct Sales (POS)", clients: "Clients & Debts (CRM)", orders: "Received Orders", fleet: "Fleet & Deliveries", contracts: "Digital Contracts", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar",team: "Users & Permissions", settings: "Settings & Trust", }
     }
   };
   const t = tLayout[language] || tLayout['fr'];
@@ -134,7 +136,8 @@ const WholesalerDashboard = ({ supplier, children }) => {
     { path: '/raw-suppliers', icon: Users, label: t.items.rawSuppliers },
     { path: '/raw-purchases', icon: Receipt, label: t.items.rawPurchases },
     { path: '/stock', icon: Layers, label: t.items.stock }, 
-    { path: '/clients', icon: Users, label: t.items.clients }, 
+    { path: '/clients', icon: Users, label: t.items.clients },
+    { path: '/pos-b2b', icon: ShoppingCart, label: t.items.posB2B }, 
     { path: '/orders', icon: Package, label: t.items.orders, badge: pendingOrdersCount },
     { path: '/fleet', icon: Truck, label: t.items.fleet, badge: readyToShipCount },  
     { path: '/contracts', icon: FileSignature, label: t.items.contracts },
@@ -147,6 +150,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
     { path: '/analytics', icon: BarChart3, label: t.items.analytics },
     { path: '/ai-advisor', icon: Sparkles, label: t.items.ai },
     { path: '/tender-radar', icon: Radar, label: t.items.radar },
+    { path: '/team', icon: Users, label: t.items.team },
     { path: '/settings', icon: Settings, label: t.items.settings }
   ];
 
@@ -342,6 +346,8 @@ function App() {
                 <Route path="/subscription" element={<SupplierSubscription />} />
                 <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
                 <Route path="/raw-purchases" element={<RawMaterialPurchases />} />
+                <Route path="/pos-b2b" element={<SupplierPOS />} />
+                <Route path="/team" element={<SupplierTeam />} />
               </Routes>
             </WholesalerDashboard>
           ) : (
