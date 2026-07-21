@@ -24,7 +24,6 @@ import RetailerSettings from './pages/Settings';
 import RetailerSubscription from './pages/RetailerSubscription';
 import TenderRadar from './pages/TenderRadar';
 import Marketplace from './pages/Marketplace';
-
 import Overview from './pages/Overview';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
@@ -245,39 +244,66 @@ function App() {
   const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
 
   useEffect(() => {
-    const initializeApp = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const accessToken = params.get('access_token');
+    let mounted = true; // 🛡️ لمنع تسرب الذاكرة وتداخل الحالة
 
-      if (accessToken) {
-        const { data } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: accessToken
-        });
-        if (data?.session) {
-          setSession(data.session);
-          await fetchSupplierProfile(data.session.user.id);
+    const initializeApp = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token'); // 👈 يجب جلب التوكن الحقيقي للتجديد
+
+        if (accessToken) {
+          // بناء إعدادات الجلسة بشكل صحيح
+          const authParams = { access_token: accessToken };
+          if (refreshToken) authParams.refresh_token = refreshToken;
+
+          const { data, error } = await supabase.auth.setSession(authParams);
+          
+          if (error) throw error;
+
+          if (data?.session) {
+            if (mounted) setSession(data.session);
+            await fetchSupplierProfile(data.session.user.id);
+          }
+
+          // 🧹 تنظيف الرابط بعد نجاح الدخول (حذف التوكن من الـ URL)
+          // هذا يمنع تسجيل الخروج العشوائي عند تحديث الصفحة (F5)
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+        } else {
+          // جلب الجلسة المحفوظة من المتصفح (localStorage)
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          if (mounted) setSession(currentSession);
+          if (currentSession?.user) {
+            await fetchSupplierProfile(currentSession.user.id);
+          }
         }
-      } else {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        if (currentSession?.user) {
-          await fetchSupplierProfile(currentSession.user.id);
-        }
+      } catch (error) {
+        console.error("Session initialization error:", error);
+        if (mounted) setSession(null);
+      } finally {
+        if (mounted) setLoading(false);
       }
-      setLoading(false);
     };
 
     initializeApp();
 
+    // 📡 الاستماع الذكي لتغيرات الجلسة في الخلفية
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      setSession(currentSession);
-      if (currentSession?.user) fetchSupplierProfile(currentSession.user.id);
+      if (mounted) {
+        setSession(currentSession);
+        if (currentSession?.user) {
+          fetchSupplierProfile(currentSession.user.id);
+        }
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [fetchSupplierProfile]);
-
+  
   if (isStorePage) {
     return (
       <BrowserRouter>
