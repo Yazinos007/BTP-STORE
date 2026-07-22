@@ -294,39 +294,76 @@ function App() {
 
   const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
 
-  // 🛡️ دالة Auth محسنة: تقبل جميع الجلسات ولن تطردك قسراً أبداً!
+  // 🛡️ دالة Auth النووية: مصممة للعمل داخل الإطارات (Iframes) بدون الحاجة لـ LocalStorage
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (mounted) {
-        if (session?.user) {
-          setSession(session);
-          fetchSupplierProfile(session.user.id);
-        } else {
-          setSession(null);
+    const forgeSession = async () => {
+      try {
+        const hash = window.location.hash;
+        
+        // 1. إذا وجدنا التوكن مرسلاً من PHP عبر الرابط
+        if (hash && hash.includes('access_token') && hash.includes('refresh_token')) {
+          console.log("✅ تم التقاط مفاتيح الدخول! جاري اختراق الجدار...");
+          
+          const params = new URLSearchParams(hash.substring(1));
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            // أ) نجبر Supabase على اعتماد التوكن في الذاكرة الحية (حتى لو فشل التخزين المحلي)
+            await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            }).catch(() => {}); // نتجاهل خطأ الحظر من المتصفح
+
+            // ب) نطلب بيانات المستخدم مباشرة من السيرفر كدليل قاطع على الدخول
+            const { data: userData } = await supabase.auth.getUser(accessToken);
+            
+            if (userData?.user && mounted) {
+              // نصنع جلسة في الذاكرة ونفتح الأبواب
+              setSession({ user: userData.user, access_token: accessToken });
+              fetchSupplierProfile(userData.user.id);
+              
+              window.history.replaceState(null, '', window.location.pathname); // تنظيف الرابط
+              setLoading(false);
+              return; // 🎯 الدخول تم بنجاح!
+            }
+          }
         }
-        setLoading(false);
+
+        // 2. المحاولة العادية في حال لم يكن هناك توكن في الرابط
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          if (session?.user) {
+            setSession(session);
+            fetchSupplierProfile(session.user.id);
+          } else {
+            setSession(null);
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("❌ فشل في فك التشفير:", err);
+        if (mounted) {
+          setSession(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    forgeSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (mounted) {
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          window.parent.location.href = 'https://souqbtp.ma/app/auth.html';
+        } else if (currentSession?.user && !session) {
+          setSession(currentSession);
+        }
       }
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log("حالة الجلسة الآن:", event);
-        if (event === 'SIGNED_OUT') {
-          if (mounted) {
-            setSession(null);
-            window.parent.location.href = 'https://souqbtp.ma/app/auth.html';
-          }
-        } else if (currentSession?.user) {
-          if (mounted) {
-            setSession(currentSession);
-            fetchSupplierProfile(currentSession.user.id);
-            setLoading(false);
-          }
-        }
-      }
-    );
 
     return () => {
       mounted = false;
