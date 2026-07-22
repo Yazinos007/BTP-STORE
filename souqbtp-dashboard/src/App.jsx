@@ -84,49 +84,76 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [readyToShipCount, setReadyToShipCount] = useState(0);
 
-  // 🛡️ دالة Auth محسنة تصبر على جلب التوكن من الرابط ولا تغلق الباب متسرعة
+ // 🛡️ دالة Auth النووية: تختطف التوكن من الرابط وتجبر المتصفح على فتحه
   useEffect(() => {
     let mounted = true;
 
-    const checkInitialSession = async () => {
-      // 1. نسأل المتصفح أولاً
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (mounted) {
-        if (session?.user) {
-          // إذا وجدناها، ندخل فوراً
-          setSession(session);
-          fetchSupplierProfile(session.user.id);
-          setLoading(false); 
-        } else {
-          // ⏳ السر هنا: إذا لم نجدها فوراً، ننتظر 1.5 ثانية لعل التوكن قادم في الرابط
-          setTimeout(() => {
-            if (mounted) setLoading(false); // نغلق التحميل فقط بعد التأكد التام
-          }, 1500); 
+    const forgeSession = async () => {
+      try {
+        // 1. اختطاف التوكن من الرابط مباشرة (لتجاوز حظر الـ iframe)
+        const hash = window.location.hash;
+        
+        if (hash && hash.includes('access_token') && hash.includes('refresh_token')) {
+          console.log("✅ تم رصد التوكن في الرابط! جاري تحطيم الجدار...");
+          
+          // فك تشفير الرابط لاستخراج المفاتيح
+          const params = new URLSearchParams(hash.substring(1));
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            // إجبار Supabase على تسجيل الدخول فوراً بهذا التوكن!
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+
+            if (data?.session?.user && mounted) {
+              setSession(data.session);
+              fetchSupplierProfile(data.session.user.id);
+              
+              // مسح التوكن من الرابط ليبقى المنظر احترافياً ونظيفاً
+              window.history.replaceState(null, '', window.location.pathname);
+              setLoading(false);
+              return; // 🎯 نجاح! نخرج من الدالة ولا نكمل
+            }
+          }
+        }
+
+        // 2. الخطة ب: إذا لم يكن هناك توكن في الرابط، نحاول بالطريقة العادية
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          if (session?.user) {
+            setSession(session);
+            fetchSupplierProfile(session.user.id);
+          } else {
+            setSession(null);
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("❌ خطأ في فك تشفير الجلسة:", err);
+        if (mounted) {
+          setSession(null);
+          setLoading(false);
         }
       }
     };
 
-    checkInitialSession();
+    forgeSession();
 
-    // 2. الاستماع لأي توكن يتم فك تشفيره من الرابط في الخلفية
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log("حدث الجلسة:", event);
-        
-        if (mounted) {
-          if (currentSession?.user) {
-            // إذا التقط النظام الجلسة من الرابط، يفتح الباب فوراً
-            setSession(currentSession);
-            fetchSupplierProfile(currentSession.user.id);
-            setLoading(false); 
-          } else if (event === 'SIGNED_OUT') {
-            setSession(null);
-            window.parent.location.href = 'https://souqbtp.ma/app/auth.html';
-          }
+    // 3. الاستماع لأي تغير مستقبلي (مثل تسجيل الخروج)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (mounted) {
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          window.parent.location.href = 'https://souqbtp.ma/app/auth.html';
+        } else if (currentSession?.user && !session) {
+          // تحديث الجلسة في الخلفية إذا تم تجديدها
+          setSession(currentSession);
         }
       }
-    );
+    });
 
     return () => {
       mounted = false;
