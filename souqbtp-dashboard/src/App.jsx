@@ -208,19 +208,26 @@ const WholesalerDashboard = ({ supplier, children }) => {
           </Link>
         </div>
         <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
-          {menuItems.map((item) => (
-            <Link key={item.path} to={item.path} className="flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all text-slate-400 hover:text-white hover:bg-slate-800/80 group">
-              <div className="flex items-center gap-3">
-                <item.icon size={20} className="group-hover:text-blue-400 transition-colors shrink-0" />
-                <span>{item.label}</span>
-              </div>
-              {item.badge > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all group ${getActiveStyle(item.path)}`}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon size={20} className={`${isActive ? 'text-current scale-110' : 'group-hover:text-blue-400'} transition-transform shrink-0`} />
+                  <span>{item.label}</span>
+                </div>
+                {item.badge > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
       </aside>
       <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
