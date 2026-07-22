@@ -86,52 +86,50 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const [readyToShipCount, setReadyToShipCount] = useState(0);
 
   useEffect(() => {
-    if (!supplier?.id) return;
+    let mounted = true;
 
-    const syncSmartData = async () => {
-      const { data: orders } = await supabase
-        .from('supply_requests')
-        .select('status, merchant_id')
-        .eq('supplier_id', supplier.id);
+    // 1. محاولة جلب الجلسة الحالية أولاً
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (mounted) {
+        if (session?.user) {
+          setSession(session);
+          fetchSupplierProfile(session.user.id);
+        } else {
+          setSession(null);
+        }
+        setLoading(false);
+      }
+    });
 
-      if (orders) {
-        setPendingOrdersCount(orders.filter(o => o.status === 'pending').length);
-        setReadyToShipCount(orders.filter(o => o.status === 'signed').length);
+    // 2. الاستماع العميق لكل التغيرات (دون فلترة قاسية تعيق الدخول)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log("حالة الجلسة الآن:", event); // لمراقبة الأحداث في الـ Console
 
-        const uniqueMerchantIds = [...new Set(orders.map(o => o.merchant_id).filter(Boolean))];
-        if (uniqueMerchantIds.length > 0) {
-          const { data: currentClients } = await supabase.from('clients').select('full_name').eq('supplier_id', supplier.id);
-          const clientNamesSet = new Set(currentClients?.map(c => c.full_name) || []);
-
-          const { data: merchants } = await supabase.from('suppliers').select('id, store_name, phone').in('id', uniqueMerchantIds);
-
-          if (merchants) {
-            for (const merchant of merchants) {
-              const name = merchant.store_name || 'Client B2B';
-              if (!clientNamesSet.has(name)) {
-                await supabase.from('clients').insert({
-                  supplier_id: supplier.id,
-                  full_name: name,
-                  phone: merchant.phone || '',
-                  total_debt: 0 
-                });
-                clientNamesSet.add(name); 
-              }
-            }
+        if (event === 'SIGNED_OUT') {
+          // في حال تسجيل الخروج الصريح فقط
+          if (mounted) {
+            setSession(null);
+            window.parent.location.href = 'https://souqbtp.ma/app/auth.html';
+          }
+        } else if (currentSession?.user) {
+          // إذا التقط النظام أي جلسة صالحة (INITIAL_SESSION أو غيرها)، نقبلها فوراً
+          if (mounted) {
+            setSession(currentSession);
+            fetchSupplierProfile(currentSession.user.id);
+            setLoading(false); // إيقاف التحميل فور العثور على جلسة
           }
         }
       }
+    );
+
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
     };
+  }, []);
 
-    syncSmartData();
-
-    const channel = supabase.channel('wholesaler-smart-radar')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'supply_requests', filter: `supplier_id=eq.${supplier.id}` }, () => {
-        syncSmartData();
-      }).subscribe();
-
-    return () => supabase.removeChannel(channel);
-  }, [supplier]);
+  }, [supplier];
   
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
@@ -258,7 +256,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
       </main>
     </div>
   );
-};
 
 function App() {
   const [session, setSession] = useState(null);
