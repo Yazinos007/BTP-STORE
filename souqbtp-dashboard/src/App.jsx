@@ -50,10 +50,13 @@ import SupplierTeam from './pages/SupplierTeam';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
+import { useLocation } from 'react-router-dom';
 
-// 🛡️ لوحة المورد الكبير المحصنة مع المستشعرات الذكية
+// 🛡️ لوحة المورد الكبير المحصنة مع إضاءة الأقسام النشطة والنبض الفاخر
 const WholesalerDashboard = ({ supplier, children }) => {
   const { language, setLanguage } = useSettingsStore();
+  const location = useLocation(); // 👈 تتبع المسار الحالي لمعرفة القسم النشط
+
   const handleLanguageChange = () => {
     if (language === 'fr') setLanguage('ar');
     else if (language === 'ar') setLanguage('en');
@@ -64,17 +67,17 @@ const WholesalerDashboard = ({ supplier, children }) => {
     fr: {
       upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste",
       unauthorizedTitle: "Accès Non Autorisé", unauthorizedDesc: "Veuillez vous connecter via le portail principal.", backPortal: "Retour au portail",
-      items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs Matières", rawPurchases: "Achats Matières", stock: "Stock Central",posB2B: "Ventes Directes (POS)", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres",team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance", }
+      items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs Matières", rawPurchases: "Achats Matières", stock: "Stock Central", posB2B: "Ventes Directes (POS)", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance", }
     },
     ar: {
       upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة",
       unauthorizedTitle: "الدخول غير مصرح", unauthorizedDesc: "يرجى تسجيل الدخول عبر البوابة الرئيسية.", backPortal: "العودة للمنصة الرئيسية",
-      items: { overview: "لوحة القيادة", rawSuppliers: "موردو المواد الخام", rawPurchases: "مشتريات المواد الخام", stock: "المخزون المركزي",posB2B: "المبيعات المباشرة (POS)", clients: "العملاء والديون (CRM)", orders: "الطلبات الواردة", fleet: "أسطول التوصيل", contracts: "المصافحة الرقمية", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات",team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق", }
+      items: { overview: "لوحة القيادة", rawSuppliers: "موردو المواد الخام", rawPurchases: "مشتريات المواد الخام", stock: "المخزون المركزي", posB2B: "المبيعات المباشرة (POS)", clients: "العملاء والديون (CRM)", orders: "الطلبات الواردة", fleet: "أسطول التوصيل", contracts: "المصافحة الرقمية", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق", }
     },
     en: {
       upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler",
       unauthorizedTitle: "Unauthorized Access", unauthorizedDesc: "Please log in via the main portal.", backPortal: "Back to Main Portal",
-      items: { overview: "Dashboard", rawSuppliers: "Raw Material Suppliers", rawPurchases: "Raw Material Purchases", stock: "Central Stock",posB2B: "Direct Sales (POS)", clients: "Clients & Debts (CRM)", orders: "Received Orders", fleet: "Fleet & Deliveries", contracts: "Digital Contracts", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar",team: "Users & Permissions", settings: "Settings & Trust", }
+      items: { overview: "Dashboard", rawSuppliers: "Raw Material Suppliers", rawPurchases: "Raw Material Purchases", stock: "Central Stock", posB2B: "Direct Sales (POS)", clients: "Clients & Debts (CRM)", orders: "Received Orders", fleet: "Fleet & Deliveries", contracts: "Digital Contracts", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", team: "Users & Permissions", settings: "Settings & Trust", }
     }
   };
   const t = tLayout[language] || tLayout['fr'];
@@ -152,6 +155,22 @@ const WholesalerDashboard = ({ supplier, children }) => {
     { path: '/team', icon: Users, label: t.items.team },
     { path: '/settings', icon: Settings, label: t.items.settings }
   ];
+
+  // 🎨 دالة تحديد ألوان وستيل البرستيج لكل قسم عند نشاطه مع تأثير النبض المستمر
+  const getActiveStyle = (path) => {
+    const isActive = location.pathname === path;
+    if (!isActive) return "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent";
+    
+    // ألوان فاخرة لكل قسم مع نبض مستمر (Animate Pulse) وإضاءة (Glow)
+    if (path === '/pos-b2b' || path === '/orders') return "bg-blue-600/20 text-blue-400 border border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.35)] animate-pulse";
+    if (path === '/stock') return "bg-emerald-600/20 text-emerald-400 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-pulse";
+    if (path === '/raw-suppliers' || path === '/raw-purchases' || path === '/team') return "bg-purple-600/20 text-purple-400 border border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.35)] animate-pulse";
+    if (path === '/invoices' || path === '/expenses') return "bg-orange-600/20 text-orange-400 border border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.35)] animate-pulse";
+    if (path === '/fleet' || path === '/contracts' || path === '/tender-radar') return "bg-cyan-600/20 text-cyan-400 border border-cyan-500/60 shadow-[0_0_20px_rgba(6,182,212,0.35)] animate-pulse";
+    
+    // اللون الافتراضي للأقسام الأخرى (إنديجو فاخر)
+    return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)] animate-pulse";
+  };
 
   return (
     <div className="flex h-screen w-full max-w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
