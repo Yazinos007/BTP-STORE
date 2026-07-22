@@ -244,54 +244,55 @@ function App() {
   const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
 
   useEffect(() => {
-    const initializeApp = async () => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
       try {
-        const params = new URLSearchParams(window.location.search);
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token'); // جلب الـ refresh token إن وجد في الرابط
-
-        if (accessToken) {
-          // 🚀 السحر هنا: تنظيف الرابط فوراً! إزالة التوكن من الـ URL حتى لا يُعاد استخدامه وهو منتهي عند تحديث الصفحة
-          window.history.replaceState({}, document.title, window.location.pathname);
-
-          const { data } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || accessToken 
-          });
-          
-          if (data?.session) {
-            setSession(data.session);
-            await fetchSupplierProfile(data.session.user.id);
-          }
-        } else {
-          // استرجاع الجلسة المحفوظة محلياً بثبات
-          const { data: { session: currentSession } } = await supabase.auth.getSession();
-          if (currentSession?.user) {
-            setSession(currentSession);
-            await fetchSupplierProfile(currentSession.user.id);
+        // 1. جلب الجلسة الحالية بهدوء
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (mounted) {
+          if (session?.user) {
+            setSession(session);
+            // استدعاء بيانات المستخدم (تاجر أو مورد)
+            fetchSupplierProfile(session.user.id); 
+          } else {
+            setSession(null);
           }
         }
-      } catch (error) {
-        console.error("Session Error:", error);
+      } catch (err) {
+        console.error("خطأ في التحقق من الجلسة:", err);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false); // إنهاء حالة التحميل فقط بعد التأكد التام
       }
     };
 
-    initializeApp();
+    initializeAuth();
 
-    // 🚀 استماع ذكي للأحداث: لا نغلق الجلسة أبداً إلا إذا كان الحدث 'تسجيل خروج صريح'
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      if (event === 'SIGNED_OUT') {
-        setSession(null);
-      } else if (currentSession) {
-        setSession(currentSession);
-        if (currentSession?.user) fetchSupplierProfile(currentSession.user.id);
+    // 2. الاستماع العميق لتغيرات الجلسة (تجديد التوكن، تسجيل خروج...)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        console.log("حالة الجلسة الآن:", event); // لمراقبة ما يحدث في الـ Console
+
+        if (event === 'SIGNED_OUT') {
+          // لا نطرد المستخدم إلا إذا كان الحدث "تسجيل خروج صريح"
+          setSession(null);
+          window.location.href = 'https://souqbtp.ma/app/'; // التوجيه للبوابة
+        } 
+        else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          // تحديث الجلسة إذا تم تجديد التوكن تلقائياً في الخلفية
+          if (mounted && currentSession?.user) {
+            setSession(currentSession);
+          }
+        }
       }
-    });
+    );
 
-    return () => subscription.unsubscribe();
-  }, [fetchSupplierProfile]);
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
+  }, []);
   
   if (isStorePage) {
     return (
@@ -304,6 +305,7 @@ function App() {
     );
   }
 
+  // 1. شاشة التحميل (احتفظنا بتصميمك الرائع متعدد اللغات)
   if (loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
@@ -313,105 +315,107 @@ function App() {
     );
   }
 
+  // 2. جدار الحماية: إذا انتهى التحميل ولم توجد جلسة، نعرض رسالة الخطأ هنا مباشرة
+  if (!session) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        <div className="text-5xl mb-4">⛔</div>
+        <h2 className="text-2xl font-bold text-red-500 mb-2">
+          {language === 'fr' ? 'Accès Non Autorisé' : language === 'en' ? 'Unauthorized Access' : 'الدخول غير مصرح'}
+        </h2>
+        <p className="text-slate-400 mb-6">
+          {language === 'fr' ? 'Veuillez vous connecter via le portail principal.' : language === 'en' ? 'Please log in via the main portal.' : 'يرجى تسجيل الدخول عبر البوابة الرئيسية.'}
+        </p>
+        <button onClick={() => window.parent.location.href = 'https://souqbtp.ma/app/auth.html'} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all cursor-pointer shadow-lg">
+          {language === 'fr' ? 'Retour au portail' : language === 'en' ? 'Back to Main Portal' : 'العودة للمنصة الرئيسية'}
+        </button>
+      </div>
+    );
+  }
+
+  // 3. تجهيز بيانات المستخدم بعد التأكد من وجود الجلسة
   const isWholesaler = session?.user?.user_metadata?.supplier_type === 'wholesale' || supplier?.supplier_type === 'wholesale';
   const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || '';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="*" element={
-          !session ? (
-            <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-              <div className="text-5xl mb-4">⛔</div>
-              <h2 className="text-2xl font-bold text-red-500 mb-2">
-                {language === 'fr' ? 'Accès Non Autorisé' : language === 'en' ? 'Unauthorized Access' : 'الدخول غير مصرح'}
+      {isWholesaler ? (
+        <WholesalerDashboard supplier={supplier}>
+          <Routes>
+            <Route path="/" element={<SupplierOverview />} />
+            <Route path="/stock" element={<SupplierStock isWholesaler={true} />} />
+            <Route path="/clients" element={<Clients isWholesaler={true} />} />
+            <Route path="/caisses" element={<Caisses isWholesaler={true} />} />
+            <Route path="/fiscal" element={<Fiscal isWholesaler={true} />} />  
+            <Route path="/orders" element={<SupplierOrders />} />
+            <Route path="/fleet" element={<Fleet />} />
+            <Route path="/contracts" element={<Contracts />} />
+            <Route path="/invoices" element={<SupplierInvoices />} />
+            <Route path="/hr" element={<SupplierHR />} />
+            <Route path="/expenses" element={<SupplierExpenses />} />
+            <Route path="/accounting" element={<SupplierAccounting />} />
+            <Route path="/analytics" element={<AnalyticsB2B />} />
+            <Route path="/ai-advisor" element={<AISmartAdvisor />} />
+            <Route path="/tender-radar" element={<TenderRadar />} />
+            <Route path="/settings" element={<SupplierSettings />} />
+            <Route path="/subscription" element={<SupplierSubscription />} />
+            <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
+            <Route path="/raw-purchases" element={<RawMaterialPurchases />} />
+            <Route path="/pos-b2b" element={<SupplierPOS />} />
+            <Route path="/team" element={<SupplierTeam />} />
+          </Routes>
+        </WholesalerDashboard>
+      ) : (
+        <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="shrink-0 flex h-full">
+            <Sidebar />
+          </div>
+          <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full">
+            <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate pr-4 text-start">
+                {language === 'fr' ? 'Bienvenue, ' : language === 'en' ? 'Welcome, ' : 'مرحباً بك، '} <span className="text-blue-600 truncate">{storeName}</span>
               </h2>
-              <p className="text-slate-400 mb-6">
-                {language === 'fr' ? 'Veuillez vous connecter via le portail principal.' : language === 'en' ? 'Please log in via the main portal.' : 'يرجى تسجيل الدخول عبر البوابة الرئيسية.'}
-              </p>
-              <button onClick={() => window.parent.location.href = 'https://souqbtp.ma/app/auth.html'} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all cursor-pointer shadow-lg">
-                {language === 'fr' ? 'Retour au portail' : language === 'en' ? 'Back to Main Portal' : 'العودة للمنصة الرئيسية'}
-              </button>
-            </div>
-          ) : isWholesaler ? (
-            <WholesalerDashboard supplier={supplier}>
-              <Routes>
-                <Route path="/" element={<SupplierOverview />} />
-                <Route path="/stock" element={<SupplierStock isWholesaler={true} />} />
-                <Route path="/clients" element={<Clients isWholesaler={true} />} />
-                <Route path="/caisses" element={<Caisses isWholesaler={true} />} />
-                <Route path="/fiscal" element={<Fiscal isWholesaler={true} />} />  
-                <Route path="/orders" element={<SupplierOrders />} />
-                <Route path="/fleet" element={<Fleet />} />
-                <Route path="/contracts" element={<Contracts />} />
-                <Route path="/invoices" element={<SupplierInvoices />} />
-                <Route path="/hr" element={<SupplierHR />} />
-                <Route path="/expenses" element={<SupplierExpenses />} />
-                <Route path="/accounting" element={<SupplierAccounting />} />
-                <Route path="/analytics" element={<AnalyticsB2B />} />
-                <Route path="/ai-advisor" element={<AISmartAdvisor />} />
-                <Route path="/tender-radar" element={<TenderRadar />} />
-                <Route path="/settings" element={<SupplierSettings />} />
-                <Route path="/subscription" element={<SupplierSubscription />} />
-                <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
-                <Route path="/raw-purchases" element={<RawMaterialPurchases />} />
-                <Route path="/pos-b2b" element={<SupplierPOS />} />
-                <Route path="/team" element={<SupplierTeam />} />
-              </Routes>
-            </WholesalerDashboard>
-          ) : (
-            <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-              <div className="shrink-0 flex h-full">
-                <Sidebar />
-              </div>
-              <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full">
-                <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
-                  <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate pr-4 text-start">
-                    {language === 'fr' ? 'Bienvenue, ' : language === 'en' ? 'Welcome, ' : 'مرحباً بك، '} <span className="text-blue-600 truncate">{storeName}</span>
-                  </h2>
-                  <div className="flex items-center gap-3 md:gap-4 shrink-0">
-                    <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
-                       <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
-                    </Link>
-                    <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
-                      {storeInitial}
-                    </div>
-                  </div>
-                </header>
-                <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full">
-                  <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
-                    <Routes>
-                      <Route path="/" element={<Overview />} />
-                      <Route path="/products" element={<Products />} />                     
-                      <Route path="/orders" element={<Orders />} />
-                      <Route path="/wallet" element={<RetailerWallet />} />
-                      <Route path="/settings" element={<RetailerSettings />} />
-                      <Route path="/pos" element={<POS />} />
-                      <Route path="/expenses" element={<Expenses />} />
-                      <Route path="/invoices" element={<Invoices />} />
-                      <Route path="/hr" element={<HR />} />
-                      <Route path="/fiscal" element={<Fiscal />} />
-                      <Route path="/caisses" element={<Caisses />} />
-                      <Route path="/devis" element={<Devis />} />
-                      <Route path="/bc" element={<BC />} />
-                      <Route path="/bl" element={<BL />} />
-                      <Route path="/avoir" element={<Avoir />} />
-                      <Route path="/fiches-expedition" element={<Expeditions />} />
-                      <Route path="/factures-achat" element={<FacturesAchat />} />
-                      <Route path="/clients" element={<Clients />} />
-                      <Route path="/accounting" element={<Accounting />} />
-                      <Route path="/suppliers" element={<ExternalSuppliers />} />
-                      <Route path="/purchases" element={<Purchases />} />
-                      <Route path="/subscription" element={<RetailerSubscription />} />
-                    </Routes>
-                  </div>
+              <div className="flex items-center gap-3 md:gap-4 shrink-0">
+                <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
+                   <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
+                </Link>
+                <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
+                  {storeInitial}
                 </div>
-              </main>
+              </div>
+            </header>
+            <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full">
+              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
+                <Routes>
+                  <Route path="/" element={<Overview />} />
+                  <Route path="/products" element={<Products />} />                     
+                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/wallet" element={<RetailerWallet />} />
+                  <Route path="/settings" element={<RetailerSettings />} />
+                  <Route path="/pos" element={<POS />} />
+                  <Route path="/expenses" element={<Expenses />} />
+                  <Route path="/invoices" element={<Invoices />} />
+                  <Route path="/hr" element={<HR />} />
+                  <Route path="/fiscal" element={<Fiscal />} />
+                  <Route path="/caisses" element={<Caisses />} />
+                  <Route path="/devis" element={<Devis />} />
+                  <Route path="/bc" element={<BC />} />
+                  <Route path="/bl" element={<BL />} />
+                  <Route path="/avoir" element={<Avoir />} />
+                  <Route path="/fiches-expedition" element={<Expeditions />} />
+                  <Route path="/factures-achat" element={<FacturesAchat />} />
+                  <Route path="/clients" element={<Clients />} />
+                  <Route path="/accounting" element={<Accounting />} />
+                  <Route path="/suppliers" element={<ExternalSuppliers />} />
+                  <Route path="/purchases" element={<Purchases />} />
+                  <Route path="/subscription" element={<RetailerSubscription />} />
+                </Routes>
+              </div>
             </div>
-          )
-        } />
-      </Routes>
+          </main>
+        </div>
+      )}
     </BrowserRouter>
   );
 }
