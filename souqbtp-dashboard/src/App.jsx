@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { 
   Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
@@ -50,12 +50,11 @@ import SupplierTeam from './pages/SupplierTeam';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
-import { useLocation } from 'react-router-dom';
 
 // 🛡️ لوحة المورد الكبير المحصنة مع إضاءة الأقسام النشطة والنبض الفاخر
 const WholesalerDashboard = ({ supplier, children }) => {
   const { language, setLanguage } = useSettingsStore();
-  const location = useLocation(); // 👈 تتبع المسار الحالي لمعرفة القسم النشط
+  const location = useLocation();
 
   const handleLanguageChange = () => {
     if (language === 'fr') setLanguage('ar');
@@ -86,50 +85,53 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const [readyToShipCount, setReadyToShipCount] = useState(0);
 
   useEffect(() => {
-    let mounted = true;
+    if (!supplier?.id) return;
 
-    // 1. محاولة جلب الجلسة الحالية أولاً
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (mounted) {
-        if (session?.user) {
-          setSession(session);
-          fetchSupplierProfile(session.user.id);
-        } else {
-          setSession(null);
-        }
-        setLoading(false);
-      }
-    });
+    const syncSmartData = async () => {
+      const { data: orders } = await supabase
+        .from('supply_requests')
+        .select('status, merchant_id')
+        .eq('supplier_id', supplier.id);
 
-    // 2. الاستماع العميق لكل التغيرات (دون فلترة قاسية تعيق الدخول)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log("حالة الجلسة الآن:", event); // لمراقبة الأحداث في الـ Console
+      if (orders) {
+        setPendingOrdersCount(orders.filter(o => o.status === 'pending').length);
+        setReadyToShipCount(orders.filter(o => o.status === 'signed').length);
 
-        if (event === 'SIGNED_OUT') {
-          // في حال تسجيل الخروج الصريح فقط
-          if (mounted) {
-            setSession(null);
-            window.parent.location.href = 'https://souqbtp.ma/app/auth.html';
+        const uniqueMerchantIds = [...new Set(orders.map(o => o.merchant_id).filter(Boolean))];
+        if (uniqueMerchantIds.length > 0) {
+          const { data: currentClients } = await supabase.from('clients').select('full_name').eq('supplier_id', supplier.id);
+          const clientNamesSet = new Set(currentClients?.map(c => c.full_name) || []);
+
+          const { data: merchants } = await supabase.from('suppliers').select('id, store_name, phone').in('id', uniqueMerchantIds);
+
+          if (merchants) {
+            for (const merchant of merchants) {
+              const name = merchant.store_name || 'Client B2B';
+              if (!clientNamesSet.has(name)) {
+                await supabase.from('clients').insert({
+                  supplier_id: supplier.id,
+                  full_name: name,
+                  phone: merchant.phone || '',
+                  total_debt: 0 
+                });
+                clientNamesSet.add(name); 
+              }
+            }
           }
-        } else if (currentSession?.user) {
-          // إذا التقط النظام أي جلسة صالحة (INITIAL_SESSION أو غيرها)، نقبلها فوراً
-          if (mounted) {
-            setSession(currentSession);
-            fetchSupplierProfile(currentSession.user.id);
-            setLoading(false); // إيقاف التحميل فور العثور على جلسة
-          }
         }
       }
-    );
-
-    return () => {
-      mounted = false;
-      subscription?.unsubscribe();
     };
-  }, []);
 
-  }, [supplier];
+    syncSmartData();
+
+    const channel = supabase.channel('wholesaler-smart-radar')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'supply_requests', filter: `supplier_id=eq.${supplier.id}` }, () => {
+        syncSmartData();
+      }).subscribe();
+
+    // 🔴 تم إصلاح القوس المفقود هنا ليعمل Vercel بسلاسة!
+    return () => supabase.removeChannel(channel);
+  }, [supplier]);
   
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
@@ -154,19 +156,16 @@ const WholesalerDashboard = ({ supplier, children }) => {
     { path: '/settings', icon: Settings, label: t.items.settings }
   ];
 
-  // 🎨 دالة تحديد ألوان وستيل البرستيج لكل قسم عند نشاطه مع تأثير النبض المستمر
   const getActiveStyle = (path) => {
     const isActive = location.pathname === path;
     if (!isActive) return "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent";
     
-    // ألوان فاخرة لكل قسم مع نبض مستمر (Animate Pulse) وإضاءة (Glow)
     if (path === '/pos-b2b' || path === '/orders') return "bg-blue-600/20 text-blue-400 border border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.35)] animate-pulse";
     if (path === '/stock') return "bg-emerald-600/20 text-emerald-400 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-pulse";
     if (path === '/raw-suppliers' || path === '/raw-purchases' || path === '/team') return "bg-purple-600/20 text-purple-400 border border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.35)] animate-pulse";
     if (path === '/invoices' || path === '/expenses') return "bg-orange-600/20 text-orange-400 border border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.35)] animate-pulse";
     if (path === '/fleet' || path === '/contracts' || path === '/tender-radar') return "bg-cyan-600/20 text-cyan-400 border border-cyan-500/60 shadow-[0_0_20px_rgba(6,182,212,0.35)] animate-pulse";
     
-    // اللون الافتراضي للأقسام الأخرى (إنديجو فاخر)
     return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)] animate-pulse";
   };
 
@@ -256,6 +255,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
       </main>
     </div>
   );
+};
 
 function App() {
   const [session, setSession] = useState(null);
@@ -266,46 +266,35 @@ function App() {
 
   const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
 
+  // 🛡️ دالة Auth محسنة: تقبل جميع الجلسات ولن تطردك قسراً أبداً!
   useEffect(() => {
     let mounted = true;
 
-    const initializeAuth = async () => {
-      try {
-        // 1. جلب الجلسة الحالية بهدوء
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (mounted) {
-          if (session?.user) {
-            setSession(session);
-            // استدعاء بيانات المستخدم (تاجر أو مورد)
-            fetchSupplierProfile(session.user.id); 
-          } else {
-            setSession(null);
-          }
-        }
-      } catch (err) {
-        console.error("خطأ في التحقق من الجلسة:", err);
-      } finally {
-        if (mounted) setLoading(false); // إنهاء حالة التحميل فقط بعد التأكد التام
-      }
-    };
-
-    initializeAuth();
-
-    // 2. الاستماع العميق لتغيرات الجلسة (تجديد التوكن، تسجيل خروج...)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        console.log("حالة الجلسة الآن:", event); // لمراقبة ما يحدث في الـ Console
-
-        if (event === 'SIGNED_OUT') {
-          // لا نطرد المستخدم إلا إذا كان الحدث "تسجيل خروج صريح"
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (mounted) {
+        if (session?.user) {
+          setSession(session);
+          fetchSupplierProfile(session.user.id);
+        } else {
           setSession(null);
-          window.location.href = 'https://souqbtp.ma/app/'; // التوجيه للبوابة
-        } 
-        else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-          // تحديث الجلسة إذا تم تجديد التوكن تلقائياً في الخلفية
-          if (mounted && currentSession?.user) {
+        }
+        setLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log("حالة الجلسة الآن:", event);
+        if (event === 'SIGNED_OUT') {
+          if (mounted) {
+            setSession(null);
+            window.parent.location.href = 'https://souqbtp.ma/app/auth.html';
+          }
+        } else if (currentSession?.user) {
+          if (mounted) {
             setSession(currentSession);
+            fetchSupplierProfile(currentSession.user.id);
+            setLoading(false);
           }
         }
       }
@@ -328,7 +317,6 @@ function App() {
     );
   }
 
-  // 1. شاشة التحميل (احتفظنا بتصميمك الرائع متعدد اللغات)
   if (loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
@@ -338,7 +326,6 @@ function App() {
     );
   }
 
-  // 2. جدار الحماية: إذا انتهى التحميل ولم توجد جلسة، نعرض رسالة الخطأ هنا مباشرة
   if (!session) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -356,7 +343,6 @@ function App() {
     );
   }
 
-  // 3. تجهيز بيانات المستخدم بعد التأكد من وجود الجلسة
   const isWholesaler = session?.user?.user_metadata?.supplier_type === 'wholesale' || supplier?.supplier_type === 'wholesale';
   const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || '';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
