@@ -84,54 +84,55 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [readyToShipCount, setReadyToShipCount] = useState(0);
 
+  // 🛡️ دالة Auth محسنة تصبر على جلب التوكن من الرابط ولا تغلق الباب متسرعة
   useEffect(() => {
-    if (!supplier?.id) return;
+    let mounted = true;
 
-    const syncSmartData = async () => {
-      const { data: orders } = await supabase
-        .from('supply_requests')
-        .select('status, merchant_id')
-        .eq('supplier_id', supplier.id);
-
-      if (orders) {
-        setPendingOrdersCount(orders.filter(o => o.status === 'pending').length);
-        setReadyToShipCount(orders.filter(o => o.status === 'signed').length);
-
-        const uniqueMerchantIds = [...new Set(orders.map(o => o.merchant_id).filter(Boolean))];
-        if (uniqueMerchantIds.length > 0) {
-          const { data: currentClients } = await supabase.from('clients').select('full_name').eq('supplier_id', supplier.id);
-          const clientNamesSet = new Set(currentClients?.map(c => c.full_name) || []);
-
-          const { data: merchants } = await supabase.from('suppliers').select('id, store_name, phone').in('id', uniqueMerchantIds);
-
-          if (merchants) {
-            for (const merchant of merchants) {
-              const name = merchant.store_name || 'Client B2B';
-              if (!clientNamesSet.has(name)) {
-                await supabase.from('clients').insert({
-                  supplier_id: supplier.id,
-                  full_name: name,
-                  phone: merchant.phone || '',
-                  total_debt: 0 
-                });
-                clientNamesSet.add(name); 
-              }
-            }
-          }
+    const checkInitialSession = async () => {
+      // 1. نسأل المتصفح أولاً
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (mounted) {
+        if (session?.user) {
+          // إذا وجدناها، ندخل فوراً
+          setSession(session);
+          fetchSupplierProfile(session.user.id);
+          setLoading(false); 
+        } else {
+          // ⏳ السر هنا: إذا لم نجدها فوراً، ننتظر 1.5 ثانية لعل التوكن قادم في الرابط
+          setTimeout(() => {
+            if (mounted) setLoading(false); // نغلق التحميل فقط بعد التأكد التام
+          }, 1500); 
         }
       }
     };
 
-    syncSmartData();
+    checkInitialSession();
 
-    const channel = supabase.channel('wholesaler-smart-radar')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'supply_requests', filter: `supplier_id=eq.${supplier.id}` }, () => {
-        syncSmartData();
-      }).subscribe();
+    // 2. الاستماع لأي توكن يتم فك تشفيره من الرابط في الخلفية
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log("حدث الجلسة:", event);
+        
+        if (mounted) {
+          if (currentSession?.user) {
+            // إذا التقط النظام الجلسة من الرابط، يفتح الباب فوراً
+            setSession(currentSession);
+            fetchSupplierProfile(currentSession.user.id);
+            setLoading(false); 
+          } else if (event === 'SIGNED_OUT') {
+            setSession(null);
+            window.parent.location.href = 'https://souqbtp.ma/app/auth.html';
+          }
+        }
+      }
+    );
 
-    // 🔴 تم إصلاح القوس المفقود هنا ليعمل Vercel بسلاسة!
-    return () => supabase.removeChannel(channel);
-  }, [supplier]);
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
+  }, []);
   
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
