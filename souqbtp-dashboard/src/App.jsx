@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { 
-  Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
+  Menu, Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
   Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart } from 'lucide-react';
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
 import RawMaterialPurchases from './pages/RawMaterialPurchases';
@@ -412,6 +412,26 @@ function App() {
   const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || '';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
 
+  // 🎯 التقاط وضع "الإطار المصغر" الذي يرسله موقعك (PHP)
+  const isMinimal = new URLSearchParams(window.location.search).get('minimal') === 'true';
+
+  // 🌟 1. وضع الإطار المصغر (يُعرض داخل موقعك بدون سيدبار)
+  if (isMinimal) {
+    return (
+      <BrowserRouter>
+        <div className={`min-h-screen ${isWholesaler ? 'bg-[#0f172a] text-slate-300' : 'bg-gray-50 text-gray-800'} overflow-y-auto p-4 md:p-8`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+          <Routes>
+            {/* راوتات مصغرة للإحصائيات والإعدادات فقط */}
+            <Route path="/" element={isWholesaler ? <SupplierOverview /> : <Overview />} />
+            <Route path="/settings" element={isWholesaler ? <SupplierSettings /> : <RetailerSettings />} />
+            <Route path="*" element={isWholesaler ? <SupplierOverview /> : <Overview />} />
+          </Routes>
+        </div>
+      </BrowserRouter>
+    );
+  }
+
+  // 🌟 2. وضع الشاشة الكاملة (يُعرض في تبويب Vercel المستقل)
   return (
     <BrowserRouter>
       {isWholesaler ? (
@@ -441,56 +461,78 @@ function App() {
           </Routes>
         </WholesalerDashboard>
       ) : (
-        <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-          <div className="shrink-0 flex h-full">
-            <Sidebar />
-          </div>
-          <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full">
-            <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate pr-4 text-start">
-                {language === 'fr' ? 'Bienvenue, ' : language === 'en' ? 'Welcome, ' : 'مرحباً بك، '} <span className="text-blue-600 truncate">{storeName}</span>
-              </h2>
-              <div className="flex items-center gap-3 md:gap-4 shrink-0">
-                <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
-                   <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
-                </Link>
-                <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
-                  {storeInitial}
-                </div>
-              </div>
-            </header>
-            <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full">
-              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
-                <Routes>
-                  <Route path="/" element={<Overview />} />
-                  <Route path="/products" element={<Products />} />                     
-                  <Route path="/orders" element={<Orders />} />
-                  <Route path="/wallet" element={<RetailerWallet />} />
-                  <Route path="/settings" element={<RetailerSettings />} />
-                  <Route path="/pos" element={<POS />} />
-                  <Route path="/expenses" element={<Expenses />} />
-                  <Route path="/invoices" element={<Invoices />} />
-                  <Route path="/hr" element={<HR />} />
-                  <Route path="/fiscal" element={<Fiscal />} />
-                  <Route path="/caisses" element={<Caisses />} />
-                  <Route path="/devis" element={<Devis />} />
-                  <Route path="/bc" element={<BC />} />
-                  <Route path="/bl" element={<BL />} />
-                  <Route path="/avoir" element={<Avoir />} />
-                  <Route path="/fiches-expedition" element={<Expeditions />} />
-                  <Route path="/factures-achat" element={<FacturesAchat />} />
-                  <Route path="/clients" element={<Clients />} />
-                  <Route path="/accounting" element={<Accounting />} />
-                  <Route path="/suppliers" element={<ExternalSuppliers />} />
-                  <Route path="/purchases" element={<Purchases />} />
-                  <Route path="/subscription" element={<RetailerSubscription />} />
-                </Routes>
-              </div>
-            </div>
-          </main>
-        </div>
+        <RetailerLayout storeName={storeName} storeInitial={storeInitial} language={language}>
+          <Routes>
+            <Route path="/" element={<Overview />} />
+            <Route path="/products" element={<Products />} />                     
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/wallet" element={<RetailerWallet />} />
+            <Route path="/settings" element={<RetailerSettings />} />
+            <Route path="/pos" element={<POS />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/invoices" element={<Invoices />} />
+            <Route path="/hr" element={<HR />} />
+            <Route path="/fiscal" element={<Fiscal />} />
+            <Route path="/caisses" element={<Caisses />} />
+            <Route path="/devis" element={<Devis />} />
+            <Route path="/bc" element={<BC />} />
+            <Route path="/bl" element={<BL />} />
+            <Route path="/avoir" element={<Avoir />} />
+            <Route path="/fiches-expedition" element={<Expeditions />} />
+            <Route path="/factures-achat" element={<FacturesAchat />} />
+            <Route path="/clients" element={<Clients />} />
+            <Route path="/accounting" element={<Accounting />} />
+            <Route path="/suppliers" element={<ExternalSuppliers />} />
+            <Route path="/purchases" element={<Purchases />} />
+            <Route path="/subscription" element={<RetailerSubscription />} />
+          </Routes>
+        </RetailerLayout>
       )}
     </BrowserRouter>
   );
 }
+
+// 💎 مكون التاجر الداعم لإخفاء السيدبار السلس
+const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  return (
+    <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      {/* قسم السيدبار المتحرك */}
+      <div className={`shrink-0 h-full transition-all duration-300 ${isSidebarOpen ? (language === 'ar' ? 'w-64 border-l' : 'w-64 border-r') : 'w-0 overflow-hidden border-none'} bg-white z-20`}>
+        <div className="w-64 h-full">
+            <Sidebar />
+        </div>
+      </div>
+      
+      <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full relative">
+        <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
+          <div className="flex items-center gap-3">
+            {/* 🎯 زر القائمة السحري */}
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="إظهار / إخفاء القائمة">
+              <Menu size={24} />
+            </button>
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate text-start">
+              {language === 'fr' ? 'Bienvenue, ' : language === 'en' ? 'Welcome, ' : 'مرحباً بك، '} <span className="text-blue-600 truncate">{storeName}</span>
+            </h2>
+          </div>
+          <div className="flex items-center gap-3 md:gap-4 shrink-0">
+            <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
+               <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
+            </Link>
+            <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
+              {storeInitial}
+            </div>
+          </div>
+        </header>
+        <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full">
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
+            {children}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
 export default App;
