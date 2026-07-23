@@ -56,22 +56,24 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const { language, setLanguage } = useSettingsStore();
   const location = useLocation();
   
-  // 🎯 التقاط وضع الإطار المصغر من الرابط
-  const isMinimal = new URLSearchParams(window.location.search).get('minimal') === 'true';
+  // 🎯 1. التقاط ذكي لا يخطئ لوضع الإطار المصغر (لإخفاء السيدبار في PHP)
+  const isMinimal = window.location.href.includes('minimal=true');
   
-  // 🎯 حالة زر إخفاء/إظهار السيدبار في الشاشة الكاملة
+  // 🎯 2. حالة السيدبار (الإخفاء والإظهار)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // 1️⃣ الوضع المصغر (يعمل داخل منصة PHP): لا سيدبار، لا هيدر، فقط المحتوى!
+  // 🛑 إذا كان الوضع مصغراً (داخل PHP): إخفاء كل شيء إلا المحتوى!
   if (isMinimal) {
     return (
-      <div className="w-full h-screen bg-[#0f172a] text-slate-300 overflow-x-hidden overflow-y-auto">
-        {children}
+      <div className="flex h-screen w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 w-full">
+          {children}
+        </main>
       </div>
     );
   }
 
-  // 2️⃣ الوضع الكامل (الشاشة المستقلة)
+  // 🌍 دوال وأزرار النسخة الكاملة
   const handleLanguageChange = () => {
     if (language === 'fr') setLanguage('ar');
     else if (language === 'ar') setLanguage('en');
@@ -151,49 +153,51 @@ const WholesalerDashboard = ({ supplier, children }) => {
   return (
     <div className="flex h-screen w-full max-w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 السيدبار الجانبي مع التحكم بالعرض (w-72 أو w-0) */}
-      <aside className={`shrink-0 h-full bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20 transition-all duration-300 ${isSidebarOpen ? 'w-72' : 'w-0 border-none overflow-hidden'}`}>
-        <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50 w-72">
-          <div className="flex items-center gap-3">
-            {supplier?.logo_url ? (
-              <img src={supplier.logo_url} alt="Logo" className="w-11 h-11 shrink-0 rounded-xl object-cover shadow-lg border border-slate-700" />
-            ) : (
-              <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg border border-white/10">
-                {supplier?.store_name?.charAt(0).toUpperCase() || 'S'}
-              </div>
-            )}
-            <div className="flex flex-col text-start">
-              <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">SouqBTP</h1>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Portal</span>
-            </div>
-          </div>
-          <button onClick={handleLanguageChange} className="flex flex-col items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-all text-slate-300 hover:text-white group cursor-pointer">
-            <Globe size={18} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="text-[9px] font-black uppercase mt-1 tracking-wider">{language}</span>
-          </button>
-        </div>
-        <div className="px-5 pt-6 pb-2 shrink-0 w-72">
-          <Link to="/subscription" className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all text-sm">
-            <Zap size={20} className="fill-black" />
-            {t.upgrade}
-          </Link>
-        </div>
-        <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar w-72">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link key={item.path} to={item.path} className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all group ${getActiveStyle(item.path)}`}>
-                <div className="flex items-center gap-3">
-                  <item.icon size={20} className={`${isActive ? 'text-current scale-110' : 'group-hover:text-blue-400'} transition-transform shrink-0`} />
-                  <span>{item.label}</span>
+      {/* 🚀 السيدبار الجانبي مع خاصية الإخفاء الناعم */}
+      <aside className={`shrink-0 h-full bg-slate-900 flex flex-col shadow-2xl relative z-20 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-72 border-r border-slate-800 opacity-100' : 'w-0 border-r-0 opacity-0 overflow-hidden'}`}>
+        <div className="w-72 h-full flex flex-col">
+          <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
+            <div className="flex items-center gap-3">
+              {supplier?.logo_url ? (
+                <img src={supplier.logo_url} alt="Logo" className="w-11 h-11 shrink-0 rounded-xl object-cover shadow-lg border border-slate-700" />
+              ) : (
+                <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg border border-white/10">
+                  {supplier?.store_name?.charAt(0).toUpperCase() || 'S'}
                 </div>
-                {item.badge > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]">{item.badge}</span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+              )}
+              <div className="flex flex-col text-start">
+                <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">SouqBTP</h1>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Portal</span>
+              </div>
+            </div>
+            <button onClick={handleLanguageChange} className="flex flex-col items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-all text-slate-300 hover:text-white group cursor-pointer">
+              <Globe size={18} className="group-hover:scale-110 transition-transform duration-300" />
+              <span className="text-[9px] font-black uppercase mt-1 tracking-wider">{language}</span>
+            </button>
+          </div>
+          <div className="px-5 pt-6 pb-2 shrink-0">
+            <Link to="/subscription" className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all text-sm">
+              <Zap size={20} className="fill-black" />
+              {t.upgrade}
+            </Link>
+          </div>
+          <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+            {menuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link key={item.path} to={item.path} className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all group ${getActiveStyle(item.path)}`}>
+                  <div className="flex items-center gap-3">
+                    <item.icon size={20} className={`${isActive ? 'text-current scale-110' : 'group-hover:text-blue-400'} transition-transform shrink-0`} />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge > 0 && (
+                    <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]">{item.badge}</span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
       </aside>
 
       <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
