@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { 
-  Menu, Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
+  Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
   Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart } from 'lucide-react';
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
 import RawMaterialPurchases from './pages/RawMaterialPurchases';
@@ -215,12 +215,19 @@ const WholesalerDashboard = ({ supplier, children }) => {
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
         <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 sticky top-0 z-10">
           <div className="flex items-center gap-3 md:gap-4">
+            {/* 🚀 الزر الذكي لإخفاء وإظهار القائمة الجانبية */}
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-              className="p-2.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all shadow-sm"
-              title="إظهار / إخفاء القائمة"
+              className="flex items-center gap-2 p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all shadow-sm group"
             >
-              <Menu size={22} />
+              {isSidebarOpen ? <X size={22} className="text-red-400 group-hover:text-red-300 transition-colors" /> : <Menu size={22} className="text-blue-400 group-hover:text-blue-300 transition-colors" />}
+              
+              <span className="hidden sm:block text-[11px] font-black tracking-wide">
+                {isSidebarOpen 
+                  ? (language === 'ar' ? 'إخفاء' : language === 'en' ? 'Close' : 'Fermer') 
+                  : (language === 'ar' ? 'القائمة' : language === 'en' ? 'Menu' : 'Menu')
+                }
+              </span>
             </button>
             <div className="truncate pr-1 text-start">
               <h2 className="text-lg md:text-xl font-bold text-white truncate">{t.portal}</h2>
@@ -474,8 +481,19 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
         <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
           <div className="flex items-center gap-3">
             {/* 🎯 زر القائمة السحري */}
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="إظهار / إخفاء القائمة">
-              <Menu size={24} />
+            {/* 🚀 الزر الذكي لإخفاء وإظهار القائمة الجانبية */}
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+              className="flex items-center gap-2 p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all shadow-sm group"
+            >
+              {isSidebarOpen ? <X size={24} className="text-red-400 group-hover:text-red-300 transition-colors" /> : <Menu size={22} className="text-blue-400 group-hover:text-blue-300 transition-colors" />}
+              
+              <span className="hidden sm:block text-[11px] font-black tracking-wide">
+                {isSidebarOpen 
+                  ? (language === 'ar' ? 'إخفاء' : language === 'en' ? 'Close' : 'Fermer') 
+                  : (language === 'ar' ? 'القائمة' : language === 'en' ? 'Menu' : 'Menu')
+                }
+              </span>
             </button>
             <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate text-start">
               {language === 'fr' ? 'Bienvenue, ' : language === 'en' ? 'Welcome, ' : 'مرحباً بك، '} <span className="text-blue-600 truncate">{storeName}</span>
