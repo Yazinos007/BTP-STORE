@@ -51,10 +51,19 @@ import SupplierTeam from './pages/SupplierTeam';
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
 
-// 🛡️ لوحة المورد الكبير المحصنة مع إضاءة الأقسام النشطة والنبض الفاخر
-const WholesalerDashboard = ({ supplier, children }) => {
+const WholesalerDashboard = ({ supplier, isMinimal, children }) => {
   const { language, setLanguage } = useSettingsStore();
   const location = useLocation();
+
+  if (isMinimal) {
+    return (
+      <div className="w-full h-full min-h-screen bg-[#0f172a] text-slate-300 overflow-x-hidden overflow-y-auto">
+        <div className="p-2 md:p-6">
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   const handleLanguageChange = () => {
     if (language === 'fr') setLanguage('ar');
