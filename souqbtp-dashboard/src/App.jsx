@@ -486,7 +486,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
               className="flex items-center gap-2 p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all shadow-sm group"
             >
-              {isSidebarOpen ? <X size={24} className="text-red-400 group-hover:text-red-300 transition-colors" /> : <Menu size={22} className="text-blue-400 group-hover:text-blue-300 transition-colors" />}
+              {isSidebarOpen ? <X size={22} className="text-red-400 group-hover:text-red-300 transition-colors" /> : <Menu size={22} className="text-blue-400 group-hover:text-blue-300 transition-colors" />}
               
               <span className="hidden sm:block text-[11px] font-black tracking-wide">
                 {isSidebarOpen 
