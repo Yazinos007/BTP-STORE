@@ -51,18 +51,25 @@ import SupplierTeam from './pages/SupplierTeam';
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
 
-// 🛡️ لوحة المورد الكبير المحصنة (مع ميزة الإخفاء السلس والوضع المصغر)
+// 🛡️ لوحة المورد الكبير المحصنة (مع ذكاء اصطناعي لتجربة الهاتف)
 const WholesalerDashboard = ({ supplier, children }) => {
   const { language, setLanguage } = useSettingsStore();
   const location = useLocation();
   
-  // 🎯 1. التقاط ذكي لا يخطئ لوضع الإطار المصغر (لإخفاء السيدبار في PHP)
   const isMinimal = window.location.href.includes('minimal=true');
   
-  // 🎯 2. حالة السيدبار (الإخفاء والإظهار)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // 🎯 1. ذكاء الشاشة: فتح السيدبار في الحاسوب، وإغلاقه في الهاتف (أصغر من 768px)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
 
-  // 🛑 إذا كان الوضع مصغراً (داخل PHP): إخفاء كل شيء إلا المحتوى!
+  // 🎯 2. مراقبة تغير حجم الشاشة (إذا قام المستخدم بتدوير الهاتف أو تكبير النافذة)
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSidebarOpen(window.innerWidth > 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (isMinimal) {
     return (
       <div className="flex h-screen w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden">
@@ -73,7 +80,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
     );
   }
 
-  // 🌍 دوال وأزرار النسخة الكاملة
   const handleLanguageChange = () => {
     if (language === 'fr') setLanguage('ar');
     else if (language === 'ar') setLanguage('en');
@@ -81,18 +87,9 @@ const WholesalerDashboard = ({ supplier, children }) => {
   };
 
   const tLayout = {
-    fr: {
-      upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste",
-      items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs Matières", rawPurchases: "Achats Matières", stock: "Stock Central", posB2B: "Ventes Directes (POS)", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance", }
-    },
-    ar: {
-      upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة",
-      items: { overview: "لوحة القيادة", rawSuppliers: "موردو المواد الخام", rawPurchases: "مشتريات المواد الخام", stock: "المخزون المركزي", posB2B: "المبيعات المباشرة (POS)", clients: "العملاء والديون (CRM)", orders: "الطلبات الواردة", fleet: "أسطول التوصيل", contracts: "المصافحة الرقمية", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق", }
-    },
-    en: {
-      upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler",
-      items: { overview: "Dashboard", rawSuppliers: "Raw Material Suppliers", rawPurchases: "Raw Material Purchases", stock: "Central Stock", posB2B: "Direct Sales (POS)", clients: "Clients & Debts (CRM)", orders: "Received Orders", fleet: "Fleet & Deliveries", contracts: "Digital Contracts", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", team: "Users & Permissions", settings: "Settings & Trust", }
-    }
+    fr: { upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs Matières", rawPurchases: "Achats Matières", stock: "Stock Central", posB2B: "Ventes Directes (POS)", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance", } },
+    ar: { upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", items: { overview: "لوحة القيادة", rawSuppliers: "موردو المواد الخام", rawPurchases: "مشتريات المواد الخام", stock: "المخزون المركزي", posB2B: "المبيعات المباشرة (POS)", clients: "العملاء والديون (CRM)", orders: "الطلبات الواردة", fleet: "أسطول التوصيل", contracts: "المصافحة الرقمية", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق", } },
+    en: { upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", items: { overview: "Dashboard", rawSuppliers: "Raw Material Suppliers", rawPurchases: "Raw Material Purchases", stock: "Central Stock", posB2B: "Direct Sales (POS)", clients: "Clients & Debts (CRM)", orders: "Received Orders", fleet: "Fleet & Deliveries", contracts: "Digital Contracts", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", team: "Users & Permissions", settings: "Settings & Trust", } }
   };
   const t = tLayout[language] || tLayout['fr'];
   
@@ -153,8 +150,8 @@ const WholesalerDashboard = ({ supplier, children }) => {
   return (
     <div className="flex h-screen w-full max-w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 السيدبار الجانبي مع خاصية الإخفاء الناعم */}
-      <aside className={`shrink-0 h-full bg-slate-900 flex flex-col shadow-2xl relative z-20 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-72 border-r border-slate-800 opacity-100' : 'w-0 border-r-0 opacity-0 overflow-hidden'}`}>
+      {/* 🚀 السيدبار: في الهواتف يطفو فوق المحتوى (Absolute) بدلاً من دفعه لليمين */}
+      <aside className={`shrink-0 h-full bg-slate-900 flex flex-col shadow-2xl transition-all duration-300 ease-in-out absolute md:relative z-30 ${isSidebarOpen ? 'w-72 border-r border-slate-800 opacity-100 translate-x-0' : 'w-0 border-r-0 opacity-0 overflow-hidden'}`}>
         <div className="w-72 h-full flex flex-col">
           <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
             <div className="flex items-center gap-3">
@@ -185,7 +182,13 @@ const WholesalerDashboard = ({ supplier, children }) => {
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
-                <Link key={item.path} to={item.path} className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all group ${getActiveStyle(item.path)}`}>
+                <Link 
+                  key={item.path} 
+                  to={item.path} 
+                  // 🎯 3. عند الضغط على أي قسم في الهاتف، يختفي السيدبار تلقائياً!
+                  onClick={() => { if(window.innerWidth <= 768) setIsSidebarOpen(false); }}
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all group ${getActiveStyle(item.path)}`}
+                >
                   <div className="flex items-center gap-3">
                     <item.icon size={20} className={`${isActive ? 'text-current scale-110' : 'group-hover:text-blue-400'} transition-transform shrink-0`} />
                     <span>{item.label}</span>
@@ -200,11 +203,18 @@ const WholesalerDashboard = ({ supplier, children }) => {
         </div>
       </aside>
 
+      {/* 🚀 خلفية داكنة خفيفة تظهر في الهاتف عندما يكون السيدبار مفتوحاً ليتمكن من الضغط عليها لإغلاقه */}
+      {isSidebarOpen && window.innerWidth <= 768 && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-20 md:hidden" 
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
       <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-            {/* 🚀 زر السحر لإخفاء وإظهار القائمة الجانبية */}
+        <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 sticky top-0 z-10">
+          <div className="flex items-center gap-3 md:gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
               className="p-2.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all shadow-sm"
@@ -212,27 +222,27 @@ const WholesalerDashboard = ({ supplier, children }) => {
             >
               <Menu size={22} />
             </button>
-            <div className="truncate pr-2 text-start">
-              <h2 className="text-xl font-bold text-white truncate">{t.portal}</h2>
-              <p className="text-xs font-bold text-slate-500 mt-1 flex items-center gap-2">
+            <div className="truncate pr-1 text-start">
+              <h2 className="text-lg md:text-xl font-bold text-white truncate">{t.portal}</h2>
+              <p className="text-[10px] md:text-xs font-bold text-slate-500 mt-1 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                 {t.online}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-6 shrink-0">
-            <div className={`flex items-center gap-3 ${language === 'ar' ? 'pr-6 border-r' : 'pl-6 border-l'} border-slate-700`}>
+            <div className={`flex items-center gap-3 ${language === 'ar' ? 'pr-3 md:pr-6 border-r' : 'pl-3 md:pl-6 border-l'} border-slate-700`}>
               <div className="text-end hidden sm:block">
                 <p className="text-sm font-bold text-white">{supplier?.store_name}</p>
                 <p className="text-xs text-slate-400 uppercase tracking-wider">{t.wholesaler}</p>
               </div>
-              <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20 border border-white/10">
+              <div className="w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20 border border-white/10">
                 {supplier?.store_name?.charAt(0).toUpperCase() || 'W'}
               </div>
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-x-hidden overflow-y-auto p-10 w-full max-w-full relative z-10">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-10 w-full max-w-full relative z-10">
           {children}
         </div>
       </main>
