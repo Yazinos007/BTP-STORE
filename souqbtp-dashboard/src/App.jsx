@@ -51,20 +51,27 @@ import SupplierTeam from './pages/SupplierTeam';
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
 
-const WholesalerDashboard = ({ supplier, isMinimal, children }) => {
+// 🛡️ لوحة المورد الكبير المحصنة (مع ميزة الإخفاء السلس والوضع المصغر)
+const WholesalerDashboard = ({ supplier, children }) => {
   const { language, setLanguage } = useSettingsStore();
   const location = useLocation();
+  
+  // 🎯 التقاط وضع الإطار المصغر من الرابط
+  const isMinimal = new URLSearchParams(window.location.search).get('minimal') === 'true';
+  
+  // 🎯 حالة زر إخفاء/إظهار السيدبار في الشاشة الكاملة
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+  // 1️⃣ الوضع المصغر (يعمل داخل منصة PHP): لا سيدبار، لا هيدر، فقط المحتوى!
   if (isMinimal) {
     return (
-      <div className="w-full h-full min-h-screen bg-[#0f172a] text-slate-300 overflow-x-hidden overflow-y-auto">
-        <div className="p-2 md:p-6">
-          {children}
-        </div>
+      <div className="w-full h-screen bg-[#0f172a] text-slate-300 overflow-x-hidden overflow-y-auto">
+        {children}
       </div>
     );
   }
 
+  // 2️⃣ الوضع الكامل (الشاشة المستقلة)
   const handleLanguageChange = () => {
     if (language === 'fr') setLanguage('ar');
     else if (language === 'ar') setLanguage('en');
@@ -74,17 +81,14 @@ const WholesalerDashboard = ({ supplier, isMinimal, children }) => {
   const tLayout = {
     fr: {
       upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste",
-      unauthorizedTitle: "Accès Non Autorisé", unauthorizedDesc: "Veuillez vous connecter via le portail principal.", backPortal: "Retour au portail",
       items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs Matières", rawPurchases: "Achats Matières", stock: "Stock Central", posB2B: "Ventes Directes (POS)", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance", }
     },
     ar: {
       upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة",
-      unauthorizedTitle: "الدخول غير مصرح", unauthorizedDesc: "يرجى تسجيل الدخول عبر البوابة الرئيسية.", backPortal: "العودة للمنصة الرئيسية",
       items: { overview: "لوحة القيادة", rawSuppliers: "موردو المواد الخام", rawPurchases: "مشتريات المواد الخام", stock: "المخزون المركزي", posB2B: "المبيعات المباشرة (POS)", clients: "العملاء والديون (CRM)", orders: "الطلبات الواردة", fleet: "أسطول التوصيل", contracts: "المصافحة الرقمية", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق", }
     },
     en: {
       upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler",
-      unauthorizedTitle: "Unauthorized Access", unauthorizedDesc: "Please log in via the main portal.", backPortal: "Back to Main Portal",
       items: { overview: "Dashboard", rawSuppliers: "Raw Material Suppliers", rawPurchases: "Raw Material Purchases", stock: "Central Stock", posB2B: "Direct Sales (POS)", clients: "Clients & Debts (CRM)", orders: "Received Orders", fleet: "Fleet & Deliveries", contracts: "Digital Contracts", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", team: "Users & Permissions", settings: "Settings & Trust", }
     }
   };
@@ -93,82 +97,22 @@ const WholesalerDashboard = ({ supplier, isMinimal, children }) => {
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [readyToShipCount, setReadyToShipCount] = useState(0);
 
- // 🛡️ دالة Auth النووية: تختطف التوكن من الرابط وتجبر المتصفح على فتحه
   useEffect(() => {
-    let mounted = true;
-
-    const forgeSession = async () => {
-      try {
-        // 1. اختطاف التوكن من الرابط مباشرة (لتجاوز حظر الـ iframe)
-        const hash = window.location.hash;
-        
-        if (hash && hash.includes('access_token') && hash.includes('refresh_token')) {
-          console.log("✅ تم رصد التوكن في الرابط! جاري تحطيم الجدار...");
-          
-          // فك تشفير الرابط لاستخراج المفاتيح
-          const params = new URLSearchParams(hash.substring(1));
-          const accessToken = params.get('access_token');
-          const refreshToken = params.get('refresh_token');
-
-          if (accessToken && refreshToken) {
-            // إجبار Supabase على تسجيل الدخول فوراً بهذا التوكن!
-            const { data, error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            });
-
-            if (data?.session?.user && mounted) {
-              setSession(data.session);
-              fetchSupplierProfile(data.session.user.id);
-              
-              // مسح التوكن من الرابط ليبقى المنظر احترافياً ونظيفاً
-              window.history.replaceState(null, '', window.location.pathname);
-              setLoading(false);
-              return; // 🎯 نجاح! نخرج من الدالة ولا نكمل
-            }
-          }
-        }
-
-        // 2. الخطة ب: إذا لم يكن هناك توكن في الرابط، نحاول بالطريقة العادية
-        const { data: { session } } = await supabase.auth.getSession();
-        if (mounted) {
-          if (session?.user) {
-            setSession(session);
-            fetchSupplierProfile(session.user.id);
-          } else {
-            setSession(null);
-          }
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("❌ خطأ في فك تشفير الجلسة:", err);
-        if (mounted) {
-          setSession(null);
-          setLoading(false);
-        }
+    if (!supplier?.id) return;
+    const syncSmartData = async () => {
+      const { data: orders } = await supabase.from('supply_requests').select('status, merchant_id').eq('supplier_id', supplier.id);
+      if (orders) {
+        setPendingOrdersCount(orders.filter(o => o.status === 'pending').length);
+        setReadyToShipCount(orders.filter(o => o.status === 'signed').length);
       }
     };
-
-    forgeSession();
-
-    // 3. الاستماع لأي تغير مستقبلي (مثل تسجيل الخروج)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      if (mounted) {
-        if (event === 'SIGNED_OUT') {
-          setSession(null);
-          window.parent.location.href = 'https://souqbtp.ma/app/auth.html';
-        } else if (currentSession?.user && !session) {
-          // تحديث الجلسة في الخلفية إذا تم تجديدها
-          setSession(currentSession);
-        }
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription?.unsubscribe();
-    };
-  }, []);
+    syncSmartData();
+    const channel = supabase.channel('wholesaler-smart-radar')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'supply_requests', filter: `supplier_id=eq.${supplier.id}` }, () => {
+        syncSmartData();
+      }).subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [supplier]);
   
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
@@ -196,20 +140,20 @@ const WholesalerDashboard = ({ supplier, isMinimal, children }) => {
   const getActiveStyle = (path) => {
     const isActive = location.pathname === path;
     if (!isActive) return "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent";
-    
     if (path === '/pos-b2b' || path === '/orders') return "bg-blue-600/20 text-blue-400 border border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.35)] animate-pulse";
     if (path === '/stock') return "bg-emerald-600/20 text-emerald-400 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-pulse";
     if (path === '/raw-suppliers' || path === '/raw-purchases' || path === '/team') return "bg-purple-600/20 text-purple-400 border border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.35)] animate-pulse";
     if (path === '/invoices' || path === '/expenses') return "bg-orange-600/20 text-orange-400 border border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.35)] animate-pulse";
     if (path === '/fleet' || path === '/contracts' || path === '/tender-radar') return "bg-cyan-600/20 text-cyan-400 border border-cyan-500/60 shadow-[0_0_20px_rgba(6,182,212,0.35)] animate-pulse";
-    
     return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)] animate-pulse";
   };
 
   return (
     <div className="flex h-screen w-full max-w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <aside className="w-72 shrink-0 h-full bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20">
-        <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
+      
+      {/* 🚀 السيدبار الجانبي مع التحكم بالعرض (w-72 أو w-0) */}
+      <aside className={`shrink-0 h-full bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl relative z-20 transition-all duration-300 ${isSidebarOpen ? 'w-72' : 'w-0 border-none overflow-hidden'}`}>
+        <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50 w-72">
           <div className="flex items-center gap-3">
             {supplier?.logo_url ? (
               <img src={supplier.logo_url} alt="Logo" className="w-11 h-11 shrink-0 rounded-xl object-cover shadow-lg border border-slate-700" />
@@ -219,60 +163,58 @@ const WholesalerDashboard = ({ supplier, isMinimal, children }) => {
               </div>
             )}
             <div className="flex flex-col text-start">
-              <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">
-                SouqBTP
-              </h1>
+              <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">SouqBTP</h1>
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Portal</span>
             </div>
           </div>
-
-          <button 
-            onClick={handleLanguageChange}
-            className="flex flex-col items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-all text-slate-300 hover:text-white group shadow-sm hover:shadow-md cursor-pointer"
-            title={language === 'ar' ? 'تغيير اللغة' : language === 'en' ? 'Change Language' : 'Changer la langue'}
-          >
+          <button onClick={handleLanguageChange} className="flex flex-col items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-all text-slate-300 hover:text-white group cursor-pointer">
             <Globe size={18} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="text-[9px] font-black uppercase mt-1 tracking-wider">{language}</span>
           </button>
         </div>
-        <div className="px-5 pt-6 pb-2 shrink-0">
+        <div className="px-5 pt-6 pb-2 shrink-0 w-72">
           <Link to="/subscription" className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all text-sm">
             <Zap size={20} className="fill-black" />
             {t.upgrade}
           </Link>
         </div>
-        <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar w-72">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link 
-                key={item.path} 
-                to={item.path} 
-                className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all group ${getActiveStyle(item.path)}`}
-              >
+              <Link key={item.path} to={item.path} className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all group ${getActiveStyle(item.path)}`}>
                 <div className="flex items-center gap-3">
                   <item.icon size={20} className={`${isActive ? 'text-current scale-110' : 'group-hover:text-blue-400'} transition-transform shrink-0`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]">
-                    {item.badge}
-                  </span>
+                  <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]">{item.badge}</span>
                 )}
               </Link>
             );
           })}
         </nav>
       </aside>
+
       <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-10 sticky top-0 z-10">
-          <div className="truncate pr-4 text-start">
-            <h2 className="text-xl font-bold text-white truncate">{t.portal}</h2>
-            <p className="text-xs font-bold text-slate-500 mt-1 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-              {t.online}
-            </p>
+        <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+            {/* 🚀 زر السحر لإخفاء وإظهار القائمة الجانبية */}
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+              className="p-2.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all shadow-sm"
+              title="إظهار / إخفاء القائمة"
+            >
+              <Menu size={22} />
+            </button>
+            <div className="truncate pr-2 text-start">
+              <h2 className="text-xl font-bold text-white truncate">{t.portal}</h2>
+              <p className="text-xs font-bold text-slate-500 mt-1 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                {t.online}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-6 shrink-0">
             <div className={`flex items-center gap-3 ${language === 'ar' ? 'pr-6 border-r' : 'pl-6 border-l'} border-slate-700`}>
