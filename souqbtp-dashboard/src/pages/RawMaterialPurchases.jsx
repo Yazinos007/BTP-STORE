@@ -1,27 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, CheckCircle, ShoppingBag, Loader2, CreditCard, X, TrendingUp, BrainCircuit, Truck, Trash2, Edit2, PhoneCall, Package } from 'lucide-react';
+import { Search, CheckCircle, ShoppingBag, Loader2, CreditCard, X, TrendingUp, BrainCircuit, Truck, Trash2, Edit2, PhoneCall, Package, Layers } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import useProductStore from '../store/useProductStore';
 import useExternalSupplierStore from '../store/useExternalSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-import confetti from 'canvas-confetti';
 import SignatureCanvas from 'react-signature-canvas';
 
 const translations = {
   ar: {
-    title: 'مشتريات المواد الأولية', subtitle: 'إدخال مواد التصنيع/التغليف وتحديث ديون الموردين.',
-    selectSupplier: 'اختر المورد', searchProd: 'ابحث عن مادة أولية...',
-    cart: 'قائمة المشتريات', costLabel: 'التكلفة:', stockLabel: 'المخزن:', saleLabel: 'البيع:',
+    title: 'إدارة المشتريات والتوريد', subtitle: 'إدخال مواد التصنيع، التغليف، والاستهلاكيات وتحديث ديون الموردين.',
+    selectSupplier: 'اختر المورد', searchProd: 'ابحث عن مادة أو منتج...',
+    cart: 'قائمة المشتريات (السلة)', costLabel: 'التكلفة:', stockLabel: 'المخزن:', saleLabel: 'البيع:',
     empty: 'القائمة فارغة', total: 'إجمالي الشراء',
     payCash: 'دفع نقداً', payCredit: 'شراء بالآجل (كريدي)', unit: 'الوحدة', qty: 'الكمية', price: 'ثمن الشراء',
     msgSelectSupplier: 'المرجو اختيار المورد أولاً!', msgEmptyCart: 'قائمة المشتريات فارغة!',
     msgAccountError: 'لم يتم التعرف على بيانات حسابك!', msgError: 'عذراً، حدث خطأ:',
-    profitMargin: 'هامش الربح:', expectedProfit: 'الربح المتوقع:',
-    msgSuccess: '✅ تم تحديث مخزون المواد، تسجيل الفاتورة والمصروف بنجاح!', invoiceDesc: 'فاتورة مواد أولية رقم:',
+    msgSuccess: '✅ تم تحديث مخزون المواد، تسجيل الفاتورة والمصروف بنجاح!', invoiceDesc: 'فاتورة مشتريات رقم:',
     categoryName: 'achats',
     drawSign: 'المرجو رسم توقيعك أولاً.', signSuccess: '✅ تم توقيع العقد بنجاح!',
-    signPrompt: 'لتوقيع هذا العقد والموافقة عليه، اكتب اسمك الكامل هنا:',
     cancelConfirm: 'هل أنت متأكد من إلغاء هذا الطلب؟', cancelSuccess: '✅ تم إلغاء الطلب بنجاح.',
     editConfirm: 'هل تريد استرجاع الطلب للسلة لتعديله؟', fallbackSupplier: 'المورد',
     poSent: '✅ تم إرسال الطلب إلى', receiveSuccess: '✅ تم الاستلام بنجاح وتوليد الفاتورة ووصل التسليم!',
@@ -30,53 +27,51 @@ const translations = {
     statusPending: 'بانتظار المورد', statusSignReq: 'يتطلب توقيعك', statusSigned: 'تم التوقيع بنجاح',
     statusShipped: 'الشاحنة في الطريق 🚚', statusDelivered: 'تم التسليم ✅',
     reqItems: 'مواد مطلوبة :', deliveryDetails: 'تفاصيل التوصيل', signContractBtn: 'توقيع العقد (مصافحة)',
-    digitallySigned: 'موقع رقمياً:', confirmReceiptBtn: 'تأكيد استلام المواد (إدخال للمخزن)',
+    digitallySigned: 'موقع رقمياً:', confirmReceiptBtn: 'تأكيد الاستلام (إدخال للمخزن)',
     completedMsg: '🎉 تم التسليم، وجرد المخزون، وتوليد الفاتورة بنجاح!', legalSign: 'التوقيع القانوني',
     signDesc: 'المرجو رسم توقيعك بوضوح داخل الإطار بالأسفل.', clear: 'مسح', cancel: 'إلغاء', confirmSign: 'تأكيد وحفظ التوقيع',
-    sendPO: 'إرسال طلب تزويد (Purchase Order)'
+    sendPO: 'إرسال طلب تزويد (Purchase Order)',
+    types: { 'all': 'الكل', 'raw_material': '🧱 مواد خام', 'packaging': '📦 تعبئة وتغليف', 'consumable': '⚙️ استهلاكية' }
   },
   fr: {
-    title: 'Achats Matières Premières', subtitle: 'Entrée des matières et dettes fournisseurs.',
-    selectSupplier: 'Choisir le Fournisseur', searchProd: 'Rechercher une matière...',
-    cart: 'Liste d\'Achat', costLabel: 'Coût:', stockLabel: 'Stock:', saleLabel: 'Vente:',
+    title: 'Achats & Approvisionnement', subtitle: 'Entrée des matières, emballages, et dettes fournisseurs.',
+    selectSupplier: 'Choisir le Fournisseur', searchProd: 'Rechercher un article...',
+    cart: 'Liste d\'Achat (Panier)', costLabel: 'Coût:', stockLabel: 'Stock:', saleLabel: 'Vente:',
     empty: 'Liste vide', total: 'Total Achat',
     payCash: 'Payer Cash', payCredit: 'Achat à Crédit', unit: 'Unité', qty: 'Qté', price: 'Prix d\'achat',
     msgSelectSupplier: 'Veuillez choisir un fournisseur !', msgEmptyCart: 'La liste d\'achat est vide !',
     msgAccountError: 'Erreur d\'identification du compte !', msgError: 'Désolé, une erreur est survenue :',
-    profitMargin: 'Marge:', expectedProfit: 'Profit Prévu:',
-    msgSuccess: '✅ Stock de matières, Facture et Charge enregistrés avec succès !', invoiceDesc: 'Facture matière N° :',
+    msgSuccess: '✅ Stock, Facture et Charge enregistrés avec succès !', invoiceDesc: 'Facture d\'achat N° :',
     categoryName: 'achats',
     drawSign: 'Veuillez dessiner votre signature.', signSuccess: '✅ Contrat signé avec succès !',
-    signPrompt: 'Pour signer ce bon de commande, tapez votre nom complet :',
     cancelConfirm: 'Annuler cette commande ?', cancelSuccess: '✅ Commande annulée.',
     editConfirm: 'Modifier cette commande ?', fallbackSupplier: 'fournisseur',
-    poSent: '✅ Commande envoyée à', receiveSuccess: '✅ Réception validée !',
+    poSent: '✅ Commande envoyée à', receiveSuccess: '✅ Réception validée et intégrée !',
     receiveError: '⚠️ Réception validée avec quelques erreurs :\n',
     b2bTitle: 'Suivi des Commandes B2B', noB2b: 'Vous n\'avez envoyé aucune commande B2B.',
     statusPending: 'En attente', statusSignReq: 'Signature Requise', statusSigned: 'Signé & Confirmé',
     statusShipped: 'En Route 🚚', statusDelivered: 'Livré ✅',
     reqItems: 'Articles demandés :', deliveryDetails: 'Détails de Livraison', signContractBtn: 'Signer le Contrat',
-    digitallySigned: 'Signé numériquement :', confirmReceiptBtn: 'Confirmer la Réception',
+    digitallySigned: 'Signé numériquement :', confirmReceiptBtn: 'Confirmer la Réception (Stock)',
     completedMsg: '🎉 Livré, Facturé & Intégré au Stock !', legalSign: 'Signature Légale',
     signDesc: 'Veuillez dessiner votre signature dans le cadre ci-dessous.', clear: 'Effacer', cancel: 'Annuler', confirmSign: 'Confirmer & Signer',
-    sendPO: 'Envoyer Bon de Commande (B2B)'
+    sendPO: 'Envoyer Bon de Commande (B2B)',
+    types: { 'all': 'Tout', 'raw_material': '🧱 Matière 1ère', 'packaging': '📦 Emballage', 'consumable': '⚙️ Consommable' }
   },
   en: {
-    title: 'Raw Material Purchases', subtitle: 'Enter raw materials and update supplier debts.',
-    selectSupplier: 'Select Supplier', searchProd: 'Search raw material...',
-    cart: 'Purchase List', costLabel: 'Cost:', stockLabel: 'Stock:', saleLabel: 'Sale:',
+    title: 'Purchases & Procurement', subtitle: 'Enter raw materials, packaging, and update supplier debts.',
+    selectSupplier: 'Select Supplier', searchProd: 'Search for an item...',
+    cart: 'Purchase List (Cart)', costLabel: 'Cost:', stockLabel: 'Stock:', saleLabel: 'Sale:',
     empty: 'List is empty', total: 'Total Purchase',
     payCash: 'Pay Cash', payCredit: 'Buy on Credit', unit: 'Unit', qty: 'Qty', price: 'Purchase Price',
     msgSelectSupplier: 'Please select a supplier first!', msgEmptyCart: 'Purchase list is empty!',
     msgAccountError: 'Account identification error!', msgError: 'Sorry, an error occurred:',
-    profitMargin: 'Margin:', expectedProfit: 'Expected Profit:',
-    msgSuccess: '✅ Raw materials stock, Invoice and Expense successfully recorded!', invoiceDesc: 'Material Invoice No:',
+    msgSuccess: '✅ Stock, Invoice and Expense successfully recorded!', invoiceDesc: 'Purchase Invoice No:',
     categoryName: 'achats',
     drawSign: 'Please draw your signature.', signSuccess: '✅ Contract signed successfully!',
-    signPrompt: 'To sign this order, type your full name here:',
     cancelConfirm: 'Cancel this order?', cancelSuccess: '✅ Order cancelled.',
     editConfirm: 'Modify this order?', fallbackSupplier: 'supplier',
-    poSent: '✅ Order sent to', receiveSuccess: '✅ Receipt validated!',
+    poSent: '✅ Order sent to', receiveSuccess: '✅ Receipt validated and integrated!',
     receiveError: '⚠️ Receipt validated with some errors:\n',
     b2bTitle: 'B2B Orders Tracking', noB2b: 'You have not sent any B2B orders yet.',
     statusPending: 'Pending', statusSignReq: 'Signature Required', statusSigned: 'Signed & Confirmed',
@@ -85,9 +80,12 @@ const translations = {
     digitallySigned: 'Digitally signed:', confirmReceiptBtn: 'Confirm Receipt (Add to Stock)',
     completedMsg: '🎉 Delivered, Invoiced & Integrated into Stock!', legalSign: 'Legal Signature',
     signDesc: 'Please draw your signature in the frame below.', clear: 'Clear', cancel: 'Cancel', confirmSign: 'Confirm & Sign',
-    sendPO: 'Send Purchase Order (B2B)'
+    sendPO: 'Send Purchase Order (B2B)',
+    types: { 'all': 'All', 'raw_material': '🧱 Raw Material', 'packaging': '📦 Packaging', 'consumable': '⚙️ Consumable' }
   }
 };
+
+const ITEM_TYPES_FILTER = ['all', 'raw_material', 'packaging', 'consumable'];
 
 export default function RawMaterialPurchases() {
   const { products, fetchProducts, updateProduct } = useProductStore();
@@ -95,15 +93,14 @@ export default function RawMaterialPurchases() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
   
-  // 🛡️ الترياق السحري
   const t = translations[language] || translations['fr'];
 
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all'); // 🎯 فلتر نوع المنتج
   const [cart, setCart] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // 🌟 حالات التوقيع اليدوي
   const [isSignModalOpen, setIsSignModalOpen] = useState(false);
   const [contractToSign, setContractToSign] = useState(null);
   const sigCanvas = useRef({});
@@ -148,6 +145,15 @@ export default function RawMaterialPurchases() {
 
   useEffect(() => { fetchProducts(); fetchSuppliers(); }, [fetchProducts, fetchSuppliers]);
 
+  // 🎯 جلب المنتجات وإخفاء "المنتجات النهائية" (لأنها لا تشترى كمواد)
+  const purchaseableProducts = products.filter(p => (p.item_type || 'finished_good') !== 'finished_good');
+
+  const filteredProducts = purchaseableProducts.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === 'all' || (p.item_type || 'finished_good') === filterType;
+    return matchesSearch && matchesType;
+  });
+
   const addToCart = (product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
@@ -163,7 +169,6 @@ export default function RawMaterialPurchases() {
   const removeFromCart = (id) => setCart(prev => prev.filter(item => item.id !== id));
   const total = cart.reduce((sum, item) => sum + (Number(item.purchase_price) * Number(item.quantity)), 0);
 
-  // 🌟 حالات تتبع طلبات B2B
   const [b2bRequests, setB2bRequests] = useState([]);
   
   const fetchB2BRequests = async () => {
@@ -355,96 +360,126 @@ export default function RawMaterialPurchases() {
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-black text-white tracking-tight">{t.title}</h2>
+          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <Layers className="text-blue-500" size={32}/> {t.title}
+          </h2>
           <p className="text-slate-300 font-medium">{t.subtitle}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+          <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+            
+            {/* 🎯 قسم اختيار المورد والبحث */}
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.selectSupplier}</label>
+                <label className="block text-sm font-bold text-slate-400 mb-2">{t.selectSupplier}</label>
                 <select 
                   value={selectedSupplierId} onChange={(e) => setSelectedSupplierId(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 font-bold"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 text-white rounded-xl outline-none focus:border-blue-500 font-bold"
                 >
                   <option value="">-- {t.selectSupplier} --</option>
                   {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.searchProd}</label>
+                <label className="block text-sm font-bold text-slate-400 mb-2">{t.searchProd}</label>
                 <div className="relative">
-                  <Search className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-gray-400`} size={18} />
+                  <Search className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-slate-400`} size={18} />
                   <input 
                     type="text" placeholder={t.searchProd} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`w-full ${language === 'ar' ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 font-bold`}
+                    className={`w-full ${language === 'ar' ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 bg-slate-900 border border-slate-700 text-white rounded-xl outline-none focus:border-blue-500 font-bold`}
                   />
                 </div>
               </div>
             </div>
 
+            {/* 🎯 شريط فلترة الـ DNA (مدمج كأزرار أنيقة) */}
+            <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+              {ITEM_TYPES_FILTER.map(type => (
+                <button
+                  key={type}
+                  onClick={() => setFilterType(type)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                    filterType === type 
+                      ? 'bg-blue-600/20 border-blue-500 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]' 
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-700'
+                  }`}
+                >
+                  {t.types[type]}
+                </button>
+              ))}
+            </div>
+
+            {/* 🎯 قائمة المنتجات المتاحة للشراء */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map(p => (
+              {filteredProducts.map(p => (
                 <button 
                   key={p.id} 
                   onClick={() => addToCart(p)} 
-                  className={`p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group relative overflow-hidden ${language === 'ar' ? 'text-right' : 'text-left'}`}
+                  className={`p-4 bg-slate-900/50 border border-slate-700 rounded-xl hover:border-blue-500 hover:bg-slate-700 transition-all group relative overflow-hidden ${language === 'ar' ? 'text-right' : 'text-left'}`}
                 >
-                  <p className="font-bold text-gray-800 group-hover:text-blue-700">{p.name}</p>
+                  <p className="font-bold text-slate-200 group-hover:text-blue-400 truncate">{p.name}</p>
                   
-                  <div className="flex flex-col mt-2 gap-1">
+                  {/* عرض الـ DNA الخاص بالمادة */}
+                  <div className="mt-1">
+                    <span className="text-[9px] font-black opacity-70">{t.types[p.item_type || 'raw_material']}</span>
+                  </div>
+
+                  <div className="flex flex-col mt-2 gap-1 border-t border-slate-700/50 pt-2">
                     <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-400 uppercase font-bold">{t.costLabel}</span>
-                      <span className="text-blue-600 font-black" dir="ltr">{p.cost_price || 0} DH</span>
+                      <span className="text-slate-400 uppercase font-bold">{t.costLabel}</span>
+                      <span className="text-emerald-400 font-black" dir="ltr">{p.cost_price || 0} DH</span>
                     </div>
                   </div>
                   
-                  <p className="text-[9px] text-gray-400 mt-2 bg-gray-100 w-fit px-1.5 py-0.5 rounded">
-                    {t.stockLabel} {p.stock_quantity} {t.unit}
-                  </p>
+                  <div className="mt-2 flex justify-between items-center bg-slate-950 px-2 py-1 rounded">
+                    <span className="text-[10px] text-slate-400">{t.stockLabel}</span>
+                    <span className="text-xs font-black text-white">{p.stock_quantity} {p.unit}</span>
+                  </div>
                 </button>
               ))}
             </div>
           </div>
         </div>
 
+        {/* 🎯 سلة المشتريات (السيدبار الجانبي) */}
         <div className="lg:col-span-1">
-          <div className="bg-[#1e293b] text-white rounded-3xl shadow-xl overflow-hidden flex flex-col h-fit sticky top-6">
-            <div className="p-6 bg-white/5 border-b border-white/10 flex items-center gap-3">
+          <div className="bg-[#1e293b] border border-slate-700 text-white rounded-3xl shadow-xl overflow-hidden flex flex-col h-fit sticky top-6">
+            <div className="p-6 bg-slate-900/80 border-b border-slate-700 flex items-center gap-3">
               <ShoppingBag className="text-blue-400" />
               <h3 className="font-black text-xl">{t.cart}</h3>
             </div>
 
             <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto custom-scrollbar">
               {cart.length === 0 ? (
-                <div className="py-10 text-center text-white/20 italic">{t.empty}</div>
+                <div className="py-10 text-center text-slate-500 italic font-bold">{t.empty}</div>
               ) : (
                 cart.map(item => (
-                  <div key={item.id} className="bg-white/5 p-4 rounded-2xl border border-white/10 mb-3">
+                  <div key={item.id} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 mb-3 hover:border-slate-600 transition-colors">
                     <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <p className="font-bold text-sm text-white">{item.name}</p>
+                      <div className="pr-2">
+                        <p className="font-bold text-sm text-slate-200">{item.name}</p>
+                        <p className="text-[9px] text-blue-400 mt-0.5">{t.types[item.item_type || 'raw_material']}</p>
                       </div>
-                      <button onClick={() => removeFromCart(item.id)} className="text-white/30 hover:text-red-400">
-                        <X size={16}/>
+                      <button onClick={() => removeFromCart(item.id)} className="text-slate-500 hover:text-red-400 bg-slate-800 p-1.5 rounded-lg">
+                        <X size={14}/>
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] text-white/50 uppercase font-black">{t.qty}</label>
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
+                        <label className="text-[9px] text-slate-400 uppercase font-black block mb-1">{t.qty}</label>
                         <input 
-                          type="number" value={item.quantity} onChange={(e) => updateCartItem(item.id, 'quantity', e.target.value)}
-                          className="w-full bg-black/20 border-none rounded-lg text-sm font-bold p-2 focus:ring-1 focus:ring-blue-500"
+                          type="number" min="1" value={item.quantity} onChange={(e) => updateCartItem(item.id, 'quantity', e.target.value)}
+                          className="w-full bg-transparent border-none text-white text-sm font-bold p-0 focus:ring-0 outline-none"
                         />
                       </div>
-                      <div>
-                        <label className="text-[10px] text-white/50 uppercase font-black">{t.price}</label>
+                      <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
+                        <label className="text-[9px] text-slate-400 uppercase font-black block mb-1">{t.price}</label>
                         <input 
-                          type="number" value={item.purchase_price} onChange={(e) => updateCartItem(item.id, 'purchase_price', e.target.value)}
-                          className="w-full bg-black/20 border-none rounded-lg text-sm font-bold p-2 focus:ring-1 focus:ring-blue-500"
+                          type="number" step="0.01" value={item.purchase_price} onChange={(e) => updateCartItem(item.id, 'purchase_price', e.target.value)}
+                          className="w-full bg-transparent border-none text-emerald-400 text-sm font-bold p-0 focus:ring-0 outline-none"
                         />
                       </div>
                     </div>
@@ -453,26 +488,26 @@ export default function RawMaterialPurchases() {
               )}
             </div>
 
-            <div className="p-6 bg-black/30 border-t border-white/10 space-y-4">
-              <div className="flex justify-between items-end">
-                <span className="text-white/50 font-bold">{t.total}</span>
+            <div className="p-6 bg-slate-900/90 border-t border-slate-700 space-y-4">
+              <div className="flex justify-between items-end bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <span className="text-slate-400 font-bold">{t.total}</span>
                 <div className="text-right flex items-baseline gap-1" dir="ltr">
                   <span className="text-3xl font-black text-blue-400">{total.toLocaleString()}</span>
-                  <span className="text-xs font-bold text-white/30 uppercase">MAD</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase">MAD</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                 <button 
                   disabled={isProcessing || cart.length === 0} onClick={() => handleCompletePurchase('cash')}
-                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black flex justify-center items-center gap-2 transition-all shadow-lg text-sm"
+                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg disabled:opacity-50 text-sm"
                 >
                   {isProcessing ? <Loader2 className="animate-spin" /> : <><CheckCircle size={16}/> {t.payCash}</>}
                 </button>
                 
                 <button 
                    disabled={isProcessing || cart.length === 0} onClick={() => handleCompletePurchase('credit')}
-                   className="w-full py-4 bg-orange-600 hover:bg-orange-500 rounded-2xl font-black flex justify-center items-center gap-2 transition-all shadow-lg text-sm"
+                   className="w-full py-3.5 bg-orange-600 hover:bg-orange-500 rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg disabled:opacity-50 text-sm"
                 >
                   <CreditCard size={16}/> {t.payCredit}
                 </button>
@@ -480,7 +515,7 @@ export default function RawMaterialPurchases() {
                 <button 
                    disabled={isProcessing || cart.length === 0} 
                    onClick={handleSendPO}
-                   className="w-full md:col-span-2 py-4 bg-gradient-to-r from-slate-800 to-black hover:from-black hover:to-slate-900 rounded-2xl font-black flex justify-center items-center gap-2 transition-all shadow-lg text-white mt-2 text-sm"
+                   className="w-full md:col-span-2 py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] disabled:opacity-50 text-white text-sm"
                 >
                   <Truck size={18}/> {t.sendPO}
                 </button>
@@ -490,51 +525,55 @@ export default function RawMaterialPurchases() {
         </div>
       </div>
 
-      <div className="mt-12 bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-        <h3 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2">
-          <Truck className="text-blue-600" />
+      {/* 🎯 قسم تتبع طلبات B2B المتبقية بالأسفل */}
+      <div className="mt-8 bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-xl">
+        <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
+          <Truck className="text-blue-400" />
           {t.b2bTitle}
         </h3>
         
         {b2bRequests.length === 0 ? (
-          <div className="text-center text-gray-400 py-10 font-medium">
+          <div className="text-center text-slate-500 py-10 font-medium bg-slate-900/50 rounded-2xl border border-slate-700">
             {t.noB2b}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {b2bRequests.map(req => (
-              <div key={req.id} className="border border-gray-200 rounded-2xl p-5 bg-gray-50/50 hover:bg-white hover:shadow-md transition-all">
+              <div key={req.id} className="border border-slate-700 rounded-2xl p-5 bg-slate-900/50 hover:border-blue-500/50 hover:bg-slate-900 transition-all shadow-lg">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <p className="text-xs font-bold text-gray-400">PO #{req.id.split('-')[0].toUpperCase()}</p>
-                    <p className="text-lg font-black text-gray-800" dir="ltr">{Number(req.total_amount).toLocaleString()} DH</p>
+                    <p className="text-xs font-bold text-slate-500">PO #{req.id.split('-')[0].toUpperCase()}</p>
+                    <p className="text-lg font-black text-white" dir="ltr">{Number(req.total_amount).toLocaleString()} DH</p>
                   </div>
                   
                   <div className="flex flex-col items-end gap-2">
-                    {req.status === 'pending' && <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-black">{t.statusPending}</span>}
-                    {req.status === 'confirmed' && <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-black animate-pulse">{t.statusSignReq}</span>}
-                    {req.status === 'signed' && <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-xs font-black">{t.statusSigned}</span>}
-                    {req.status === 'shipped' && <span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-xs font-black animate-pulse">{t.statusShipped}</span>}
-                    {req.status === 'delivered' && <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-black">{t.statusDelivered}</span>}
+                    {req.status === 'pending' && <span className="bg-orange-500/10 text-orange-400 px-3 py-1 rounded-full text-xs font-black border border-orange-500/20">{t.statusPending}</span>}
+                    {req.status === 'confirmed' && <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-xs font-black animate-pulse border border-blue-500/20">{t.statusSignReq}</span>}
+                    {req.status === 'signed' && <span className="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-xs font-black border border-emerald-500/20">{t.statusSigned}</span>}
+                    {req.status === 'shipped' && <span className="bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full text-xs font-black animate-pulse border border-indigo-500/20">{t.statusShipped}</span>}
+                    {req.status === 'delivered' && <span className="bg-slate-700 text-slate-300 px-3 py-1 rounded-full text-xs font-black border border-slate-600">{t.statusDelivered}</span>}
 
                     {req.status === 'pending' && (
                       <div className="flex gap-2 mt-1">
-                        <button onClick={() => handleEditB2B(req)} className="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-all"><Edit2 size={16}/></button>
-                        <button onClick={() => handleDeleteB2B(req.id)} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-all"><Trash2 size={16}/></button>
+                        <button onClick={() => handleEditB2B(req)} className="text-blue-400 hover:text-white bg-blue-500/10 hover:bg-blue-500 p-2 rounded-lg transition-all"><Edit2 size={16}/></button>
+                        <button onClick={() => handleDeleteB2B(req.id)} className="text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500 p-2 rounded-lg transition-all"><Trash2 size={16}/></button>
                       </div>
                     )}
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <p className="text-xs font-bold text-gray-400 mb-2">
+                  <p className="text-xs font-bold text-slate-400 mb-2">
                     {req.items?.length} {t.reqItems}
                   </p>
-                  <div className="bg-gray-100/50 rounded-lg p-3 space-y-1.5 border border-gray-100">
+                  <div className="bg-slate-950 rounded-xl p-3 space-y-2 border border-slate-800 max-h-32 overflow-y-auto custom-scrollbar">
                     {req.items?.map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-sm">
-                        <span className="font-bold text-gray-700">{item.name}</span>
-                        <span className="text-gray-500 font-medium px-2 py-0.5 bg-white rounded-md border shadow-sm">
+                      <div key={idx} className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-1 last:border-0 last:pb-0">
+                        <div>
+                          <span className="font-bold text-slate-300">{item.name}</span>
+                          <span className="block text-[9px] text-blue-400 mt-0.5">{t.types[item.item_type || 'raw_material']}</span>
+                        </div>
+                        <span className="text-emerald-400 font-black px-2 py-1 bg-emerald-500/10 rounded-md text-xs">
                           {item.quantity} {t.unit}
                         </span>
                       </div>
@@ -543,15 +582,15 @@ export default function RawMaterialPurchases() {
                 </div>
 
                 {(req.status === 'shipped' || req.status === 'delivered') && (
-                  <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-4">
+                  <div className="bg-blue-900/20 border border-blue-500/20 rounded-xl p-4 mb-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">{t.deliveryDetails}</span>
-                      <span className="text-xs font-black text-gray-500 bg-white px-2 py-1 rounded shadow-sm">{req.vehicle_plate}</span>
+                      <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">{t.deliveryDetails}</span>
+                      <span className="text-xs font-black text-slate-300 bg-slate-800 px-2 py-1 rounded shadow-sm">{req.vehicle_plate}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-gray-800">🚚 {req.driver_name}</span>
+                      <span className="text-sm font-bold text-white">🚚 {req.driver_name}</span>
                       {req.driver_phone && (
-                        <a href={`tel:${req.driver_phone}`} className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-bold text-sm bg-blue-100/50 px-3 py-1.5 rounded-lg transition-all">
+                        <a href={`tel:${req.driver_phone}`} className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 font-bold text-sm bg-blue-500/10 px-3 py-1.5 rounded-lg transition-all border border-blue-500/20">
                           <PhoneCall size={14}/> {req.driver_phone}
                         </a>
                       )}
@@ -559,36 +598,19 @@ export default function RawMaterialPurchases() {
                   </div>
                 )}
 
-                {req.status === 'shipped' && (
-                  <div className="mb-4">
-                    <style>{`
-                      @keyframes drive { 0% { transform: translateX(-10%); } 100% { transform: translateX(110%); } }
-                      @keyframes bounce-truck { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
-                    `}</style>
-                    <div className="relative w-full h-8 overflow-hidden bg-gray-100 rounded-full border-b-2 border-gray-300 shadow-inner">
-                      <div className="absolute top-0.5 animate-[drive_3s_linear_infinite]" style={{ width: '100%' }}>
-                        <div className="animate-[bounce-truck_0.5s_ease-in-out_infinite] flex items-center w-fit">
-                          <span className="text-lg opacity-70">💨</span>
-                          <Truck className="text-blue-600 drop-shadow-md" size={20} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {req.status === 'confirmed' && (
                   <button 
                     onClick={() => openSignModal(req.id)}
-                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-600/30"
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-500/30"
                   >
                     <CheckCircle size={18} /> {t.signContractBtn}
                   </button>
                 )}
                 
                 {req.status !== 'pending' && req.status !== 'confirmed' && req.digital_signature && req.digital_signature.startsWith('data:image') && (
-                <div className="w-full p-2 bg-emerald-50 rounded-xl border border-emerald-200 flex flex-col items-center justify-center">
-                  <p className="text-xs font-bold text-emerald-600 mb-1">{t.digitallySigned}</p>
-                  <img src={req.digital_signature} alt="Signature" className="h-12 object-contain" />
+                <div className="w-full p-3 bg-slate-950 rounded-xl border border-slate-800 flex flex-col items-center justify-center">
+                  <p className="text-xs font-bold text-slate-500 mb-2">{t.digitallySigned}</p>
+                  <img src={req.digital_signature} alt="Signature" className="h-10 object-contain invert opacity-70" />
                 </div>
                 )}
 
@@ -596,14 +618,14 @@ export default function RawMaterialPurchases() {
                   <button 
                     onClick={() => handleReceiveOrder(req)} 
                     disabled={isProcessing} 
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg shadow-emerald-600/30 animate-pulse"
+                    className="w-full py-3.5 mt-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg shadow-emerald-600/30 animate-pulse border border-emerald-500"
                   >
                     {isProcessing ? <Loader2 size={18} className="animate-spin"/> : <><Package size={18} /> {t.confirmReceiptBtn}</>}
                   </button>
                 )}
 
                 {req.status === 'completed' && (
-                  <div className="w-full py-3 bg-emerald-50 text-emerald-600 rounded-xl font-black flex justify-center items-center gap-2 border border-emerald-200 text-sm">
+                  <div className="w-full py-3 mt-3 bg-emerald-500/10 text-emerald-400 rounded-xl font-black flex justify-center items-center gap-2 border border-emerald-500/20 text-sm">
                      🎉 {t.completedMsg}
                   </div>
                 )}
@@ -614,33 +636,33 @@ export default function RawMaterialPurchases() {
       </div>
 
       {isSignModalOpen && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative animate-fade-in text-center">
-            <h3 className="text-xl font-black text-gray-800 mb-2">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 w-full max-w-md shadow-2xl relative animate-fade-in text-center">
+            <h3 className="text-2xl font-black text-white mb-2">
               {t.legalSign}
             </h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-slate-400 mb-6">
               {t.signDesc}
             </p>
             
-            <div className="border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 mb-4 overflow-hidden" dir="ltr">
+            <div className="border border-slate-600 rounded-2xl bg-white mb-6 overflow-hidden shadow-inner" dir="ltr">
               <SignatureCanvas 
                 ref={sigCanvas}
                 penColor="black"
-                canvasProps={{ width: 350, height: 150, className: 'sigCanvas w-full cursor-crosshair' }}
+                canvasProps={{ width: 350, height: 180, className: 'sigCanvas w-full cursor-crosshair' }}
               />
             </div>
 
             <div className="flex gap-3">
               <button 
                 onClick={() => sigCanvas.current.clear()} 
-                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold rounded-xl transition-all"
               >
                 {t.clear}
               </button>
               <button 
                 onClick={closeSignModal} 
-                className="flex-1 py-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl transition-all"
+                className="flex-1 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold rounded-xl transition-all"
               >
                 {t.cancel}
               </button>
@@ -649,7 +671,7 @@ export default function RawMaterialPurchases() {
             <button 
               onClick={handleSaveSignature}
               disabled={isProcessing}
-              className="w-full mt-3 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg shadow-blue-500/30 transition-all flex justify-center items-center gap-2"
+              className="w-full mt-4 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl shadow-lg shadow-blue-500/30 transition-all flex justify-center items-center gap-2 text-lg"
             >
                {isProcessing ? <Loader2 className="animate-spin" size={20}/> : t.confirmSign}
             </button>
