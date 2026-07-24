@@ -258,6 +258,9 @@ const WholesalerDashboard = ({ supplier, children }) => {
 };
 
 function App() {
+  // 🎯 1. التقاط وضع الإطار المصغر وتجميده في الذاكرة (قبل أن يتم تنظيف الرابط!)
+  const [isMinimal] = useState(() => window.location.search.includes('minimal=true') || window.location.href.includes('minimal=true'));
+  
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -266,7 +269,7 @@ function App() {
 
   const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
 
-  // 🛡️ دالة Auth النووية: مصممة للعمل داخل الإطارات (Iframes) بدون الحاجة لـ LocalStorage
+  // 🛡️ دالة Auth النووية
   useEffect(() => {
     let mounted = true;
 
@@ -274,7 +277,6 @@ function App() {
       try {
         const hash = window.location.hash;
         
-        // 1. إذا وجدنا التوكن مرسلاً من PHP عبر الرابط
         if (hash && hash.includes('access_token') && hash.includes('refresh_token')) {
           console.log("✅ تم التقاط مفاتيح الدخول! جاري اختراق الجدار...");
           
@@ -283,28 +285,25 @@ function App() {
           const refreshToken = params.get('refresh_token');
 
           if (accessToken && refreshToken) {
-            // أ) نجبر Supabase على اعتماد التوكن في الذاكرة الحية (حتى لو فشل التخزين المحلي)
             await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken
-            }).catch(() => {}); // نتجاهل خطأ الحظر من المتصفح
+            }).catch(() => {});
 
-            // ب) نطلب بيانات المستخدم مباشرة من السيرفر كدليل قاطع على الدخول
             const { data: userData } = await supabase.auth.getUser(accessToken);
             
             if (userData?.user && mounted) {
-              // نصنع جلسة في الذاكرة ونفتح الأبواب
               setSession({ user: userData.user, access_token: accessToken });
               fetchSupplierProfile(userData.user.id);
               
-              window.history.replaceState(null, '', window.location.pathname); // تنظيف الرابط
+              // 🎯 2. تنظيف التوكن مع الحفاظ على الرابط الأصلي
+              window.history.replaceState(null, '', window.location.pathname + window.location.search); 
               setLoading(false);
-              return; // 🎯 الدخول تم بنجاح!
+              return; 
             }
           }
         }
 
-        // 2. المحاولة العادية في حال لم يكن هناك توكن في الرابط
         const { data: { session } } = await supabase.auth.getSession();
         if (mounted) {
           if (session?.user) {
@@ -384,20 +383,14 @@ function App() {
   const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || '';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
 
-  // 🎯 الاكتشاف المبكر لوضع الإطار المصغر (قطع جذور السيدبار)
-  const isMinimal = window.location.href.includes('minimal=true');
-
-  // 🌟 1. وضع الإطار المصغر (داخل موقعك PHP): لا سيدبار، لا هيدر، فقط الصفحة المطلوبة!
+  // 🌟 3. وضع الإطار المصغر (داخل موقعك PHP): لا سيدبار، لا هيدر، فقط الصفحة المطلوبة!
   if (isMinimal) {
     return (
       <BrowserRouter>
         <div className={`w-full min-h-screen overflow-x-hidden overflow-y-auto p-4 md:p-6 ${isWholesaler ? 'bg-[#0f172a] text-slate-300' : 'bg-gray-50 text-gray-800'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <Routes>
-            {/* عرض صفحة الإحصائيات أو الإعدادات مباشرة وبشكل مجرد تماماً */}
             <Route path="/" element={isWholesaler ? <SupplierOverview /> : <Overview />} />
             <Route path="/settings" element={isWholesaler ? <SupplierSettings /> : <RetailerSettings />} />
-            
-            {/* في حال إدخال مسار خاطئ داخل الإطار، نعيده للرئيسية المصغرة */}
             <Route path="*" element={isWholesaler ? <SupplierOverview /> : <Overview />} />
           </Routes>
         </div>
@@ -471,7 +464,6 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
 
   return (
     <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* قسم السيدبار المتحرك */}
       <div className={`shrink-0 h-full transition-all duration-300 ${isSidebarOpen ? (language === 'ar' ? 'w-64 border-l' : 'w-64 border-r') : 'w-0 overflow-hidden border-none'} bg-white z-20`}>
         <div className="w-64 h-full">
             <Sidebar />
@@ -481,7 +473,6 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
       <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full relative">
         <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
           <div className="flex items-center gap-3">
-            {/* 🚀 الزر الذكي للتاجر (بألوان فاتحة تتناسب مع اللوحة) */}
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
               className="flex items-center gap-2 p-2 bg-gray-100 hover:bg-blue-50 border border-gray-200 rounded-xl text-gray-600 hover:text-blue-600 transition-all shadow-sm group"
