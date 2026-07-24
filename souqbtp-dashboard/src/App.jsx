@@ -384,18 +384,20 @@ function App() {
   const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || '';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
 
-  // 🎯 التقاط وضع "الإطار المصغر" الذي يرسله موقعك (PHP)
-  const isMinimal = new URLSearchParams(window.location.search).get('minimal') === 'true';
+  // 🎯 الاكتشاف المبكر لوضع الإطار المصغر (قطع جذور السيدبار)
+  const isMinimal = window.location.href.includes('minimal=true');
 
-  // 🌟 1. وضع الإطار المصغر (يُعرض داخل موقعك بدون سيدبار)
+  // 🌟 1. وضع الإطار المصغر (داخل موقعك PHP): لا سيدبار، لا هيدر، فقط الصفحة المطلوبة!
   if (isMinimal) {
     return (
       <BrowserRouter>
-        <div className={`min-h-screen ${isWholesaler ? 'bg-[#0f172a] text-slate-300' : 'bg-gray-50 text-gray-800'} overflow-y-auto p-4 md:p-8`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        <div className={`w-full min-h-screen overflow-x-hidden overflow-y-auto p-4 md:p-6 ${isWholesaler ? 'bg-[#0f172a] text-slate-300' : 'bg-gray-50 text-gray-800'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <Routes>
-            {/* راوتات مصغرة للإحصائيات والإعدادات فقط */}
+            {/* عرض صفحة الإحصائيات أو الإعدادات مباشرة وبشكل مجرد تماماً */}
             <Route path="/" element={isWholesaler ? <SupplierOverview /> : <Overview />} />
             <Route path="/settings" element={isWholesaler ? <SupplierSettings /> : <RetailerSettings />} />
+            
+            {/* في حال إدخال مسار خاطئ داخل الإطار، نعيده للرئيسية المصغرة */}
             <Route path="*" element={isWholesaler ? <SupplierOverview /> : <Overview />} />
           </Routes>
         </div>
@@ -403,7 +405,6 @@ function App() {
     );
   }
 
-  // 🌟 2. وضع الشاشة الكاملة (يُعرض في تبويب Vercel المستقل)
   return (
     <BrowserRouter>
       {isWholesaler ? (
@@ -480,13 +481,12 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
       <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full relative">
         <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
           <div className="flex items-center gap-3">
-            {/* 🎯 زر القائمة السحري */}
-            {/* 🚀 الزر الذكي لإخفاء وإظهار القائمة الجانبية */}
+            {/* 🚀 الزر الذكي للتاجر (بألوان فاتحة تتناسب مع اللوحة) */}
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-              className="flex items-center gap-2 p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all shadow-sm group"
+              className="flex items-center gap-2 p-2 bg-gray-100 hover:bg-blue-50 border border-gray-200 rounded-xl text-gray-600 hover:text-blue-600 transition-all shadow-sm group"
             >
-              {isSidebarOpen ? <X size={22} className="text-red-400 group-hover:text-red-300 transition-colors" /> : <Menu size={22} className="text-blue-400 group-hover:text-blue-300 transition-colors" />}
+              {isSidebarOpen ? <X size={22} className="text-red-500 group-hover:text-red-600 transition-colors" /> : <Menu size={22} className="text-blue-500 group-hover:text-blue-600 transition-colors" />}
               
               <span className="hidden sm:block text-[11px] font-black tracking-wide">
                 {isSidebarOpen 
