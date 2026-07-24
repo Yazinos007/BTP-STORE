@@ -10,19 +10,22 @@ const translations = {
     subtitle: 'تصميم الوصفات (BOM)، تصنيع المنتجات، ومحاكاة الأرباح الحية.',
     tabs: { recipes: '🧬 وصفات التصنيع (BOM)', production: '🚀 خط الإنتاج الفوري', history: '🕒 سجل المعمل' },
     newRecipe: 'إنشاء وصفة جديدة',
-    recipeName: 'اسم الوصفة (مثال: خلطة أسمنت 50 كغ)',
+    recipeName: 'اسم الوصفة',
+    recipePlaceholder: 'مثال: خلطة أسمنت 50 كغ...',
     finishedProduct: 'المنتج النهائي المستهدف',
     selectProduct: '-- اختر المنتج النهائي --',
     components: 'مكونات الوصفة (المواد الخام، التغليف، الاستهلاكية)',
     addMaterial: 'إضافة مكون للوصفة',
     materialPlaceholder: '-- اختر المادة من المخزون --',
     qtyRequired: 'الكمية المطلوبة',
+    qtyPlaceholder: 'الكمية',
     unit: 'الوحدة',
     estCost: 'التكلفة التقديرية للوحدة:',
     saveRecipe: 'حفظ الوصفة في المعمل',
     noRecipes: 'لا توجد وصفات مسجلة بعد. أنشئ أول وصفة تصنيع!',
     produceTitle: 'تشغيل خط الإنتاج الآلي',
     selectRecipe: 'اختر الوصفة المراد تصنيعها',
+    selectRecipePlaceholder: '-- اختر وصفة للتصنيع --',
     prodQty: 'الكمية المراد إنتاجها (العدد)',
     simulator: '🧠 محاكي الأرباح والجدوى الاقتصادية',
     marketPrice: 'سعر البيع المتوقع في السوق (للوحدة):',
@@ -32,27 +35,42 @@ const translations = {
     startProduction: '🚀 بدء عملية التصنيع الفوري',
     stockWarning: '⚠️ تحذير: بعض المكونات غير متوفرة بالكمية الكافية في المخزون!',
     successProd: '✅ تم التصنيع بنجاح! تم خصم المواد وإضافة المنتجات النهائية للمخزون.',
+    successSave: '✅ تم حفظ الوصفة في المعمل بنجاح!',
     historyHeaders: { date: 'التاريخ', recipe: 'الوصفة', qty: 'الكمية المنتجة', unitCost: 'تكلفة الوحدة', total: 'التكلفة الإجمالية' },
-    currency: 'MAD'
+    currency: 'MAD',
+    registeredRecipes: 'الوصفات المسجلة في المعمل',
+    targetProduct: 'المنتج المستهدف:',
+    unspecified: 'غير محدد',
+    unitCostBadge: 'تكلفة الوحدة:',
+    reqComponents: 'المكونات المطلوبة للوحدة الواحدة:',
+    materialFallback: 'مادة',
+    available: 'متوفر:',
+    simulatorEmpty: 'اختر وصفة من القائمة لعرض محاكي الأرباح.',
+    historyEmpty: 'لا توجد عمليات تصنيع مسجلة بعد.',
+    errorSaveMsg: 'خطأ أثناء حفظ الوصفة: ',
+    errorProdMsg: 'خطأ أثناء التصنيع: '
   },
   fr: {
     title: 'Usine Numérique & Production',
     subtitle: 'Conception de recettes (BOM), fabrication et simulateur de profit.',
     tabs: { recipes: '🧬 Recettes (BOM)', production: '🚀 Ligne de Production', history: '🕒 Historique' },
     newRecipe: 'Créer une Nouvelle Recette',
-    recipeName: 'Nom de la recette (Ex: Lot Ciment 50kg)',
+    recipeName: 'Nom de la recette',
+    recipePlaceholder: 'Ex: Lot Ciment 50kg...',
     finishedProduct: 'Produit Fini Cible',
     selectProduct: '-- Choisir le produit fini --',
     components: 'Composants (Matières 1ères, Emballages, Consommables)',
     addMaterial: 'Ajouter un composant',
     materialPlaceholder: '-- Choisir l\'article du stock --',
     qtyRequired: 'Quantité requise',
+    qtyPlaceholder: 'Qté',
     unit: 'Unité',
     estCost: 'Coût unitaire estimé:',
     saveRecipe: 'Enregistrer la Recette',
     noRecipes: 'Aucune recette enregistrée.',
     produceTitle: 'Lancer la Ligne de Production',
     selectRecipe: 'Sélectionner la recette à fabriquer',
+    selectRecipePlaceholder: '-- Choisir une recette --',
     prodQty: 'Quantité à produire',
     simulator: '🧠 Simulateur de Profit & Viabilité',
     marketPrice: 'Prix de vente estimé sur le marché (par unité):',
@@ -62,27 +80,42 @@ const translations = {
     startProduction: '🚀 Lancer la Fabrication',
     stockWarning: '⚠️ Attention: Composants insuffisants en stock !',
     successProd: '✅ Production réussie ! Stocks mis à jour.',
+    successSave: '✅ Recette enregistrée avec succès !',
     historyHeaders: { date: 'Date', recipe: 'Recette', qty: 'Quantité', unitCost: 'Coût Unitaire', total: 'Coût Total' },
-    currency: 'MAD'
+    currency: 'MAD',
+    registeredRecipes: 'Recettes Enregistrées',
+    targetProduct: 'Produit Cible:',
+    unspecified: 'Non spécifié',
+    unitCostBadge: 'Coût Unitaire:',
+    reqComponents: 'Composants requis par unité:',
+    materialFallback: 'Matériau',
+    available: 'Dispo:',
+    simulatorEmpty: 'Sélectionnez une recette pour voir le simulateur.',
+    historyEmpty: 'Aucune production enregistrée pour le moment.',
+    errorSaveMsg: 'Erreur lors de l\'enregistrement : ',
+    errorProdMsg: 'Erreur lors de la production : '
   },
   en: {
     title: 'Digital Factory & Production',
     subtitle: 'Recipe design (BOM), manufacturing, and live profit simulator.',
     tabs: { recipes: '🧬 Recipes (BOM)', production: '🚀 Production Line', history: '🕒 History' },
     newRecipe: 'Create New Recipe',
-    recipeName: 'Recipe Name (Ex: Cement Batch 50kg)',
+    recipeName: 'Recipe Name',
+    recipePlaceholder: 'Ex: Cement Batch 50kg...',
     finishedProduct: 'Target Finished Good',
     selectProduct: '-- Select Finished Good --',
     components: 'Recipe Components (Raw Materials, Packaging, Consumables)',
     addMaterial: 'Add Component',
     materialPlaceholder: '-- Select Material from Stock --',
     qtyRequired: 'Required Quantity',
+    qtyPlaceholder: 'Qty',
     unit: 'Unit',
     estCost: 'Estimated Unit Cost:',
     saveRecipe: 'Save Recipe',
     noRecipes: 'No recipes registered yet.',
     produceTitle: 'Run Automated Production Line',
     selectRecipe: 'Select Recipe to Manufacture',
+    selectRecipePlaceholder: '-- Select a recipe --',
     prodQty: 'Quantity to Produce',
     simulator: '🧠 Profit & Viability Simulator',
     marketPrice: 'Expected Market Selling Price (per unit):',
@@ -92,8 +125,20 @@ const translations = {
     startProduction: '🚀 Start Manufacturing',
     stockWarning: '⚠️ Warning: Insufficient stock for some components!',
     successProd: '✅ Production successful! Inventory updated.',
+    successSave: '✅ Recipe saved successfully!',
     historyHeaders: { date: 'Date', recipe: 'Recipe', qty: 'Quantity', unitCost: 'Unit Cost', total: 'Total Cost' },
-    currency: 'MAD'
+    currency: 'MAD',
+    registeredRecipes: 'Registered Recipes',
+    targetProduct: 'Target Product:',
+    unspecified: 'Unspecified',
+    unitCostBadge: 'Unit Cost:',
+    reqComponents: 'Required components per unit:',
+    materialFallback: 'Material',
+    available: 'Avail:',
+    simulatorEmpty: 'Select a recipe to view the simulator.',
+    historyEmpty: 'No production operations registered yet.',
+    errorSaveMsg: 'Error saving recipe: ',
+    errorProdMsg: 'Error during production: '
   }
 };
 
@@ -129,15 +174,12 @@ export default function SupplierProduction() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // 1. جلب المخزون كامل
       const { data: prodData } = await supabase.from('products').select('*').eq('supplier_id', supplier.id);
       if (prodData) setProducts(prodData);
 
-      // 2. جلب الوصفات مع مكوناتها
       const { data: recData } = await supabase.from('product_recipes').select('*, recipe_items(*), products!product_recipes_finished_product_id_fkey(name, price)').eq('supplier_id', supplier.id);
       if (recData) setRecipes(recData);
 
-      // 3. جلب سجل الإنتاج
       const { data: histData } = await supabase.from('production_orders').select('*, product_recipes(recipe_name)').eq('supplier_id', supplier.id).order('created_at', { ascending: false });
       if (histData) setHistory(histData);
 
@@ -148,7 +190,6 @@ export default function SupplierProduction() {
     }
   };
 
-  // إضافة سطر مكون جديد للوصفة
   const addItemRow = () => {
     setRecipeItems([...recipeItems, { material_id: '', quantity_required: '' }]);
   };
@@ -157,7 +198,6 @@ export default function SupplierProduction() {
     setRecipeItems(recipeItems.filter((_, i) => i !== index));
   };
 
-  // حساب التكلفة التقديرية للوصفة بناءً على أسعار المخزون الحالية
   const calculateEstimatedRecipeCost = () => {
     let total = 0;
     recipeItems.forEach(item => {
@@ -169,7 +209,6 @@ export default function SupplierProduction() {
     return total;
   };
 
-  // حفظ الوصفة في قاعدة البيانات
   const handleSaveRecipe = async (e) => {
     e.preventDefault();
     if (!recipeName || !finishedProductId || recipeItems.length === 0) return;
@@ -177,7 +216,6 @@ export default function SupplierProduction() {
     setIsProcessing(true);
     try {
       const estCost = calculateEstimatedRecipeCost();
-      // أ) حفظ رأس الوصفة
       const { data: recData, error: recError } = await supabase.from('product_recipes').insert([{
         supplier_id: supplier.id,
         finished_product_id: finishedProductId,
@@ -188,7 +226,6 @@ export default function SupplierProduction() {
 
       if (recError) throw recError;
 
-      // ب) حفظ مكونات الوصفة
       const itemsToInsert = recipeItems.map(item => ({
         recipe_id: recData.id,
         material_id: item.material_id,
@@ -198,7 +235,7 @@ export default function SupplierProduction() {
       const { error: itemsError } = await supabase.from('recipe_items').insert(itemsToInsert);
       if (itemsError) throw itemsError;
 
-      alert("✅ تم حفظ الوصفة في المعمل بنجاح!");
+      alert(t.successSave);
       setRecipeName('');
       setFinishedProductId('');
       setRecipeItems([{ material_id: '', quantity_required: '' }]);
@@ -206,16 +243,14 @@ export default function SupplierProduction() {
       fetchData();
       setActiveTab('recipes');
     } catch (err) {
-      alert("خطأ أثناء حفظ الوصفة: " + err.message);
+      alert(t.errorSaveMsg + err.message);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // الوصفة المختارة حالياً في خط الإنتاج
   const activeRecipe = recipes.find(r => r.id === selectedRecipeId);
 
-  // التحقق هل المخزون يكفي للإنتاج؟
   const checkStockSufficiency = () => {
     if (!activeRecipe) return true;
     for (const item of activeRecipe.recipe_items) {
@@ -226,7 +261,6 @@ export default function SupplierProduction() {
     return true;
   };
 
-  // حساب تكلفة الإنتاج للوحدة
   const calculateUnitCost = () => {
     if (!activeRecipe) return 0;
     let total = 0;
@@ -243,7 +277,6 @@ export default function SupplierProduction() {
   const netProfit = estimatedRevenue - totalBatchCost;
   const profitMargin = estimatedRevenue > 0 ? (netProfit / estimatedRevenue) * 100 : 0;
 
-  // تنفيذ أمر التصنيع الفوري
   const handleExecuteProduction = async () => {
     if (!activeRecipe) return;
     if (!checkStockSufficiency()) {
@@ -253,24 +286,18 @@ export default function SupplierProduction() {
 
     setIsProcessing(true);
     try {
-      // 1. خصم المكونات من المخزون
       for (const item of activeRecipe.recipe_items) {
         const mat = products.find(p => p.id === item.material_id);
         const newQty = mat.stock_quantity - (item.quantity_required * productionQty);
         await supabase.from('products').update({ stock_quantity: newQty }).eq('id', mat.id);
       }
 
-      // 2. إضافة المنتجات النهائية للمخزون
       const finishedProd = products.find(p => p.id === activeRecipe.finished_product_id);
       if (finishedProd) {
         const newFinishedQty = finishedProd.stock_quantity + Number(productionQty);
         await supabase.from('products').update({ stock_quantity: newFinishedQty }).eq('id', finishedProd.id);
-      } else {
-        // إذا لم يكن موجوداً كمواد جاهزة، نضيفه
-        // (افتراضياً المنتج موجود لأنه تم اختياره عند إنشاء الوصفة)
       }
 
-      // 3. تسجيل أمر الإنتاج في الجدول
       await supabase.from('production_orders').insert([{
         supplier_id: supplier.id,
         recipe_id: activeRecipe.id,
@@ -284,7 +311,7 @@ export default function SupplierProduction() {
       fetchData();
       setProductionQty(1);
     } catch (err) {
-      alert("خطأ أثناء التصنيع: " + err.message);
+      alert(t.errorProdMsg + err.message);
     } finally {
       setIsProcessing(false);
     }
@@ -302,7 +329,6 @@ export default function SupplierProduction() {
         <p className="text-slate-400 mt-1 font-medium">{t.subtitle}</p>
       </div>
 
-      {/* التبويبات العلوية */}
       <div className="flex gap-3 border-b border-slate-700 pb-4">
         <button onClick={() => setActiveTab('recipes')} className={`px-5 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'recipes' ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
           {t.tabs.recipes}
@@ -315,17 +341,15 @@ export default function SupplierProduction() {
         </button>
       </div>
 
-      {/* 🧬 تبويب 1: وصفات التصنيع وإدارتها */}
       {activeTab === 'recipes' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* نموذج إنشاء وصفة */}
           <div className="lg:col-span-1 bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl">
             <h3 className="text-xl font-black mb-4 flex items-center gap-2 text-amber-400"><Plus size={20}/> {t.newRecipe}</h3>
             
             <form onSubmit={handleSaveRecipe} className="space-y-4">
               <div>
                 <label className="block text-sm font-bold text-slate-400 mb-1">{t.recipeName}</label>
-                <input required type="text" value={recipeName} onChange={e => setRecipeName(e.target.value)} className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-amber-500 font-medium" placeholder="Ex: خلطة الطلاء الفاخر" />
+                <input required type="text" value={recipeName} onChange={e => setRecipeName(e.target.value)} className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-amber-500 font-medium" placeholder={t.recipePlaceholder} />
               </div>
 
               <div>
@@ -346,10 +370,10 @@ export default function SupplierProduction() {
                       setRecipeItems(newItems);
                     }} className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white outline-none">
                       <option value="">{t.materialPlaceholder}</option>
-                      {rawMaterials.map(m => <option key={m.id} value={m.id}>{m.name} (متوفر: {m.stock_quantity} {m.unit})</option>)}
+                      {rawMaterials.map(m => <option key={m.id} value={m.id}>{m.name} ({t.available} {m.stock_quantity} {m.unit})</option>)}
                     </select>
 
-                    <input required type="number" step="0.01" placeholder="الكمية" value={item.quantity_required} onChange={e => {
+                    <input required type="number" step="0.01" placeholder={t.qtyPlaceholder} value={item.quantity_required} onChange={e => {
                       const newItems = [...recipeItems];
                       newItems[index].quantity_required = e.target.value;
                       setRecipeItems(newItems);
@@ -374,9 +398,8 @@ export default function SupplierProduction() {
             </form>
           </div>
 
-          {/* قائمة الوصفات المحفوظة */}
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="text-xl font-black text-white mb-2 flex items-center gap-2"><Cpu className="text-blue-400"/> الوصفات المسجلة في المعمل ({recipes.length})</h3>
+            <h3 className="text-xl font-black text-white mb-2 flex items-center gap-2"><Cpu className="text-blue-400"/> {t.registeredRecipes} ({recipes.length})</h3>
             {recipes.length === 0 ? (
               <div className="bg-slate-800/50 border border-slate-700 p-12 text-center rounded-2xl text-slate-400 font-bold">{t.noRecipes}</div>
             ) : (
@@ -385,20 +408,20 @@ export default function SupplierProduction() {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h4 className="text-lg font-black text-white">{rec.recipe_name}</h4>
-                      <p className="text-xs text-amber-400 font-bold mt-1">المنتج المستهدف: {rec.products?.name || 'غير محدد'}</p>
+                      <p className="text-xs text-amber-400 font-bold mt-1">{t.targetProduct} {rec.products?.name || t.unspecified}</p>
                     </div>
                     <span className="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg text-sm font-black" dir="ltr">
-                      تكلفة الوحدة: {rec.estimated_cost?.toLocaleString()} {t.currency}
+                      {t.unitCostBadge} {rec.estimated_cost?.toLocaleString()} {t.currency}
                     </span>
                   </div>
                   <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 text-xs text-slate-300">
-                    <p className="font-bold text-slate-400 mb-1">المكونات المطلوبة للوحدة الواحدة:</p>
+                    <p className="font-bold text-slate-400 mb-1">{t.reqComponents}</p>
                     <div className="flex flex-wrap gap-2">
                       {rec.recipe_items?.map((it, idx) => {
                         const matObj = products.find(p => p.id === it.material_id);
                         return (
                           <span key={idx} className="bg-slate-800 px-2.5 py-1 rounded-md border border-slate-700">
-                            {matObj?.name || 'مادة'} : <strong className="text-amber-300">{it.quantity_required} {matObj?.unit}</strong>
+                            {matObj?.name || t.materialFallback} : <strong className="text-amber-300">{it.quantity_required} {matObj?.unit}</strong>
                           </span>
                         );
                       })}
@@ -411,7 +434,6 @@ export default function SupplierProduction() {
         </div>
       )}
 
-      {/* 🚀 تبويب 2: خط الإنتاج ومحاكي الأرباح */}
       {activeTab === 'production' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl space-y-5">
@@ -420,8 +442,8 @@ export default function SupplierProduction() {
             <div>
               <label className="block text-sm font-bold text-slate-400 mb-2">{t.selectRecipe}</label>
               <select value={selectedRecipeId} onChange={e => setSelectedRecipeId(e.target.value)} className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-blue-500 font-bold">
-                <option value="">-- اختر وصفة للتصنيع --</option>
-                {recipes.map(r => <option key={r.id} value={r.id}>{r.recipe_name} (تكلفة الوحدة: {r.estimated_cost} د.م)</option>)}
+                <option value="">{t.selectRecipePlaceholder}</option>
+                {recipes.map(r => <option key={r.id} value={r.id}>{r.recipe_name} ({t.unitCostBadge} {r.estimated_cost} {t.currency})</option>)}
               </select>
             </div>
 
@@ -432,7 +454,6 @@ export default function SupplierProduction() {
                   <input type="number" min="1" value={productionQty} onChange={e => setProductionQty(Math.max(1, Number(e.target.value)))} className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-blue-500 font-black text-xl" />
                 </div>
 
-                {/* التحقق من توفر المخزون */}
                 {!checkStockSufficiency() && (
                   <div className="bg-red-900/20 border border-red-500/40 p-4 rounded-xl flex items-center gap-3 text-red-400 text-sm font-bold">
                     <AlertTriangle size={24} className="shrink-0"/>
@@ -443,7 +464,6 @@ export default function SupplierProduction() {
             )}
           </div>
 
-          {/* محاكي الأرباح الفضائي */}
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
             <div>
               <h3 className="text-xl font-black text-emerald-400 flex items-center gap-2 mb-4"><TrendingUp size={22}/> {t.simulator}</h3>
@@ -472,7 +492,7 @@ export default function SupplierProduction() {
                   </div>
                 </div>
               ) : (
-                <p className="text-slate-500 font-bold text-center py-10">اختر وصفة من القائمة لعرض محاكي الأرباح.</p>
+                <p className="text-slate-500 font-bold text-center py-10">{t.simulatorEmpty}</p>
               )}
             </div>
 
@@ -489,7 +509,6 @@ export default function SupplierProduction() {
         </div>
       )}
 
-      {/* 🕒 تبويب 3: سجل العمليات */}
       {activeTab === 'history' && (
         <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
           <table className="w-full text-start border-collapse text-sm">
@@ -504,7 +523,7 @@ export default function SupplierProduction() {
             </thead>
             <tbody className="divide-y divide-slate-700/50">
               {history.length === 0 ? (
-                <tr><td colSpan="5" className="p-10 text-center text-slate-500 font-bold">لا توجد عمليات تصنيع مسجلة بعد.</td></tr>
+                <tr><td colSpan="5" className="p-10 text-center text-slate-500 font-bold">{t.historyEmpty}</td></tr>
               ) : (
                 history.map(h => (
                   <tr key={h.id} className="hover:bg-slate-700/30 transition-colors">
