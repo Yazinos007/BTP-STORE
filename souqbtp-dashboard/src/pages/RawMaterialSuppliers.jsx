@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import useExternalSupplierStore from '../store/useExternalSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
-import { Truck, UserPlus, Phone, Building2, CreditCard, Edit, Trash2, Search, X, Loader2, Banknote, CheckCircle } from 'lucide-react';
+import { Truck, UserPlus, Phone, Building2, CreditCard, Edit, Trash2, Search, X, Loader2, Banknote, CheckCircle, Dna } from 'lucide-react';
 
 const translations = {
   ar: {
@@ -12,6 +12,7 @@ const translations = {
     count: 'عدد الموردين',
     name: 'اسم المورد / الشركة', 
     contact: 'الاتصال و ICE',
+    specialty: 'تخصص المورد (DNA)',
     phone: 'الهاتف', 
     ice: 'ICE', 
     debt: 'الديون المستحقة له',
@@ -45,6 +46,7 @@ const translations = {
     count: 'Nombre de Fournisseurs',
     name: 'Nom Fournisseur / Société', 
     contact: 'Contact & ICE',
+    specialty: 'Spécialité (DNA)',
     phone: 'Téléphone', 
     ice: 'ICE', 
     debt: 'Dette à régler',
@@ -78,6 +80,7 @@ const translations = {
     count: 'Number of Suppliers',
     name: 'Supplier / Company Name', 
     contact: 'Contact & ICE',
+    specialty: 'Specialty (DNA)',
     phone: 'Phone', 
     ice: 'ICE', 
     debt: 'Pending Debt',
@@ -105,19 +108,26 @@ const translations = {
   }
 };
 
+// 🧬 مكتبة التخصصات (DNA) الآتية من المستقبل
+const DNA_TYPES = [
+  { id: 'raw_material', label: { ar: '🧱 مواد خام', fr: '🧱 Matières 1ères', en: '🧱 Raw Material' }, color: 'bg-orange-100 text-orange-700 border-orange-300' },
+  { id: 'packaging', label: { ar: '📦 تغليف', fr: '📦 Emballage', en: '📦 Packaging' }, color: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
+  { id: 'consumable', label: { ar: '⚙️ استهلاكية', fr: '⚙️ Consommables', en: '⚙️ Consumables' }, color: 'bg-slate-100 text-slate-700 border-slate-300' }
+];
+
 export default function RawMaterialSuppliers() {
   const { suppliers, isLoading, fetchSuppliers, addSupplier, updateSupplier, deleteSupplier } = useExternalSupplierStore();
   const { language } = useSettingsStore();
   
-  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', phone: '', ice: '', address: '', total_debt: '0' });
+  
+  // 🧬 إضافة حقل الـ DNA إلى البيانات
+  const [formData, setFormData] = useState({ name: '', phone: '', ice: '', address: '', total_debt: '0', supplier_dna: [] });
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 💸 حالات نافذة تسديد الديون
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentSupplier, setPaymentSupplier] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -125,17 +135,26 @@ export default function RawMaterialSuppliers() {
 
   useEffect(() => { fetchSuppliers(); }, [fetchSuppliers]);
 
+  // 🧬 دالة تفعيل وإلغاء تخصصات المورد
+  const toggleDna = (dnaId) => {
+    setFormData(prev => ({
+      ...prev,
+      supplier_dna: prev.supplier_dna?.includes(dnaId)
+        ? prev.supplier_dna.filter(id => id !== dnaId)
+        : [...(prev.supplier_dna || []), dnaId]
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const data = { ...formData, total_debt: parseFloat(formData.total_debt) };
+    const data = { ...formData, total_debt: parseFloat(formData.total_debt), supplier_dna: formData.supplier_dna || [] };
     if (editingId) await updateSupplier(editingId, data);
     else await addSupplier(data);
     setShowModal(false);
     setEditingId(null);
-    setFormData({ name: '', phone: '', ice: '', address: '', total_debt: '0' });
+    setFormData({ name: '', phone: '', ice: '', address: '', total_debt: '0', supplier_dna: [] });
   };
 
-  // 💸 دالة تسديد الدين
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     const paidAmount = parseFloat(paymentAmount);
@@ -152,7 +171,7 @@ export default function RawMaterialSuppliers() {
       await updateSupplier(paymentSupplier.id, { total_debt: newDebt });
       setShowPaymentModal(false);
       setPaymentAmount('');
-      fetchSuppliers(); // تحديث البيانات
+      fetchSuppliers(); 
     } catch (error) {
       alert(t.errorPayment);
     } finally {
@@ -177,7 +196,7 @@ export default function RawMaterialSuppliers() {
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div><h2 className="text-3xl font-black text-white">{t.title}</h2><p className="text-slate-300 mt-1">{t.subtitle}</p></div>
-        <button onClick={() => { setEditingId(null); setFormData({ name: '', phone: '', ice: '', address: '', total_debt: '0' }); setShowModal(true); }} className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 font-bold shadow-lg shadow-blue-500/30 transition-all"><UserPlus size={20} /> {t.addBtn}</button>
+        <button onClick={() => { setEditingId(null); setFormData({ name: '', phone: '', ice: '', address: '', total_debt: '0', supplier_dna: [] }); setShowModal(true); }} className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 font-bold shadow-lg shadow-blue-500/30 transition-all"><UserPlus size={20} /> {t.addBtn}</button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -197,17 +216,34 @@ export default function RawMaterialSuppliers() {
             <thead className="bg-white border-b border-gray-100">
               <tr>
                 <th className="px-6 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.name}</th>
+                <th className="px-6 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.specialty}</th>
                 <th className="px-6 py-4 text-gray-400 font-black text-start uppercase tracking-wider text-xs">{t.contact}</th>
                 <th className="px-6 py-4 text-gray-400 font-black text-end uppercase tracking-wider text-xs">{t.debt}</th>
                 <th className="px-6 py-4 text-gray-400 font-black text-center uppercase tracking-wider text-xs">{t.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {isLoading ? (<tr><td colSpan="4" className="py-10 text-center"><Loader2 className="animate-spin mx-auto text-blue-500" /></td></tr>) : 
-               filtered.length === 0 ? (<tr><td colSpan="4" className="py-12 text-center text-gray-400"><Truck size={40} className="mx-auto mb-2 opacity-20" />{t.empty}</td></tr>) : 
+              {isLoading ? (<tr><td colSpan="5" className="py-10 text-center"><Loader2 className="animate-spin mx-auto text-blue-500" /></td></tr>) : 
+               filtered.length === 0 ? (<tr><td colSpan="5" className="py-12 text-center text-gray-400"><Truck size={40} className="mx-auto mb-2 opacity-20" />{t.empty}</td></tr>) : 
                filtered.map(s => (
                 <tr key={s.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-6 py-4 font-bold text-gray-800">{s.name}</td>
+                  
+                  {/* 🧬 عرض تخصصات المورد (DNA) */}
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap gap-1.5">
+                      {s.supplier_dna && s.supplier_dna.length > 0 ? (
+                        s.supplier_dna.map(dnaId => {
+                          const dna = DNA_TYPES.find(d => d.id === dnaId);
+                          if(!dna) return null;
+                          return <span key={dnaId} className={`text-[10px] px-2 py-1 rounded-md border font-black shadow-sm ${dna.color}`}>{dna.label[language]}</span>
+                        })
+                      ) : (
+                        <span className="text-xs text-gray-400 font-medium">—</span>
+                      )}
+                    </div>
+                  </td>
+
                   <td className="px-6 py-4 text-xs space-y-1 text-gray-500">
                     <div className="flex items-center gap-1"><Phone size={12}/> {s.phone || '-'}</div>
                     <div className="flex items-center gap-1"><Building2 size={12}/> ICE: {s.ice || '-'}</div>
@@ -219,13 +255,12 @@ export default function RawMaterialSuppliers() {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      {/* 💸 زر تسديد ديون المورد */}
                       {Number(s.total_debt) > 0 && (
                         <button onClick={() => { setPaymentSupplier(s); setShowPaymentModal(true); }} className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors" title={t.payTooltip}>
                           <Banknote size={18}/>
                         </button>
                       )}
-                      <button onClick={() => { setEditingId(s.id); setFormData(s); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title={t.editTooltip}><Edit size={18}/></button>
+                      <button onClick={() => { setEditingId(s.id); setFormData({ ...s, supplier_dna: s.supplier_dna || [] }); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title={t.editTooltip}><Edit size={18}/></button>
                       <button onClick={() => { if(window.confirm(t.confirmDelete)) deleteSupplier(s.id); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title={t.deleteTooltip}><Trash2 size={18}/></button>
                     </div>
                   </td>
@@ -249,6 +284,27 @@ export default function RawMaterialSuppliers() {
                   <label className="block text-sm font-bold text-gray-700 mb-1">{t.name}</label>
                   <input required type="text" placeholder={t.supplierPlaceholder} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" />
                 </div>
+                
+                {/* 🧬 أزرار اختيار تخصص المورد */}
+                <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl">
+                  <label className="block text-sm font-black text-gray-700 mb-2 flex items-center gap-2"><Dna size={16} className="text-blue-500"/> {t.specialty}</label>
+                  <div className="flex flex-wrap gap-2">
+                    {DNA_TYPES.map(dna => {
+                      const isSelected = formData.supplier_dna?.includes(dna.id);
+                      return (
+                        <button
+                          key={dna.id}
+                          type="button"
+                          onClick={() => toggleDna(dna.id)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isSelected ? dna.color + ' scale-105 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-100'}`}
+                        >
+                          {dna.label[language]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.phone}</label><input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" /></div>
                   <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.ice}</label><input type="text" value={formData.ice} onChange={e => setFormData({...formData, ice: e.target.value})} className="w-full px-4 py-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" /></div>

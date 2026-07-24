@@ -47,6 +47,7 @@ import ExternalSuppliers from './pages/ExternalSuppliers';
 import Purchases from './pages/Purchases';
 import SupplierPOS from './pages/SupplierPOS';
 import SupplierTeam from './pages/SupplierTeam';
+import SupplierProduction from './pages/SupplierProduction';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
@@ -117,6 +118,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
     { path: '/raw-suppliers', icon: Users, label: t.items.rawSuppliers },
     { path: '/raw-purchases', icon: Receipt, label: t.items.rawPurchases },
+    { path: '/production', icon: Factory, label: 'المعمل الرقمي' },
     { path: '/stock', icon: Layers, label: t.items.stock }, 
     { path: '/clients', icon: Users, label: t.items.clients },
     { path: '/pos-b2b', icon: ShoppingCart, label: t.items.posB2B }, 
@@ -423,6 +425,7 @@ function App() {
             <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
             <Route path="/raw-purchases" element={<RawMaterialPurchases />} />
             <Route path="/pos-b2b" element={<SupplierPOS />} />
+            <Route path="/production" element={<SupplierProduction />} />
             <Route path="/team" element={<SupplierTeam />} />
           </Routes>
         </WholesalerDashboard>
