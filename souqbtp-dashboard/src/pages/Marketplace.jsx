@@ -77,14 +77,12 @@ const translations = {
 
 export default function Marketplace() {
   const { language } = useSettingsStore();
-  // 🛡️ الترياق السحري
   const t = translations[language] || translations['fr'];
   const isArabic = language === 'ar';
   
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // حالات البيانات
   const [vendorId, setVendorId] = useState(null);
   const [vendorInfo, setVendorInfo] = useState(null);
   const [products, setProducts] = useState([]);
@@ -92,7 +90,6 @@ export default function Marketplace() {
   const [error, setError] = useState(null);
   const [cart, setCart] = useState([]);
 
-  // التصنيفات مبنية داخل المكون لتدعم الترجمة الديناميكية
   const categories = [
     { id: 'all', name: t.categories.all, icon: <Package size={20} /> },
     { id: 'gros-oeuvre', name: t.categories.grosOeuvre, icon: <Package size={20} /> },
@@ -102,7 +99,6 @@ export default function Marketplace() {
   ];
 
   useEffect(() => {
-    // 1. قراءة معرف المورد من الرابط (URL)
     const queryParams = new URLSearchParams(window.location.search);
     const vId = queryParams.get('vendor');
     
@@ -113,7 +109,7 @@ export default function Marketplace() {
       setError(t.storeNotSpecified);
       setLoading(false);
     }
-  }, [language]); // أضفنا language لتحديث الـ error إن تغيرت اللغة
+  }, [language]);
 
   const fetchVendorStore = async (vId) => {
     try {
@@ -135,7 +131,10 @@ export default function Marketplace() {
         .eq('supplier_id', vId);
 
       if (productsError) throw productsError;
-      setProducts(productsData || []);
+      
+      // 🎯 السحر هنا: فلترة مخزون المورد لكي نعرض في واجهة المتجر "المنتجات النهائية" فقط
+      const finishedGoodsOnly = (productsData || []).filter(p => (p.item_type || 'finished_good') === 'finished_good');
+      setProducts(finishedGoodsOnly);
 
     } catch (err) {
       console.error("Error fetching store data:", err);
@@ -183,10 +182,8 @@ export default function Marketplace() {
   return (
     <div className={`min-h-screen bg-slate-50 font-sans`} dir={isArabic ? 'rtl' : 'ltr'}>
       
-      {/* الهيدر الخاص بمتجر المورد الديناميكي */}
       <div className="bg-gradient-to-r from-[#1e1b4b] via-[#2d2252] to-[#4338ca] pt-8 pb-16 px-6 lg:px-12 relative overflow-hidden shadow-lg">
         
-        {/* شريط الأزرار العلوية للعودة والسلة */}
         <div className="max-w-7xl mx-auto mb-6 relative z-20 flex justify-between items-center">
           <a href="https://souqbtp.ma/app/marketplace.php" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm text-sm font-bold">
              <ArrowRight size={16} className={isArabic ? '' : 'rotate-180'} />
@@ -203,7 +200,6 @@ export default function Marketplace() {
           </div>
         </div>
 
-        {/* عرض بيانات المورد المستخرجة من جدول suppliers */}
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center text-center">
           <div className="w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center text-4xl font-black text-blue-600 mb-4 border-4 border-white/20 overflow-hidden uppercase">
              {vendorInfo?.store_name ? vendorInfo.store_name.charAt(0) : 'M'}
@@ -223,7 +219,6 @@ export default function Marketplace() {
 
       <div className="max-w-7xl mx-auto px-4 lg:px-8 -mt-8 relative z-20 pb-20">
         
-        {/* شريط البحث والتصنيفات */}
         <div className="bg-white rounded-2xl p-4 shadow-lg mb-8 flex flex-col lg:flex-row gap-4 justify-between items-center border border-gray-100">
           
           <div className="flex overflow-x-auto hide-scrollbar gap-2 w-full lg:w-auto pb-2 lg:pb-0">
@@ -249,13 +244,13 @@ export default function Marketplace() {
               placeholder={t.searchPlaceholder}
               className={`w-full bg-slate-50 border border-gray-200 rounded-xl py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition-all ${isArabic ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
               value={searchQuery}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)} 
             />
+            {/* 🎯 تم إصلاح onChange هنا لتعمل مع searchQuery بدلاً من setSearchTerm */}
             <Search className={`absolute top-3 text-gray-400 ${isArabic ? 'right-3' : 'left-3'}`} size={20} />
           </div>
         </div>
 
-        {/* شبكة المنتجات الحقيقية المستخرجة */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
             <div key={product.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative group">
@@ -271,7 +266,6 @@ export default function Marketplace() {
                   <Star size={12} className="fill-yellow-500" /> 4.5
                 </div>
 
-                {/* قناع حماية في حال نفاد المخزون */}
                 {product.stock_quantity <= 0 && (
                   <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center">
                     <span className="bg-red-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg border border-red-400">
