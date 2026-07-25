@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
+import ProductModal from '../components/ProductModal';
+import SmartCart from '../components/SmartCart';
 import { Search, ShoppingCart, Star, MapPin, Package, Zap, Droplets, PenTool, ArrowRight, Loader2, Store } from 'lucide-react';
 
 const translations = {
@@ -80,6 +82,8 @@ export default function Marketplace() {
   const t = translations[language] || translations['fr'];
   const isArabic = language === 'ar';
   
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -132,7 +136,6 @@ export default function Marketplace() {
 
       if (productsError) throw productsError;
       
-      // 🎯 السحر هنا: فلترة مخزون المورد لكي نعرض في واجهة المتجر "المنتجات النهائية" فقط
       const finishedGoodsOnly = (productsData || []).filter(p => (p.item_type || 'finished_good') === 'finished_good');
       setProducts(finishedGoodsOnly);
 
@@ -163,10 +166,10 @@ export default function Marketplace() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Loader2 className="animate-spin text-blue-600" size={48} />
-      </div>
+      </div> 
     );
   }
-
+ 
   if (error && !vendorInfo) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4" dir={isArabic ? 'rtl' : 'ltr'}>
@@ -175,7 +178,7 @@ export default function Marketplace() {
         <a href="https://souqbtp.ma/app/marketplace.php" className="px-6 py-3 bg-blue-600 hover:bg-blue-700 transition-colors text-white rounded-xl font-bold">
           {t.backToMarket}
         </a>
-      </div>
+      </div> 
     );
   }
 
@@ -190,15 +193,18 @@ export default function Marketplace() {
              {t.backToMarket}
           </a>
 
-          <div className="relative bg-white/10 p-3 rounded-full text-white cursor-pointer hover:bg-white/20 transition-all">
-             <ShoppingCart size={24} />
-             {cart.length > 0 && (
-               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                 {cart.length}
-               </span>
-             )}
-          </div>
-        </div>
+        <div 
+          onClick={() => setIsCartOpen(true)} 
+          className="relative bg-white/10 p-3 rounded-full text-white cursor-pointer hover:bg-white/20 transition-all shadow-md"
+        >
+        <ShoppingCart size={24} />
+        {cart.length > 0 && (
+        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full shadow-lg border-2 border-[#2d2252]">
+           {cart.length}
+        </span>
+       )}
+    </div>
+  </div>
 
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center text-center">
           <div className="w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center text-4xl font-black text-blue-600 mb-4 border-4 border-white/20 overflow-hidden uppercase">
@@ -246,15 +252,17 @@ export default function Marketplace() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)} 
             />
-            {/* 🎯 تم إصلاح onChange هنا لتعمل مع searchQuery بدلاً من setSearchTerm */}
             <Search className={`absolute top-3 text-gray-400 ${isArabic ? 'right-3' : 'left-3'}`} size={20} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative group">
-              
+            <div 
+              key={product.id} 
+              onClick={() => setSelectedProduct(product)}
+              className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative group cursor-pointer"
+            >
               <div className="relative h-48 rounded-2xl overflow-hidden mb-4 bg-gray-100 border border-gray-50 flex items-center justify-center">
                 {product.image_url ? (
                   <img src={product.image_url} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -291,7 +299,7 @@ export default function Marketplace() {
                   </div>
                   
                   <button 
-                    onClick={() => addToCart(product)}
+                    onClick={(e) => { e.stopPropagation(); addToCart(product); }}
                     disabled={product.stock_quantity <= 0}
                     className={`p-3 rounded-xl transition-all ${
                       product.stock_quantity <= 0 
@@ -315,8 +323,31 @@ export default function Marketplace() {
             </p>
           </div>
         )}
-
       </div>
-    </div>
-  );
-}
+
+      {/* 🚀 نافذة المنتج السحرية */}
+      {selectedProduct && (
+        <ProductModal 
+          product={selectedProduct} 
+          onClose={() => setSelectedProduct(null)} 
+          onAddToCart={(item) => {
+            setCart([...cart, item]);
+            alert(t.addedToCart.replace('{product}', item.name));
+          }}
+          language={language}
+          currency={t.currency}
+        />
+      )}
+      {/* 🚀 السلة الذكية */}
+        <SmartCart 
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          cart={cart}
+          setCart={setCart}
+          vendorInfo={vendorInfo}
+          language={language}
+          currency={t.currency}
+        />
+      </div>
+    );
+  }
