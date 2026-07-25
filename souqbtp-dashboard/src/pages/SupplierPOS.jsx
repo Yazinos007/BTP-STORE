@@ -12,7 +12,7 @@ const translations = {
   ar: {
     title: 'المبيعات المباشرة (POS B2B)',
     subtitle: 'إصدار فواتير سريعة وبيع مباشر للتجار والمقاولين.',
-    searchProd: 'ابحث عن منتج في المخزون...',
+    searchProd: 'ابحث عن منتج نهائي في المخزون...',
     searchClient: 'اختر العميل (التاجر)...',
     newClient: '+ عميل جديد',
     cart: 'سلة الفاتورة',
@@ -29,12 +29,13 @@ const translations = {
     success: '✅ تم إصدار الفاتورة، خصم المخزون، وتسجيل التكلفة بنجاح!',
     error: 'حدث خطأ أثناء إتمام العملية.',
     stockError: 'الكمية المطلوبة غير متوفرة في المخزون!',
-    currency: 'درهم'
+    currency: 'درهم',
+    finishedGoodsBadge: '🏆 منتج نهائي'
   },
   fr: {
     title: 'Ventes Directes (POS B2B)',
     subtitle: 'Édition rapide de factures et ventes directes aux détaillants.',
-    searchProd: 'Chercher un produit dans le stock...',
+    searchProd: 'Chercher un produit fini dans le stock...',
     searchClient: 'Sélectionner le client...',
     newClient: '+ Nouveau Client',
     cart: 'Panier de Facturation',
@@ -51,12 +52,13 @@ const translations = {
     success: '✅ Facture éditée, stock déduit et coût enregistré avec succès !',
     error: 'Une erreur est survenue lors de la transaction.',
     stockError: 'Quantité insuffisante dans le stock !',
-    currency: 'MAD'
+    currency: 'MAD',
+    finishedGoodsBadge: '🏆 Produit Fini'
   },
   en: {
     title: 'Direct Sales (POS B2B)',
     subtitle: 'Quick invoicing and direct sales to retailers and contractors.',
-    searchProd: 'Search product in stock...',
+    searchProd: 'Search finished product in stock...',
     searchClient: 'Select client...',
     newClient: '+ New Client',
     cart: 'Invoice Cart',
@@ -73,7 +75,8 @@ const translations = {
     success: '✅ Invoice issued, stock deducted, and cost recorded successfully!',
     error: 'An error occurred during the transaction.',
     stockError: 'Insufficient quantity in stock!',
-    currency: 'MAD'
+    currency: 'MAD',
+    finishedGoodsBadge: '🏆 Finished Good'
   }
 };
 
@@ -102,20 +105,24 @@ export default function SupplierPOS() {
     try {
       const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
       
-      // جلب المخزون
+      // جلب المخزون بالكامل
       const { data: prods } = await supabase
         .from('products')
         .select('*')
         .eq('supplier_id', targetId)
         .gt('stock_quantity', 0);
         
+      // 🎯 السحر هنا: فلترة المنتجات لكي نأخذ فقط "المنتجات النهائية"
+      // نستخدم (p.item_type || 'finished_good') لضمان أن المنتجات القديمة جداً تعتبر نهائية أيضاً لتفادي اختفائها
+      const finishedGoodsOnly = (prods || []).filter(p => (p.item_type || 'finished_good') === 'finished_good');
+
       // جلب العملاء من CRM
       const { data: clts } = await supabase
         .from('clients')
         .select('*')
         .eq('supplier_id', targetId);
 
-      setProducts(prods || []);
+      setProducts(finishedGoodsOnly);
       setClients(clts || []);
     } catch (error) {
       console.error(error);
@@ -165,7 +172,6 @@ export default function SupplierPOS() {
       const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
       // 🌟 1. حساب تكلفة البضاعة المباعة (COGS) لإضافتها في المصاريف
-      // إذا كان للمنتج cost_price نستخدمه، وإلا نفترض أن التكلفة هي 75% من سعر البيع كمتوسط لأسواق الجملة
       const totalCost = cart.reduce((sum, item) => {
         const cost = item.cost_price ? item.cost_price : (item.price * 0.75); 
         return sum + (cost * item.quantity);
@@ -185,12 +191,12 @@ export default function SupplierPOS() {
       });
       if (docError) throw docError;
 
-      // 🌟 3. تسجيل تكلفة البضاعة في قسم "المصاريف" (كما طلبت)
+      // 🌟 3. تسجيل تكلفة البضاعة في قسم "المصاريف"
       const { error: expError } = await supabase.from('expenses').insert({
         supplier_id: targetId,
         title: `تكلفة بضاعة مباعة (COGS) - ${refNumber}`,
         amount: totalCost,
-        category: 'achats', // تصنيف المشتريات
+        category: 'achats', 
         date: new Date().toISOString()
       });
       if (expError) throw expError;
@@ -216,7 +222,6 @@ export default function SupplierPOS() {
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       alert(t.success);
       
-      // إعادة تعيين الواجهة
       setCart([]);
       setSelectedClient('');
       fetchData(); 
@@ -235,7 +240,7 @@ export default function SupplierPOS() {
   return (
     <div className="h-full flex flex-col md:flex-row gap-6 animate-fade-in text-white" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 📦 القسم الأيمن/الأيسر: كتالوج المخزون المركزي */}
+      {/* 📦 القسم الأيمن/الأيسر: كتالوج المنتجات النهائية فقط */}
       <div className="flex-1 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col h-[calc(100vh-120px)]">
         <div className="mb-6">
           <h2 className="text-2xl font-black flex items-center gap-3 text-white mb-2">
@@ -262,7 +267,13 @@ export default function SupplierPOS() {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredProducts.map(product => (
-                <div key={product.id} onClick={() => addToCart(product)} className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-blue-500/50 p-4 rounded-2xl cursor-pointer transition-all group shadow-lg text-start">
+                <div key={product.id} onClick={() => addToCart(product)} className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-blue-500/50 p-4 rounded-2xl cursor-pointer transition-all group relative shadow-lg text-start overflow-hidden">
+                  
+                  {/* 🎯 شارة المنتج النهائي للمسة احترافية */}
+                  <div className={`absolute top-2 ${language === 'ar' ? 'left-2' : 'right-2'} bg-amber-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-md z-10 shadow-sm border border-amber-400/50`}>
+                    {t.finishedGoodsBadge}
+                  </div>
+
                   <div className="w-full h-24 bg-slate-900 rounded-xl mb-3 overflow-hidden border border-slate-700 flex items-center justify-center">
                     {product.image_url ? <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform" /> : <PackageSearch size={32} className="text-slate-600" />}
                   </div>
