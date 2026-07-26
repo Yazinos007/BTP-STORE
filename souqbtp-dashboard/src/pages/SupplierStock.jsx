@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-import { Package, Search, Plus, Edit2, Trash2, Loader2, AlertCircle, Layers, UploadCloud, Image as ImageIcon, Box, Wrench, Droplets } from 'lucide-react';
+import { Package, Search, Plus, Edit2, Trash2, Loader2, AlertCircle, Layers, UploadCloud, Image as ImageIcon, RotateCcw, ShieldAlert } from 'lucide-react';
 
 const translations = {
   ar: {
@@ -22,6 +22,11 @@ const translations = {
     currency: 'MAD', imgFormat: 'PNG, JPG (Max 5MB)',
     deleteTooltip: 'حذف', editTooltip: 'تعديل',
     itemTypeLabel: 'نوع العنصر (الـ DNA)',
+    cleanMenu: '🧹 تنظيف القسم',
+    zeroStock: 'تصفير كميات هذا القسم (0)',
+    deleteEmpty: 'حذف العناصر نافدة الكمية (0)',
+    confirmZero: 'هل أنت متأكد من تصفير كميات جميع عناصر هذا القسم؟',
+    confirmDeleteEmpty: 'هل أنت متأكد من حذف جميع العناصر نافدة الكمية؟ (سيتم تجاهل العناصر المرتبطة بفواتير قديمة)',
     cats: { 'gros-oeuvre': 'مواد البناء الأساسية', 'electricite': 'الكهرباء', 'plomberie': 'السباكة', 'outillage': 'المعدات والأدوات' },
     units: { 'Unité': 'قطعة (Unité)', 'Kg': 'كيلوغرام (Kg)', 'Quintal': 'قنطار (q)', 'Tonne': 'طن (T)', 'Sac': 'كيس (Sac)', 'm2': 'متر مربع (m²)', 'm3': 'متر مكعب (m³)', 'ml': 'متر طولي (ml)', 'Palette': 'باليت (Palette)' },
     types: { 'finished_good': '🏆 منتج نهائي', 'raw_material': '🧱 مادة خام', 'packaging': '📦 تعبئة وتغليف', 'consumable': '⚙️ مادة استهلاكية' }
@@ -43,6 +48,11 @@ const translations = {
     currency: 'MAD', imgFormat: 'PNG, JPG (Max 5MB)',
     deleteTooltip: 'Supprimer', editTooltip: 'Modifier',
     itemTypeLabel: 'Type d\'article (DNA)',
+    cleanMenu: '🧹 Nettoyer la section',
+    zeroStock: 'Mettre les stocks à zéro (0)',
+    deleteEmpty: 'Supprimer les articles en rupture',
+    confirmZero: 'Êtes-vous sûr de vouloir remettre à zéro tout le stock de cette section ?',
+    confirmDeleteEmpty: 'Supprimer les articles en rupture ? (Les articles liés à des factures seront ignorés)',
     cats: { 'gros-oeuvre': 'Gros Œuvre', 'electricite': 'Électricité', 'plomberie': 'Plomberie', 'outillage': 'Outillage' },
     units: { 'Unité': 'Unité (Pièce)', 'Kg': 'Kilogramme (Kg)', 'Quintal': 'Quintal (q)', 'Tonne': 'Tonne (T)', 'Sac': 'Sac', 'm2': 'Mètre Carré (m²)', 'm3': 'Mètre Cube (m³)', 'ml': 'Mètre Linéaire (ml)', 'Palette': 'Palette' },
     types: { 'finished_good': '🏆 Produit Fini', 'raw_material': '🧱 Matière 1ère', 'packaging': '📦 Emballage', 'consumable': '⚙️ Consommable' }
@@ -64,6 +74,11 @@ const translations = {
     currency: 'MAD', imgFormat: 'PNG, JPG (Max 5MB)',
     deleteTooltip: 'Delete', editTooltip: 'Edit',
     itemTypeLabel: 'Item Type (DNA)',
+    cleanMenu: '🧹 Clean Section',
+    zeroStock: 'Reset stock to zero (0)',
+    deleteEmpty: 'Delete out-of-stock items',
+    confirmZero: 'Are you sure you want to reset all stock quantities in this section to zero?',
+    confirmDeleteEmpty: 'Delete out-of-stock items? (Items linked to invoices will be ignored)',
     cats: { 'gros-oeuvre': 'Heavy Construction', 'electricite': 'Electricity', 'plomberie': 'Plumbing', 'outillage': 'Tools & Equipment' },
     units: { 'Unité': 'Unit (Piece)', 'Kg': 'Kilogram (Kg)', 'Quintal': 'Quintal (q)', 'Tonne': 'Tonne (T)', 'Sac': 'Bag', 'm2': 'Square Meter (m²)', 'm3': 'Cubic Meter (m³)', 'ml': 'Linear Meter (ml)', 'Palette': 'Palette' },
     types: { 'finished_good': '🏆 Finished Good', 'raw_material': '🧱 Raw Material', 'packaging': '📦 Packaging', 'consumable': '⚙️ Consumable' }
@@ -81,8 +96,6 @@ export default function SupplierStock() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // 🎯 التبويب النشط (افتراضياً: المنتجات النهائية)
   const [activeTab, setActiveTab] = useState('finished_good');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -90,6 +103,9 @@ export default function SupplierStock() {
   const [uploading, setUploading] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   
+  // حالة القائمة المنسدلة للتنظيف
+  const [showCleanMenu, setShowCleanMenu] = useState(false);
+
   const [formData, setFormData] = useState({ 
     name: '', category: 'gros-oeuvre', price: '', stock_quantity: '', unit: 'Unité', image_url: '', item_type: 'finished_good'
   });
@@ -150,7 +166,7 @@ export default function SupplierStock() {
         stock_quantity: product.stock_quantity, 
         unit: product.unit || 'Unité', 
         image_url: product.image_url || '',
-        item_type: product.item_type || 'finished_good' // 🧬 استدعاء نوع العنصر
+        item_type: product.item_type || 'finished_good'
       });
     } else {
       setEditingProduct(null);
@@ -171,7 +187,7 @@ export default function SupplierStock() {
         unit: formData.unit, 
         image_url: formData.image_url, 
         supplier_id: supplier.id,
-        item_type: formData.item_type // 🧬 حفظ نوع العنصر
+        item_type: formData.item_type
       };
 
       if (editingProduct) {
@@ -199,17 +215,55 @@ export default function SupplierStock() {
       if (error) throw error;
       fetchProducts();
     } catch (err) {
-      alert("Erreur: " + err.message);
+      alert("Erreur: (هذا المنتج مرتبط بفواتير أو عمليات تصنيع ولا يمكن حذفه)");
     }
   };
 
-  // 🎯 فلترة ذكية: بناءً على التبويب النشط (item_type) وكلمة البحث
+  // 🧹 دالة تصفير المخزون
+  const handleZeroStock = async () => {
+    if (!window.confirm(t.confirmZero)) return;
+    setIsProcessing(true);
+    setShowCleanMenu(false);
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ stock_quantity: 0 })
+        .eq('supplier_id', supplier.id)
+        .eq('item_type', activeTab);
+      if (error) throw error;
+      fetchProducts();
+    } catch (err) {
+      alert(err.message);
+    }
+    setIsProcessing(false);
+  };
+
+  // 🗑️ دالة حذف المنتجات الفارغة
+  const handleDeleteEmptyProducts = async () => {
+    if (!window.confirm(t.confirmDeleteEmpty)) return;
+    setIsProcessing(true);
+    setShowCleanMenu(false);
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('supplier_id', supplier.id)
+        .eq('item_type', activeTab)
+        .eq('stock_quantity', 0);
+      if (error) throw error;
+      fetchProducts();
+    } catch (err) {
+      alert("بعض المنتجات مرتبطة بفواتير ولا يمكن حذفها نهائياً. تم تخطيها لحماية حساباتك.");
+      fetchProducts(); // تحديث القائمة على أي حال
+    }
+    setIsProcessing(false);
+  };
+
   const filteredProducts = products.filter(p => 
     (p.item_type || 'finished_good') === activeTab && 
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // حساب القيمة الإجمالية للمخزون المرئي فقط
   const totalStockValue = filteredProducts.reduce((acc, p) => acc + (p.price * p.stock_quantity), 0);
 
   return (
@@ -231,7 +285,6 @@ export default function SupplierStock() {
         </div>
       </div>
 
-      {/* 🧬 شريط التبويبات المتدفق (Fluid Tabs) */}
       <div className="flex overflow-x-auto gap-3 pb-2 custom-scrollbar">
         {ITEM_TYPES.map(type => {
           const count = products.filter(p => (p.item_type || 'finished_good') === type).length;
@@ -263,9 +316,35 @@ export default function SupplierStock() {
             className={`w-full ${language === 'ar' ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-medium`}
           />
         </div>
-        <button onClick={() => handleOpenModal()} className="w-full sm:w-auto py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-500/20">
-          <Plus size={20}/> {t.newProduct}
-        </button>
+        
+        <div className="flex w-full sm:w-auto gap-3 relative">
+          
+          {/* 🧹 زر تنظيف المخزون المنسدل */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowCleanMenu(!showCleanMenu)}
+              disabled={isProcessing}
+              className="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-black flex justify-center items-center gap-2 transition-all border border-slate-600"
+            >
+              {isProcessing ? <Loader2 size={20} className="animate-spin" /> : t.cleanMenu}
+            </button>
+
+            {showCleanMenu && (
+              <div className={`absolute top-full mt-2 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden ${language === 'ar' ? 'right-0' : 'left-0'}`}>
+                <button onClick={handleZeroStock} className="w-full text-start px-4 py-3 hover:bg-slate-700 text-sm font-bold text-amber-400 flex items-center gap-2 border-b border-slate-700">
+                  <RotateCcw size={16} /> {t.zeroStock}
+                </button>
+                <button onClick={handleDeleteEmptyProducts} className="w-full text-start px-4 py-3 hover:bg-red-500/10 text-sm font-bold text-red-400 flex items-center gap-2">
+                  <ShieldAlert size={16} /> {t.deleteEmpty}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button onClick={() => handleOpenModal()} className="flex-1 sm:flex-none py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-500/20">
+            <Plus size={20}/> {t.newProduct}
+          </button>
+        </div>
       </div>
 
       <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
@@ -333,8 +412,6 @@ export default function SupplierStock() {
             </h3>
             
             <form onSubmit={handleSaveProduct} className="space-y-5">
-              
-              {/* 🧬 أزرار اختيار نوع العنصر (Pill Buttons) */}
               <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 mb-6">
                 <label className="block text-sm font-bold text-slate-400 mb-3">{t.itemTypeLabel}</label>
                 <div className="flex flex-wrap gap-2">
@@ -426,7 +503,6 @@ export default function SupplierStock() {
         </div>
       )}
 
-      {/* تنبيهات المخزون (تراقب العنصر النشط حالياً فقط) */}
       <div className="bg-slate-800 border border-red-900/30 p-6 rounded-3xl shadow-lg relative overflow-hidden mt-6 text-start">
         <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} top-0 w-24 h-24 bg-red-500/10 rounded-bl-full pointer-events-none`}></div>
         <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
