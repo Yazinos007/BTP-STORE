@@ -184,7 +184,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
     { path: '/settings', icon: Settings, label: t.items.settings }
   ];
 
-  // 🎯 التمييز البصري للقطاعات
+  // 🎯 التمييز البصري المتقدم للقطاعات
   const getActiveStyle = (path) => {
     const isActive = location.pathname === path;
     if (!isActive) return "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent";
@@ -198,10 +198,26 @@ const WholesalerDashboard = ({ supplier, children }) => {
       return "bg-purple-600/20 text-purple-400 border border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.35)] animate-pulse";
     
     // المشتريات والمخزون -> أخضر (زمردي)
-    if (['/raw-suppliers', '/raw-purchases', '/stock'].includes(path)) 
+    if (['/raw-suppliers', '/raw-purchases', '/stock', '/production'].includes(path)) 
       return "bg-emerald-600/20 text-emerald-400 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-pulse";
+
+    // المالية والمحاسبة -> برتقالي
+    if (['/invoices', '/caisses', '/expenses', '/fiscal', '/accounting'].includes(path)) 
+      return "bg-orange-600/20 text-orange-400 border border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.35)] animate-pulse";
+
+    // الموارد البشرية والفريق -> وردي
+    if (['/hr', '/team'].includes(path)) 
+      return "bg-pink-600/20 text-pink-400 border border-pink-500/60 shadow-[0_0_20px_rgba(236,72,153,0.35)] animate-pulse";
+
+    // الذكاء الاصطناعي والتحليلات -> سماوي (Cyan)
+    if (['/analytics', '/ai-advisor', '/tender-radar'].includes(path)) 
+      return "bg-cyan-600/20 text-cyan-400 border border-cyan-500/60 shadow-[0_0_20px_rgba(6,182,212,0.35)] animate-pulse";
+
+    // الإعدادات -> رمادي
+    if (path === '/settings') 
+      return "bg-slate-700/50 text-slate-300 border border-slate-500/60 shadow-[0_0_20px_rgba(148,163,184,0.35)] animate-pulse";
     
-    // افتراضي
+    // لوحة القيادة (الرئيسية) -> اللون النيلي الساطع
     return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)] animate-pulse";
   };
 

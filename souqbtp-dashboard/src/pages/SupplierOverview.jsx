@@ -1,112 +1,71 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { 
-  Users, Package, DollarSign, Sparkles, AlertTriangle, 
-  ShieldAlert, ShieldCheck, Truck, ChevronRight, ArrowRightLeft, 
-  Loader2, Briefcase, Receipt, CreditCard, ShoppingCart, Activity, Landmark, Wallet
+  DollarSign, ShoppingCart, Package, Users, 
+  Wallet, CreditCard, Receipt, Landmark, 
+  Activity, ShieldAlert, Truck, Loader2, Sparkles, ChevronRight
 } from 'lucide-react';
 
 const translations = {
   ar: {
-    revenue: 'إجمالي المبيعات',
-    activeOrders: 'طلبات قيد المعالجة',
-    activeProducts: 'المنتجات النشطة',
-    stockValue: 'قيمة المخزون',
-    activeEmployees: 'الموظفون النشطون',
-    payroll: 'كتلة الأجور',
-    cashBalance: 'رصيد الصناديق',
-    debts: 'ديون العملاء',
-    totalExpenses: 'إجمالي المصاريف',
-    fiscalSystem: 'النظام الجبائي (TVA)',
-    tvaPending: 'TVA واجبة الأداء قيد الانتظار',
-    netProfitTitle: 'النتيجة الصافية لأداء الشركة',
-    advisorTitle: 'المستشار الاستراتيجي الذكي',
-    priceRadar: 'رادار الأسعار',
-    priceRadarDesc: 'تنبيه : ارتفاع وشيك بنسبة +5.4% في أسعار الحديد. المصانع الوطنية ستحدث الأسعار خلال 48 ساعة.',
-    expectedSavings: 'توفير متوقع',
-    freezePrices: 'تجميد الأسعار',
-    logisticsOpt: 'محسن اللوجستيك',
-    tanger: 'طنجة',
-    casablanca: 'الدار البيضاء',
-    logisticsDesc: 'فرصة : شاحنتك تعود فارغة من طنجة. شريك لديه شحنة جاهزة لنفس خط العودة.',
-    confirmShare: 'تأكيد مشاركة الشحنة',
-    currency: 'درهم',
-    cmdUnit: 'طلب',
-    prodUnit: 'منتج',
-    empUnit: 'موظف'
+    totalSales: 'إجمالي المبيعات', pendingOrders: 'الطلبات المعلقة',
+    activeProducts: 'المنتجات النشطة', activeEmployees: 'الموظفون النشطون',
+    cashBalance: 'الرصيد النقدي', customerDebts: 'ديون العملاء',
+    totalExpenses: 'إجمالي المصاريف', taxSystem: 'النظام الجبائي (TVA)',
+    netProfit: 'صافي ربح الشركة',
+    aiAdvisor: 'المستشار الاستراتيجي الذكي',
+    priceRadar: 'رادار الأسعار', logisticsOpt: 'مُحسّن اللوجستيك',
+    inventoryValue: 'قيمة المخزون:', payroll: 'إجمالي الرواتب:',
+    pendingVat: 'الضريبة واجبة الأداء', orders: 'طلبات', products: 'منتج', employees: 'موظف',
+    currency: 'MAD',
+    priceRadarDesc: 'تنبيه: زيادة وشيكة بنسبة 5.4٪ في أسعار الحديد. ستقوم المصانع الوطنية بتعديل الأسعار الأسبوع المقبل. ننصح بتأمين طلبياتك الآن لتوفير هامش الربح.',
+    logisticsDesc: 'اقتراح ذكي: لديك 3 شحنات متجهة إلى مدينة طنجة. دمجها في شاحنة واحدة كبيرة سيوفر لك 1,200 درهم من تكاليف النقل الإجمالية اليوم.',
+    tanger: 'طنجة', casablanca: 'الدار البيضاء'
   },
   fr: {
-    revenue: "Chiffre d'Affaires",
-    activeOrders: 'Commandes en cours',
-    activeProducts: 'Produits Actifs',
-    stockValue: 'Valeur Stock',
-    activeEmployees: 'Employés Actifs',
-    payroll: 'Masse Salariale',
-    cashBalance: 'Solde des Caisses',
-    debts: 'Créances Clients',
-    totalExpenses: 'Total des Charges',
-    fiscalSystem: 'Système Fiscal (TVA)',
-    tvaPending: 'TVA due en attente',
-    netProfitTitle: "RÉSULTAT NET DE L'ENTREPRISE",
-    advisorTitle: 'Conseiller Stratégique (IA)',
-    priceRadar: 'Radar des Prix',
-    priceRadarDesc: 'Alerte : Hausse imminente de +5.4% sur l\'Acier. Les usines nationales vont ajuster les prix sous 48h.',
-    expectedSavings: 'Économie Prévue',
-    freezePrices: 'Geler les prix',
-    logisticsOpt: 'Optimiseur Logistique',
-    tanger: 'Tanger',
-    casablanca: 'Casablanca',
-    logisticsDesc: 'Opportunité : Votre camion rentre à vide de Tanger. Un partenaire a une charge pour le retour.',
-    confirmShare: 'Confirmer le Partage',
+    totalSales: 'TOTAL VENTES', pendingOrders: 'COMMANDES EN ATTENTE',
+    activeProducts: 'PRODUITS ACTIFS', activeEmployees: 'EMPLOYÉS ACTIFS',
+    cashBalance: 'SOLDE DE TRÉSORERIE', customerDebts: 'DETTES CLIENTS',
+    totalExpenses: 'DÉPENSES TOTALES', taxSystem: 'SYSTÈME FISCAL (TVA)',
+    netProfit: 'BÉNÉFICE NET DE L\'ENTREPRISE',
+    aiAdvisor: 'Conseiller Stratégique IA',
+    priceRadar: 'Radar de Prix', logisticsOpt: 'Optimiseur Logistique',
+    inventoryValue: 'Valeur du stock:', payroll: 'Masse salariale:',
+    pendingVat: 'TVA due en attente', orders: 'Commandes', products: 'Produits', employees: 'Employés',
     currency: 'MAD',
-    cmdUnit: 'Cmds',
-    prodUnit: 'Prods',
-    empUnit: 'Emp'
+    priceRadarDesc: 'Alerte : Hausse imminente de +5.4% sur l\'Acier. Les usines nationales vont ajuster les prix la semaine prochaine. Conseillons de sécuriser les commandes maintenant.',
+    logisticsDesc: 'Suggestion Intelligente : Vous avez 3 expéditions vers Tanger. Les regrouper dans un seul camion vous fera économiser 1 200 MAD aujourd\'hui.',
+    tanger: 'Tanger', casablanca: 'Casablanca'
   },
   en: {
-    revenue: 'Total Sales',
-    activeOrders: 'Pending Orders',
-    activeProducts: 'Active Products',
-    stockValue: 'Inventory Value',
-    activeEmployees: 'Active Employees',
-    payroll: 'Payroll',
-    cashBalance: 'Cash Balance',
-    debts: 'Customer Debts',
-    totalExpenses: 'Total Expenses',
-    fiscalSystem: 'Tax System (VAT)',
-    tvaPending: 'Pending VAT due',
-    netProfitTitle: 'COMPANY NET PROFIT',
-    advisorTitle: 'Strategic AI Advisor',
-    priceRadar: 'Price Radar',
-    priceRadarDesc: 'Alert: Imminent +5.4% increase on Steel. National factories will adjust prices within 48 hours.',
-    expectedSavings: 'Expected Savings',
-    freezePrices: 'Freeze Prices',
-    logisticsOpt: 'Logistics Optimizer',
-    tanger: 'Tangier',
-    casablanca: 'Casablanca',
-    logisticsDesc: 'Opportunity: Your truck is returning empty from Tangier. A partner has a load for the return trip.',
-    confirmShare: 'Confirm Sharing',
+    totalSales: 'TOTAL SALES', pendingOrders: 'PENDING ORDERS',
+    activeProducts: 'ACTIVE PRODUCTS', activeEmployees: 'ACTIVE EMPLOYEES',
+    cashBalance: 'CASH BALANCE', customerDebts: 'CUSTOMER DEBTS',
+    totalExpenses: 'TOTAL EXPENSES', taxSystem: 'TAX SYSTEM (VAT)',
+    netProfit: 'COMPANY NET PROFIT',
+    aiAdvisor: 'Strategic AI Advisor',
+    priceRadar: 'Price Radar', logisticsOpt: 'Logistics Optimizer',
+    inventoryValue: 'Inventory Value:', payroll: 'Payroll:',
+    pendingVat: 'Pending VAT due', orders: 'Orders', products: 'Products', employees: 'Employees',
     currency: 'MAD',
-    cmdUnit: 'Orders',
-    prodUnit: 'Products',
-    empUnit: 'Employees'
+    priceRadarDesc: 'Alert: Imminent +5.4% increase on Steel. National factories will adjust prices next week. Advise securing orders now to lock in margins.',
+    logisticsDesc: 'Smart Suggestion: You have 3 shipments heading to Tangier. Consolidating them into one large truck will save you 1,200 MAD in overall transit costs today.',
+    tanger: 'Tangier', casablanca: 'Casablanca'
   }
 };
 
 export default function SupplierOverview() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
-  
-  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
-  
-  const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({ 
-    revenue: 0, activeOrders: 0, clientsCount: 0, stockValue: 0, 
-    totalProducts: 0, totalExpenses: 0, activeEmployees: 0, payroll: 0,
-    debts: 0, netProfit: 0, cashBalance: 0, tvaDue: 0
+  const isArabic = language === 'ar';
+
+  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState({
+    sales: 0, orders: 0, productsCount: 0, inventoryValue: 0,
+    employeesCount: 0, payroll: 0, cash: 0, debts: 0, expenses: 0, vat: 0, netProfit: 0
   });
 
   useEffect(() => {
@@ -114,225 +73,264 @@ export default function SupplierOverview() {
   }, [supplier]);
 
   const fetchDashboardData = async () => {
-    setIsLoading(true);
+    setLoading(true);
     try {
-      const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
+      const targetId = supplier.id;
 
-      const { data: myProducts } = await supabase.from('products').select('*').eq('supplier_id', targetId);
-      const myProductNames = new Set(myProducts?.map(p => (p.name || '').replace(/\s+/g, '').toLowerCase()) || []);
-      const stockVal = (myProducts || []).reduce((sum, p) => sum + (Number(p.price || p.sale_price || 0) * Number(p.stock_quantity || 0)), 0);
+      // 1. المبيعات (من فواتير B2B + الماركت بليس)
+      let totalSales = 0;
+      const { data: docs } = await supabase.from('documents').select('total_amount').eq('owner_id', targetId).eq('type', 'Facture');
+      const { data: marketOrders } = await supabase.from('marketplace_orders').select('total_amount').eq('supplier_id', targetId).in('order_status', ['delivered', 'shipped']);
+      if (docs) docs.forEach(d => totalSales += Number(d.total_amount || 0));
+      if (marketOrders) marketOrders.forEach(o => totalSales += Number(o.total_amount || 0));
 
-      const { data: allInvoices } = await supabase.from('documents').select('total_amount, items').eq('type', 'Facture');
-      const myInvoices = (allInvoices || []).filter(inv => 
-        (inv.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
-      );
-      const totalRevenue = myInvoices.reduce((sum, doc) => sum + Number(doc.total_amount || 0), 0);
+      // 2. الطلبات المعلقة (من B2B + الماركت بليس)
+      let pendingOrders = 0;
+      const { data: b2bReq } = await supabase.from('supply_requests').select('id').eq('supplier_id', targetId).eq('status', 'pending');
+      const { data: mOrders } = await supabase.from('marketplace_orders').select('id').eq('supplier_id', targetId).eq('order_status', 'pending');
+      if (b2bReq) pendingOrders += b2bReq.length;
+      if (mOrders) pendingOrders += mOrders.length;
 
-      const { data: allRequests } = await supabase.from('supply_requests').select('merchant_id, items, status');
-      const myRequests = (allRequests || []).filter(req => 
-        (req.items || []).some(item => myProductNames.has((item.name || '').replace(/\s+/g, '').toLowerCase()))
-      );
-      const activeOrders = myRequests.filter(req => req.status !== 'completed' && req.status !== 'cancelled').length;
-      const uniqueClients = new Set(myRequests.map(req => req.merchant_id).filter(id => id));
+      // 3. المنتجات والمخزون
+      let productsCount = 0;
+      let inventoryValue = 0;
+      const { data: prods } = await supabase.from('products').select('stock_quantity, price').eq('supplier_id', targetId);
+      if (prods) {
+        prods.forEach(p => {
+          if (p.stock_quantity > 0) {
+            productsCount++;
+            inventoryValue += (p.stock_quantity * p.price);
+          }
+        });
+      }
 
-      const { data: employees } = await supabase.from('employees').select('base_salary, primes_avances, retenues, status').eq('supplier_id', targetId);
-      const activeEmps = (employees || []).filter(e => e.status === 'Actif' || e.status === 'active');
-      const totalPayroll = activeEmps.reduce((sum, e) => sum + (Number(e.base_salary || 0) + Number(e.primes_avances || 0) - Number(e.retenues || 0)), 0);
+      // 4. الموظفين
+      let employeesCount = 0;
+      let payroll = 0;
+      const { data: emps } = await supabase.from('employees').select('salary, base_salary').eq('supplier_id', targetId);
+      if (emps) {
+        employeesCount = emps.length;
+        emps.forEach(e => payroll += Number(e.salary || e.base_salary || 0));
+      }
 
-      const { data: expenses } = await supabase.from('expenses').select('amount').eq('supplier_id', targetId);
-      const totalExpenses = (expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
-      
+      // 5. الرصيد النقدي (الصناديق)
+      let cash = 0;
+      const { data: caisses } = await supabase.from('caisses').select('balance').eq('supplier_id', targetId);
+      if (caisses) caisses.forEach(c => cash += Number(c.balance || 0));
+
+      // 6. ديون العملاء
+      let debts = 0;
       const { data: clients } = await supabase.from('clients').select('total_debt').eq('supplier_id', targetId);
-      const totalDebts = (clients || []).reduce((sum, c) => sum + Number(c.total_debt || 0), 0);
+      if (clients) clients.forEach(c => debts += Number(c.total_debt || 0));
 
-      const { data: declarations } = await supabase.from('declarations').select('tva_due, status');
-      const totalTvaDue = (declarations || []).filter(d => d.status === 'pending').reduce((sum, d) => sum + Number(d.tva_due || 0), 0);
+      // 7. إجمالي المصاريف
+      let expenses = 0;
+      const { data: exps } = await supabase.from('expenses').select('amount').eq('supplier_id', targetId);
+      if (exps) exps.forEach(e => expenses += Number(e.amount || 0));
 
-      const calculatedNetProfit = totalRevenue - totalExpenses - totalPayroll - totalTvaDue;
-      const calculatedCash = (totalRevenue - totalExpenses) > 0 ? (totalRevenue - totalExpenses) : 0;
+      // 8. حسابات الضريبة والربح الصافي
+      const estimatedVat = (totalSales * 0.20) - (expenses * 0.20); 
+      const netProfit = totalSales - expenses - payroll;
 
-      setStats({
-        revenue: totalRevenue, activeOrders, clientsCount: uniqueClients.size, stockValue: stockVal,
-        totalProducts: myProducts?.length || 0, totalExpenses, activeEmployees: activeEmps.length,
-        payroll: totalPayroll, debts: totalDebts, tvaDue: totalTvaDue, 
-        netProfit: calculatedNetProfit, cashBalance: calculatedCash
+      setMetrics({
+        sales: totalSales, orders: pendingOrders, productsCount, inventoryValue,
+        employeesCount, payroll, cash, debts, expenses, vat: estimatedVat > 0 ? estimatedVat : 0, netProfit
       });
 
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  if (isLoading) return (
-    <div className="flex h-screen items-center justify-center bg-[#0f172a]">
-      <Loader2 size={40} className="animate-spin text-blue-500" />
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[70vh]">
+        <Loader2 className="animate-spin text-blue-500" size={64} />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-10 animate-fade-in pb-10" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="space-y-6 animate-fade-in font-sans text-start" dir={isArabic ? 'rtl' : 'ltr'}>
       
-      {/* 💼 الصف الأول */}
+      {/* 📊 شبكة البطاقات العلوية */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title={t.revenue} 
-          value={stats.revenue.toLocaleString()} 
-          icon={DollarSign} color="blue" suffix={t.currency}
-        />
-        <StatCard 
-          title={t.activeOrders} 
-          value={stats.activeOrders} 
-          icon={ShoppingCart} color="emerald" suffix={t.cmdUnit}
-        />
-        <StatCard 
-          title={t.activeProducts} 
-          value={stats.totalProducts} 
-          subValue={`${t.stockValue}: ${stats.stockValue.toLocaleString()} ${t.currency}`} 
-          icon={Package} color="teal" suffix={t.prodUnit}
-        />
-        <StatCard 
-          title={t.activeEmployees} 
-          value={stats.activeEmployees} 
-          subValue={`${t.payroll}: ${stats.payroll.toLocaleString()} ${t.currency}`} 
-          icon={Briefcase} color="purple" suffix={t.empUnit}
-        />
-      </div>
-
-      {/* 🪙 الصف الثاني */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title={t.cashBalance} 
-          value={stats.cashBalance.toLocaleString()} 
-          icon={Wallet} color="slate" suffix={t.currency}
-        />
-        <StatCard 
-          title={t.debts} 
-          value={stats.debts.toLocaleString()} 
-          icon={CreditCard} color="orange" suffix={t.currency}
-        />
-        <StatCard 
-          title={t.totalExpenses} 
-          value={stats.totalExpenses.toLocaleString()} 
-          icon={Receipt} color="gray" suffix={t.currency}
-        />
-        <StatCard 
-          title={t.fiscalSystem} 
-          value={stats.tvaDue.toLocaleString()} 
-          subValue={t.tvaPending}
-          icon={Landmark} color="indigo" suffix={t.currency}
-        />
-      </div>
-
-      {/* 🚨 الصف الثالث: بطاقة النتيجة الصافية */}
-      <div className="w-full">
-        <div className={`relative overflow-hidden p-8 rounded-3xl border-2 text-white flex flex-col justify-between shadow-2xl transition-all duration-300
-          ${stats.netProfit < 0 
-            ? 'bg-gradient-to-br from-red-600 via-red-700 to-red-900 border-red-400 shadow-[0_0_30px_rgba(220,38,38,0.4)] animate-[pulse_1.5s_ease-in-out_infinite]' 
-            : 'bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700 border-green-400 shadow-[0_0_30px_rgba(16,185,129,0.3)] animate-[pulse_3s_ease-in-out_infinite]' 
-          }`}
-        >
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-15 pointer-events-none">
-            {stats.netProfit < 0 ? <ShieldAlert size={160} /> : <ShieldCheck size={160} />}
+        
+        {/* المبيعات */}
+        <div className="bg-[#4f46e5] rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+          <DollarSign className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform" size={140} />
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm text-white"><DollarSign size={24}/></div>
+            <h3 className="text-white font-black tracking-widest text-sm">{t.totalSales}</h3>
           </div>
-          <div className="relative z-10 flex items-center gap-4 mb-3">
-            <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md border border-white/10">
-              <Activity size={32} className="text-white" />
-            </div>
+          <div className="relative z-10" dir="ltr">
+            <span className="text-4xl font-black text-white">{metrics.sales.toLocaleString()}</span>
+            <span className="text-sm text-blue-200 ml-2 font-bold">{t.currency}</span>
+          </div>
+        </div>
+
+        {/* الطلبات المعلقة */}
+        <div className="bg-[#10b981] rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+          <ShoppingCart className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform" size={140} />
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm text-white"><ShoppingCart size={24}/></div>
+            <h3 className="text-white font-black tracking-widest text-sm">{t.pendingOrders}</h3>
+          </div>
+          <div className="relative z-10" dir="ltr">
+            <span className="text-4xl font-black text-white">{metrics.orders.toLocaleString()}</span>
+            <span className="text-sm text-emerald-100 ml-2 font-bold uppercase">{t.orders}</span>
+          </div>
+        </div>
+
+        {/* المنتجات النشطة */}
+        <div className="bg-[#06b6d4] rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+          <Package className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform" size={140} />
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm text-white"><Package size={24}/></div>
+            <h3 className="text-white font-black tracking-widest text-sm">{t.activeProducts}</h3>
+          </div>
+          <div className="relative z-10 flex flex-col" dir="ltr">
             <div>
-              <p className="text-xs font-black uppercase tracking-widest text-white/80">
-                {t.netProfitTitle}
-              </p>
-              <h3 className="text-4xl font-black mt-1 tracking-tight" dir="ltr">
-                {stats.netProfit.toLocaleString()} <span className="text-xl font-bold opacity-80 uppercase">{t.currency}</span>
-              </h3>
+              <span className="text-4xl font-black text-white">{metrics.productsCount.toLocaleString()}</span>
+              <span className="text-sm text-cyan-100 ml-2 font-bold uppercase">{t.products}</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-white/20 text-xs font-bold text-cyan-50">
+              {t.inventoryValue} {metrics.inventoryValue.toLocaleString()} {t.currency}
+            </div>
+          </div>
+        </div>
+
+        {/* الموظفين */}
+        <div className="bg-[#d946ef] rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+          <Users className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform" size={140} />
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm text-white"><Users size={24}/></div>
+            <h3 className="text-white font-black tracking-widest text-sm">{t.activeEmployees}</h3>
+          </div>
+          <div className="relative z-10 flex flex-col" dir="ltr">
+            <div>
+              <span className="text-4xl font-black text-white">{metrics.employeesCount.toLocaleString()}</span>
+              <span className="text-sm text-purple-200 ml-2 font-bold uppercase">{t.employees}</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-white/20 text-xs font-bold text-purple-50">
+              {t.payroll} {metrics.payroll.toLocaleString()} {t.currency}
+            </div>
+          </div>
+        </div>
+
+        {/* الرصيد النقدي */}
+        <div className="bg-[#334155] rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+          <Wallet className="absolute -right-6 -bottom-6 text-white/5 group-hover:scale-110 transition-transform" size={140} />
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm text-slate-300"><Wallet size={24}/></div>
+            <h3 className="text-slate-300 font-black tracking-widest text-sm">{t.cashBalance}</h3>
+          </div>
+          <div className="relative z-10" dir="ltr">
+            <span className="text-4xl font-black text-white">{metrics.cash.toLocaleString()}</span>
+            <span className="text-sm text-slate-400 ml-2 font-bold uppercase">{t.currency}</span>
+          </div>
+        </div>
+
+        {/* ديون العملاء */}
+        <div className="bg-[#f97316] rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+          <CreditCard className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform" size={140} />
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm text-white"><CreditCard size={24}/></div>
+            <h3 className="text-white font-black tracking-widest text-sm">{t.customerDebts}</h3>
+          </div>
+          <div className="relative z-10" dir="ltr">
+            <span className="text-4xl font-black text-white">{metrics.debts.toLocaleString()}</span>
+            <span className="text-sm text-orange-200 ml-2 font-bold uppercase">{t.currency}</span>
+          </div>
+        </div>
+
+        {/* إجمالي المصاريف */}
+        <div className="bg-[#64748b] rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+          <Receipt className="absolute -right-6 -bottom-6 text-white/5 group-hover:scale-110 transition-transform" size={140} />
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm text-gray-300"><Receipt size={24}/></div>
+            <h3 className="text-gray-300 font-black tracking-widest text-sm">{t.totalExpenses}</h3>
+          </div>
+          <div className="relative z-10" dir="ltr">
+            <span className="text-4xl font-black text-white">{metrics.expenses.toLocaleString()}</span>
+            <span className="text-sm text-gray-400 ml-2 font-bold uppercase">{t.currency}</span>
+          </div>
+        </div>
+
+        {/* النظام الضريبي */}
+        <div className="bg-[#3b82f6] rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+          <Landmark className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform" size={140} />
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm text-white"><Landmark size={24}/></div>
+            <h3 className="text-white font-black tracking-widest text-sm">{t.taxSystem}</h3>
+          </div>
+          <div className="relative z-10 flex flex-col" dir="ltr">
+            <div>
+              <span className="text-4xl font-black text-white">{metrics.vat.toLocaleString()}</span>
+              <span className="text-sm text-blue-200 ml-2 font-bold uppercase">{t.currency}</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-white/20 text-xs font-bold text-blue-100">
+              {t.pendingVat}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 🔮 القسم الأوسط: المستشار الاستراتيجي الخارق (IA Advisor) */}
-      <div className="space-y-6 pt-4">
-        <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-          <Sparkles className="text-blue-400 animate-pulse" size={28} />
-          <h3 className="text-2xl font-black text-white">
-            {t.advisorTitle}
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl group transition-all hover:border-red-500/30 text-start">
-            <div className="absolute right-4 top-4 opacity-10 text-red-500"><ShieldAlert size={120} /></div>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-red-500/10 text-red-400 rounded-xl border border-red-500/20"><AlertTriangle size={24} /></div>
-              <h4 className="text-xl font-bold text-white">{t.priceRadar}</h4>
+      {/* 📉 صافي الربح الكبير */}
+      <div className={`rounded-3xl p-8 shadow-2xl relative overflow-hidden ${metrics.netProfit >= 0 ? 'bg-[#1e1b4b] border border-indigo-500/30' : 'bg-[#450a0a] border border-red-500/30'}`}>
+        {metrics.netProfit >= 0 ? (
+           <Activity className={`absolute ${isArabic ? 'left-6' : 'right-6'} top-1/2 -translate-y-1/2 opacity-5 text-indigo-300`} size={200} />
+        ) : (
+           <ShieldAlert className={`absolute ${isArabic ? 'left-6' : 'right-6'} top-1/2 -translate-y-1/2 opacity-5 text-red-300`} size={200} />
+        )}
+        <div className="relative z-10 flex items-center gap-6">
+          <div className={`p-5 rounded-2xl backdrop-blur-md ${metrics.netProfit >= 0 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-red-500/20 text-red-400'}`}>
+            <Activity size={40} className="animate-pulse" />
+          </div>
+          <div>
+            <h3 className={`font-black tracking-widest text-sm mb-2 ${metrics.netProfit >= 0 ? 'text-indigo-400' : 'text-red-400'}`}>{t.netProfit}</h3>
+            <div className="flex items-baseline gap-3" dir="ltr">
+              <span className="text-5xl md:text-7xl font-black text-white">{metrics.netProfit.toLocaleString()}</span>
+              <span className={`text-xl font-bold uppercase ${metrics.netProfit >= 0 ? 'text-indigo-500' : 'text-red-500'}`}>{t.currency}</span>
             </div>
-            <p className="text-slate-300 font-medium leading-relaxed mb-6">
+          </div>
+        </div>
+      </div>
+
+      {/* 🤖 قسم المستشار الذكي المصغر */}
+      <div>
+        <h3 className="text-xl font-black text-white mb-4 flex items-center gap-2">
+          <Sparkles className="text-blue-400"/> {t.aiAdvisor}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <div className="bg-slate-900 border border-red-500/20 rounded-3xl p-6 relative overflow-hidden shadow-lg">
+            <ShieldAlert className={`absolute ${isArabic ? 'left-[-20px]' : 'right-[-20px]'} bottom-[-20px] text-red-500/5`} size={150}/>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-red-500/10 p-2.5 rounded-xl text-red-400"><ShieldAlert size={20}/></div>
+              <h4 className="font-bold text-white">{t.priceRadar}</h4>
+            </div>
+            <p className="text-sm text-slate-400 leading-relaxed relative z-10">
               {t.priceRadarDesc}
             </p>
-            <div className="flex justify-between items-center bg-black/40 p-4 rounded-2xl mb-6">
-              <div>
-                <p className="text-xs text-slate-500 uppercase font-black tracking-widest">{t.expectedSavings}</p>
-                <p className="text-2xl font-black text-emerald-400" dir="ltr">85,000 MAD</p>
-              </div>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-black text-sm transition-all shadow-lg">
-                {t.freezePrices}
-              </button>
-            </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl group transition-all hover:border-emerald-500/30 text-start">
-            <div className="absolute right-4 top-4 opacity-10 text-emerald-500"><Truck size={120} /></div>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20"><Truck size={24} /></div>
-              <h4 className="text-xl font-bold text-white">{t.logisticsOpt}</h4>
+          <div className="bg-slate-900 border border-emerald-500/20 rounded-3xl p-6 relative overflow-hidden shadow-lg">
+            <Truck className={`absolute ${isArabic ? 'left-[-20px]' : 'right-[-20px]'} bottom-[-20px] text-emerald-500/5`} size={150}/>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-emerald-500/10 p-2.5 rounded-xl text-emerald-400"><Truck size={20}/></div>
+              <h4 className="font-bold text-white">{t.logisticsOpt}</h4>
             </div>
-            <div className="flex items-center gap-3 mb-4 font-black text-white text-sm bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10 w-fit">
-               <span>{t.tanger}</span> <ArrowRightLeft size={16} className="text-blue-400" /> <span>{t.casablanca}</span>
-            </div>
-            <p className="text-slate-300 font-medium leading-relaxed mb-6">
+            <p className="text-sm text-slate-400 leading-relaxed relative z-10">
               {t.logisticsDesc}
             </p>
-            <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-lg">
-              {t.confirmShare} <ChevronRight size={18} className={language === 'ar' ? 'rotate-180' : ''} />
-            </button>
           </div>
+
         </div>
       </div>
-    </div>
-  );
-}
 
-function StatCard({ title, value, subValue, icon: Icon, color, suffix }) {
-  const colors = {
-    blue: "from-blue-600 to-indigo-700 shadow-blue-500/20",
-    emerald: "from-emerald-500 to-teal-600 shadow-emerald-500/20",
-    teal: "from-teal-500 to-cyan-600 shadow-teal-500/20",
-    purple: "from-purple-600 to-fuchsia-600 shadow-purple-500/20",
-    orange: "from-orange-500 to-amber-600 shadow-orange-500/20",
-    slate: "from-slate-700 to-slate-900 shadow-slate-800/20",
-    indigo: "from-indigo-600 to-blue-800 shadow-indigo-600/20",
-    gray: "from-gray-500 to-gray-700 shadow-gray-500/20"
-  };
-
-  return (
-    <div className={`bg-gradient-to-br ${colors[color]} p-6 rounded-3xl shadow-xl relative overflow-hidden group transition-all hover:-translate-y-1 flex flex-col justify-between text-start`}>
-      <div className="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-1/4 -translate-y-1/4 group-hover:scale-110 transition-transform">
-        <Icon size={130} />
-      </div>
-      <div className="relative z-10 flex items-center gap-4 mb-3">
-        <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md border border-white/10"><Icon size={24} className="text-white" /></div>
-        <p className="text-white/90 text-sm font-black uppercase tracking-wider">{title}</p>
-      </div>
-      <div className="relative z-10">
-        <h4 className="text-2xl font-black text-white" dir="ltr">{value} <span className="text-xs font-bold text-white/70 uppercase">{suffix}</span></h4>
-        {subValue && (
-          <div className="mt-2 pt-2 border-t border-white/20">
-            <p className="text-[11px] font-bold text-white/90">{subValue}</p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
