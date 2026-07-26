@@ -3,7 +3,8 @@ import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react
 import { supabase } from './lib/supabase';
 import { 
   Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
-  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag } from 'lucide-react';
+  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase 
+} from 'lucide-react';
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
 import RawMaterialPurchases from './pages/RawMaterialPurchases';
 import SupplierStock from './pages/SupplierStock';
@@ -61,10 +62,23 @@ const WholesalerDashboard = ({ supplier, children }) => {
   
   const isMinimal = window.location.href.includes('minimal=true');
   
-  // 🎯 1. ذكاء الشاشة: فتح السيدبار في الحاسوب، وإغلاقه في الهاتف (أصغر من 768px)
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
 
-  // 🎯 2. مراقبة تغير حجم الشاشة (إذا قام المستخدم بتدوير الهاتف أو تكبير النافذة)
+  // 🎯 حالة القوائم المنسدلة (Accordions)
+  const [openMenus, setOpenMenus] = useState({
+    achats: false,
+    marketplace: false,
+    ventes: false
+  });
+
+  // فتح القائمة المنسدلة تلقائياً بناءً على المسار الحالي
+  useEffect(() => {
+    const p = location.pathname;
+    if (['/raw-suppliers', '/raw-purchases'].includes(p)) setOpenMenus(prev => ({...prev, achats: true}));
+    if (['/market-orders', '/fleet-market'].includes(p)) setOpenMenus(prev => ({...prev, marketplace: true}));
+    if (['/clients', '/pos-b2b', '/orders', '/fleet-b2b', '/contracts'].includes(p)) setOpenMenus(prev => ({...prev, ventes: true}));
+  }, [location.pathname]);
+
   useEffect(() => {
     const handleResize = () => {
       setIsSidebarOpen(window.innerWidth > 768);
@@ -90,9 +104,21 @@ const WholesalerDashboard = ({ supplier, children }) => {
   };
 
   const tLayout = {
-    fr: { upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs Matières", marketOrders: "Commandes Marketplace", fleet: "Flotte & Livraisons", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", posB2B: "Ventes Directes (POS)", clients: "Clients & Dettes", orders: "Commandes Reçues", fleet: "Flotte & Livraisons", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance", production: "Production" } },
-    ar: { upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", items: { overview: "لوحة القيادة", rawSuppliers: "موردو المواد الخام",marketOrders: "طلبات المتجر الإلكتروني", fleet: "أسطول التوصيل (اللوجستيك)", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", posB2B: "المبيعات المباشرة (POS)", clients: "العملاء والديون (CRM)", orders: "الطلبات الواردة", fleet: "أسطول التوصيل", contracts: "المصافحة الرقمية", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق", production: "الإنتاج" } },
-    en: { upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", items: { overview: "Dashboard", rawSuppliers: "Raw Material Suppliers",marketOrders: "Marketplace Orders", fleet: "Fleet & Deliveries", rawPurchases: "Purchases & Procurement", stock: "Central Stock", posB2B: "Direct Sales (POS)", clients: "Clients & Debts (CRM)", orders: "Received Orders", fleet: "Fleet & Deliveries", contracts: "Digital Contracts", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", team: "Users & Permissions", settings: "Settings & Trust", production: "Production" } }
+    fr: { 
+      upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", 
+      groups: { achats: "Achats & Fournisseurs", marketplace: "Gestion Marketplace", ventes: "Gestion des Ventes" },
+      items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs & Prestataires", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", production: "Production", marketOrders: "Commandes Marketplace", fleetMarket: "Suivi des Commandes", clients: "Clients & Dettes", posB2B: "Ventes Directes (POS)", orders: "Commandes Reçues (B2B)", fleetB2B: "Suivi des Commandes (B2B)", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance" } 
+    },
+    ar: { 
+      upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
+      groups: { achats: "المشتريات والموردون", marketplace: "إدارة الماركت بليس", ventes: "إدارة المبيعات" },
+      items: { overview: "لوحة القيادة", rawSuppliers: "الموردون والشركاء", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", production: "الإنتاج (المعمل)", marketOrders: "طلبات الماركت بليس", fleetMarket: "تتبع شحنات المتجر", clients: "العملاء والديون (CRM)", posB2B: "المبيعات المباشرة (POS)", orders: "طلبات التزويد (B2B)", fleetB2B: "تتبع شحنات التزويد", contracts: "العقود والتوقيعات", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق" } 
+    },
+    en: { 
+      upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", 
+      groups: { achats: "Purchases & Suppliers", marketplace: "Marketplace Management", ventes: "Sales Management" },
+      items: { overview: "Dashboard", rawSuppliers: "Suppliers & Partners", rawPurchases: "Purchases & Procurement", stock: "Central Stock", production: "Production", marketOrders: "Marketplace Orders", fleetMarket: "Order Tracking", clients: "Clients & Debts", posB2B: "Direct Sales (POS)", orders: "Received Orders (B2B)", fleetB2B: "B2B Tracking", contracts: "Contracts & Signatures", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", team: "Users & Permissions", settings: "Settings & Trust" } 
+    }
   };
   const t = tLayout[language] || tLayout['fr'];
   
@@ -116,19 +142,35 @@ const WholesalerDashboard = ({ supplier, children }) => {
     return () => supabase.removeChannel(channel);
   }, [supplier]);
   
+  // 🎯 هندسة القوائم الجديدة حسب رسمتك
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
-    { path: '/raw-suppliers', icon: Users, label: t.items.rawSuppliers },
-    { path: '/raw-purchases', icon: Receipt, label: t.items.rawPurchases },
+    {
+      id: 'achats', icon: ShoppingBag, label: t.groups.achats,
+      children: [
+        { path: '/raw-suppliers', icon: Users, label: t.items.rawSuppliers },
+        { path: '/raw-purchases', icon: Receipt, label: t.items.rawPurchases },
+      ]
+    },
     { path: '/stock', icon: Layers, label: t.items.stock },
     { path: '/production', icon: Factory, label: t.items.production }, 
-    { path: '/market-orders', icon: ShoppingBag, label: t.items.marketOrders },
-    { path: '/fleet', icon: Truck, label: t.items.fleet }, 
-    { path: '/clients', icon: Users, label: t.items.clients },
-    { path: '/pos-b2b', icon: ShoppingCart, label: t.items.posB2B }, 
-    { path: '/orders', icon: Package, label: t.items.orders, badge: pendingOrdersCount },
-    { path: '/fleet', icon: Truck, label: t.items.fleet, badge: readyToShipCount },  
-    { path: '/contracts', icon: FileSignature, label: t.items.contracts },
+    {
+      id: 'marketplace', icon: Store, label: t.groups.marketplace,
+      children: [
+        { path: '/market-orders', icon: ShoppingBag, label: t.items.marketOrders },
+        { path: '/fleet-market', icon: Truck, label: t.items.fleetMarket }, 
+      ]
+    },
+    {
+      id: 'ventes', icon: Briefcase, label: t.groups.ventes,
+      children: [
+        { path: '/clients', icon: Users, label: t.items.clients },
+        { path: '/pos-b2b', icon: ShoppingCart, label: t.items.posB2B }, 
+        { path: '/orders', icon: Package, label: t.items.orders, badge: pendingOrdersCount },
+        { path: '/fleet-b2b', icon: Truck, label: t.items.fleetB2B, badge: readyToShipCount },  
+        { path: '/contracts', icon: FileSignature, label: t.items.contracts },
+      ]
+    },
     { path: '/invoices', icon: FileText, label: t.items.invoices },
     { path: '/hr', icon: Users, label: t.items.hr },
     { path: '/caisses', icon: Wallet, label: t.items.caisses },
@@ -142,21 +184,34 @@ const WholesalerDashboard = ({ supplier, children }) => {
     { path: '/settings', icon: Settings, label: t.items.settings }
   ];
 
+  // 🎯 التمييز البصري للقطاعات
   const getActiveStyle = (path) => {
     const isActive = location.pathname === path;
     if (!isActive) return "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent";
-    if (path === '/pos-b2b' || path === '/orders') return "bg-blue-600/20 text-blue-400 border border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.35)] animate-pulse";
-    if (path === '/stock') return "bg-emerald-600/20 text-emerald-400 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-pulse";
-    if (path === '/raw-suppliers' || path === '/raw-purchases' || path === '/team') return "bg-purple-600/20 text-purple-400 border border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.35)] animate-pulse";
-    if (path === '/invoices' || path === '/expenses') return "bg-orange-600/20 text-orange-400 border border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.35)] animate-pulse";
-    if (path === '/fleet' || path === '/contracts' || path === '/tender-radar') return "bg-cyan-600/20 text-cyan-400 border border-cyan-500/60 shadow-[0_0_20px_rgba(6,182,212,0.35)] animate-pulse";
+    
+    // المبيعات (Ventes) -> أزرق
+    if (['/clients', '/pos-b2b', '/orders', '/fleet-b2b', '/contracts'].includes(path)) 
+      return "bg-blue-600/20 text-blue-400 border border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.35)] animate-pulse";
+    
+    // الماركت بليس -> أرجواني
+    if (['/market-orders', '/fleet-market'].includes(path)) 
+      return "bg-purple-600/20 text-purple-400 border border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.35)] animate-pulse";
+    
+    // المشتريات والمخزون -> أخضر (زمردي)
+    if (['/raw-suppliers', '/raw-purchases', '/stock'].includes(path)) 
+      return "bg-emerald-600/20 text-emerald-400 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-pulse";
+    
+    // افتراضي
     return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)] animate-pulse";
+  };
+
+  const toggleMenu = (id) => {
+    setOpenMenus(prev => ({...prev, [id]: !prev[id]}));
   };
 
   return (
     <div className="flex h-screen w-full max-w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 السيدبار: في الهواتف يطفو فوق المحتوى (Absolute) بدلاً من دفعه لليمين */}
       <aside className={`shrink-0 h-full bg-slate-900 flex flex-col shadow-2xl transition-all duration-300 ease-in-out absolute md:relative z-30 ${isSidebarOpen ? 'w-72 border-r border-slate-800 opacity-100 translate-x-0' : 'w-0 border-r-0 opacity-0 overflow-hidden'}`}>
         <div className="w-72 h-full flex flex-col">
           <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
@@ -184,19 +239,63 @@ const WholesalerDashboard = ({ supplier, children }) => {
               {t.upgrade}
             </Link>
           </div>
-          <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+          
+          <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar pb-24">
             {menuItems.map((item) => {
+              // 🎯 إذا كان هناك عناصر فرعية (Dropdown)
+              if (item.children) {
+                const isOpen = openMenus[item.id];
+                return (
+                  <div key={item.id} className="space-y-1 pt-1">
+                    <button
+                      onClick={() => toggleMenu(item.id)}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all hover:bg-slate-800 text-slate-300"
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon size={20} className="text-slate-400 shrink-0" />
+                        <span className="text-sm uppercase tracking-wider">{item.label}</span>
+                      </div>
+                      <ChevronDown size={16} className={`transition-transform duration-300 ${isOpen ? 'rotate-180 text-white' : 'text-slate-500'}`} />
+                    </button>
+                    
+                    <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                      <div className={`py-1 space-y-1 border-slate-800 ${language === 'ar' ? 'mr-6 border-r-2 pr-4' : 'ml-6 border-l-2 pl-4'}`}>
+                        {item.children.map(child => {
+                          const isChildActive = location.pathname === child.path;
+                          return (
+                            <Link
+                              key={child.path}
+                              to={child.path}
+                              onClick={() => { if(window.innerWidth <= 768) setIsSidebarOpen(false); }}
+                              className={`flex items-center justify-between px-4 py-2.5 rounded-lg font-bold transition-all text-sm group ${getActiveStyle(child.path)}`}
+                            >
+                               <div className="flex items-center gap-3">
+                                <child.icon size={18} className={`${isChildActive ? 'text-current' : 'text-slate-500 group-hover:text-blue-400'} transition-transform shrink-0`} />
+                                <span>{child.label}</span>
+                               </div>
+                               {child.badge > 0 && (
+                                 <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.6)]">{child.badge}</span>
+                               )}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // 🎯 الأزرار العادية
               const isActive = location.pathname === item.path;
               return (
                 <Link 
                   key={item.path} 
                   to={item.path} 
-                  // 🎯 3. عند الضغط على أي قسم في الهاتف، يختفي السيدبار تلقائياً!
                   onClick={() => { if(window.innerWidth <= 768) setIsSidebarOpen(false); }}
                   className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all group ${getActiveStyle(item.path)}`}
                 >
                   <div className="flex items-center gap-3">
-                    <item.icon size={20} className={`${isActive ? 'text-current scale-110' : 'group-hover:text-blue-400'} transition-transform shrink-0`} />
+                    <item.icon size={20} className={`${isActive ? 'text-current scale-110' : 'text-slate-400 group-hover:text-blue-400'} transition-transform shrink-0`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge > 0 && (
@@ -209,7 +308,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
         </div>
       </aside>
 
-      {/* 🚀 خلفية داكنة خفيفة تظهر في الهاتف عندما يكون السيدبار مفتوحاً ليتمكن من الضغط عليها لإغلاقه */}
       {isSidebarOpen && window.innerWidth <= 768 && (
         <div 
           className="fixed inset-0 bg-black/50 z-20 md:hidden" 
@@ -221,7 +319,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
         <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 sticky top-0 z-10">
           <div className="flex items-center gap-3 md:gap-4">
-            {/* 🚀 الزر الذكي لإخفاء وإظهار القائمة الجانبية */}
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
               className="flex items-center gap-2 p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all shadow-sm group"
@@ -264,7 +361,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
 };
 
 function App() {
-  // 🎯 1. التقاط وضع الإطار المصغر وتجميده في الذاكرة (قبل أن يتم تنظيف الرابط!)
   const [isMinimal] = useState(() => window.location.search.includes('minimal=true') || window.location.href.includes('minimal=true'));
   
   const [session, setSession] = useState(null);
@@ -275,7 +371,6 @@ function App() {
 
   const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
 
-  // 🛡️ دالة Auth النووية
   useEffect(() => {
     let mounted = true;
 
@@ -284,8 +379,6 @@ function App() {
         const hash = window.location.hash;
         
         if (hash && hash.includes('access_token') && hash.includes('refresh_token')) {
-          console.log("✅ تم التقاط مفاتيح الدخول! جاري اختراق الجدار...");
-          
           const params = new URLSearchParams(hash.substring(1));
           const accessToken = params.get('access_token');
           const refreshToken = params.get('refresh_token');
@@ -301,8 +394,6 @@ function App() {
             if (userData?.user && mounted) {
               setSession({ user: userData.user, access_token: accessToken });
               fetchSupplierProfile(userData.user.id);
-              
-              // 🎯 2. تنظيف التوكن مع الحفاظ على الرابط الأصلي
               window.history.replaceState(null, '', window.location.pathname + window.location.search); 
               setLoading(false);
               return; 
@@ -321,7 +412,7 @@ function App() {
           setLoading(false);
         }
       } catch (err) {
-        console.error("❌ فشل في فك التشفير:", err);
+        console.error("❌ فشل:", err);
         if (mounted) {
           setSession(null);
           setLoading(false);
@@ -389,7 +480,6 @@ function App() {
   const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || '';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
 
-  // 🌟 3. وضع الإطار المصغر (داخل موقعك PHP): لا سيدبار، لا هيدر، فقط الصفحة المطلوبة!
   if (isMinimal) {
     return (
       <BrowserRouter>
@@ -415,7 +505,10 @@ function App() {
             <Route path="/caisses" element={<Caisses isWholesaler={true} />} />
             <Route path="/fiscal" element={<Fiscal isWholesaler={true} />} />  
             <Route path="/orders" element={<SupplierOrders />} />
-            <Route path="/fleet" element={<Fleet />} />
+            {/* 🎯 تم فصل الأسطول هنا لمنع التداخل */}
+            <Route path="/fleet-b2b" element={<Fleet />} />
+            <Route path="/fleet-market" element={<FleetManagement />} /> 
+            
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/invoices" element={<SupplierInvoices />} />
             <Route path="/hr" element={<SupplierHR />} />
@@ -432,7 +525,6 @@ function App() {
             <Route path="/production" element={<SupplierProduction />} />
             <Route path="/team" element={<SupplierTeam />} />
             <Route path="/market-orders" element={<MarketplaceOrders />} />
-            <Route path="/fleet" element={<FleetManagement />} /> 
           </Routes>
         </WholesalerDashboard>
       ) : (
@@ -517,5 +609,4 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
     </div>
   );
 };
-
 export default App;
