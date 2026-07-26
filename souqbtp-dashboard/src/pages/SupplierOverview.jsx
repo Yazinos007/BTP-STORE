@@ -279,21 +279,33 @@ export default function SupplierOverview() {
       </div>
 
       {/* 📉 صافي الربح الكبير */}
-      <div className={`rounded-3xl p-8 shadow-2xl relative overflow-hidden ${metrics.netProfit >= 0 ? 'bg-[#1e1b4b] border border-indigo-500/30' : 'bg-[#450a0a] border border-red-500/30'}`}>
-        {metrics.netProfit >= 0 ? (
-           <Activity className={`absolute ${isArabic ? 'left-6' : 'right-6'} top-1/2 -translate-y-1/2 opacity-5 text-indigo-300`} size={200} />
-        ) : (
-           <ShieldAlert className={`absolute ${isArabic ? 'left-6' : 'right-6'} top-1/2 -translate-y-1/2 opacity-5 text-red-300`} size={200} />
-        )}
-        <div className="relative z-10 flex items-center gap-6">
-          <div className={`p-5 rounded-2xl backdrop-blur-md ${metrics.netProfit >= 0 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-red-500/20 text-red-400'}`}>
-            <Activity size={40} className="animate-pulse" />
+      <div className="w-full">
+        <div className={`relative overflow-hidden p-8 rounded-3xl border-2 text-white flex flex-col justify-between shadow-2xl transition-all duration-300
+          ${metrics.netProfit < 0 
+            ? 'bg-gradient-to-br from-red-600 via-red-700 to-red-900 border-red-400 shadow-[0_0_30px_rgba(220,38,38,0.4)] animate-[pulse_1.5s_ease-in-out_infinite]' 
+            : 'bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700 border-green-400 shadow-[0_0_30px_rgba(16,185,129,0.3)] animate-[pulse_3s_ease-in-out_infinite]' 
+          }`}
+        >
+          <div className={`absolute ${isArabic ? 'left-6' : 'right-6'} top-1/2 -translate-y-1/2 opacity-15 pointer-events-none`}>
+            {metrics.netProfit < 0 ? <ShieldAlert size={160} /> : <Activity size={160} />}
           </div>
-          <div>
-            <h3 className={`font-black tracking-widest text-sm mb-2 ${metrics.netProfit >= 0 ? 'text-indigo-400' : 'text-red-400'}`}>{t.netProfit}</h3>
-            <div className="flex items-baseline gap-3" dir="ltr">
-              <span className="text-5xl md:text-7xl font-black text-white">{metrics.netProfit.toLocaleString()}</span>
-              <span className={`text-xl font-bold uppercase ${metrics.netProfit >= 0 ? 'text-indigo-500' : 'text-red-500'}`}>{t.currency}</span>
+          
+          <div className="relative z-10 flex items-center gap-5 mb-2">
+            <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-md border border-white/10">
+              <Activity size={36} className="text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-black uppercase tracking-widest text-white/80 mb-1">
+                {t.netProfit}
+              </p>
+              <div className="flex items-baseline gap-3" dir="ltr">
+                <h3 className="text-5xl md:text-7xl font-black tracking-tight text-white">
+                  {metrics.netProfit.toLocaleString()}
+                </h3>
+                <span className="text-xl font-bold opacity-90 uppercase">
+                  {t.currency}
+                </span>
+              </div>
             </div>
           </div>
         </div>
