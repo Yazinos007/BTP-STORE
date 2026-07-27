@@ -183,10 +183,10 @@ export default function SupplierTeam() {
             <thead>
               <tr className="border-b border-slate-800 text-sm">
                 <th className="pb-4 font-black text-slate-400 text-start">{t.userCol}</th>
-                <th className="pb-4 font-bold text-blue-400 text-center">{t.colCommercial}</th>
                 <th className="pb-4 font-bold text-emerald-400 text-center">{t.colOps}</th>
-                <th className="pb-4 font-bold text-orange-400 text-center">{t.colFinance}</th>
+                <th className="pb-4 font-bold text-blue-400 text-center">{t.colCommercial}</th>
                 <th className="pb-4 font-bold text-pink-400 text-center">{t.colHR}</th>
+                <th className="pb-4 font-bold text-orange-400 text-center">{t.colFinance}</th>
                 <th className="pb-4 font-black text-slate-500 text-center">{t.actionsCol}</th>
               </tr>
             </thead>
