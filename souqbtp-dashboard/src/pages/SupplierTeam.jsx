@@ -11,16 +11,15 @@ const translations = {
   ar: {
     title: 'الإعدادات والصلاحيات', subtitle: 'إدارة حسابات الموظفين وصلاحيات الوصول للنظام.',
     addUserBtn: 'إضافة مستخدم', userCol: 'المستخدم', actionsCol: 'إجراءات',
-    // أعمدة الجدول المجمعة
     colCommercial: 'التجارة والمبيعات', colOps: 'العمليات والمخزون', colFinance: 'المالية والمحاسبة', colHR: 'الموارد البشرية',
-    // الصلاحيات الدقيقة للنافذة
     permAchats: 'المشتريات والموردون', permStock: 'المخزون المركزي', permProd: 'الإنتاج (المعمل)', 
     permMarket: 'إدارة الماركت بليس', permVentes: 'إدارة المبيعات', permFactures: 'الفواتير',
     permRH: 'الموارد البشرية', permCaisses: 'الصناديق والبنك', permCharges: 'إدارة المصاريف', 
     permFiscal: 'النظام الجبائي', permCompta: 'المحاسبة والبيان',
     modalTitle: 'إضافة موظف جديد', name: 'الاسم الكامل', email: 'البريد الإلكتروني', password: 'كلمة المرور',
     permissions: 'صلاحيات الوصول الدقيقة', save: 'حفظ المستخدم', cancel: 'إلغاء', boss: 'المالك (Boss)',
-    saving: 'جاري الحفظ...', success: '✅ تم حفظ المستخدم بنجاح!', deleteConfirm: 'هل أنت متأكد من حذف هذا المستخدم؟'
+    saving: 'جاري الحفظ...', success: '✅ تم حفظ المستخدم بنجاح!', deleteConfirm: 'هل أنت متأكد من حذف هذا المستخدم؟',
+    fullAccess: 'وصول كامل للمجموعة', partialAccess: 'وصول جزئي للمجموعة', noAccess: 'بدون صلاحيات'
   },
   fr: {
     title: 'Paramètres & Permissions', subtitle: 'Gérez les comptes des employés et les accès au système.',
@@ -32,7 +31,8 @@ const translations = {
     permFiscal: 'Système Fiscal', permCompta: 'Comptabilité & Bilan',
     modalTitle: 'Ajouter un employé', name: 'Nom complet', email: 'Email', password: 'Mot de passe',
     permissions: 'Permissions d\'accès détaillées', save: 'Enregistrer', cancel: 'Annuler', boss: 'Propriétaire (Boss)',
-    saving: 'Enregistrement...', success: '✅ Utilisateur enregistré avec succès !', deleteConfirm: 'Voulez-vous vraiment supprimer cet utilisateur ?'
+    saving: 'Enregistrement...', success: '✅ Utilisateur enregistré avec succès !', deleteConfirm: 'Voulez-vous vraiment supprimer cet utilisateur ?',
+    fullAccess: 'Accès complet au groupe', partialAccess: 'Accès partiel au groupe', noAccess: 'Aucun accès'
   },
   en: {
     title: 'Settings & Permissions', subtitle: 'Manage employee accounts and system access permissions.',
@@ -44,10 +44,10 @@ const translations = {
     permFiscal: 'Tax System (VAT)', permCompta: 'Accounting & CPC',
     modalTitle: 'Add New Employee', name: 'Full Name', email: 'Email', password: 'Password',
     permissions: 'Detailed Access Permissions', save: 'Save User', cancel: 'Cancel', boss: 'Owner (Boss)',
-    saving: 'Saving...', success: '✅ User saved successfully!', deleteConfirm: 'Are you sure you want to delete this user?'
+    saving: 'Saving...', success: '✅ User saved successfully!', deleteConfirm: 'Are you sure you want to delete this user?',
+    fullAccess: 'Full access to group', partialAccess: 'Partial access to group', noAccess: 'No access'
   }
 };
-
 // المجموعات المنطقية لتسهيل عرض الجدول
 const permissionClusters = {
   commercial: ['permMarket', 'permVentes', 'permFactures'],
@@ -239,9 +239,25 @@ export default function SupplierTeam() {
               )}
             </tbody>
           </table>
-          <div className="mt-4 flex justify-center gap-6 text-xs text-slate-500">
-            <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-blue-500"></div> وصول كامل للمجموعة</span>
-            <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-amber-500"></div> وصول جزئي للمجموعة</span>
+          <div className="mt-6 flex flex-wrap justify-center gap-6 md:gap-10 text-xs text-slate-500 font-medium bg-slate-900/50 py-3 rounded-xl border border-slate-800">
+            <span className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow-md">
+                <Check size={12} className="text-white" />
+              </div> 
+              {t.fullAccess}
+            </span>
+            <span className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shadow-md">
+                <Minus size={12} className="text-white" />
+              </div> 
+              {t.partialAccess}
+            </span>
+            <span className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
+                <X size={12} className="text-slate-600" />
+              </div> 
+              {t.noAccess}
+            </span>
           </div>
         </div>
       </div>
