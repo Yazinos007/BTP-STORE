@@ -104,13 +104,20 @@ export default function SupplierOverview() {
         });
       }
 
-      // 4. الموظفين
+      // 4. الموظفين (النسخة المحاسبية الدقيقة)
       let employeesCount = 0;
       let payroll = 0;
-      const { data: emps } = await supabase.from('employees').select('salary, base_salary').eq('supplier_id', targetId);
+      const { data: emps } = await supabase
+        .from('employees')
+        .select('base_salary, primes_avances, retenues, status')
+        .eq('supplier_id', targetId);
+        
       if (emps) {
-        employeesCount = emps.length;
-        emps.forEach(e => payroll += Number(e.salary || e.base_salary || 0));
+        const activeEmps = emps.filter(e => e.status === 'Actif' || e.status === 'active');
+        employeesCount = activeEmps.length;
+        activeEmps.forEach(e => {
+          payroll += (Number(e.base_salary || 0) + Number(e.primes_avances || 0) - Number(e.retenues || 0));
+        });
       }
 
       // 5. الرصيد النقدي (الصناديق)
