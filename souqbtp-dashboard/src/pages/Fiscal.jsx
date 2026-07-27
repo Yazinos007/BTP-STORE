@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import useFiscalStore from '../store/useFiscalStore';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-import { Landmark, FileCheck, Plus, TrendingUp, TrendingDown, Edit, Trash2, X, Search, Clock, CheckCircle } from 'lucide-react';
+// ✅ Corrected import (Added Loader2):
+import { Landmark, FileCheck, Plus, TrendingUp, TrendingDown, Edit, Trash2, X, Search, Clock, CheckCircle, Loader2 } from 'lucide-react';
 
 const translations = {
   ar: {
