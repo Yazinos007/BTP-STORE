@@ -224,10 +224,10 @@ export default function SupplierTeam() {
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.commercial} /></td>
                     <td className="py-4 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.operations} /></td>
+                    <td className="py-4 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.commercial} /></td>
+                    <td className="py-4 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.hr} /></td> 
                     <td className="py-4 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.finance} /></td>
-                    <td className="py-4 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.hr} /></td>
                     <td className="py-4 text-center">
                       <div className="flex items-center justify-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => openModal(user)} className="p-2 bg-slate-800 hover:bg-blue-500/20 text-slate-400 hover:text-blue-400 rounded-lg transition-colors cursor-pointer"><Edit2 size={16} /></button>
