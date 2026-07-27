@@ -50,10 +50,10 @@ const translations = {
 };
 // المجموعات المنطقية لتسهيل عرض الجدول
 const permissionClusters = {
-  commercial: ['permMarket', 'permVentes', 'permFactures'],
   operations: ['permAchats', 'permStock', 'permProd'],
-  finance: ['permCaisses', 'permCharges', 'permFiscal', 'permCompta'],
-  hr: ['permRH']
+  commercial: ['permMarket', 'permVentes', 'permFactures'],
+  hr: ['permRH'],
+  finance: ['permCaisses', 'permCharges', 'permFiscal', 'permCompta']
 };
 
 export default function SupplierTeam() {
@@ -295,17 +295,26 @@ export default function SupplierTeam() {
                 <label className="block text-sm font-bold text-slate-400 mb-4">{t.permissions}</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {Object.keys(defaultPermissions).map((key) => {
-                    const color = key.includes('Market') || key.includes('Ventes') || key.includes('Factures') ? 'blue' 
-                                : key.includes('Achats') || key.includes('Stock') || key.includes('Prod') ? 'emerald'
-                                : key.includes('RH') ? 'pink' : 'orange';
+                    const isChecked = formData.permissions[key];
+                    
+                    // تعريف الألوان بشكل صريح لمنع Tailwind من حذفها
+                    let theme = { bg: 'bg-orange-500/10', border: 'border-orange-500/50', check: 'bg-orange-500 border-orange-500' };
+                    
+                    if (key.includes('Market') || key.includes('Ventes') || key.includes('Factures')) {
+                      theme = { bg: 'bg-blue-500/10', border: 'border-blue-500/50', check: 'bg-blue-500 border-blue-500' };
+                    } else if (key.includes('Achats') || key.includes('Stock') || key.includes('Prod')) {
+                      theme = { bg: 'bg-emerald-500/10', border: 'border-emerald-500/50', check: 'bg-emerald-500 border-emerald-500' };
+                    } else if (key.includes('RH')) {
+                      theme = { bg: 'bg-pink-500/10', border: 'border-pink-500/50', check: 'bg-pink-500 border-pink-500' };
+                    }
 
                     return (
-                      <label key={key} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.permissions[key] ? `bg-${color}-500/10 border-${color}-500/50` : 'bg-slate-950 border-slate-800 hover:bg-slate-800'}`}>
-                        <input type="checkbox" checked={formData.permissions[key]} onChange={() => handleTogglePermission(key)} className="hidden" />
-                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${formData.permissions[key] ? `bg-${color}-500 border-${color}-500` : 'border-slate-600'}`}>
-                          {formData.permissions[key] && <Check size={14} className="text-white" />}
+                      <label key={key} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${isChecked ? `${theme.bg} ${theme.border}` : 'bg-slate-950 border-slate-800 hover:bg-slate-800'}`}>
+                        <input type="checkbox" checked={isChecked} onChange={() => handleTogglePermission(key)} className="hidden" />
+                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${isChecked ? theme.check : 'border-slate-600'}`}>
+                          {isChecked && <Check size={14} className="text-white" />}
                         </div>
-                        <span className={`text-sm font-bold ${formData.permissions[key] ? 'text-white' : 'text-slate-400'}`}>{t[key]}</span>
+                        <span className={`text-sm font-bold ${isChecked ? 'text-white' : 'text-slate-400'}`}>{t[key]}</span>
                       </label>
                     );
                   })}
