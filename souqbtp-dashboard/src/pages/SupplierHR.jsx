@@ -105,6 +105,46 @@ export default function SupplierHR() {
 
   const [formData, setFormData] = useState({ full_name: '', position: '', salary: '', cin: '', phone: '', primes: '0', retenues: '0', status: 'Actif' });
   const [searchTerm, setSearchTerm] = useState('');
+  // 🗂️ States for GED & Trainings (Simulated for Frontend)
+  const [trainings, setTrainings] = useState(['Habilitation Électrique (B1V)', "Conduite d'engins (CACES R482)"]);
+  const [showAddTraining, setShowAddTraining] = useState(false);
+  const [newTraining, setNewTraining] = useState('');
+  
+  const [documents, setDocuments] = useState([
+    { id: 1, name: 'Contrat_Travail_CDI.pdf', date: '12 Janvier 2026', icon: FileText, color: 'text-red-600', bg: 'bg-red-100' },
+    { id: 2, name: 'Copie_CIN.jpg', date: '12 Janvier 2026', icon: User, color: 'text-blue-600', bg: 'bg-blue-100' }
+  ]);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // 🗂️ Handlers
+  const handleAddTraining = () => {
+    if (newTraining.trim()) {
+      setTrainings([...trainings, newTraining.trim()]);
+      setNewTraining('');
+      setShowAddTraining(false);
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    // محاكاة وقت الرفع للسيرفر
+    setTimeout(() => {
+      const isImage = file.type.includes('image');
+      const newDoc = {
+        id: Date.now(),
+        name: file.name,
+        date: new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+        icon: isImage ? User : FileText,
+        color: isImage ? 'text-blue-600' : 'text-red-600',
+        bg: isImage ? 'bg-blue-100' : 'bg-red-100'
+      };
+      setDocuments([newDoc, ...documents]);
+      setIsUploading(false);
+    }, 1500);
+  };
 
   useEffect(() => {
     if (supplier?.id) fetchEmployees();
