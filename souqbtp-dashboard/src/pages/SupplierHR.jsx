@@ -591,18 +591,29 @@ export default function SupplierHR() {
                         <BookOpen size={16} /> Formations BTP
                       </h4>
                       <ul className="space-y-3">
-                        <li className="flex items-start gap-2">
-                          <CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" />
-                          <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>Habilitation Électrique (B1V)</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" />
-                          <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>Conduite d'engins (CACES R482)</span>
-                        </li>
+                        {trainings.map((training, idx) => (
+                          <li key={idx} className="flex items-start justify-between gap-2 group">
+                            <div className="flex items-start gap-2">
+                              <CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                              <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>{training}</span>
+                            </div>
+                            <button onClick={() => setTrainings(trainings.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Trash2 size={14}/>
+                            </button>
+                          </li>
+                        ))}
                       </ul>
-                      <button className="mt-4 w-full py-2 text-xs font-bold text-blue-600 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors">
-                        + Ajouter une formation
-                      </button>
+                      
+                      {showAddTraining ? (
+                        <div className="mt-4 flex gap-2">
+                          <input type="text" value={newTraining} onChange={(e) => setNewTraining(e.target.value)} placeholder="Nom de la formation..." autoFocus className={`flex-1 px-3 py-1.5 text-sm rounded-lg outline-none border ${isDarkTheme ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-gray-200 text-gray-800'}`} />
+                          <button onClick={handleAddTraining} className="px-3 py-1.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700">OK</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setShowAddTraining(true)} className="mt-4 w-full py-2 text-xs font-bold text-blue-600 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors">
+                          + Ajouter une formation
+                        </button>
+                      )}
                     </div>
 
                   </div>
@@ -615,37 +626,48 @@ export default function SupplierHR() {
                       </h4>
                       
                       {/* منطقة الرفع */}
-                      <div className={`border-2 border-dashed rounded-xl p-8 text-center mb-6 transition-colors cursor-pointer ${isDarkTheme ? 'border-slate-700 hover:border-pink-500/50 hover:bg-pink-500/5' : 'border-gray-300 hover:border-pink-400 hover:bg-pink-50'}`}>
-                        <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 ${isDarkTheme ? 'bg-slate-900 text-slate-400' : 'bg-white text-gray-400 shadow-sm'}`}>
-                          <Plus size={24} />
-                        </div>
-                        <p className={`font-bold ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>Glissez et déposez vos fichiers ici</p>
-                        <p className={`text-xs mt-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>PDF, PNG, JPG (Max 5MB)</p>
-                      </div>
+                      <label className={`block border-2 border-dashed rounded-xl p-8 text-center mb-6 transition-all cursor-pointer relative overflow-hidden ${isDarkTheme ? 'border-slate-700 hover:border-pink-500/50 hover:bg-pink-500/5' : 'border-gray-300 hover:border-pink-400 hover:bg-pink-50'}`}>
+                        <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept=".pdf,.png,.jpg,.jpeg" />
+                        
+                        {isUploading ? (
+                          <div className="flex flex-col items-center justify-center">
+                            <Loader2 size={32} className="text-pink-500 animate-spin mb-3" />
+                            <p className={`font-bold ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>Téléchargement en cours...</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 ${isDarkTheme ? 'bg-slate-900 text-slate-400' : 'bg-white text-gray-400 shadow-sm'}`}>
+                              <Plus size={24} />
+                            </div>
+                            <p className={`font-bold ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>Cliquez ou Glissez vos fichiers ici</p>
+                            <p className={`text-xs mt-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>PDF, PNG, JPG (Max 5MB)</p>
+                          </>
+                        )}
+                      </label>
 
-                      {/* قائمة الوثائق الافتراضية */}
+                      {/* قائمة الوثائق المرفوعة */}
                       <div className="space-y-3">
-                        <div className={`flex items-center justify-between p-4 rounded-xl border ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-red-100 text-red-600 rounded-lg"><FileText size={18} /></div>
-                            <div>
-                              <p className={`font-bold text-sm ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>Contrat_Travail_CDI.pdf</p>
-                              <p className={`text-xs ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Ajouté le 12 Janvier 2026</p>
-                            </div>
-                          </div>
-                          <button className="text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
-                        </div>
-
-                        <div className={`flex items-center justify-between p-4 rounded-xl border ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><User size={18} /></div>
-                            <div>
-                              <p className={`font-bold text-sm ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>Copie_CIN.jpg</p>
-                              <p className={`text-xs ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Ajouté le 12 Janvier 2026</p>
-                            </div>
-                          </div>
-                          <button className="text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
-                        </div>
+                        {documents.length === 0 ? (
+                          <p className={`text-center text-sm py-4 ${isDarkTheme ? 'text-slate-500' : 'text-gray-400'}`}>Aucun document n'a été ajouté.</p>
+                        ) : (
+                          documents.map(doc => {
+                            const DocIcon = doc.icon;
+                            return (
+                              <div key={doc.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors hover:border-pink-500/30 ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
+                                <div className="flex items-center gap-3">
+                                  <div className={`p-2 rounded-lg ${doc.bg} ${doc.color}`}><DocIcon size={18} /></div>
+                                  <div>
+                                    <p className={`font-bold text-sm ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>{doc.name}</p>
+                                    <p className={`text-xs ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Ajouté le {doc.date}</p>
+                                  </div>
+                                </div>
+                                <button onClick={() => setDocuments(documents.filter(d => d.id !== doc.id))} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            );
+                          })
+                        )}
                       </div>
 
                     </div>
