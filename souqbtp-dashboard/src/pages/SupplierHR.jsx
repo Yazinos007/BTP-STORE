@@ -29,9 +29,9 @@ const translations = {
     addLeave: 'إضافة إجازة', leaveType: 'نوع الإجازة', leaveStart: 'تاريخ البدء', leaveEnd: 'تاريخ الانتهاء',
     timelineTitle: 'المسار المهني (Timeline)', addEvent: 'إضافة حدث',
     eventPromo: 'ترقية', eventTrain: 'دورة تدريبية', eventWarn: 'إنذار', eventTitle: 'عنوان الحدث',
-    // حقول جديدة
     contractType: 'نوع العقد', hireDate: 'تاريخ التعيين', cnss: 'رقم الضمان (CNSS)', 
-    emergency: 'هاتف الطوارئ', familyStatus: 'الحالة العائلية', infoPro: 'بيانات مهنية', infoPerso: 'بيانات شخصية'
+    emergency: 'هاتف الطوارئ', familyStatus: 'الحالة العائلية', infoPro: 'بيانات مهنية', infoPerso: 'بيانات شخصية',
+    single: 'أعزب / عزباء', married: 'متزوج(ة)', divorced: 'مطلق(ة)', widowed: 'أرمل(ة)'
   },
   fr: {
     title: 'Ressources Humaines', subtitle: 'Gestion des employés, carrières et paie.',
@@ -52,9 +52,9 @@ const translations = {
     addLeave: 'Nouveau Congé', leaveType: 'Type de congé', leaveStart: 'Date de début', leaveEnd: 'Date de fin',
     timelineTitle: 'Parcours Professionnel', addEvent: 'Ajouter Événement',
     eventPromo: 'Promotion', eventTrain: 'Formation', eventWarn: 'Avertissement', eventTitle: 'Titre de l\'événement',
-    // Nouveaux champs
     contractType: 'Type de Contrat', hireDate: 'Date d\'embauche', cnss: 'N° CNSS', 
-    emergency: 'Contact d\'Urgence', familyStatus: 'Situation Familiale', infoPro: 'Infos Pro.', infoPerso: 'Infos Perso.'
+    emergency: 'Contact d\'Urgence', familyStatus: 'Situation Familiale', infoPro: 'Infos Pro.', infoPerso: 'Infos Perso.',
+    single: 'Célibataire', married: 'Marié(e)', divorced: 'Divorcé(e)', widowed: 'Veuf/Veuve'
   },
   en: {
     title: 'Human Resources', subtitle: 'Manage employees, careers, and payroll.',
@@ -75,9 +75,9 @@ const translations = {
     addLeave: 'Add Leave', leaveType: 'Leave Type', leaveStart: 'Start Date', leaveEnd: 'End Date',
     timelineTitle: 'Career Timeline', addEvent: 'Add Event',
     eventPromo: 'Promotion', eventTrain: 'Training', eventWarn: 'Warning', eventTitle: 'Event Title',
-    // New Fields
     contractType: 'Contract Type', hireDate: 'Hire Date', cnss: 'CNSS Number', 
-    emergency: 'Emergency Contact', familyStatus: 'Family Status', infoPro: 'Pro Info', infoPerso: 'Personal Info'
+    emergency: 'Emergency Contact', familyStatus: 'Family Status', infoPro: 'Pro Info', infoPerso: 'Personal Info',
+    single: 'Single', married: 'Married', divorced: 'Divorced', widowed: 'Widowed'
   }
 };
 
@@ -85,8 +85,6 @@ export default function SupplierHR() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
   const t = translations[language] || translations['fr'];
-  
-  const isDarkTheme = supplier?.supplier_type === 'wholesale' || supplier?.role === 'grossiste' || supplier?.role === 'employé';
 
   const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,8 +100,8 @@ export default function SupplierHR() {
   const [newTraining, setNewTraining] = useState('');
   
   const [documents, setDocuments] = useState([
-    { id: 1, name: 'Contrat_Travail_CDI.pdf', date: '12 Janvier 2026', icon: FileText, color: 'text-red-600', bg: 'bg-red-100' },
-    { id: 2, name: 'Copie_CIN.jpg', date: '12 Janvier 2026', icon: User, color: 'text-blue-600', bg: 'bg-blue-100' }
+    { id: 1, name: 'Contrat_Travail_CDI.pdf', date: '12 Janvier 2026', icon: FileText, color: 'text-red-500', bg: 'bg-red-500/10' },
+    { id: 2, name: 'Copie_CIN.jpg', date: '12 Janvier 2026', icon: User, color: 'text-blue-500', bg: 'bg-blue-500/10' }
   ]);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -118,7 +116,6 @@ export default function SupplierHR() {
   const [showAddLeave, setShowAddLeave] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
 
-  // 🔥 Form Data with Iron Memory Fields
   const [formData, setFormData] = useState({ 
     full_name: '', position: '', salary: '', cin: '', phone: '', primes: '0', retenues: '0', status: 'Actif',
     contractType: 'CDI', hireDate: '', cnss: '', emergency: '', familyStatus: 'Célibataire'
@@ -144,9 +141,6 @@ export default function SupplierHR() {
   const handleSaveEmployee = async (e) => {
     e.preventDefault();
     const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
-    
-    // In a real app, you would add these new fields to your Supabase schema.
-    // For now, we save the core data to avoid DB errors on missing columns.
     const empData = {
       full_name: formData.full_name, role: formData.position, base_salary: parseFloat(formData.salary),
       cin: formData.cin, phone: formData.phone, primes_avances: parseFloat(formData.primes || 0),
@@ -208,7 +202,7 @@ export default function SupplierHR() {
       const newDoc = {
         id: Date.now(), name: file.name,
         date: new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
-        icon: isImage ? User : FileText, color: isImage ? 'text-blue-600' : 'text-red-600', bg: isImage ? 'bg-blue-100' : 'bg-red-100'
+        icon: isImage ? User : FileText, color: isImage ? 'text-blue-400' : 'text-red-400', bg: isImage ? 'bg-blue-500/10' : 'bg-red-500/10'
       };
       setDocuments([newDoc, ...documents]);
       setIsUploading(false);
@@ -220,10 +214,10 @@ export default function SupplierHR() {
   const totalPayroll = employees.filter(emp => emp.status === 'Actif' || emp.status === 'active').reduce((sum, emp) => sum + Number(emp.base_salary || 0), 0);
 
   const statusConfig = {
-    active: { label: t.statusActive, color: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
-    Actif: { label: t.statusActive, color: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
-    on_leave: { label: t.statusLeave, color: 'bg-orange-500/10 text-orange-500 border-orange-500/20', icon: Clock },
-    terminated: { label: t.statusTerminated, color: 'bg-red-500/10 text-red-500 border-red-500/20', icon: XCircle }
+    active: { label: t.statusActive, color: 'bg-green-500/10 text-green-400 border-green-500/20', icon: CheckCircle },
+    Actif: { label: t.statusActive, color: 'bg-green-500/10 text-green-400 border-green-500/20', icon: CheckCircle },
+    on_leave: { label: t.statusLeave, color: 'bg-orange-500/10 text-orange-400 border-orange-500/20', icon: Clock },
+    terminated: { label: t.statusTerminated, color: 'bg-red-500/10 text-red-400 border-red-500/20', icon: XCircle }
   };
 
   const currentMonth = new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { month: 'long', year: 'numeric' });
@@ -249,16 +243,16 @@ export default function SupplierHR() {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="space-y-6 animate-fade-in text-slate-300" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
       {/* 🚀 Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h2 className={`text-3xl font-black tracking-tight flex items-center gap-3 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>
-           <Users className={isDarkTheme ? 'text-blue-500' : 'text-blue-600'} size={32} />
+          <h2 className="text-3xl font-black tracking-tight flex items-center gap-3 text-white">
+           <Users className="text-blue-500" size={32} />
            {t.title}
           </h2>
-          <p className={`mt-1 font-medium ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>
+          <p className="mt-1 font-medium text-slate-400">
            {t.subtitle}
           </p>
         </div>
@@ -280,49 +274,49 @@ export default function SupplierHR() {
       </div>
 
       {/* 👥 Employees List */}
-      <div className={`${isDarkTheme ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'} border rounded-3xl shadow-xl overflow-hidden flex flex-col`}>
-        <div className={`p-5 md:p-6 border-b flex flex-col sm:flex-row justify-between items-center gap-4 ${isDarkTheme ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50 border-gray-100'}`}>
-          <h3 className={`font-black text-lg ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>{t.activeEmp}</h3>
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+        <div className="p-5 md:p-6 border-b border-slate-800 bg-slate-950/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <h3 className="font-black text-lg text-white">{t.activeEmp}</h3>
           <div className="relative w-full md:w-80">
-            <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'right-4' : 'left-4'} ${isDarkTheme ? 'text-slate-500' : 'text-gray-400'}`} />
+            <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${language === 'ar' ? 'right-4' : 'left-4'} text-slate-500`} />
             <input type="text" placeholder={t.searchPlaceholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} 
-              className={`w-full py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium ${language === 'ar' ? 'pr-11 pl-4' : 'pl-11 pr-4'} ${isDarkTheme ? 'bg-slate-900 border border-slate-700 text-white placeholder-slate-500' : 'bg-white border border-gray-200 text-gray-800 placeholder-gray-400'}`} 
+              className={`w-full py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium ${language === 'ar' ? 'pr-11 pl-4' : 'pl-11 pr-4'} bg-slate-900 border border-slate-700 text-white placeholder-slate-500`} 
             />
           </div>
         </div>
 
         <div className="overflow-x-auto custom-scrollbar">
-          {isLoading ? <div className="p-12 text-center flex justify-center"><Loader2 size={40} className="animate-spin text-blue-500"/></div> : filteredEmployees.length === 0 ? <div className={`p-16 text-center font-bold ${isDarkTheme ? 'text-slate-500' : 'text-gray-400'}`}><Users size={48} className="mx-auto mb-4 opacity-20"/> {t.empty}</div> : (
+          {isLoading ? <div className="p-12 text-center flex justify-center"><Loader2 size={40} className="animate-spin text-blue-500"/></div> : filteredEmployees.length === 0 ? <div className="p-16 text-center font-bold text-slate-500"><Users size={48} className="mx-auto mb-4 opacity-20"/> {t.empty}</div> : (
             <table className="w-full text-start border-collapse">
-              <thead className={`border-b ${isDarkTheme ? 'border-slate-700 bg-slate-900/80' : 'border-gray-100 bg-white'}`}>
+              <thead className="border-b border-slate-800 bg-slate-950/80">
                 <tr>
-                  <th className={`px-6 py-5 text-xs font-black uppercase tracking-wider text-start ${isDarkTheme ? 'text-slate-400' : 'text-gray-400'}`}>{t.name}</th>
-                  <th className={`px-6 py-5 text-xs font-black uppercase tracking-wider text-start ${isDarkTheme ? 'text-slate-400' : 'text-gray-400'}`}>{t.position}</th>
-                  <th className={`px-6 py-5 text-xs font-black uppercase tracking-wider text-start ${isDarkTheme ? 'text-slate-400' : 'text-gray-400'}`}>{t.salary}</th>
-                  <th className={`px-6 py-5 text-xs font-black uppercase tracking-wider text-start ${isDarkTheme ? 'text-slate-400' : 'text-gray-400'}`}>{t.status}</th>
-                  <th className={`px-6 py-5 text-xs font-black uppercase tracking-wider text-center ${isDarkTheme ? 'text-slate-400' : 'text-gray-400'}`}>{t.actions}</th>
+                  <th className="px-6 py-5 text-xs font-black uppercase tracking-wider text-start text-slate-400">{t.name}</th>
+                  <th className="px-6 py-5 text-xs font-black uppercase tracking-wider text-start text-slate-400">{t.position}</th>
+                  <th className="px-6 py-5 text-xs font-black uppercase tracking-wider text-start text-slate-400">{t.salary}</th>
+                  <th className="px-6 py-5 text-xs font-black uppercase tracking-wider text-start text-slate-400">{t.status}</th>
+                  <th className="px-6 py-5 text-xs font-black uppercase tracking-wider text-center text-slate-400">{t.actions}</th>
                 </tr>
               </thead>
-              <tbody className={`divide-y ${isDarkTheme ? 'divide-slate-700/50' : 'divide-gray-50'}`}>
+              <tbody className="divide-y divide-slate-800/50">
                 {filteredEmployees.map(emp => {
                   const empStatus = statusConfig[emp.status] ? emp.status : 'Actif';
                   const StatusIcon = statusConfig[empStatus].icon;
                   return (
-                    <tr key={emp.id} className={`transition-colors group ${isDarkTheme ? 'hover:bg-slate-700/30' : 'hover:bg-blue-50/30'}`}>
+                    <tr key={emp.id} className="transition-colors group hover:bg-slate-800/30">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg uppercase shrink-0 shadow-inner ${isDarkTheme ? 'bg-slate-900 border border-slate-700 text-slate-300' : 'bg-blue-100 text-blue-700'}`}>
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg uppercase shrink-0 shadow-inner bg-slate-800 border border-slate-700 text-slate-300">
                             {emp.full_name.slice(0, 2)}
                           </div>
                           <div>
-                            <p className={`font-bold text-base ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>{emp.full_name}</p>
-                            <p className={`text-xs mt-0.5 font-medium ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>{emp.cin ? `CIN: ${emp.cin}` : ''} {emp.phone ? `| Tél: ${emp.phone}` : ''}</p>
+                            <p className="font-bold text-base text-white">{emp.full_name}</p>
+                            <p className="text-xs mt-0.5 font-medium text-slate-500">{emp.cin ? `CIN: ${emp.cin}` : ''} {emp.phone ? `| Tél: ${emp.phone}` : ''}</p>
                           </div>
                         </div>
                       </td>
-                      <td className={`px-6 py-4 font-bold ${isDarkTheme ? 'text-slate-300' : 'text-gray-600'}`}>{emp.role}</td>
-                      <td className="px-6 py-4 font-black font-mono text-blue-500 text-base" dir="ltr">
-                        {Number(emp.base_salary).toLocaleString()} <span className={`text-[10px] font-bold uppercase ${isDarkTheme ? 'text-slate-500' : 'text-gray-400'}`}>{t.currency}</span>
+                      <td className="px-6 py-4 font-bold text-slate-300">{emp.role}</td>
+                      <td className="px-6 py-4 font-black font-mono text-blue-400 text-base" dir="ltr">
+                        {Number(emp.base_salary).toLocaleString()} <span className="text-[10px] font-bold uppercase text-slate-500">{t.currency}</span>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black border ${statusConfig[empStatus].color}`}>
@@ -330,10 +324,10 @@ export default function SupplierHR() {
                         </span>
                       </td>
                       <td className="px-6 py-4 flex items-center justify-center gap-2 opacity-100 sm:opacity-50 sm:group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openProfile(emp)} className={`px-4 py-2 rounded-xl text-sm font-black flex items-center gap-2 transition-colors ${isDarkTheme ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white' : 'text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100'}`} title={t.profileTooltip}>
+                        <button onClick={() => openProfile(emp)} className="px-4 py-2 rounded-xl text-sm font-black flex items-center gap-2 transition-colors bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white" title={t.profileTooltip}>
                           <User size={16} /> {t.profileTooltip}
                         </button>
-                        <button onClick={() => handleDeleteClick(emp.id)} className={`p-2 rounded-xl transition-colors ${isDarkTheme ? 'bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white' : 'text-red-500 hover:bg-red-100'}`} title={t.deleteTooltip}>
+                        <button onClick={() => handleDeleteClick(emp.id)} className="p-2 rounded-xl transition-colors bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white" title={t.deleteTooltip}>
                           <Trash2 size={18} />
                         </button>
                       </td>
@@ -348,23 +342,23 @@ export default function SupplierHR() {
 
       {/* 🗂️ Employee 360° Profile Modal */}
       {showProfileModal && (
-        <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 text-start" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-          <div className={`border rounded-3xl w-full max-w-6xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[95vh] ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
+        <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-start" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="border rounded-3xl w-full max-w-6xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[95vh] bg-slate-900 border-slate-700">
             
             {/* Modal Header */}
-            <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkTheme ? 'border-slate-800 bg-slate-950/50' : 'border-gray-100 bg-gray-50'}`}>
+            <div className="p-6 border-b flex justify-between items-center shrink-0 border-slate-800 bg-slate-950/50">
               <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-xl ${isDarkTheme ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}><User size={24}/></div>
+                <div className="p-3 rounded-xl bg-blue-500/20 text-blue-400"><User size={24}/></div>
                 <div>
-                  <h3 className={`text-xl font-black ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>{editingId ? formData.full_name : t.newEmp}</h3>
-                  <p className={`text-sm font-bold ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>{editingId ? formData.position : t.profileTitle}</p>
+                  <h3 className="text-xl font-black text-white">{editingId ? formData.full_name : t.newEmp}</h3>
+                  <p className="text-sm font-bold text-slate-500">{editingId ? formData.position : t.profileTitle}</p>
                 </div>
               </div>
-              <button onClick={closeProfile} className={`transition-colors cursor-pointer ${isDarkTheme ? 'text-slate-500 hover:text-white' : 'text-gray-400 hover:text-gray-800'}`}><X size={28} /></button>
+              <button onClick={closeProfile} className="transition-colors cursor-pointer text-slate-500 hover:text-white"><X size={28} /></button>
             </div>
 
             {/* Navigation Tabs */}
-            <div className={`flex overflow-x-auto custom-scrollbar border-b shrink-0 px-6 pt-4 gap-2 ${isDarkTheme ? 'border-slate-800 bg-slate-950/30' : 'border-gray-200 bg-white'}`}>
+            <div className="flex overflow-x-auto custom-scrollbar border-b shrink-0 px-6 pt-4 gap-2 border-slate-800 bg-slate-950/30">
               {[
                 { id: 'info', icon: User, label: t.tabInfo },
                 { id: 'paie', icon: Wallet, label: t.tabPaie, disabled: !editingId },
@@ -375,8 +369,8 @@ export default function SupplierHR() {
                   key={tab.id} disabled={tab.disabled} onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-5 py-3 font-black text-sm border-b-2 transition-all whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed
                     ${activeTab === tab.id 
-                      ? (isDarkTheme ? 'border-blue-500 text-blue-400 bg-blue-500/10 rounded-t-xl' : 'border-blue-600 text-blue-700 bg-blue-50 rounded-t-xl')
-                      : (isDarkTheme ? 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-t-xl' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-t-xl')
+                      ? 'border-blue-500 text-blue-400 bg-blue-500/10 rounded-t-xl'
+                      : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-t-xl'
                     }`}
                 >
                   <tab.icon size={18}/> {tab.label}
@@ -387,29 +381,29 @@ export default function SupplierHR() {
             {/* Tab Contents */}
             <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar relative">
               
-              {/* TAB 1: Infos de Base (UPGRADED with Iron Memory) */}
+              {/* TAB 1: Infos de Base */}
               {activeTab === 'info' && (
                 <form id="emp-form" onSubmit={handleSaveEmployee} className="space-y-8">
                   
                   {/* Section: Informations Professionnelles */}
                   <div>
-                    <h4 className={`text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2 ${isDarkTheme ? 'text-blue-400' : 'text-blue-600'}`}>
+                    <h4 className="text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-blue-400">
                       <Briefcase size={16} /> {t.infoPro}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       <div className="md:col-span-2">
-                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.name}</label>
-                        <input type="text" required value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`} />
+                        <label className="block text-xs font-bold mb-2 text-slate-400">{t.name}</label>
+                        <input type="text" required value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all bg-slate-950 border border-slate-800 text-white focus:border-blue-500" />
                       </div>
                       <div>
-                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.position}</label>
-                        <input type="text" list="roles-list" required value={formData.position} onChange={e => setFormData({...formData, position: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`} autoComplete="off" />
+                        <label className="block text-xs font-bold mb-2 text-slate-400">{t.position}</label>
+                        <input type="text" list="roles-list" required value={formData.position} onChange={e => setFormData({...formData, position: e.target.value})} className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all bg-slate-950 border border-slate-800 text-white focus:border-blue-500" autoComplete="off" />
                         <datalist id="roles-list">{roleSuggestions.map((role, i) => <option key={i} value={role} />)}</datalist>
                       </div>
                       
                       <div>
-                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.contractType}</label>
-                        <select value={formData.contractType} onChange={e => setFormData({...formData, contractType: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all appearance-none ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`}>
+                        <label className="block text-xs font-bold mb-2 text-slate-400">{t.contractType}</label>
+                        <select value={formData.contractType} onChange={e => setFormData({...formData, contractType: e.target.value})} className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all appearance-none bg-slate-950 border border-slate-800 text-white focus:border-blue-500">
                           <option value="CDI">CDI</option>
                           <option value="CDD">CDD</option>
                           <option value="ANAPEC">ANAPEC</option>
@@ -417,59 +411,59 @@ export default function SupplierHR() {
                         </select>
                       </div>
                       <div>
-                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.hireDate}</label>
-                        <input type="date" value={formData.hireDate} onChange={e => setFormData({...formData, hireDate: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`} />
+                        <label className="block text-xs font-bold mb-2 text-slate-400">{t.hireDate}</label>
+                        <input type="date" value={formData.hireDate} onChange={e => setFormData({...formData, hireDate: e.target.value})} className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all bg-slate-950 border border-slate-800 text-white focus:border-blue-500" />
                       </div>
                       <div>
-                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.salary} ({t.currency})</label>
-                        <input type="number" required min="0" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-black text-lg transition-all ${isDarkTheme ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400 focus:border-blue-500' : 'bg-blue-50 border border-blue-200 text-blue-700 focus:border-blue-500'}`} />
+                        <label className="block text-xs font-bold mb-2 text-slate-400">{t.salary} ({t.currency})</label>
+                        <input type="number" required min="0" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className="w-full px-4 py-3 rounded-xl outline-none font-black text-lg transition-all bg-blue-500/10 border border-blue-500/30 text-blue-400 focus:border-blue-500" />
                       </div>
                     </div>
                   </div>
 
-                  <div className={`w-full h-px ${isDarkTheme ? 'bg-slate-800' : 'bg-gray-200'}`}></div>
+                  <div className="w-full h-px bg-slate-800"></div>
 
                   {/* Section: Informations Personnelles */}
                   <div>
-                    <h4 className={`text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2 ${isDarkTheme ? 'text-pink-400' : 'text-pink-600'}`}>
+                    <h4 className="text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-pink-400">
                       <User size={16} /> {t.infoPerso}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       <div>
-                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.cin}</label>
-                        <input type="text" value={formData.cin} onChange={e => setFormData({...formData, cin: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-pink-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-pink-500'}`} />
+                        <label className="block text-xs font-bold mb-2 text-slate-400">{t.cin}</label>
+                        <input type="text" value={formData.cin} onChange={e => setFormData({...formData, cin: e.target.value})} className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all bg-slate-950 border border-slate-800 text-white focus:border-pink-500" />
                       </div>
                       <div>
-                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.cnss}</label>
-                        <input type="text" value={formData.cnss} onChange={e => setFormData({...formData, cnss: e.target.value})} placeholder="Ex: 123456789" className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-pink-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-pink-500'}`} />
+                        <label className="block text-xs font-bold mb-2 text-slate-400">{t.cnss}</label>
+                        <input type="text" value={formData.cnss} onChange={e => setFormData({...formData, cnss: e.target.value})} placeholder="Ex: 123456789" className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all bg-slate-950 border border-slate-800 text-white focus:border-pink-500" />
                       </div>
                       <div>
-                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.familyStatus}</label>
-                        <select value={formData.familyStatus} onChange={e => setFormData({...formData, familyStatus: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all appearance-none ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-pink-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-pink-500'}`}>
-                          <option value="Célibataire">Célibataire (أعزب)</option>
-                          <option value="Marié(e)">Marié(e) (متزوج)</option>
-                          <option value="Divorcé(e)">Divorcé(e) (مطلق)</option>
-                          <option value="Veuf/Veuve">Veuf/Veuve (أرمل)</option>
+                        <label className="block text-xs font-bold mb-2 text-slate-400">{t.familyStatus}</label>
+                        <select value={formData.familyStatus} onChange={e => setFormData({...formData, familyStatus: e.target.value})} className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all appearance-none bg-slate-950 border border-slate-800 text-white focus:border-pink-500">
+                          <option value="Célibataire">{t.single}</option>
+                          <option value="Marié(e)">{t.married}</option>
+                          <option value="Divorcé(e)">{t.divorced}</option>
+                          <option value="Veuf/Veuve">{t.widowed}</option>
                         </select>
                       </div>
                       
                       <div>
-                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.phone}</label>
-                        <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-pink-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-pink-500'}`} />
+                        <label className="block text-xs font-bold mb-2 text-slate-400">{t.phone}</label>
+                        <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all bg-slate-950 border border-slate-800 text-white focus:border-pink-500" />
                       </div>
                       <div className="md:col-span-2">
-                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-red-400' : 'text-red-600'} flex items-center gap-1`}>
+                        <label className="block text-xs font-bold mb-2 text-red-400 flex items-center gap-1">
                           <PhoneCall size={12}/> {t.emergency}
                         </label>
-                        <input type="text" value={formData.emergency} onChange={e => setFormData({...formData, emergency: e.target.value})} placeholder="Nom et téléphone du contact d'urgence" className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-red-500/5 border border-red-500/20 text-white focus:border-red-500' : 'bg-red-50 border border-red-200 text-gray-900 focus:border-red-500'}`} />
+                        <input type="text" value={formData.emergency} onChange={e => setFormData({...formData, emergency: e.target.value})} placeholder="Contact..." className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all bg-red-500/5 border border-red-500/20 text-white focus:border-red-500" />
                       </div>
                     </div>
                   </div>
                   
                   {/* Status */}
                   <div>
-                    <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.status}</label>
-                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className={`w-full md:w-1/3 px-4 py-3 rounded-xl outline-none font-bold transition-all appearance-none ${isDarkTheme ? 'bg-slate-900 border border-slate-700 text-white focus:border-blue-500' : 'bg-gray-100 border border-gray-300 text-gray-900 focus:border-blue-500'}`}>
+                    <label className="block text-xs font-bold mb-2 text-slate-400">{t.status}</label>
+                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full md:w-1/3 px-4 py-3 rounded-xl outline-none font-bold transition-all appearance-none bg-slate-900 border border-slate-700 text-white focus:border-blue-500">
                       <option value="Actif">{t.statusActive}</option>
                       <option value="on_leave">{t.statusLeave}</option>
                       <option value="terminated">{t.statusTerminated}</option>
@@ -478,26 +472,26 @@ export default function SupplierHR() {
                 </form>
               )}
 
-              {/* TAB 2: Paie (Payroll & Payslip Generator) */}
+              {/* TAB 2: Paie (Payroll) */}
               {activeTab === 'paie' && (
                 <div className="space-y-8 animate-fade-in">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className={`p-6 rounded-2xl border ${isDarkTheme ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'}`}>
-                      <label className={`block text-sm font-black mb-3 ${isDarkTheme ? 'text-emerald-400' : 'text-emerald-700'}`}>{t.primes}</label>
-                      <input type="number" min="0" value={formData.primes} onChange={e => setFormData({...formData, primes: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all ${isDarkTheme ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 focus:border-emerald-500' : 'bg-white border border-emerald-200 text-emerald-700 focus:border-emerald-500'}`} />
-                      <p className={`text-xs mt-2 font-bold ${isDarkTheme ? 'text-emerald-500/70' : 'text-emerald-600/70'}`}>Inclut les primes de rendement, l'ancienneté, etc.</p>
+                    <div className="p-6 rounded-2xl border bg-emerald-500/5 border-emerald-500/20">
+                      <label className="block text-sm font-black mb-3 text-emerald-400">{t.primes}</label>
+                      <input type="number" min="0" value={formData.primes} onChange={e => setFormData({...formData, primes: e.target.value})} className="w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 focus:border-emerald-500" />
+                      <p className="text-xs mt-2 font-bold text-emerald-500/70">Bonus, Primes, etc.</p>
                     </div>
-                    <div className={`p-6 rounded-2xl border ${isDarkTheme ? 'bg-red-500/5 border-red-500/20' : 'bg-red-50 border-red-100'}`}>
-                      <label className={`block text-sm font-black mb-3 ${isDarkTheme ? 'text-red-400' : 'text-red-700'}`}>{t.retenues}</label>
-                      <input type="number" min="0" value={formData.retenues} onChange={e => setFormData({...formData, retenues: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all ${isDarkTheme ? 'bg-red-500/10 border border-red-500/30 text-red-400 focus:border-red-500' : 'bg-white border border-red-200 text-red-700 focus:border-red-500'}`} />
-                      <p className={`text-xs mt-2 font-bold ${isDarkTheme ? 'text-red-500/70' : 'text-red-600/70'}`}>Cotisations CNSS, AMO, IR, Avances...</p>
+                    <div className="p-6 rounded-2xl border bg-red-500/5 border-red-500/20">
+                      <label className="block text-sm font-black mb-3 text-red-400">{t.retenues}</label>
+                      <input type="number" min="0" value={formData.retenues} onChange={e => setFormData({...formData, retenues: e.target.value})} className="w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all bg-red-500/10 border border-red-500/30 text-red-400 focus:border-red-500" />
+                      <p className="text-xs mt-2 font-bold text-red-500/70">CNSS, AMO, IR, etc.</p>
                     </div>
                   </div>
                   
-                  <div className={`flex flex-col sm:flex-row items-center justify-between p-6 rounded-2xl border ${isDarkTheme ? 'bg-slate-950 border-slate-800' : 'bg-gray-50 border-gray-200'}`}>
+                  <div className="flex flex-col sm:flex-row items-center justify-between p-6 rounded-2xl border bg-slate-950 border-slate-800">
                     <div>
-                      <p className={`text-sm font-black uppercase tracking-widest ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>{t.netToPay}</p>
-                      <h4 className={`text-3xl font-black mt-1 font-mono ${isDarkTheme ? 'text-white' : 'text-gray-900'}`} dir="ltr">
+                      <p className="text-sm font-black uppercase tracking-widest text-slate-500">{t.netToPay}</p>
+                      <h4 className="text-3xl font-black mt-1 font-mono text-white" dir="ltr">
                         {(Number(formData.salary) + Number(formData.primes || 0) - Number(formData.retenues || 0)).toLocaleString()} <span className="text-sm text-blue-500">{t.currency}</span>
                       </h4>
                     </div>
@@ -513,35 +507,35 @@ export default function SupplierHR() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
-                      <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>
+                      <h4 className="font-black text-lg flex items-center gap-2 text-white">
                         <CalendarDays size={20} className="text-orange-500"/> {t.leavesTitle}
                       </h4>
-                      <span className={`px-4 py-1.5 rounded-lg font-black text-sm border ${isDarkTheme ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                      <span className="px-4 py-1.5 rounded-lg font-black text-sm border bg-orange-500/10 text-orange-400 border-orange-500/20">
                         {t.leaveBalance} 18 {t.days}
                       </span>
                     </div>
 
-                    <div className={`border rounded-2xl p-4 space-y-4 ${isDarkTheme ? 'bg-slate-950 border-slate-800' : 'bg-gray-50 border-gray-200'}`}>
+                    <div className="border rounded-2xl p-4 space-y-4 bg-slate-950 border-slate-800">
                       {leavesHistory.map((leave, idx) => (
-                        <div key={idx} className={`p-4 rounded-xl border flex justify-between items-center ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-100'}`}>
+                        <div key={idx} className="p-4 rounded-xl border flex justify-between items-center bg-slate-900 border-slate-700">
                           <div>
-                            <p className={`font-bold ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>{leave.type}</p>
-                            <p className={`text-xs mt-1 ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>{leave.start} ➔ {leave.end}</p>
+                            <p className="font-bold text-white">{leave.type}</p>
+                            <p className="text-xs mt-1 text-slate-400">{leave.start} ➔ {leave.end}</p>
                           </div>
                           <span className="font-black font-mono text-orange-500">{leave.days} J</span>
                         </div>
                       ))}
                       
                       {showAddLeave ? (
-                        <div className={`p-4 rounded-xl border mt-4 ${isDarkTheme ? 'bg-slate-900 border-orange-500/30' : 'bg-white border-orange-200'}`}>
+                        <div className="p-4 rounded-xl border mt-4 bg-slate-900 border-orange-500/30">
                           <div className="space-y-3">
-                            <input type="text" placeholder={t.leaveType} className={`w-full px-3 py-2 rounded-lg text-sm outline-none border ${isDarkTheme ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`} />
+                            <input type="text" placeholder={t.leaveType} className="w-full px-3 py-2 rounded-lg text-sm outline-none border bg-slate-800 border-slate-700 text-white" />
                             <div className="flex gap-2">
-                              <input type="date" className={`flex-1 px-3 py-2 rounded-lg text-sm outline-none border ${isDarkTheme ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`} />
-                              <input type="date" className={`flex-1 px-3 py-2 rounded-lg text-sm outline-none border ${isDarkTheme ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`} />
+                              <input type="date" className="flex-1 px-3 py-2 rounded-lg text-sm outline-none border bg-slate-800 border-slate-700 text-white" />
+                              <input type="date" className="flex-1 px-3 py-2 rounded-lg text-sm outline-none border bg-slate-800 border-slate-700 text-white" />
                             </div>
                             <div className="flex gap-2 pt-2">
-                              <button onClick={() => setShowAddLeave(false)} className={`flex-1 py-2 text-sm font-bold rounded-lg ${isDarkTheme ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-gray-200 text-gray-800'}`}>{t.cancel}</button>
+                              <button onClick={() => setShowAddLeave(false)} className="flex-1 py-2 text-sm font-bold rounded-lg bg-slate-800 text-white hover:bg-slate-700">{t.cancel}</button>
                               <button className="flex-[2] py-2 bg-orange-500 text-white text-sm font-black rounded-lg shadow-lg hover:bg-orange-600">{t.save}</button>
                             </div>
                           </div>
@@ -555,43 +549,43 @@ export default function SupplierHR() {
                   </div>
 
                   <div className="space-y-6">
-                    <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>
+                    <h4 className="font-black text-lg flex items-center gap-2 text-white">
                       <Activity size={20} className="text-purple-500"/> {t.timelineTitle}
                     </h4>
                     
-                    <div className={`border rounded-2xl p-6 ${isDarkTheme ? 'bg-slate-950 border-slate-800' : 'bg-gray-50 border-gray-200'}`}>
+                    <div className="border rounded-2xl p-6 bg-slate-950 border-slate-800">
                       <div className="relative border-l-2 border-slate-700/50 pl-6 space-y-6 ml-3">
                         
                         {careerEvents.map((ev, idx) => {
                           const isPromo = ev.type === 'promotion';
                           const isTrain = ev.type === 'training';
                           const Icon = isPromo ? Award : isTrain ? BookOpen : AlertTriangle;
-                          const color = isPromo ? 'text-emerald-500 bg-emerald-500/20' : isTrain ? 'text-blue-500 bg-blue-500/20' : 'text-red-500 bg-red-500/20';
+                          const color = isPromo ? 'text-emerald-400 bg-emerald-500/20' : isTrain ? 'text-blue-400 bg-blue-500/20' : 'text-red-400 bg-red-500/20';
                           
                           return (
                             <div key={idx} className="relative">
                               <div className={`absolute -left-[35px] w-8 h-8 rounded-full border-4 border-slate-900 flex items-center justify-center ${color}`}>
                                 <Icon size={12} className="text-current" />
                               </div>
-                              <div className={`p-4 rounded-xl border ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
-                                <p className={`font-bold text-sm ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>{ev.title}</p>
-                                <p className={`text-xs mt-1 ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>{ev.date}</p>
+                              <div className="p-4 rounded-xl border bg-slate-900 border-slate-700">
+                                <p className="font-bold text-sm text-white">{ev.title}</p>
+                                <p className="text-xs mt-1 text-slate-400">{ev.date}</p>
                               </div>
                             </div>
                           );
                         })}
 
                         {showAddEvent ? (
-                          <div className={`p-4 rounded-xl border mt-4 ${isDarkTheme ? 'bg-slate-900 border-purple-500/30' : 'bg-white border-purple-200'}`}>
+                          <div className="p-4 rounded-xl border mt-4 bg-slate-900 border-purple-500/30">
                             <div className="space-y-3">
-                              <select className={`w-full px-3 py-2 rounded-lg text-sm font-bold outline-none border ${isDarkTheme ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`}>
+                              <select className="w-full px-3 py-2 rounded-lg text-sm font-bold outline-none border bg-slate-800 border-slate-700 text-white">
                                 <option value="promotion">{t.eventPromo}</option>
                                 <option value="training">{t.eventTrain}</option>
                                 <option value="warning">{t.eventWarn}</option>
                               </select>
-                              <input type="text" placeholder={t.eventTitle} className={`w-full px-3 py-2 rounded-lg text-sm outline-none border ${isDarkTheme ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`} />
+                              <input type="text" placeholder={t.eventTitle} className="w-full px-3 py-2 rounded-lg text-sm outline-none border bg-slate-800 border-slate-700 text-white" />
                               <div className="flex gap-2 pt-2">
-                                <button onClick={() => setShowAddEvent(false)} className={`flex-1 py-2 text-sm font-bold rounded-lg ${isDarkTheme ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-gray-200 text-gray-800'}`}>{t.cancel}</button>
+                                <button onClick={() => setShowAddEvent(false)} className="flex-1 py-2 text-sm font-bold rounded-lg bg-slate-800 text-white hover:bg-slate-700">{t.cancel}</button>
                                 <button className="flex-[2] py-2 bg-purple-500 text-white text-sm font-black rounded-lg shadow-lg hover:bg-purple-600">{t.save}</button>
                               </div>
                             </div>
@@ -609,28 +603,26 @@ export default function SupplierHR() {
                 </div>
               )}
 
-              {/* TAB 4: Documents (GED) & Infos Avancées */}
+              {/* TAB 4: Documents (GED) */}
               {activeTab === 'docs' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
                   
-                  {/* العمود الأيمن/الأيسر: المعلومات السريعة والتكوين */}
+                  {/* Left Column */}
                   <div className="lg:col-span-1 space-y-6">
-                    
-                    {/* بطاقة الأقدمية */}
-                    <div className={`p-6 rounded-2xl border ${isDarkTheme ? 'bg-slate-950 border-slate-800' : 'bg-gray-50 border-gray-200'}`}>
-                      <h4 className={`text-sm font-black uppercase tracking-wider mb-4 flex items-center gap-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>
+                    <div className="p-6 rounded-2xl border bg-slate-950 border-slate-800">
+                      <h4 className="text-sm font-black uppercase tracking-wider mb-4 flex items-center gap-2 text-slate-400">
                         <Clock size={16} /> Historique & Ancienneté
                       </h4>
                       <div className="space-y-4">
                         <div>
-                          <p className={`text-xs font-bold mb-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Date d'embauche</p>
-                          <p className={`font-black ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
+                          <p className="text-xs font-bold mb-1 text-slate-500">Date d'embauche</p>
+                          <p className="font-black text-white">
                             {formData.hireDate ? new Date(formData.hireDate).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US') : '---'}
                           </p>
                         </div>
                         <div>
-                          <p className={`text-xs font-bold mb-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Ancienneté</p>
-                          <p className="font-black text-blue-500">
+                          <p className="text-xs font-bold mb-1 text-slate-500">Ancienneté</p>
+                          <p className="font-black text-blue-400">
                             {formData.hireDate ? (() => {
                               const hireDate = new Date(formData.hireDate);
                               const diffTime = Math.abs(new Date() - hireDate);
@@ -642,17 +634,16 @@ export default function SupplierHR() {
                       </div>
                     </div>
 
-                    {/* بطاقة الشهادات والدورات الخاصة بقطاع BTP */}
-                    <div className={`p-6 rounded-2xl border ${isDarkTheme ? 'bg-blue-900/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
-                      <h4 className={`text-sm font-black uppercase tracking-wider mb-4 flex items-center gap-2 ${isDarkTheme ? 'text-blue-400' : 'text-blue-700'}`}>
+                    <div className="p-6 rounded-2xl border bg-blue-900/10 border-blue-500/20">
+                      <h4 className="text-sm font-black uppercase tracking-wider mb-4 flex items-center gap-2 text-blue-400">
                         <BookOpen size={16} /> Formations BTP
                       </h4>
                       <ul className="space-y-3">
                         {trainings.map((training, idx) => (
                           <li key={idx} className="flex items-start justify-between gap-2 group">
                             <div className="flex items-start gap-2">
-                              <CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" />
-                              <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>{training}</span>
+                              <CheckCircle size={14} className="text-emerald-400 mt-0.5 shrink-0" />
+                              <span className="text-sm font-medium text-slate-300">{training}</span>
                             </div>
                             <button onClick={() => setTrainings(trainings.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Trash2 size={14}/>
@@ -663,59 +654,56 @@ export default function SupplierHR() {
                       
                       {showAddTraining ? (
                         <div className="mt-4 flex gap-2">
-                          <input type="text" value={newTraining} onChange={(e) => setNewTraining(e.target.value)} placeholder="Nom de la formation..." autoFocus className={`flex-1 px-3 py-1.5 text-sm rounded-lg outline-none border ${isDarkTheme ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-gray-200 text-gray-800'}`} />
+                          <input type="text" value={newTraining} onChange={(e) => setNewTraining(e.target.value)} placeholder="Nom de formation..." autoFocus className="flex-1 px-3 py-1.5 text-sm rounded-lg outline-none border bg-slate-900 border-slate-700 text-white" />
                           <button onClick={handleAddTraining} className="px-3 py-1.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700">OK</button>
                         </div>
                       ) : (
-                        <button onClick={() => setShowAddTraining(true)} className="mt-4 w-full py-2 text-xs font-bold text-blue-600 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors">
+                        <button onClick={() => setShowAddTraining(true)} className="mt-4 w-full py-2 text-xs font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors">
                           + Ajouter une formation
                         </button>
                       )}
                     </div>
-
                   </div>
 
-                  {/* العمود الأعرض: إدارة الوثائق */}
+                  {/* Main Document Area */}
                   <div className="lg:col-span-2">
-                    <div className={`border rounded-2xl p-6 h-full ${isDarkTheme ? 'bg-slate-950 border-slate-800' : 'bg-gray-50 border-gray-200'}`}>
-                      <h4 className={`font-black text-lg flex items-center gap-2 mb-6 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>
+                    <div className="border rounded-2xl p-6 h-full bg-slate-950 border-slate-800">
+                      <h4 className="font-black text-lg flex items-center gap-2 mb-6 text-white">
                         <FolderOpen size={20} className="text-pink-500"/> Fichiers & Documents Légaux
                       </h4>
                       
-                      {/* منطقة الرفع */}
-                      <label className={`block border-2 border-dashed rounded-xl p-8 text-center mb-6 transition-all cursor-pointer relative overflow-hidden ${isDarkTheme ? 'border-slate-700 hover:border-pink-500/50 hover:bg-pink-500/5' : 'border-gray-300 hover:border-pink-400 hover:bg-pink-50'}`}>
+                      <label className="block border-2 border-dashed rounded-xl p-8 text-center mb-6 transition-all cursor-pointer relative overflow-hidden border-slate-700 hover:border-pink-500/50 hover:bg-pink-500/5">
                         <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept=".pdf,.png,.jpg,.jpeg" />
                         
                         {isUploading ? (
                           <div className="flex flex-col items-center justify-center">
                             <Loader2 size={32} className="text-pink-500 animate-spin mb-3" />
-                            <p className={`font-bold ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>Téléchargement en cours...</p>
+                            <p className="font-bold text-slate-300">Téléchargement en cours...</p>
                           </div>
                         ) : (
                           <>
-                            <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 ${isDarkTheme ? 'bg-slate-900 text-slate-400' : 'bg-white text-gray-400 shadow-sm'}`}>
+                            <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 bg-slate-900 text-slate-400">
                               <Plus size={24} />
                             </div>
-                            <p className={`font-bold ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>Cliquez ou Glissez vos fichiers ici</p>
-                            <p className={`text-xs mt-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>PDF, PNG, JPG (Max 5MB)</p>
+                            <p className="font-bold text-slate-300">Cliquez ou Glissez vos fichiers ici</p>
+                            <p className="text-xs mt-1 text-slate-500">PDF, PNG, JPG (Max 5MB)</p>
                           </>
                         )}
                       </label>
 
-                      {/* قائمة الوثائق المرفوعة */}
                       <div className="space-y-3">
                         {documents.length === 0 ? (
-                          <p className={`text-center text-sm py-4 ${isDarkTheme ? 'text-slate-500' : 'text-gray-400'}`}>Aucun document n'a été ajouté.</p>
+                          <p className="text-center text-sm py-4 text-slate-500">Aucun document n'a été ajouté.</p>
                         ) : (
                           documents.map(doc => {
                             const DocIcon = doc.icon;
                             return (
-                              <div key={doc.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors hover:border-pink-500/30 ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
+                              <div key={doc.id} className="flex items-center justify-between p-4 rounded-xl border transition-colors hover:border-pink-500/30 bg-slate-900 border-slate-700">
                                 <div className="flex items-center gap-3">
                                   <div className={`p-2 rounded-lg ${doc.bg} ${doc.color}`}><DocIcon size={18} /></div>
                                   <div>
-                                    <p className={`font-bold text-sm ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>{doc.name}</p>
-                                    <p className={`text-xs ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Ajouté le {doc.date}</p>
+                                    <p className="font-bold text-sm text-white">{doc.name}</p>
+                                    <p className="text-xs text-slate-500">Ajouté le {doc.date}</p>
                                   </div>
                                 </div>
                                 <button onClick={() => setDocuments(documents.filter(d => d.id !== doc.id))} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
@@ -736,8 +724,8 @@ export default function SupplierHR() {
             </div>
 
             {/* Modal Footer */}
-            <div className={`p-6 border-t shrink-0 flex gap-3 ${isDarkTheme ? 'border-slate-800 bg-slate-950/50' : 'border-gray-100 bg-gray-50'}`}>
-              <button onClick={closeProfile} className={`flex-1 py-3.5 rounded-xl font-black transition-colors ${isDarkTheme ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}>
+            <div className="p-6 border-t shrink-0 flex gap-3 border-slate-800 bg-slate-950/50">
+              <button onClick={closeProfile} className="flex-1 py-3.5 rounded-xl font-black transition-colors bg-slate-800 text-white hover:bg-slate-700">
                 {t.cancel}
               </button>
               {(activeTab === 'info' || activeTab === 'paie') && (
