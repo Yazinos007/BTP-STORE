@@ -5,7 +5,7 @@ import useSupplierStore from '../store/useSupplierStore';
 import { 
   Briefcase, UserPlus, DollarSign, Users, CheckCircle, XCircle, Clock, 
   FileText, Printer, X, Trash2, Search, UserCheck, User, Wallet, 
-  GraduationCap, FolderOpen, AlertCircle, ChevronRight
+  GraduationCap, FolderOpen, AlertCircle, ChevronRight, Loader2
 } from 'lucide-react';
 
 const translations = {
