@@ -5,7 +5,8 @@ import useSupplierStore from '../store/useSupplierStore';
 import { 
   DollarSign, ShoppingCart, Package, Users, 
   Wallet, CreditCard, Receipt, Landmark, 
-  Activity, ShieldAlert, Truck, Loader2, Sparkles, ChevronRight
+  Activity, ShieldAlert, Truck, Loader2, Sparkles, ChevronRight,
+  TrendingUp, AlertTriangle, Hammer, Factory
 } from 'lucide-react';
 
 const translations = {
@@ -22,7 +23,14 @@ const translations = {
     currency: 'MAD',
     priceRadarDesc: 'تنبيه: زيادة وشيكة بنسبة 5.4٪ في أسعار الحديد. ستقوم المصانع الوطنية بتعديل الأسعار الأسبوع المقبل. ننصح بتأمين طلبياتك الآن لتوفير هامش الربح.',
     logisticsDesc: 'اقتراح ذكي: لديك 3 شحنات متجهة إلى مدينة طنجة. دمجها في شاحنة واحدة كبيرة سيوفر لك 1,200 درهم من تكاليف النقل الإجمالية اليوم.',
-    tanger: 'طنجة', casablanca: 'الدار البيضاء'
+    // New Translations for Executive Widget
+    executiveDashboard: 'لوحة القيادة التنفيذية',
+    salesTrend: 'تطور الأداء المالي (6 أشهر)',
+    revenue: 'الإيرادات', costs: 'التكاليف', margin: 'الهامش',
+    smartAlerts: 'تنبيهات المخزون الذكية',
+    runRateAlert: 'تنبيه نفاد وشيك', daysLeft: 'أيام متبقية',
+    rawMaterialAlert: 'نقص المادة الخام', productionRisk: 'خطر توقف الإنتاج',
+    actionOrder: 'إرسال طلب شراء', actionProduce: 'أمر إنتاج (OF)'
   },
   fr: {
     totalSales: 'TOTAL VENTES', pendingOrders: 'COMMANDES EN ATTENTE',
@@ -37,7 +45,14 @@ const translations = {
     currency: 'MAD',
     priceRadarDesc: 'Alerte : Hausse imminente de +5.4% sur l\'Acier. Les usines nationales vont ajuster les prix la semaine prochaine. Conseillons de sécuriser les commandes maintenant.',
     logisticsDesc: 'Suggestion Intelligente : Vous avez 3 expéditions vers Tanger. Les regrouper dans un seul camion vous fera économiser 1 200 MAD aujourd\'hui.',
-    tanger: 'Tanger', casablanca: 'Casablanca'
+    // New Translations for Executive Widget
+    executiveDashboard: 'Tableau de Bord Exécutif',
+    salesTrend: 'Évolution des Performances (6 Mois)',
+    revenue: 'Revenus', costs: 'Coûts', margin: 'Marge',
+    smartAlerts: 'Alertes de Stock Intelligentes',
+    runRateAlert: 'Rupture Imminente', daysLeft: 'Jours restants',
+    rawMaterialAlert: 'Manque Matière 1ère', productionRisk: 'Risque d\'arrêt de production',
+    actionOrder: 'Commander l\'usine', actionProduce: 'Ordre de Fab. (OF)'
   },
   en: {
     totalSales: 'TOTAL SALES', pendingOrders: 'PENDING ORDERS',
@@ -52,7 +67,14 @@ const translations = {
     currency: 'MAD',
     priceRadarDesc: 'Alert: Imminent +5.4% increase on Steel. National factories will adjust prices next week. Advise securing orders now to lock in margins.',
     logisticsDesc: 'Smart Suggestion: You have 3 shipments heading to Tangier. Consolidating them into one large truck will save you 1,200 MAD in overall transit costs today.',
-    tanger: 'Tangier', casablanca: 'Casablanca'
+    // New Translations for Executive Widget
+    executiveDashboard: 'Executive Dashboard',
+    salesTrend: 'Financial Performance Trend (6 Months)',
+    revenue: 'Revenue', costs: 'Costs', margin: 'Margin',
+    smartAlerts: 'Smart Stock Alerts',
+    runRateAlert: 'Imminent Stockout', daysLeft: 'Days left',
+    rawMaterialAlert: 'Raw Material Shortage', productionRisk: 'Production halt risk',
+    actionOrder: 'Send Purchase Order', actionProduce: 'Production Order (PO)'
   }
 };
 
@@ -150,6 +172,17 @@ export default function SupplierOverview() {
       setLoading(false);
     }
   };
+
+  // بيانات بيانية وهمية للأشهر الستة الماضية (لأغراض العرض التوضيحي)
+  const chartData = [
+    { month: 'Fév', sales: 45000, costs: 30000 },
+    { month: 'Mar', sales: 52000, costs: 32000 },
+    { month: 'Avr', sales: 48000, costs: 29000 },
+    { month: 'Mai', sales: 61000, costs: 35000 },
+    { month: 'Juin', sales: 75000, costs: 40000 },
+    { month: 'Juil', sales: metrics.sales > 0 ? metrics.sales : 82000, costs: metrics.expenses > 0 ? metrics.expenses : 45000 },
+  ];
+  const maxChartValue = Math.max(...chartData.map(d => Math.max(d.sales, d.costs))) * 1.1;
 
   if (loading) {
     return (
@@ -316,6 +349,90 @@ export default function SupplierOverview() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 📈 Executive Widget (Sales Trend & Smart Alerts) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* 📉 Smart Sales Area Chart */}
+        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <TrendingUp className="text-blue-500"/> {t.salesTrend}
+            </h3>
+            <div className="flex gap-4 text-xs font-bold">
+              <span className="flex items-center gap-1.5 text-blue-400"><div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div> {t.revenue}</span>
+              <span className="flex items-center gap-1.5 text-red-400"><div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div> {t.costs}</span>
+            </div>
+          </div>
+          
+          {/* CSS-based Area Chart (Ultra-fast, no libraries) */}
+          <div className="h-64 flex items-end justify-between gap-2 relative border-b border-slate-800 pb-2">
+            {chartData.map((data, index) => {
+              const salesHeight = (data.sales / maxChartValue) * 100;
+              const costsHeight = (data.costs / maxChartValue) * 100;
+              const margin = data.sales - data.costs;
+              return (
+                <div key={index} className="relative w-full flex flex-col items-center justify-end h-full group">
+                  {/* Tooltip on Hover */}
+                  <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 border border-slate-700 p-2 rounded-xl text-xs font-bold shadow-xl z-20 pointer-events-none whitespace-nowrap">
+                    <span className="text-emerald-400">{t.margin}: +{margin.toLocaleString()}</span>
+                  </div>
+                  
+                  <div className="w-full flex justify-center items-end relative h-full">
+                    {/* Sales Column (Back) */}
+                    <div className="w-full max-w-[40px] bg-gradient-to-t from-blue-900 to-blue-500 rounded-t-lg opacity-80 group-hover:opacity-100 transition-opacity absolute bottom-0" style={{ height: `${salesHeight}%` }}></div>
+                    {/* Costs Column (Front - Semi-transparent Overlay) */}
+                    <div className="w-full max-w-[40px] bg-gradient-to-t from-red-900/80 to-red-500/80 rounded-t-lg absolute bottom-0 z-10" style={{ height: `${costsHeight}%` }}></div>
+                  </div>
+                  <span className="text-xs font-bold text-slate-500 mt-3 uppercase">{data.month}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ⚠️ Smart Stock Alerts */}
+        <div className="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col">
+          <h3 className="text-xl font-black text-white flex items-center gap-2 mb-6">
+            <AlertTriangle className="text-orange-500"/> {t.smartAlerts}
+          </h3>
+          
+          <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
+            {/* Run-rate Alert (Buy) */}
+            <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 group transition-colors hover:bg-orange-500/20">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                  <h4 className="font-bold text-orange-400 text-sm">{t.runRateAlert}</h4>
+                </div>
+                <span className="text-xs font-black text-orange-500 bg-orange-500/10 px-2 py-1 rounded-md">4 {t.daysLeft}</span>
+              </div>
+              <p className="text-white font-black mb-3">Ciment Portland CPJ 45</p>
+              <p className="text-xs text-slate-400 mb-4 font-medium">Vitesse de vente élevée. Stock estimé à zéro ce Vendredi.</p>
+              <button className="w-full py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(234,88,12,0.3)]">
+                <ShoppingCart size={14}/> {t.actionOrder}
+              </button>
+            </div>
+
+            {/* Raw Material Alert (Produce) */}
+            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 group transition-colors hover:bg-red-500/20">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                  <h4 className="font-bold text-red-400 text-sm">{t.rawMaterialAlert}</h4>
+                </div>
+                <span className="text-xs font-black text-red-500 bg-red-500/10 px-2 py-1 rounded-md">{t.productionRisk}</span>
+              </div>
+              <p className="text-white font-black mb-3">Sable de concassage</p>
+              <p className="text-xs text-slate-400 mb-4 font-medium">Manque de matière 1ère pour produire "Bloc Béton 20x20".</p>
+              <button className="w-full py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
+                <Factory size={14}/> {t.actionProduce}
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       {/* 🤖 قسم المستشار الذكي المصغر */}
