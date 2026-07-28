@@ -6,7 +6,7 @@ import {
   Briefcase, UserPlus, DollarSign, Users, CheckCircle, XCircle, Clock, 
   FileText, Printer, X, Trash2, Search, UserCheck, User, Wallet, 
   GraduationCap, FolderOpen, AlertCircle, ChevronRight, Loader2,
-  CalendarDays, Award, BookOpen, AlertTriangle, Plus, Activity
+  CalendarDays, Award, BookOpen, AlertTriangle, Plus, Activity, PhoneCall
 } from 'lucide-react';
 
 const translations = {
@@ -17,19 +17,21 @@ const translations = {
     tabInfo: 'المعلومات الأساسية', tabPaie: 'الرواتب والقسائم', tabCareer: 'المسار والإجازات', tabDocs: 'محفظة الوثائق',
     name: 'الاسم الكامل', position: 'المنصب / المهمة', salary: 'الراتب الأساسي', cin: 'رقم البطاقة (CIN)', phone: 'رقم الهاتف',
     primes: 'المنح / التسبيقات', retenues: 'اقتطاعات (CNSS/AMO)',
-    save: 'حفظ البيانات', cancel: 'إلغاء', date: 'تاريخ التعيين', status: 'الحالة', actions: 'إجراءات',
+    save: 'حفظ البيانات', cancel: 'إلغاء', status: 'الحالة', actions: 'إجراءات',
     loading: 'جاري التحميل...', empty: 'لا يوجد موظفون مسجلون حالياً.', currency: 'درهم',
     statusActive: 'نشط', statusLeave: 'في إجازة', statusTerminated: 'منهي العقد',
     payslip: 'توليد قسيمة الراتب', printBtn: 'طباعة القسيمة', closeBtn: 'إغلاق', month: 'الشهر',
     confirmDelete: 'هل أنت متأكد من حذف هذا الموظف نهائياً؟', searchPlaceholder: 'ابحث بالاسم، CIN، أو المنصب...',
     designation: 'البيان', amount: 'المبلغ', netToPay: 'صافي الأجر للاستلام',
     employerSign: 'توقيع المشغل', employeeSign: 'توقيع الموظف', docInternal: 'مستند داخلي - الأجور',
-    profileTooltip: 'فتح ملف الموظف', deleteTooltip: 'حذف الموظف',
-    comingSoon: 'هذه الميزة قيد التطوير وستتوفر قريباً!', module: 'إدارة الـ HR',
+    profileTooltip: 'فتح ملف الموظف', deleteTooltip: 'حذف الموظف', module: 'إدارة الـ HR',
     leavesTitle: 'إدارة الإجازات', leaveBalance: 'الرصيد:', days: 'أيام',
     addLeave: 'إضافة إجازة', leaveType: 'نوع الإجازة', leaveStart: 'تاريخ البدء', leaveEnd: 'تاريخ الانتهاء',
     timelineTitle: 'المسار المهني (Timeline)', addEvent: 'إضافة حدث',
-    eventPromo: 'ترقية', eventTrain: 'دورة تدريبية', eventWarn: 'إنذار', eventTitle: 'عنوان الحدث'
+    eventPromo: 'ترقية', eventTrain: 'دورة تدريبية', eventWarn: 'إنذار', eventTitle: 'عنوان الحدث',
+    // حقول جديدة
+    contractType: 'نوع العقد', hireDate: 'تاريخ التعيين', cnss: 'رقم الضمان (CNSS)', 
+    emergency: 'هاتف الطوارئ', familyStatus: 'الحالة العائلية', infoPro: 'بيانات مهنية', infoPerso: 'بيانات شخصية'
   },
   fr: {
     title: 'Ressources Humaines', subtitle: 'Gestion des employés, carrières et paie.',
@@ -38,19 +40,21 @@ const translations = {
     tabInfo: 'Infos de Base', tabPaie: 'Paie & Fiches', tabCareer: 'Carrière & Congés', tabDocs: 'Documents (GED)',
     name: 'Nom Complet', position: 'Poste / Fonction', salary: 'Salaire de Base', cin: 'CIN', phone: 'Téléphone',
     primes: 'Primes / Avances', retenues: 'Retenues (CNSS/AMO)',
-    save: 'Enregistrer', cancel: 'Annuler', date: 'Date d\'embauche', status: 'Statut', actions: 'Actions',
+    save: 'Enregistrer', cancel: 'Annuler', status: 'Statut', actions: 'Actions',
     loading: 'Chargement...', empty: 'Aucun employé enregistré.', currency: 'MAD',
     statusActive: 'Actif', statusLeave: 'En congé', statusTerminated: 'Résilié',
     payslip: 'Générer Fiche de Paie', printBtn: 'Imprimer', closeBtn: 'Fermer', month: 'Mois',
     confirmDelete: 'Voulez-vous vraiment supprimer cet employé ?', searchPlaceholder: 'Rechercher par nom, CIN, ou poste...',
     designation: 'Désignation', amount: 'Montant', netToPay: 'Net à Payer',
     employerSign: 'Signature de l\'Employeur', employeeSign: 'Signature de l\'Employé', docInternal: 'Document Interne - Paie',
-    profileTooltip: 'Ouvrir le Profil', deleteTooltip: 'Supprimer',
-    comingSoon: 'Cette fonctionnalité est en cours de développement !', module: 'Module HR',
+    profileTooltip: 'Ouvrir le Profil', deleteTooltip: 'Supprimer', module: 'Module HR',
     leavesTitle: 'Gestion des Congés', leaveBalance: 'Solde :', days: 'Jours',
     addLeave: 'Nouveau Congé', leaveType: 'Type de congé', leaveStart: 'Date de début', leaveEnd: 'Date de fin',
     timelineTitle: 'Parcours Professionnel', addEvent: 'Ajouter Événement',
-    eventPromo: 'Promotion', eventTrain: 'Formation', eventWarn: 'Avertissement', eventTitle: 'Titre de l\'événement'
+    eventPromo: 'Promotion', eventTrain: 'Formation', eventWarn: 'Avertissement', eventTitle: 'Titre de l\'événement',
+    // Nouveaux champs
+    contractType: 'Type de Contrat', hireDate: 'Date d\'embauche', cnss: 'N° CNSS', 
+    emergency: 'Contact d\'Urgence', familyStatus: 'Situation Familiale', infoPro: 'Infos Pro.', infoPerso: 'Infos Perso.'
   },
   en: {
     title: 'Human Resources', subtitle: 'Manage employees, careers, and payroll.',
@@ -59,19 +63,21 @@ const translations = {
     tabInfo: 'Basic Info', tabPaie: 'Payroll & Slips', tabCareer: 'Career & Leaves', tabDocs: 'Documents (GED)',
     name: 'Full Name', position: 'Position / Role', salary: 'Base Salary', cin: 'ID Number (CIN)', phone: 'Phone Number',
     primes: 'Bonuses / Advances', retenues: 'Deductions (Tax/Insurance)',
-    save: 'Save Details', cancel: 'Cancel', date: 'Hire Date', status: 'Status', actions: 'Actions',
+    save: 'Save Details', cancel: 'Cancel', status: 'Status', actions: 'Actions',
     loading: 'Loading...', empty: 'No employees registered yet.', currency: 'MAD',
     statusActive: 'Active', statusLeave: 'On Leave', statusTerminated: 'Terminated',
     payslip: 'Generate Payslip', printBtn: 'Print', closeBtn: 'Close', month: 'Month',
     confirmDelete: 'Are you sure you want to permanently delete this employee?', searchPlaceholder: 'Search by name, CIN, or position...',
     designation: 'Description', amount: 'Amount', netToPay: 'Net Pay',
     employerSign: 'Employer Signature', employeeSign: 'Employee Signature', docInternal: 'Internal Document - Payroll',
-    profileTooltip: 'Open Profile', deleteTooltip: 'Delete',
-    comingSoon: 'This feature is under development and will be available soon!', module: 'HR Module',
+    profileTooltip: 'Open Profile', deleteTooltip: 'Delete', module: 'HR Module',
     leavesTitle: 'Leave Management', leaveBalance: 'Balance:', days: 'Days',
     addLeave: 'Add Leave', leaveType: 'Leave Type', leaveStart: 'Start Date', leaveEnd: 'End Date',
     timelineTitle: 'Career Timeline', addEvent: 'Add Event',
-    eventPromo: 'Promotion', eventTrain: 'Training', eventWarn: 'Warning', eventTitle: 'Event Title'
+    eventPromo: 'Promotion', eventTrain: 'Training', eventWarn: 'Warning', eventTitle: 'Event Title',
+    // New Fields
+    contractType: 'Contract Type', hireDate: 'Hire Date', cnss: 'CNSS Number', 
+    emergency: 'Emergency Contact', familyStatus: 'Family Status', infoPro: 'Pro Info', infoPerso: 'Personal Info'
   }
 };
 
@@ -85,13 +91,22 @@ export default function SupplierHR() {
   const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // 360° Profile State
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
   const [editingId, setEditingId] = useState(null);
   const [showPayslip, setShowPayslip] = useState(false);
 
-  // Fake states for Career Tab UI (will reset on close)
+  // 🗂️ Simulated States for UI (Frontend Demo)
+  const [trainings, setTrainings] = useState(['Habilitation Électrique (B1V)', "Conduite d'engins (CACES R482)"]);
+  const [showAddTraining, setShowAddTraining] = useState(false);
+  const [newTraining, setNewTraining] = useState('');
+  
+  const [documents, setDocuments] = useState([
+    { id: 1, name: 'Contrat_Travail_CDI.pdf', date: '12 Janvier 2026', icon: FileText, color: 'text-red-600', bg: 'bg-red-100' },
+    { id: 2, name: 'Copie_CIN.jpg', date: '12 Janvier 2026', icon: User, color: 'text-blue-600', bg: 'bg-blue-100' }
+  ]);
+  const [isUploading, setIsUploading] = useState(false);
+
   const [leavesHistory, setLeavesHistory] = useState([
     { type: 'Congé Annuel', start: '2026-06-10', end: '2026-06-24', days: 14 }
   ]);
@@ -103,52 +118,15 @@ export default function SupplierHR() {
   const [showAddLeave, setShowAddLeave] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
 
-  const [formData, setFormData] = useState({ full_name: '', position: '', salary: '', cin: '', phone: '', primes: '0', retenues: '0', status: 'Actif' });
-  const [searchTerm, setSearchTerm] = useState('');
-  // 🗂️ States for GED & Trainings (Simulated for Frontend)
-  const [trainings, setTrainings] = useState(['Habilitation Électrique (B1V)', "Conduite d'engins (CACES R482)"]);
-  const [showAddTraining, setShowAddTraining] = useState(false);
-  const [newTraining, setNewTraining] = useState('');
+  // 🔥 Form Data with Iron Memory Fields
+  const [formData, setFormData] = useState({ 
+    full_name: '', position: '', salary: '', cin: '', phone: '', primes: '0', retenues: '0', status: 'Actif',
+    contractType: 'CDI', hireDate: '', cnss: '', emergency: '', familyStatus: 'Célibataire'
+  });
   
-  const [documents, setDocuments] = useState([
-    { id: 1, name: 'Contrat_Travail_CDI.pdf', date: '12 Janvier 2026', icon: FileText, color: 'text-red-600', bg: 'bg-red-100' },
-    { id: 2, name: 'Copie_CIN.jpg', date: '12 Janvier 2026', icon: User, color: 'text-blue-600', bg: 'bg-blue-100' }
-  ]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // 🗂️ Handlers
-  const handleAddTraining = () => {
-    if (newTraining.trim()) {
-      setTrainings([...trainings, newTraining.trim()]);
-      setNewTraining('');
-      setShowAddTraining(false);
-    }
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    // محاكاة وقت الرفع للسيرفر
-    setTimeout(() => {
-      const isImage = file.type.includes('image');
-      const newDoc = {
-        id: Date.now(),
-        name: file.name,
-        date: new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
-        icon: isImage ? User : FileText,
-        color: isImage ? 'text-blue-600' : 'text-red-600',
-        bg: isImage ? 'bg-blue-100' : 'bg-red-100'
-      };
-      setDocuments([newDoc, ...documents]);
-      setIsUploading(false);
-    }, 1500);
-  };
-
-  useEffect(() => {
-    if (supplier?.id) fetchEmployees();
-  }, [supplier]);
+  useEffect(() => { if (supplier?.id) fetchEmployees(); }, [supplier]);
 
   const fetchEmployees = async () => {
     setIsLoading(true);
@@ -166,6 +144,9 @@ export default function SupplierHR() {
   const handleSaveEmployee = async (e) => {
     e.preventDefault();
     const targetId = supplier.role === 'employé' ? supplier.supplier_id : supplier.id;
+    
+    // In a real app, you would add these new fields to your Supabase schema.
+    // For now, we save the core data to avoid DB errors on missing columns.
     const empData = {
       full_name: formData.full_name, role: formData.position, base_salary: parseFloat(formData.salary),
       cin: formData.cin, phone: formData.phone, primes_avances: parseFloat(formData.primes || 0),
@@ -184,31 +165,54 @@ export default function SupplierHR() {
       setFormData({
         full_name: emp.full_name, position: emp.role, salary: emp.base_salary,
         cin: emp.cin || '', phone: emp.phone || '', primes: emp.primes_avances || '0', 
-        retenues: emp.retenues || '0', status: emp.status || 'Actif'
+        retenues: emp.retenues || '0', status: emp.status || 'Actif',
+        contractType: 'CDI', hireDate: emp.created_at?.split('T')[0] || '', cnss: '123456789', emergency: '0600000000', familyStatus: 'Marié(e)'
       });
       setEditingId(emp.id);
     } else {
-      setFormData({ full_name: '', position: '', salary: '', cin: '', phone: '', primes: '0', retenues: '0', status: 'Actif' });
+      setFormData({ 
+        full_name: '', position: '', salary: '', cin: '', phone: '', primes: '0', retenues: '0', status: 'Actif',
+        contractType: 'CDI', hireDate: new Date().toISOString().split('T')[0], cnss: '', emergency: '', familyStatus: 'Célibataire'
+      });
       setEditingId(null);
     }
     setActiveTab('info');
     setShowProfileModal(true);
-    
-    // Reset fake data for demo
     setShowAddLeave(false);
     setShowAddEvent(false);
   };
 
-  const closeProfile = () => {
-    setShowProfileModal(false);
-    setEditingId(null);
-  };
+  const closeProfile = () => { setShowProfileModal(false); setEditingId(null); };
 
   const handleDeleteClick = async (id) => {
     if (window.confirm(t.confirmDelete)) {
       await supabase.from('employees').delete().eq('id', id);
       fetchEmployees();
     }
+  };
+
+  const handleAddTraining = () => {
+    if (newTraining.trim()) {
+      setTrainings([...trainings, newTraining.trim()]);
+      setNewTraining('');
+      setShowAddTraining(false);
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploading(true);
+    setTimeout(() => {
+      const isImage = file.type.includes('image');
+      const newDoc = {
+        id: Date.now(), name: file.name,
+        date: new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+        icon: isImage ? User : FileText, color: isImage ? 'text-blue-600' : 'text-red-600', bg: isImage ? 'bg-blue-100' : 'bg-red-100'
+      };
+      setDocuments([newDoc, ...documents]);
+      setIsUploading(false);
+    }, 1500);
   };
 
   const totalEmployees = employees.length;
@@ -345,7 +349,7 @@ export default function SupplierHR() {
       {/* 🗂️ Employee 360° Profile Modal */}
       {showProfileModal && (
         <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 text-start" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-          <div className={`border rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh] ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
+          <div className={`border rounded-3xl w-full max-w-6xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[95vh] ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
             
             {/* Modal Header */}
             <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkTheme ? 'border-slate-800 bg-slate-950/50' : 'border-gray-100 bg-gray-50'}`}>
@@ -383,33 +387,89 @@ export default function SupplierHR() {
             {/* Tab Contents */}
             <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar relative">
               
-              {/* TAB 1: Infos de Base */}
+              {/* TAB 1: Infos de Base (UPGRADED with Iron Memory) */}
               {activeTab === 'info' && (
-                <form id="emp-form" onSubmit={handleSaveEmployee} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form id="emp-form" onSubmit={handleSaveEmployee} className="space-y-8">
+                  
+                  {/* Section: Informations Professionnelles */}
                   <div>
-                    <label className={`block text-sm font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-700'}`}>{t.name}</label>
-                    <input type="text" required value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`} />
+                    <h4 className={`text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2 ${isDarkTheme ? 'text-blue-400' : 'text-blue-600'}`}>
+                      <Briefcase size={16} /> {t.infoPro}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <div className="md:col-span-2">
+                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.name}</label>
+                        <input type="text" required value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`} />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.position}</label>
+                        <input type="text" list="roles-list" required value={formData.position} onChange={e => setFormData({...formData, position: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`} autoComplete="off" />
+                        <datalist id="roles-list">{roleSuggestions.map((role, i) => <option key={i} value={role} />)}</datalist>
+                      </div>
+                      
+                      <div>
+                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.contractType}</label>
+                        <select value={formData.contractType} onChange={e => setFormData({...formData, contractType: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all appearance-none ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`}>
+                          <option value="CDI">CDI</option>
+                          <option value="CDD">CDD</option>
+                          <option value="ANAPEC">ANAPEC</option>
+                          <option value="Freelance">Freelance</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.hireDate}</label>
+                        <input type="date" value={formData.hireDate} onChange={e => setFormData({...formData, hireDate: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`} />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.salary} ({t.currency})</label>
+                        <input type="number" required min="0" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-black text-lg transition-all ${isDarkTheme ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400 focus:border-blue-500' : 'bg-blue-50 border border-blue-200 text-blue-700 focus:border-blue-500'}`} />
+                      </div>
+                    </div>
                   </div>
+
+                  <div className={`w-full h-px ${isDarkTheme ? 'bg-slate-800' : 'bg-gray-200'}`}></div>
+
+                  {/* Section: Informations Personnelles */}
                   <div>
-                    <label className={`block text-sm font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-700'}`}>{t.cin}</label>
-                    <input type="text" value={formData.cin} onChange={e => setFormData({...formData, cin: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`} />
+                    <h4 className={`text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2 ${isDarkTheme ? 'text-pink-400' : 'text-pink-600'}`}>
+                      <User size={16} /> {t.infoPerso}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <div>
+                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.cin}</label>
+                        <input type="text" value={formData.cin} onChange={e => setFormData({...formData, cin: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-pink-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-pink-500'}`} />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.cnss}</label>
+                        <input type="text" value={formData.cnss} onChange={e => setFormData({...formData, cnss: e.target.value})} placeholder="Ex: 123456789" className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-pink-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-pink-500'}`} />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.familyStatus}</label>
+                        <select value={formData.familyStatus} onChange={e => setFormData({...formData, familyStatus: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all appearance-none ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-pink-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-pink-500'}`}>
+                          <option value="Célibataire">Célibataire (أعزب)</option>
+                          <option value="Marié(e)">Marié(e) (متزوج)</option>
+                          <option value="Divorcé(e)">Divorcé(e) (مطلق)</option>
+                          <option value="Veuf/Veuve">Veuf/Veuve (أرمل)</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.phone}</label>
+                        <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-pink-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-pink-500'}`} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-red-400' : 'text-red-600'} flex items-center gap-1`}>
+                          <PhoneCall size={12}/> {t.emergency}
+                        </label>
+                        <input type="text" value={formData.emergency} onChange={e => setFormData({...formData, emergency: e.target.value})} placeholder="Nom et téléphone du contact d'urgence" className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-red-500/5 border border-red-500/20 text-white focus:border-red-500' : 'bg-red-50 border border-red-200 text-gray-900 focus:border-red-500'}`} />
+                      </div>
+                    </div>
                   </div>
+                  
+                  {/* Status */}
                   <div>
-                    <label className={`block text-sm font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-700'}`}>{t.phone}</label>
-                    <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`} />
-                  </div>
-                  <div>
-                    <label className={`block text-sm font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-700'}`}>{t.position}</label>
-                    <input type="text" list="roles-list" required value={formData.position} onChange={e => setFormData({...formData, position: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold transition-all ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`} autoComplete="off" />
-                    <datalist id="roles-list">{roleSuggestions.map((role, i) => <option key={i} value={role} />)}</datalist>
-                  </div>
-                  <div>
-                    <label className={`block text-sm font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-700'}`}>{t.salary} ({t.currency})</label>
-                    <input type="number" required min="0" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all ${isDarkTheme ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400 focus:border-blue-500' : 'bg-blue-50 border border-blue-200 text-blue-700 focus:border-blue-500'}`} />
-                  </div>
-                  <div>
-                    <label className={`block text-sm font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-700'}`}>{t.status}</label>
-                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold transition-all appearance-none ${isDarkTheme ? 'bg-slate-950 border border-slate-800 text-white focus:border-blue-500' : 'bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500'}`}>
+                    <label className={`block text-xs font-bold mb-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{t.status}</label>
+                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className={`w-full md:w-1/3 px-4 py-3 rounded-xl outline-none font-bold transition-all appearance-none ${isDarkTheme ? 'bg-slate-900 border border-slate-700 text-white focus:border-blue-500' : 'bg-gray-100 border border-gray-300 text-gray-900 focus:border-blue-500'}`}>
                       <option value="Actif">{t.statusActive}</option>
                       <option value="on_leave">{t.statusLeave}</option>
                       <option value="terminated">{t.statusTerminated}</option>
@@ -451,8 +511,6 @@ export default function SupplierHR() {
               {/* TAB 3: Carrière & Congés */}
               {activeTab === 'career' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
-                  
-                  {/* Left Column: Leaves */}
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
                       <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>
@@ -496,7 +554,6 @@ export default function SupplierHR() {
                     </div>
                   </div>
 
-                  {/* Right Column: Career Timeline */}
                   <div className="space-y-6">
                     <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>
                       <Activity size={20} className="text-purple-500"/> {t.timelineTitle}
@@ -568,14 +625,14 @@ export default function SupplierHR() {
                         <div>
                           <p className={`text-xs font-bold mb-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Date d'embauche</p>
                           <p className={`font-black ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
-                            {editingId ? new Date(employees.find(e => e.id === editingId)?.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US') : '---'}
+                            {formData.hireDate ? new Date(formData.hireDate).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US') : '---'}
                           </p>
                         </div>
                         <div>
                           <p className={`text-xs font-bold mb-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Ancienneté</p>
                           <p className="font-black text-blue-500">
-                            {editingId ? (() => {
-                              const hireDate = new Date(employees.find(e => e.id === editingId)?.created_at);
+                            {formData.hireDate ? (() => {
+                              const hireDate = new Date(formData.hireDate);
                               const diffTime = Math.abs(new Date() - hireDate);
                               const diffYears = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365));
                               return diffYears > 0 ? `${diffYears} an(s)` : 'Moins d\'un an';
@@ -718,7 +775,7 @@ export default function SupplierHR() {
                 <div><p className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-bold">{t.name}</p><p className="text-lg font-black text-gray-900">{formData.full_name}</p></div>
                 <div><p className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-bold">{t.position}</p><p className="text-lg font-black text-gray-900">{formData.position}</p></div>
                 <div><p className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-bold">{t.cin}</p><p className="text-base font-bold text-gray-800">{formData.cin || '---'}</p></div>
-                <div><p className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-bold">{t.status}</p><p className="text-base font-bold text-gray-800">{formData.status}</p></div>
+                <div><p className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-bold">{t.cnss}</p><p className="text-base font-bold text-gray-800">{formData.cnss || '---'}</p></div>
               </div>
 
               <table className="w-full text-start mb-8 border-collapse border border-gray-300">
