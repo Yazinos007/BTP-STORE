@@ -31,7 +31,8 @@ const translations = {
     eventPromo: 'ترقية', eventTrain: 'دورة تدريبية', eventWarn: 'إنذار', eventTitle: 'عنوان الحدث',
     contractType: 'نوع العقد', hireDate: 'تاريخ التعيين', cnss: 'رقم الضمان (CNSS)', 
     emergency: 'هاتف الطوارئ', familyStatus: 'الحالة العائلية', infoPro: 'بيانات مهنية', infoPerso: 'بيانات شخصية',
-    single: 'أعزب / عزباء', married: 'متزوج(ة)', divorced: 'مطلق(ة)', widowed: 'أرمل(ة)'
+    single: 'أعزب / عزباء', married: 'متزوج(ة)', divorced: 'مطلق(ة)', widowed: 'أرمل(ة)',
+    annualLeave: 'إجازة سنوية', sickLeave: 'إجازة مرضية', unpaidLeave: 'إجازة بدون راتب', maternityLeave: 'إجازة أمومة/أبوة'
   },
   fr: {
     title: 'Ressources Humaines', subtitle: 'Gestion des employés, carrières et paie.',
@@ -54,7 +55,8 @@ const translations = {
     eventPromo: 'Promotion', eventTrain: 'Formation', eventWarn: 'Avertissement', eventTitle: 'Titre de l\'événement',
     contractType: 'Type de Contrat', hireDate: 'Date d\'embauche', cnss: 'N° CNSS', 
     emergency: 'Contact d\'Urgence', familyStatus: 'Situation Familiale', infoPro: 'Infos Pro.', infoPerso: 'Infos Perso.',
-    single: 'Célibataire', married: 'Marié(e)', divorced: 'Divorcé(e)', widowed: 'Veuf/Veuve'
+    single: 'Célibataire', married: 'Marié(e)', divorced: 'Divorcé(e)', widowed: 'Veuf/Veuve',
+    annualLeave: 'Congé Annuel', sickLeave: 'Congé Maladie', unpaidLeave: 'Congé sans solde', maternityLeave: 'Congé Maternité/Paternité'
   },
   en: {
     title: 'Human Resources', subtitle: 'Manage employees, careers, and payroll.',
@@ -77,7 +79,8 @@ const translations = {
     eventPromo: 'Promotion', eventTrain: 'Training', eventWarn: 'Warning', eventTitle: 'Event Title',
     contractType: 'Contract Type', hireDate: 'Hire Date', cnss: 'CNSS Number', 
     emergency: 'Emergency Contact', familyStatus: 'Family Status', infoPro: 'Pro Info', infoPerso: 'Personal Info',
-    single: 'Single', married: 'Married', divorced: 'Divorced', widowed: 'Widowed'
+    single: 'Single', married: 'Married', divorced: 'Divorced', widowed: 'Widowed',
+    annualLeave: 'Annual Leave', sickLeave: 'Sick Leave', unpaidLeave: 'Unpaid Leave', maternityLeave: 'Maternity/Paternity'
   }
 };
 
@@ -529,7 +532,13 @@ export default function SupplierHR() {
                       {showAddLeave ? (
                         <div className="p-4 rounded-xl border mt-4 bg-slate-900 border-orange-500/30">
                           <div className="space-y-3">
-                            <input type="text" placeholder={t.leaveType} className="w-full px-3 py-2 rounded-lg text-sm outline-none border bg-slate-800 border-slate-700 text-white" />
+                            <select className="w-full px-3 py-2 rounded-lg text-sm font-bold outline-none border bg-slate-800 border-slate-700 text-white appearance-none">
+                              <option value="" disabled selected>{t.leaveType}</option>
+                              <option value={t.annualLeave}>{t.annualLeave}</option>
+                              <option value={t.sickLeave}>{t.sickLeave}</option>
+                              <option value={t.maternityLeave}>{t.maternityLeave}</option>
+                              <option value={t.unpaidLeave}>{t.unpaidLeave}</option>
+                            </select>
                             <div className="flex gap-2">
                               <input type="date" className="flex-1 px-3 py-2 rounded-lg text-sm outline-none border bg-slate-800 border-slate-700 text-white" />
                               <input type="date" className="flex-1 px-3 py-2 rounded-lg text-sm outline-none border bg-slate-800 border-slate-700 text-white" />
@@ -563,13 +572,18 @@ export default function SupplierHR() {
                           const color = isPromo ? 'text-emerald-400 bg-emerald-500/20' : isTrain ? 'text-blue-400 bg-blue-500/20' : 'text-red-400 bg-red-500/20';
                           
                           return (
-                            <div key={idx} className="relative">
+                            <div key={idx} className="relative group">
                               <div className={`absolute -left-[35px] w-8 h-8 rounded-full border-4 border-slate-900 flex items-center justify-center ${color}`}>
                                 <Icon size={12} className="text-current" />
                               </div>
-                              <div className="p-4 rounded-xl border bg-slate-900 border-slate-700">
-                                <p className="font-bold text-sm text-white">{ev.title}</p>
-                                <p className="text-xs mt-1 text-slate-400">{ev.date}</p>
+                              <div className="p-4 rounded-xl border bg-slate-900 border-slate-700 flex justify-between items-start">
+                                <div>
+                                  <p className="font-bold text-sm text-white">{ev.title}</p>
+                                  <p className="text-xs mt-1 text-slate-400">{ev.date}</p>
+                                </div>
+                                <button onClick={() => setCareerEvents(careerEvents.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1">
+                                  <Trash2 size={16} />
+                                </button>
                               </div>
                             </div>
                           );
