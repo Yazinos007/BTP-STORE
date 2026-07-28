@@ -5,7 +5,8 @@ import useSupplierStore from '../store/useSupplierStore';
 import { 
   Briefcase, UserPlus, DollarSign, Users, CheckCircle, XCircle, Clock, 
   FileText, Printer, X, Trash2, Search, UserCheck, User, Wallet, 
-  GraduationCap, FolderOpen, AlertCircle, ChevronRight, Loader2
+  GraduationCap, FolderOpen, AlertCircle, ChevronRight, Loader2,
+  CalendarDays, Award, BookOpen, AlertTriangle, Plus, Activity
 } from 'lucide-react';
 
 const translations = {
@@ -24,7 +25,11 @@ const translations = {
     designation: 'البيان', amount: 'المبلغ', netToPay: 'صافي الأجر للاستلام',
     employerSign: 'توقيع المشغل', employeeSign: 'توقيع الموظف', docInternal: 'مستند داخلي - الأجور',
     profileTooltip: 'فتح ملف الموظف', deleteTooltip: 'حذف الموظف',
-    comingSoon: 'هذه الميزة قيد التطوير وستتوفر قريباً!', module: 'إدارة الـ HR'
+    comingSoon: 'هذه الميزة قيد التطوير وستتوفر قريباً!', module: 'إدارة الـ HR',
+    leavesTitle: 'إدارة الإجازات', leaveBalance: 'الرصيد:', days: 'أيام',
+    addLeave: 'إضافة إجازة', leaveType: 'نوع الإجازة', leaveStart: 'تاريخ البدء', leaveEnd: 'تاريخ الانتهاء',
+    timelineTitle: 'المسار المهني (Timeline)', addEvent: 'إضافة حدث',
+    eventPromo: 'ترقية', eventTrain: 'دورة تدريبية', eventWarn: 'إنذار', eventTitle: 'عنوان الحدث'
   },
   fr: {
     title: 'Ressources Humaines', subtitle: 'Gestion des employés, carrières et paie.',
@@ -41,7 +46,11 @@ const translations = {
     designation: 'Désignation', amount: 'Montant', netToPay: 'Net à Payer',
     employerSign: 'Signature de l\'Employeur', employeeSign: 'Signature de l\'Employé', docInternal: 'Document Interne - Paie',
     profileTooltip: 'Ouvrir le Profil', deleteTooltip: 'Supprimer',
-    comingSoon: 'Cette fonctionnalité est en cours de développement !', module: 'Module HR'
+    comingSoon: 'Cette fonctionnalité est en cours de développement !', module: 'Module HR',
+    leavesTitle: 'Gestion des Congés', leaveBalance: 'Solde :', days: 'Jours',
+    addLeave: 'Nouveau Congé', leaveType: 'Type de congé', leaveStart: 'Date de début', leaveEnd: 'Date de fin',
+    timelineTitle: 'Parcours Professionnel', addEvent: 'Ajouter Événement',
+    eventPromo: 'Promotion', eventTrain: 'Formation', eventWarn: 'Avertissement', eventTitle: 'Titre de l\'événement'
   },
   en: {
     title: 'Human Resources', subtitle: 'Manage employees, careers, and payroll.',
@@ -58,7 +67,11 @@ const translations = {
     designation: 'Description', amount: 'Amount', netToPay: 'Net Pay',
     employerSign: 'Employer Signature', employeeSign: 'Employee Signature', docInternal: 'Internal Document - Payroll',
     profileTooltip: 'Open Profile', deleteTooltip: 'Delete',
-    comingSoon: 'This feature is under development and will be available soon!', module: 'HR Module'
+    comingSoon: 'This feature is under development and will be available soon!', module: 'HR Module',
+    leavesTitle: 'Leave Management', leaveBalance: 'Balance:', days: 'Days',
+    addLeave: 'Add Leave', leaveType: 'Leave Type', leaveStart: 'Start Date', leaveEnd: 'End Date',
+    timelineTitle: 'Career Timeline', addEvent: 'Add Event',
+    eventPromo: 'Promotion', eventTrain: 'Training', eventWarn: 'Warning', eventTitle: 'Event Title'
   }
 };
 
@@ -67,7 +80,6 @@ export default function SupplierHR() {
   const { supplier } = useSupplierStore();
   const t = translations[language] || translations['fr'];
   
-  // 👻 Theme Awareness
   const isDarkTheme = supplier?.supplier_type === 'wholesale' || supplier?.role === 'grossiste' || supplier?.role === 'employé';
 
   const [employees, setEmployees] = useState([]);
@@ -77,9 +89,19 @@ export default function SupplierHR() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
   const [editingId, setEditingId] = useState(null);
-  
-  // Payslip State
   const [showPayslip, setShowPayslip] = useState(false);
+
+  // Fake states for Career Tab UI (will reset on close)
+  const [leavesHistory, setLeavesHistory] = useState([
+    { type: 'Congé Annuel', start: '2026-06-10', end: '2026-06-24', days: 14 }
+  ]);
+  const [careerEvents, setCareerEvents] = useState([
+    { type: 'promotion', title: 'Promotion au poste de Manager', date: '2025-11-01' },
+    { type: 'training', title: 'Formation Sécurité Routière', date: '2025-04-15' }
+  ]);
+  
+  const [showAddLeave, setShowAddLeave] = useState(false);
+  const [showAddEvent, setShowAddEvent] = useState(false);
 
   const [formData, setFormData] = useState({ full_name: '', position: '', salary: '', cin: '', phone: '', primes: '0', retenues: '0', status: 'Actif' });
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,6 +153,10 @@ export default function SupplierHR() {
     }
     setActiveTab('info');
     setShowProfileModal(true);
+    
+    // Reset fake data for demo
+    setShowAddLeave(false);
+    setShowAddEvent(false);
   };
 
   const closeProfile = () => {
@@ -278,7 +304,7 @@ export default function SupplierHR() {
 
       {/* 🗂️ Employee 360° Profile Modal */}
       {showProfileModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 text-start" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 text-start" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <div className={`border rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh] ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
             
             {/* Modal Header */}
@@ -315,7 +341,7 @@ export default function SupplierHR() {
             </div>
             
             {/* Tab Contents */}
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar relative">
               
               {/* TAB 1: Infos de Base */}
               {activeTab === 'info' && (
@@ -354,7 +380,7 @@ export default function SupplierHR() {
 
               {/* TAB 2: Paie (Payroll & Payslip Generator) */}
               {activeTab === 'paie' && (
-                <div className="space-y-8">
+                <div className="space-y-8 animate-fade-in">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className={`p-6 rounded-2xl border ${isDarkTheme ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'}`}>
                       <label className={`block text-sm font-black mb-3 ${isDarkTheme ? 'text-emerald-400' : 'text-emerald-700'}`}>{t.primes}</label>
@@ -382,22 +408,114 @@ export default function SupplierHR() {
                 </div>
               )}
 
-              {/* TAB 3: Carrière & Congés (Placeholder pour la prochaine étape) */}
+              {/* TAB 3: Carrière & Congés */}
               {activeTab === 'career' && (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <div className={`p-6 rounded-full mb-6 ${isDarkTheme ? 'bg-purple-500/10 text-purple-400' : 'bg-purple-100 text-purple-600'}`}>
-                    <GraduationCap size={64} />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
+                  
+                  {/* Left Column: Leaves */}
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>
+                        <CalendarDays size={20} className="text-orange-500"/> {t.leavesTitle}
+                      </h4>
+                      <span className={`px-4 py-1.5 rounded-lg font-black text-sm border ${isDarkTheme ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                        {t.leaveBalance} 18 {t.days}
+                      </span>
+                    </div>
+
+                    <div className={`border rounded-2xl p-4 space-y-4 ${isDarkTheme ? 'bg-slate-950 border-slate-800' : 'bg-gray-50 border-gray-200'}`}>
+                      {leavesHistory.map((leave, idx) => (
+                        <div key={idx} className={`p-4 rounded-xl border flex justify-between items-center ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-100'}`}>
+                          <div>
+                            <p className={`font-bold ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>{leave.type}</p>
+                            <p className={`text-xs mt-1 ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>{leave.start} ➔ {leave.end}</p>
+                          </div>
+                          <span className="font-black font-mono text-orange-500">{leave.days} J</span>
+                        </div>
+                      ))}
+                      
+                      {showAddLeave ? (
+                        <div className={`p-4 rounded-xl border mt-4 ${isDarkTheme ? 'bg-slate-900 border-orange-500/30' : 'bg-white border-orange-200'}`}>
+                          <div className="space-y-3">
+                            <input type="text" placeholder={t.leaveType} className={`w-full px-3 py-2 rounded-lg text-sm outline-none border ${isDarkTheme ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`} />
+                            <div className="flex gap-2">
+                              <input type="date" className={`flex-1 px-3 py-2 rounded-lg text-sm outline-none border ${isDarkTheme ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`} />
+                              <input type="date" className={`flex-1 px-3 py-2 rounded-lg text-sm outline-none border ${isDarkTheme ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`} />
+                            </div>
+                            <div className="flex gap-2 pt-2">
+                              <button onClick={() => setShowAddLeave(false)} className={`flex-1 py-2 text-sm font-bold rounded-lg ${isDarkTheme ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-gray-200 text-gray-800'}`}>{t.cancel}</button>
+                              <button className="flex-[2] py-2 bg-orange-500 text-white text-sm font-black rounded-lg shadow-lg hover:bg-orange-600">{t.save}</button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => setShowAddLeave(true)} className="w-full py-3 mt-2 border-2 border-dashed border-orange-500/50 text-orange-500 hover:bg-orange-500/10 font-black rounded-xl transition-colors flex items-center justify-center gap-2">
+                          <Plus size={18}/> {t.addLeave}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <h4 className={`text-2xl font-black mb-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>Carrière & Congés</h4>
-                  <p className={`font-medium max-w-md ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>{t.comingSoon}</p>
-                  <p className={`text-sm mt-4 font-bold ${isDarkTheme ? 'text-slate-500' : 'text-gray-400'}`}>Timeline, Formations, Évaluations, Gestion des soldes de congés...</p>
+
+                  {/* Right Column: Career Timeline */}
+                  <div className="space-y-6">
+                    <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>
+                      <Activity size={20} className="text-purple-500"/> {t.timelineTitle}
+                    </h4>
+                    
+                    <div className={`border rounded-2xl p-6 ${isDarkTheme ? 'bg-slate-950 border-slate-800' : 'bg-gray-50 border-gray-200'}`}>
+                      <div className="relative border-l-2 border-slate-700/50 pl-6 space-y-6 ml-3">
+                        
+                        {careerEvents.map((ev, idx) => {
+                          const isPromo = ev.type === 'promotion';
+                          const isTrain = ev.type === 'training';
+                          const Icon = isPromo ? Award : isTrain ? BookOpen : AlertTriangle;
+                          const color = isPromo ? 'text-emerald-500 bg-emerald-500/20' : isTrain ? 'text-blue-500 bg-blue-500/20' : 'text-red-500 bg-red-500/20';
+                          
+                          return (
+                            <div key={idx} className="relative">
+                              <div className={`absolute -left-[35px] w-8 h-8 rounded-full border-4 border-slate-900 flex items-center justify-center ${color}`}>
+                                <Icon size={12} className="text-current" />
+                              </div>
+                              <div className={`p-4 rounded-xl border ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
+                                <p className={`font-bold text-sm ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>{ev.title}</p>
+                                <p className={`text-xs mt-1 ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>{ev.date}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {showAddEvent ? (
+                          <div className={`p-4 rounded-xl border mt-4 ${isDarkTheme ? 'bg-slate-900 border-purple-500/30' : 'bg-white border-purple-200'}`}>
+                            <div className="space-y-3">
+                              <select className={`w-full px-3 py-2 rounded-lg text-sm font-bold outline-none border ${isDarkTheme ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`}>
+                                <option value="promotion">{t.eventPromo}</option>
+                                <option value="training">{t.eventTrain}</option>
+                                <option value="warning">{t.eventWarn}</option>
+                              </select>
+                              <input type="text" placeholder={t.eventTitle} className={`w-full px-3 py-2 rounded-lg text-sm outline-none border ${isDarkTheme ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`} />
+                              <div className="flex gap-2 pt-2">
+                                <button onClick={() => setShowAddEvent(false)} className={`flex-1 py-2 text-sm font-bold rounded-lg ${isDarkTheme ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-gray-200 text-gray-800'}`}>{t.cancel}</button>
+                                <button className="flex-[2] py-2 bg-purple-500 text-white text-sm font-black rounded-lg shadow-lg hover:bg-purple-600">{t.save}</button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button onClick={() => setShowAddEvent(true)} className="w-full py-3 border-2 border-dashed border-purple-500/50 text-purple-500 hover:bg-purple-500/10 font-black rounded-xl transition-colors flex items-center justify-center gap-2 mt-4">
+                            <Plus size={18}/> {t.addEvent}
+                          </button>
+                        )}
+                        
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               )}
 
               {/* TAB 4: Documents (GED) (Placeholder pour la prochaine étape) */}
               {activeTab === 'docs' && (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <div className={`p-6 rounded-full mb-6 ${isDarkTheme ? 'bg-orange-500/10 text-orange-400' : 'bg-orange-100 text-orange-600'}`}>
+                <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                  <div className={`p-6 rounded-full mb-6 ${isDarkTheme ? 'bg-pink-500/10 text-pink-400' : 'bg-pink-100 text-pink-600'}`}>
                     <FolderOpen size={64} />
                   </div>
                   <h4 className={`text-2xl font-black mb-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>Dossier Électronique (GED)</h4>
@@ -423,7 +541,7 @@ export default function SupplierHR() {
         </div>
       )}
 
-      {/* 🧾 Payslip Overlay (Générateur de Fiche de Paie) */}
+      {/* 🧾 Payslip Overlay */}
       {showPayslip && editingId && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex justify-center items-center overflow-y-auto py-10 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <div className="bg-white text-gray-800 w-[700px] shadow-2xl p-10 relative print-area rounded-2xl animate-slide-up">
