@@ -512,15 +512,105 @@ export default function SupplierHR() {
                 </div>
               )}
 
-              {/* TAB 4: Documents (GED) (Placeholder pour la prochaine étape) */}
+              {/* TAB 4: Documents (GED) & Infos Avancées */}
               {activeTab === 'docs' && (
-                <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-                  <div className={`p-6 rounded-full mb-6 ${isDarkTheme ? 'bg-pink-500/10 text-pink-400' : 'bg-pink-100 text-pink-600'}`}>
-                    <FolderOpen size={64} />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+                  
+                  {/* العمود الأيمن/الأيسر: المعلومات السريعة والتكوين */}
+                  <div className="lg:col-span-1 space-y-6">
+                    
+                    {/* بطاقة الأقدمية */}
+                    <div className={`p-6 rounded-2xl border ${isDarkTheme ? 'bg-slate-950 border-slate-800' : 'bg-gray-50 border-gray-200'}`}>
+                      <h4 className={`text-sm font-black uppercase tracking-wider mb-4 flex items-center gap-2 ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>
+                        <Clock size={16} /> Historique & Ancienneté
+                      </h4>
+                      <div className="space-y-4">
+                        <div>
+                          <p className={`text-xs font-bold mb-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Date d'embauche</p>
+                          <p className={`font-black ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
+                            {editingId ? new Date(employees.find(e => e.id === editingId)?.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US') : '---'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className={`text-xs font-bold mb-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Ancienneté</p>
+                          <p className="font-black text-blue-500">
+                            {editingId ? (() => {
+                              const hireDate = new Date(employees.find(e => e.id === editingId)?.created_at);
+                              const diffTime = Math.abs(new Date() - hireDate);
+                              const diffYears = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365));
+                              return diffYears > 0 ? `${diffYears} an(s)` : 'Moins d\'un an';
+                            })() : '---'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* بطاقة الشهادات والدورات الخاصة بقطاع BTP */}
+                    <div className={`p-6 rounded-2xl border ${isDarkTheme ? 'bg-blue-900/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
+                      <h4 className={`text-sm font-black uppercase tracking-wider mb-4 flex items-center gap-2 ${isDarkTheme ? 'text-blue-400' : 'text-blue-700'}`}>
+                        <BookOpen size={16} /> Formations BTP
+                      </h4>
+                      <ul className="space-y-3">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                          <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>Habilitation Électrique (B1V)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                          <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>Conduite d'engins (CACES R482)</span>
+                        </li>
+                      </ul>
+                      <button className="mt-4 w-full py-2 text-xs font-bold text-blue-600 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors">
+                        + Ajouter une formation
+                      </button>
+                    </div>
+
                   </div>
-                  <h4 className={`text-2xl font-black mb-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>Dossier Électronique (GED)</h4>
-                  <p className={`font-medium max-w-md ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>{t.comingSoon}</p>
-                  <p className={`text-sm mt-4 font-bold ${isDarkTheme ? 'text-slate-500' : 'text-gray-400'}`}>Contrat de travail, CIN scannée, Certificats médicaux, Avertissements...</p>
+
+                  {/* العمود الأعرض: إدارة الوثائق */}
+                  <div className="lg:col-span-2">
+                    <div className={`border rounded-2xl p-6 h-full ${isDarkTheme ? 'bg-slate-950 border-slate-800' : 'bg-gray-50 border-gray-200'}`}>
+                      <h4 className={`font-black text-lg flex items-center gap-2 mb-6 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>
+                        <FolderOpen size={20} className="text-pink-500"/> Fichiers & Documents Légaux
+                      </h4>
+                      
+                      {/* منطقة الرفع */}
+                      <div className={`border-2 border-dashed rounded-xl p-8 text-center mb-6 transition-colors cursor-pointer ${isDarkTheme ? 'border-slate-700 hover:border-pink-500/50 hover:bg-pink-500/5' : 'border-gray-300 hover:border-pink-400 hover:bg-pink-50'}`}>
+                        <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 ${isDarkTheme ? 'bg-slate-900 text-slate-400' : 'bg-white text-gray-400 shadow-sm'}`}>
+                          <Plus size={24} />
+                        </div>
+                        <p className={`font-bold ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>Glissez et déposez vos fichiers ici</p>
+                        <p className={`text-xs mt-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>PDF, PNG, JPG (Max 5MB)</p>
+                      </div>
+
+                      {/* قائمة الوثائق الافتراضية */}
+                      <div className="space-y-3">
+                        <div className={`flex items-center justify-between p-4 rounded-xl border ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-red-100 text-red-600 rounded-lg"><FileText size={18} /></div>
+                            <div>
+                              <p className={`font-bold text-sm ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>Contrat_Travail_CDI.pdf</p>
+                              <p className={`text-xs ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Ajouté le 12 Janvier 2026</p>
+                            </div>
+                          </div>
+                          <button className="text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                        </div>
+
+                        <div className={`flex items-center justify-between p-4 rounded-xl border ${isDarkTheme ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><User size={18} /></div>
+                            <div>
+                              <p className={`font-bold text-sm ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>Copie_CIN.jpg</p>
+                              <p className={`text-xs ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>Ajouté le 12 Janvier 2026</p>
+                            </div>
+                          </div>
+                          <button className="text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
                 </div>
               )}
 
