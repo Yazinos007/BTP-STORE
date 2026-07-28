@@ -32,7 +32,12 @@ const translations = {
     contractType: 'نوع العقد', hireDate: 'تاريخ التعيين', cnss: 'رقم الضمان (CNSS)', 
     emergency: 'هاتف الطوارئ', familyStatus: 'الحالة العائلية', infoPro: 'بيانات مهنية', infoPerso: 'بيانات شخصية',
     single: 'أعزب / عزباء', married: 'متزوج(ة)', divorced: 'مطلق(ة)', widowed: 'أرمل(ة)',
-    annualLeave: 'إجازة سنوية', sickLeave: 'إجازة مرضية', unpaidLeave: 'إجازة بدون راتب', maternityLeave: 'إجازة أمومة/أبوة'
+    annualLeave: 'إجازة سنوية', sickLeave: 'إجازة مرضية', unpaidLeave: 'إجازة بدون راتب', maternityLeave: 'إجازة أمومة/أبوة',
+    historySeniority: 'السجل والأقدمية', seniority: 'الأقدمية', lessThanYear: 'أقل من سنة', years: 'سنة/سنوات',
+    btpTrainings: 'دورات التكوين (BTP)', addTraining: '+ إضافة دورة', trainingName: 'اسم الدورة التدريبية...',
+    legalDocs: 'الملفات والوثائق القانونية', dragDropFiles: 'اضغط أو اسحب الملفات هنا', uploading: 'جاري الرفع...',
+    noDocs: 'لم يتم إضافة أي وثيقة.', addedOn: 'أضيف في', daysAbbr: 'يوم', okBtn: 'إضافة', fileFormats: 'PDF, PNG, JPG (الحد الأقصى 5MB)',
+    bonusHint: 'يشمل منح المردودية، الأقدمية، إلخ.', deductHint: 'اقتطاعات الضمان الاجتماعي، السلف، إلخ.'
   },
   fr: {
     title: 'Ressources Humaines', subtitle: 'Gestion des employés, carrières et paie.',
@@ -56,7 +61,12 @@ const translations = {
     contractType: 'Type de Contrat', hireDate: 'Date d\'embauche', cnss: 'N° CNSS', 
     emergency: 'Contact d\'Urgence', familyStatus: 'Situation Familiale', infoPro: 'Infos Pro.', infoPerso: 'Infos Perso.',
     single: 'Célibataire', married: 'Marié(e)', divorced: 'Divorcé(e)', widowed: 'Veuf/Veuve',
-    annualLeave: 'Congé Annuel', sickLeave: 'Congé Maladie', unpaidLeave: 'Congé sans solde', maternityLeave: 'Congé Maternité/Paternité'
+    annualLeave: 'Congé Annuel', sickLeave: 'Congé Maladie', unpaidLeave: 'Congé sans solde', maternityLeave: 'Congé Maternité/Paternité',
+    historySeniority: 'Historique & Ancienneté', seniority: 'Ancienneté', lessThanYear: 'Moins d\'un an', years: 'an(s)',
+    btpTrainings: 'Formations BTP', addTraining: '+ Ajouter une formation', trainingName: 'Nom de la formation...',
+    legalDocs: 'Fichiers & Documents Légaux', dragDropFiles: 'Cliquez ou Glissez vos fichiers ici', uploading: 'Téléchargement en cours...',
+    noDocs: 'Aucun document n\'a été ajouté.', addedOn: 'Ajouté le', daysAbbr: 'J', okBtn: 'OK', fileFormats: 'PDF, PNG, JPG (Max 5MB)',
+    bonusHint: 'Inclut les primes de rendement, l\'ancienneté, etc.', deductHint: 'Cotisations CNSS, AMO, IR, Avances...'
   },
   en: {
     title: 'Human Resources', subtitle: 'Manage employees, careers, and payroll.',
@@ -80,7 +90,12 @@ const translations = {
     contractType: 'Contract Type', hireDate: 'Hire Date', cnss: 'CNSS Number', 
     emergency: 'Emergency Contact', familyStatus: 'Family Status', infoPro: 'Pro Info', infoPerso: 'Personal Info',
     single: 'Single', married: 'Married', divorced: 'Divorced', widowed: 'Widowed',
-    annualLeave: 'Annual Leave', sickLeave: 'Sick Leave', unpaidLeave: 'Unpaid Leave', maternityLeave: 'Maternity/Paternity'
+    annualLeave: 'Annual Leave', sickLeave: 'Sick Leave', unpaidLeave: 'Unpaid Leave', maternityLeave: 'Maternity/Paternity',
+    historySeniority: 'History & Seniority', seniority: 'Seniority', lessThanYear: 'Less than a year', years: 'year(s)',
+    btpTrainings: 'BTP Trainings', addTraining: '+ Add Training', trainingName: 'Training name...',
+    legalDocs: 'Legal Files & Documents', dragDropFiles: 'Click or Drag files here', uploading: 'Uploading...',
+    noDocs: 'No documents added yet.', addedOn: 'Added on', daysAbbr: 'D', okBtn: 'Add', fileFormats: 'PDF, PNG, JPG (Max 5MB)',
+    bonusHint: 'Includes performance bonuses, seniority, etc.', deductHint: 'CNSS, AMO, Tax, Advances...'
   }
 };
 
@@ -204,7 +219,7 @@ export default function SupplierHR() {
       const isImage = file.type.includes('image');
       const newDoc = {
         id: Date.now(), name: file.name,
-        date: new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+        date: new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { day: 'numeric', month: 'long', year: 'numeric' }),
         icon: isImage ? User : FileText, color: isImage ? 'text-blue-400' : 'text-red-400', bg: isImage ? 'bg-blue-500/10' : 'bg-red-500/10'
       };
       setDocuments([newDoc, ...documents]);
@@ -458,7 +473,7 @@ export default function SupplierHR() {
                         <label className="block text-xs font-bold mb-2 text-red-400 flex items-center gap-1">
                           <PhoneCall size={12}/> {t.emergency}
                         </label>
-                        <input type="text" value={formData.emergency} onChange={e => setFormData({...formData, emergency: e.target.value})} placeholder="Contact..." className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all bg-red-500/5 border border-red-500/20 text-white focus:border-red-500" />
+                        <input type="text" value={formData.emergency} onChange={e => setFormData({...formData, emergency: e.target.value})} placeholder="..." className="w-full px-4 py-3 rounded-xl outline-none font-bold transition-all bg-red-500/5 border border-red-500/20 text-white focus:border-red-500" />
                       </div>
                     </div>
                   </div>
@@ -482,12 +497,12 @@ export default function SupplierHR() {
                     <div className="p-6 rounded-2xl border bg-emerald-500/5 border-emerald-500/20">
                       <label className="block text-sm font-black mb-3 text-emerald-400">{t.primes}</label>
                       <input type="number" min="0" value={formData.primes} onChange={e => setFormData({...formData, primes: e.target.value})} className="w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 focus:border-emerald-500" />
-                      <p className="text-xs mt-2 font-bold text-emerald-500/70">Bonus, Primes, etc.</p>
+                      <p className="text-xs mt-2 font-bold text-emerald-500/70">{t.bonusHint}</p>
                     </div>
                     <div className="p-6 rounded-2xl border bg-red-500/5 border-red-500/20">
                       <label className="block text-sm font-black mb-3 text-red-400">{t.retenues}</label>
                       <input type="number" min="0" value={formData.retenues} onChange={e => setFormData({...formData, retenues: e.target.value})} className="w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all bg-red-500/10 border border-red-500/30 text-red-400 focus:border-red-500" />
-                      <p className="text-xs mt-2 font-bold text-red-500/70">CNSS, AMO, IR, etc.</p>
+                      <p className="text-xs mt-2 font-bold text-red-500/70">{t.deductHint}</p>
                     </div>
                   </div>
                   
@@ -522,10 +537,10 @@ export default function SupplierHR() {
                       {leavesHistory.map((leave, idx) => (
                         <div key={idx} className="p-4 rounded-xl border flex justify-between items-center bg-slate-900 border-slate-700">
                           <div>
-                            <p className="font-bold text-white">{leave.type}</p>
+                            <p className="font-bold text-white">{leave.type === 'Congé Annuel' ? t.annualLeave : leave.type}</p>
                             <p className="text-xs mt-1 text-slate-400">{leave.start} ➔ {leave.end}</p>
                           </div>
-                          <span className="font-black font-mono text-orange-500">{leave.days} J</span>
+                          <span className="font-black font-mono text-orange-500">{leave.days} {t.daysAbbr}</span>
                         </div>
                       ))}
                       
@@ -545,7 +560,7 @@ export default function SupplierHR() {
                             </div>
                             <div className="flex gap-2 pt-2">
                               <button onClick={() => setShowAddLeave(false)} className="flex-1 py-2 text-sm font-bold rounded-lg bg-slate-800 text-white hover:bg-slate-700">{t.cancel}</button>
-                              <button className="flex-[2] py-2 bg-orange-500 text-white text-sm font-black rounded-lg shadow-lg hover:bg-orange-600">{t.save}</button>
+                              <button className="flex-[2] py-2 bg-orange-500 text-white text-sm font-black rounded-lg shadow-lg hover:bg-orange-600">{t.okBtn}</button>
                             </div>
                           </div>
                         </div>
@@ -592,7 +607,7 @@ export default function SupplierHR() {
                         {showAddEvent ? (
                           <div className="p-4 rounded-xl border mt-4 bg-slate-900 border-purple-500/30">
                             <div className="space-y-3">
-                              <select className="w-full px-3 py-2 rounded-lg text-sm font-bold outline-none border bg-slate-800 border-slate-700 text-white">
+                              <select className="w-full px-3 py-2 rounded-lg text-sm font-bold outline-none border bg-slate-800 border-slate-700 text-white appearance-none">
                                 <option value="promotion">{t.eventPromo}</option>
                                 <option value="training">{t.eventTrain}</option>
                                 <option value="warning">{t.eventWarn}</option>
@@ -600,7 +615,7 @@ export default function SupplierHR() {
                               <input type="text" placeholder={t.eventTitle} className="w-full px-3 py-2 rounded-lg text-sm outline-none border bg-slate-800 border-slate-700 text-white" />
                               <div className="flex gap-2 pt-2">
                                 <button onClick={() => setShowAddEvent(false)} className="flex-1 py-2 text-sm font-bold rounded-lg bg-slate-800 text-white hover:bg-slate-700">{t.cancel}</button>
-                                <button className="flex-[2] py-2 bg-purple-500 text-white text-sm font-black rounded-lg shadow-lg hover:bg-purple-600">{t.save}</button>
+                                <button className="flex-[2] py-2 bg-purple-500 text-white text-sm font-black rounded-lg shadow-lg hover:bg-purple-600">{t.okBtn}</button>
                               </div>
                             </div>
                           </div>
@@ -625,23 +640,23 @@ export default function SupplierHR() {
                   <div className="lg:col-span-1 space-y-6">
                     <div className="p-6 rounded-2xl border bg-slate-950 border-slate-800">
                       <h4 className="text-sm font-black uppercase tracking-wider mb-4 flex items-center gap-2 text-slate-400">
-                        <Clock size={16} /> Historique & Ancienneté
+                        <Clock size={16} /> {t.historySeniority}
                       </h4>
                       <div className="space-y-4">
                         <div>
-                          <p className="text-xs font-bold mb-1 text-slate-500">Date d'embauche</p>
+                          <p className="text-xs font-bold mb-1 text-slate-500">{t.hireDate}</p>
                           <p className="font-black text-white">
-                            {formData.hireDate ? new Date(formData.hireDate).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US') : '---'}
+                            {formData.hireDate ? new Date(formData.hireDate).toLocaleDateString(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA') : '---'}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs font-bold mb-1 text-slate-500">Ancienneté</p>
+                          <p className="text-xs font-bold mb-1 text-slate-500">{t.seniority}</p>
                           <p className="font-black text-blue-400">
                             {formData.hireDate ? (() => {
                               const hireDate = new Date(formData.hireDate);
                               const diffTime = Math.abs(new Date() - hireDate);
                               const diffYears = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365));
-                              return diffYears > 0 ? `${diffYears} an(s)` : 'Moins d\'un an';
+                              return diffYears > 0 ? `${diffYears} ${t.years}` : t.lessThanYear;
                             })() : '---'}
                           </p>
                         </div>
@@ -650,7 +665,7 @@ export default function SupplierHR() {
 
                     <div className="p-6 rounded-2xl border bg-blue-900/10 border-blue-500/20">
                       <h4 className="text-sm font-black uppercase tracking-wider mb-4 flex items-center gap-2 text-blue-400">
-                        <BookOpen size={16} /> Formations BTP
+                        <BookOpen size={16} /> {t.btpTrainings}
                       </h4>
                       <ul className="space-y-3">
                         {trainings.map((training, idx) => (
@@ -668,12 +683,12 @@ export default function SupplierHR() {
                       
                       {showAddTraining ? (
                         <div className="mt-4 flex gap-2">
-                          <input type="text" value={newTraining} onChange={(e) => setNewTraining(e.target.value)} placeholder="Nom de formation..." autoFocus className="flex-1 px-3 py-1.5 text-sm rounded-lg outline-none border bg-slate-900 border-slate-700 text-white" />
-                          <button onClick={handleAddTraining} className="px-3 py-1.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700">OK</button>
+                          <input type="text" value={newTraining} onChange={(e) => setNewTraining(e.target.value)} placeholder={t.trainingName} autoFocus className="flex-1 px-3 py-1.5 text-sm rounded-lg outline-none border bg-slate-900 border-slate-700 text-white" />
+                          <button onClick={handleAddTraining} className="px-3 py-1.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700">{t.okBtn}</button>
                         </div>
                       ) : (
                         <button onClick={() => setShowAddTraining(true)} className="mt-4 w-full py-2 text-xs font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors">
-                          + Ajouter une formation
+                          {t.addTraining}
                         </button>
                       )}
                     </div>
@@ -683,7 +698,7 @@ export default function SupplierHR() {
                   <div className="lg:col-span-2">
                     <div className="border rounded-2xl p-6 h-full bg-slate-950 border-slate-800">
                       <h4 className="font-black text-lg flex items-center gap-2 mb-6 text-white">
-                        <FolderOpen size={20} className="text-pink-500"/> Fichiers & Documents Légaux
+                        <FolderOpen size={20} className="text-pink-500"/> {t.legalDocs}
                       </h4>
                       
                       <label className="block border-2 border-dashed rounded-xl p-8 text-center mb-6 transition-all cursor-pointer relative overflow-hidden border-slate-700 hover:border-pink-500/50 hover:bg-pink-500/5">
@@ -692,22 +707,22 @@ export default function SupplierHR() {
                         {isUploading ? (
                           <div className="flex flex-col items-center justify-center">
                             <Loader2 size={32} className="text-pink-500 animate-spin mb-3" />
-                            <p className="font-bold text-slate-300">Téléchargement en cours...</p>
+                            <p className="font-bold text-slate-300">{t.uploading}</p>
                           </div>
                         ) : (
                           <>
                             <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 bg-slate-900 text-slate-400">
                               <Plus size={24} />
                             </div>
-                            <p className="font-bold text-slate-300">Cliquez ou Glissez vos fichiers ici</p>
-                            <p className="text-xs mt-1 text-slate-500">PDF, PNG, JPG (Max 5MB)</p>
+                            <p className="font-bold text-slate-300">{t.dragDropFiles}</p>
+                            <p className="text-xs mt-1 text-slate-500">{t.fileFormats}</p>
                           </>
                         )}
                       </label>
 
                       <div className="space-y-3">
                         {documents.length === 0 ? (
-                          <p className="text-center text-sm py-4 text-slate-500">Aucun document n'a été ajouté.</p>
+                          <p className="text-center text-sm py-4 text-slate-500">{t.noDocs}</p>
                         ) : (
                           documents.map(doc => {
                             const DocIcon = doc.icon;
@@ -717,7 +732,7 @@ export default function SupplierHR() {
                                   <div className={`p-2 rounded-lg ${doc.bg} ${doc.color}`}><DocIcon size={18} /></div>
                                   <div>
                                     <p className="font-bold text-sm text-white">{doc.name}</p>
-                                    <p className="text-xs text-slate-500">Ajouté le {doc.date}</p>
+                                    <p className="text-xs text-slate-500">{t.addedOn} {doc.date}</p>
                                   </div>
                                 </div>
                                 <button onClick={() => setDocuments(documents.filter(d => d.id !== doc.id))} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
