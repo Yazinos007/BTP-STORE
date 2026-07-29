@@ -5,7 +5,7 @@ import useSupplierStore from '../store/useSupplierStore';
 import { 
   Package, Search, Plus, Edit2, Trash2, Loader2, AlertCircle, Layers, 
   UploadCloud, Image as ImageIcon, RotateCcw, ShieldAlert, 
-  AlertTriangle, ShoppingCart, Factory 
+  AlertTriangle, ShoppingCart, Factory, CheckCircle 
 } from 'lucide-react';
 
 const translations = {
