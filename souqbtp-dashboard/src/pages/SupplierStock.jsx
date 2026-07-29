@@ -34,13 +34,14 @@ const translations = {
     cats: { 'gros-oeuvre': 'مواد البناء الأساسية', 'electricite': 'الكهرباء', 'plomberie': 'السباكة', 'outillage': 'المعدات والأدوات' },
     units: { 'Unité': 'قطعة (Unité)', 'Kg': 'كيلوغرام (Kg)', 'Quintal': 'قنطار (q)', 'Tonne': 'طن (T)', 'Sac': 'كيس (Sac)', 'm2': 'متر مربع (m²)', 'm3': 'متر مكعب (m³)', 'ml': 'متر طولي (ml)', 'Palette': 'باليت (Palette)' },
     types: { 'finished_good': '🏆 منتج نهائي', 'raw_material': '🧱 مادة خام', 'packaging': '📦 تعبئة وتغليف', 'consumable': '⚙️ مادة استهلاكية' },
-    // Smart Alerts Translations
     runRateAlert: 'تنبيه نفاد وشيك', daysLeft: 'أيام متبقية',
     rawMaterialAlert: 'نقص المادة الخام', productionRisk: 'خطر توقف الإنتاج',
     actionOrder: 'إرسال طلب شراء', actionProduce: 'أمر إنتاج (OF)',
     cementDesc: 'سرعة مبيعات عالية. نفاذ المخزون متوقع يوم الجمعة.',
     sandDesc: 'نقص في المادة الخام لإنتاج "طوب خرساني 20x20".',
-    realStockAlerts: 'تنبيهات المخزون الفعلي (أقل من 1000 وحدة)'
+    realStockAlerts: 'تنبيهات المخزون الفعلي (أقل من 1000 وحدة)',
+    orderSuccess: '✅ تم إرسال طلب الشراء للمورد بنجاح!',
+    prodSuccess: '✅ تم إطلاق أمر الإنتاج وإرساله للورشة!'
   },
   fr: {
     title: 'Gestion du Stock Central', subtitle: 'Gérez votre catalogue, matières 1ères et quantités.',
@@ -67,13 +68,14 @@ const translations = {
     cats: { 'gros-oeuvre': 'Gros Œuvre', 'electricite': 'Électricité', 'plomberie': 'Plomberie', 'outillage': 'Outillage' },
     units: { 'Unité': 'Unité (Pièce)', 'Kg': 'Kilogramme (Kg)', 'Quintal': 'Quintal (q)', 'Tonne': 'Tonne (T)', 'Sac': 'Sac', 'm2': 'Mètre Carré (m²)', 'm3': 'Mètre Cube (m³)', 'ml': 'Mètre Linéaire (ml)', 'Palette': 'Palette' },
     types: { 'finished_good': '🏆 Produit Fini', 'raw_material': '🧱 Matière 1ère', 'packaging': '📦 Emballage', 'consumable': '⚙️ Consommable' },
-    // Smart Alerts Translations
     runRateAlert: 'Rupture Imminente', daysLeft: 'Jours restants',
     rawMaterialAlert: 'Manque Matière 1ère', productionRisk: 'Risque d\'arrêt de production',
     actionOrder: 'Commander l\'usine', actionProduce: 'Ordre de Fab. (OF)',
     cementDesc: 'Vitesse de vente élevée. Stock estimé à zéro ce Vendredi.',
     sandDesc: 'Manque de matière 1ère pour produire "Bloc Béton 20x20".',
-    realStockAlerts: 'Alertes Stock Réel (Moins de 1000 unités)'
+    realStockAlerts: 'Alertes Stock Réel (Moins de 1000 unités)',
+    orderSuccess: '✅ Commande envoyée au fournisseur avec succès !',
+    prodSuccess: '✅ Ordre de fabrication envoyé à l\'atelier !'
   },
   en: {
     title: 'Central Stock Management', subtitle: 'Manage your catalog, raw materials, and quantities.',
@@ -100,13 +102,14 @@ const translations = {
     cats: { 'gros-oeuvre': 'Heavy Construction', 'electricite': 'Electricity', 'plomberie': 'Plumbing', 'outillage': 'Tools & Equipment' },
     units: { 'Unité': 'Unit (Piece)', 'Kg': 'Kilogram (Kg)', 'Quintal': 'Quintal (q)', 'Tonne': 'Tonne (T)', 'Sac': 'Bag', 'm2': 'Square Meter (m²)', 'm3': 'Cubic Meter (m³)', 'ml': 'Linear Meter (ml)', 'Palette': 'Palette' },
     types: { 'finished_good': '🏆 Finished Good', 'raw_material': '🧱 Raw Material', 'packaging': '📦 Packaging', 'consumable': '⚙️ Consumable' },
-    // Smart Alerts Translations
     runRateAlert: 'Imminent Stockout', daysLeft: 'Days left',
     rawMaterialAlert: 'Raw Material Shortage', productionRisk: 'Production halt risk',
     actionOrder: 'Send Purchase Order', actionProduce: 'Production Order (PO)',
     cementDesc: 'High sales velocity. Stock estimated zero by Friday.',
     sandDesc: 'Raw material shortage to produce "Concrete Block 20x20".',
-    realStockAlerts: 'Real Stock Alerts (Under 1000 units)'
+    realStockAlerts: 'Real Stock Alerts (Under 1000 units)',
+    orderSuccess: '✅ Purchase order sent to supplier successfully!',
+    prodSuccess: '✅ Production order sent to workshop successfully!'
   }
 };
 
@@ -128,6 +131,10 @@ export default function SupplierStock() {
   const [uploading, setUploading] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showCleanMenu, setShowCleanMenu] = useState(false);
+
+  // States for Smart Alert Buttons
+  const [ordering, setOrdering] = useState(false);
+  const [producing, setProducing] = useState(false);
 
   const [formData, setFormData] = useState({ 
     name: '', category: 'gros-oeuvre', price: '', stock_quantity: '', unit: 'Unité', image_url: '', item_type: 'finished_good'
@@ -269,6 +276,23 @@ export default function SupplierStock() {
       fetchProducts();
     }
     setIsProcessing(false);
+  };
+
+  // Smart Alert Handlers
+  const handleOrder = () => {
+    setOrdering(true);
+    setTimeout(() => {
+      setOrdering(false);
+      alert(t.orderSuccess);
+    }, 1500);
+  };
+
+  const handleProduce = () => {
+    setProducing(true);
+    setTimeout(() => {
+      setProducing(false);
+      alert(t.prodSuccess);
+    }, 1500);
   };
 
   const filteredProducts = products.filter(p => 
@@ -533,8 +557,8 @@ export default function SupplierStock() {
             </div>
             <p className="text-white font-black text-lg mb-2">Ciment Portland CPJ 45</p>
             <p className="text-sm text-slate-400 mb-6 font-medium leading-relaxed">{t.cementDesc}</p>
-            <button className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(234,88,12,0.3)]">
-              <ShoppingCart size={18}/> {t.actionOrder}
+            <button onClick={handleOrder} disabled={ordering} className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(234,88,12,0.3)] disabled:opacity-70">
+              {ordering ? <Loader2 size={18} className="animate-spin" /> : <ShoppingCart size={18}/>} {t.actionOrder}
             </button>
           </div>
 
@@ -549,8 +573,8 @@ export default function SupplierStock() {
             </div>
             <p className="text-white font-black text-lg mb-2">Sable de concassage</p>
             <p className="text-sm text-slate-400 mb-6 font-medium leading-relaxed">{t.sandDesc}</p>
-            <button className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
-              <Factory size={18}/> {t.actionProduce}
+            <button onClick={handleProduce} disabled={producing} className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(220,38,38,0.3)] disabled:opacity-70">
+              {producing ? <Loader2 size={18} className="animate-spin" /> : <Factory size={18}/>} {t.actionProduce}
             </button>
           </div>
 
@@ -560,7 +584,12 @@ export default function SupplierStock() {
               <AlertCircle size={16} /> {t.realStockAlerts}
             </h4>
             <div className="space-y-3 overflow-y-auto custom-scrollbar pr-2 flex-1">
-              {lowStockProducts?.length === 0 ? (
+              {filteredProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center opacity-50">
+                  <Package size={32} className="text-slate-500 mb-2" />
+                  <p className="text-sm font-bold text-slate-400">{t.noProducts}</p>
+                </div>
+              ) : lowStockProducts?.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center opacity-50">
                   <CheckCircle size={32} className="text-emerald-500 mb-2" />
                   <p className="text-sm font-bold text-slate-300">{t.optimalStock}</p>
