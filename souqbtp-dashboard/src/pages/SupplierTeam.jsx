@@ -48,7 +48,7 @@ const translations = {
     fullAccess: 'Full access to group', partialAccess: 'Partial access to group', noAccess: 'No access'
   }
 };
-// المجموعات المنطقية لتسهيل عرض الجدول
+
 const permissionClusters = {
   operations: ['permAchats', 'permStock', 'permProd'],
   commercial: ['permMarket', 'permVentes', 'permFactures'],
@@ -106,7 +106,7 @@ export default function SupplierTeam() {
     try {
       if (formData.id) {
         const { error } = await supabase.from('employees').update({
-          full_name: formData.full_name, permissions: formData.permissions
+          full_name: formData.full_name, email: formData.email, permissions: formData.permissions
         }).eq('id', formData.id);
         if (error) throw error;
       } else {
@@ -139,7 +139,7 @@ export default function SupplierTeam() {
   const openModal = (user = null) => {
     if (user) {
       setFormData({
-        id: user.id, full_name: user.full_name, email: user.email, password: '',
+        id: user.id, full_name: user.full_name || '', email: user.email || '', password: '',
         permissions: { ...defaultPermissions, ...(user.permissions || {}) }
       });
     } else {
@@ -148,7 +148,6 @@ export default function SupplierTeam() {
     setIsModalOpen(true);
   };
 
-  // مكون ذكي لعرض حالة المجموعة (كاملة، جزئية، فارغة)
   const ClusterStatus = ({ permissions, clusterKeys, isBoss }) => {
     if (isBoss) return <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mx-auto shadow-md"><Check size={14} className="text-white" /></div>;
     
@@ -280,7 +279,8 @@ export default function SupplierTeam() {
                 
                 <div className="relative">
                   <Mail className={`absolute ${language === 'ar' ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-slate-500`} size={18} />
-                  <input required type="email" placeholder={t.email} value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} disabled={!!formData.id} className={`w-full bg-slate-950 border border-slate-800 py-3.5 ${language === 'ar' ? 'pr-12 pl-4' : 'pl-12 pr-4'} rounded-xl text-white outline-none focus:border-blue-500 font-medium disabled:opacity-50`} />
+                  {/* لقد تم إزالة خاصية الإغلاق (disabled) من هنا لتتمكن من إدخال الإيميل بحرية */}
+                  <input required type="email" placeholder={t.email} value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={`w-full bg-slate-950 border border-slate-800 py-3.5 ${language === 'ar' ? 'pr-12 pl-4' : 'pl-12 pr-4'} rounded-xl text-white outline-none focus:border-blue-500 font-medium`} />
                 </div>
 
                 {!formData.id && (
@@ -297,7 +297,6 @@ export default function SupplierTeam() {
                   {Object.keys(defaultPermissions).map((key) => {
                     const isChecked = formData.permissions[key];
                     
-                    // تعريف الألوان بشكل صريح لمنع Tailwind من حذفها
                     let theme = { bg: 'bg-orange-500/10', border: 'border-orange-500/50', check: 'bg-orange-500 border-orange-500' };
                     
                     if (key.includes('Market') || key.includes('Ventes') || key.includes('Factures')) {
