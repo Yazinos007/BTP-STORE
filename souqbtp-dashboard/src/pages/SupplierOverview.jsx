@@ -23,14 +23,17 @@ const translations = {
     currency: 'MAD',
     priceRadarDesc: 'تنبيه: زيادة وشيكة بنسبة 5.4٪ في أسعار الحديد. ستقوم المصانع الوطنية بتعديل الأسعار الأسبوع المقبل. ننصح بتأمين طلبياتك الآن لتوفير هامش الربح.',
     logisticsDesc: 'اقتراح ذكي: لديك 3 شحنات متجهة إلى مدينة طنجة. دمجها في شاحنة واحدة كبيرة سيوفر لك 1,200 درهم من تكاليف النقل الإجمالية اليوم.',
-    // New Translations for Executive Widget
     executiveDashboard: 'لوحة القيادة التنفيذية',
     salesTrend: 'تطور الأداء المالي (6 أشهر)',
     revenue: 'الإيرادات', costs: 'التكاليف', margin: 'الهامش',
     smartAlerts: 'تنبيهات المخزون الذكية',
     runRateAlert: 'تنبيه نفاد وشيك', daysLeft: 'أيام متبقية',
     rawMaterialAlert: 'نقص المادة الخام', productionRisk: 'خطر توقف الإنتاج',
-    actionOrder: 'إرسال طلب شراء', actionProduce: 'أمر إنتاج (OF)'
+    actionOrder: 'إرسال طلب شراء', actionProduce: 'أمر إنتاج (OF)',
+    cementDesc: 'سرعة مبيعات عالية. نفاذ المخزون متوقع يوم الجمعة.',
+    sandDesc: 'نقص في المادة الخام لإنتاج "طوب خرساني 20x20".',
+    orderSuccess: '✅ تم إرسال طلب الشراء للمورد بنجاح!',
+    prodSuccess: '✅ تم إطلاق أمر الإنتاج وإرساله للورشة!'
   },
   fr: {
     totalSales: 'TOTAL VENTES', pendingOrders: 'COMMANDES EN ATTENTE',
@@ -45,14 +48,17 @@ const translations = {
     currency: 'MAD',
     priceRadarDesc: 'Alerte : Hausse imminente de +5.4% sur l\'Acier. Les usines nationales vont ajuster les prix la semaine prochaine. Conseillons de sécuriser les commandes maintenant.',
     logisticsDesc: 'Suggestion Intelligente : Vous avez 3 expéditions vers Tanger. Les regrouper dans un seul camion vous fera économiser 1 200 MAD aujourd\'hui.',
-    // New Translations for Executive Widget
     executiveDashboard: 'Tableau de Bord Exécutif',
     salesTrend: 'Évolution des Performances (6 Mois)',
     revenue: 'Revenus', costs: 'Coûts', margin: 'Marge',
     smartAlerts: 'Alertes de Stock Intelligentes',
     runRateAlert: 'Rupture Imminente', daysLeft: 'Jours restants',
     rawMaterialAlert: 'Manque Matière 1ère', productionRisk: 'Risque d\'arrêt de production',
-    actionOrder: 'Commander l\'usine', actionProduce: 'Ordre de Fab. (OF)'
+    actionOrder: 'Commander l\'usine', actionProduce: 'Ordre de Fab. (OF)',
+    cementDesc: 'Vitesse de vente élevée. Stock estimé à zéro ce Vendredi.',
+    sandDesc: 'Manque de matière 1ère pour produire "Bloc Béton 20x20".',
+    orderSuccess: '✅ Commande envoyée au fournisseur avec succès !',
+    prodSuccess: '✅ Ordre de fabrication envoyé à l\'atelier !'
   },
   en: {
     totalSales: 'TOTAL SALES', pendingOrders: 'PENDING ORDERS',
@@ -67,14 +73,17 @@ const translations = {
     currency: 'MAD',
     priceRadarDesc: 'Alert: Imminent +5.4% increase on Steel. National factories will adjust prices next week. Advise securing orders now to lock in margins.',
     logisticsDesc: 'Smart Suggestion: You have 3 shipments heading to Tangier. Consolidating them into one large truck will save you 1,200 MAD in overall transit costs today.',
-    // New Translations for Executive Widget
     executiveDashboard: 'Executive Dashboard',
     salesTrend: 'Financial Performance Trend (6 Months)',
     revenue: 'Revenue', costs: 'Costs', margin: 'Margin',
     smartAlerts: 'Smart Stock Alerts',
     runRateAlert: 'Imminent Stockout', daysLeft: 'Days left',
     rawMaterialAlert: 'Raw Material Shortage', productionRisk: 'Production halt risk',
-    actionOrder: 'Send Purchase Order', actionProduce: 'Production Order (PO)'
+    actionOrder: 'Send Purchase Order', actionProduce: 'Production Order (PO)',
+    cementDesc: 'High sales velocity. Stock estimated zero by Friday.',
+    sandDesc: 'Raw material shortage to produce "Concrete Block 20x20".',
+    orderSuccess: '✅ Purchase order sent to supplier successfully!',
+    prodSuccess: '✅ Production order sent to workshop successfully!'
   }
 };
 
@@ -90,6 +99,10 @@ export default function SupplierOverview() {
     employeesCount: 0, payroll: 0, cash: 0, debts: 0, expenses: 0, vat: 0, netProfit: 0
   });
 
+  // Action Buttons States
+  const [ordering, setOrdering] = useState(false);
+  const [producing, setProducing] = useState(false);
+
   useEffect(() => {
     if (supplier?.id) fetchDashboardData();
   }, [supplier]);
@@ -99,21 +112,18 @@ export default function SupplierOverview() {
     try {
       const targetId = supplier.id;
 
-      // 1. المبيعات (من فواتير B2B + الماركت بليس)
       let totalSales = 0;
       const { data: docs } = await supabase.from('documents').select('total_amount').eq('owner_id', targetId).eq('type', 'Facture');
       const { data: marketOrders } = await supabase.from('marketplace_orders').select('total_amount').eq('supplier_id', targetId).in('order_status', ['delivered', 'shipped']);
       if (docs) docs.forEach(d => totalSales += Number(d.total_amount || 0));
       if (marketOrders) marketOrders.forEach(o => totalSales += Number(o.total_amount || 0));
 
-      // 2. الطلبات المعلقة (من B2B + الماركت بليس)
       let pendingOrders = 0;
       const { data: b2bReq } = await supabase.from('supply_requests').select('id').eq('supplier_id', targetId).eq('status', 'pending');
       const { data: mOrders } = await supabase.from('marketplace_orders').select('id').eq('supplier_id', targetId).eq('order_status', 'pending');
       if (b2bReq) pendingOrders += b2bReq.length;
       if (mOrders) pendingOrders += mOrders.length;
 
-      // 3. المنتجات والمخزون
       let productsCount = 0;
       let inventoryValue = 0;
       const { data: prods } = await supabase.from('products').select('stock_quantity, price').eq('supplier_id', targetId);
@@ -126,14 +136,9 @@ export default function SupplierOverview() {
         });
       }
 
-      // 4. الموظفين (النسخة المحاسبية الدقيقة)
       let employeesCount = 0;
       let payroll = 0;
-      const { data: emps } = await supabase
-        .from('employees')
-        .select('base_salary, primes_avances, retenues, status')
-        .eq('supplier_id', targetId);
-        
+      const { data: emps } = await supabase.from('employees').select('base_salary, primes_avances, retenues, status').eq('supplier_id', targetId);
       if (emps) {
         const activeEmps = emps.filter(e => e.status === 'Actif' || e.status === 'active');
         employeesCount = activeEmps.length;
@@ -142,22 +147,18 @@ export default function SupplierOverview() {
         });
       }
 
-      // 5. الرصيد النقدي (الصناديق)
       let cash = 0;
       const { data: caisses } = await supabase.from('caisses').select('balance').eq('supplier_id', targetId);
       if (caisses) caisses.forEach(c => cash += Number(c.balance || 0));
 
-      // 6. ديون العملاء
       let debts = 0;
       const { data: clients } = await supabase.from('clients').select('total_debt').eq('supplier_id', targetId);
       if (clients) clients.forEach(c => debts += Number(c.total_debt || 0));
 
-      // 7. إجمالي المصاريف
       let expenses = 0;
       const { data: exps } = await supabase.from('expenses').select('amount').eq('supplier_id', targetId);
       if (exps) exps.forEach(e => expenses += Number(e.amount || 0));
 
-      // 8. حسابات الضريبة والربح الصافي
       const estimatedVat = (totalSales * 0.20) - (expenses * 0.20); 
       const netProfit = totalSales - expenses - payroll;
 
@@ -173,14 +174,31 @@ export default function SupplierOverview() {
     }
   };
 
-  // بيانات بيانية وهمية للأشهر الستة الماضية (لأغراض العرض التوضيحي)
+  // Simulated Action Handlers
+  const handleOrder = () => {
+    setOrdering(true);
+    setTimeout(() => {
+      setOrdering(false);
+      alert(t.orderSuccess);
+    }, 1500);
+  };
+
+  const handleProduce = () => {
+    setProducing(true);
+    setTimeout(() => {
+      setProducing(false);
+      alert(t.prodSuccess);
+    }, 1500);
+  };
+
+  // Dynamic Chart Data with Translated Months
   const chartData = [
-    { month: 'Fév', sales: 45000, costs: 30000 },
-    { month: 'Mar', sales: 52000, costs: 32000 },
-    { month: 'Avr', sales: 48000, costs: 29000 },
-    { month: 'Mai', sales: 61000, costs: 35000 },
-    { month: 'Juin', sales: 75000, costs: 40000 },
-    { month: 'Juil', sales: metrics.sales > 0 ? metrics.sales : 82000, costs: metrics.expenses > 0 ? metrics.expenses : 45000 },
+    { month: isArabic ? 'فبراير' : 'Fév', sales: 45000, costs: 30000 },
+    { month: isArabic ? 'مارس' : 'Mar', sales: 52000, costs: 32000 },
+    { month: isArabic ? 'أبريل' : 'Avr', sales: 48000, costs: 29000 },
+    { month: isArabic ? 'ماي' : 'Mai', sales: 61000, costs: 35000 },
+    { month: isArabic ? 'يونيو' : 'Juin', sales: 75000, costs: 40000 },
+    { month: isArabic ? 'يوليوز' : 'Juil', sales: metrics.sales > 0 ? metrics.sales : 82000, costs: metrics.expenses > 0 ? metrics.expenses : 45000 },
   ];
   const maxChartValue = Math.max(...chartData.map(d => Math.max(d.sales, d.costs))) * 1.1;
 
@@ -374,15 +392,12 @@ export default function SupplierOverview() {
               const margin = data.sales - data.costs;
               return (
                 <div key={index} className="relative w-full flex flex-col items-center justify-end h-full group">
-                  {/* Tooltip on Hover */}
                   <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 border border-slate-700 p-2 rounded-xl text-xs font-bold shadow-xl z-20 pointer-events-none whitespace-nowrap">
                     <span className="text-emerald-400">{t.margin}: +{margin.toLocaleString()}</span>
                   </div>
                   
                   <div className="w-full flex justify-center items-end relative h-full">
-                    {/* Sales Column (Back) */}
                     <div className="w-full max-w-[40px] bg-gradient-to-t from-blue-900 to-blue-500 rounded-t-lg opacity-80 group-hover:opacity-100 transition-opacity absolute bottom-0" style={{ height: `${salesHeight}%` }}></div>
-                    {/* Costs Column (Front - Semi-transparent Overlay) */}
                     <div className="w-full max-w-[40px] bg-gradient-to-t from-red-900/80 to-red-500/80 rounded-t-lg absolute bottom-0 z-10" style={{ height: `${costsHeight}%` }}></div>
                   </div>
                   <span className="text-xs font-bold text-slate-500 mt-3 uppercase">{data.month}</span>
@@ -409,9 +424,10 @@ export default function SupplierOverview() {
                 <span className="text-xs font-black text-orange-500 bg-orange-500/10 px-2 py-1 rounded-md">4 {t.daysLeft}</span>
               </div>
               <p className="text-white font-black mb-3">Ciment Portland CPJ 45</p>
-              <p className="text-xs text-slate-400 mb-4 font-medium">Vitesse de vente élevée. Stock estimé à zéro ce Vendredi.</p>
-              <button className="w-full py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(234,88,12,0.3)]">
-                <ShoppingCart size={14}/> {t.actionOrder}
+              <p className="text-xs text-slate-400 mb-4 font-medium">{t.cementDesc}</p>
+              <button onClick={handleOrder} disabled={ordering} className="w-full py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(234,88,12,0.3)] disabled:opacity-70">
+                {ordering ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14}/>}
+                {t.actionOrder}
               </button>
             </div>
 
@@ -425,9 +441,10 @@ export default function SupplierOverview() {
                 <span className="text-xs font-black text-red-500 bg-red-500/10 px-2 py-1 rounded-md">{t.productionRisk}</span>
               </div>
               <p className="text-white font-black mb-3">Sable de concassage</p>
-              <p className="text-xs text-slate-400 mb-4 font-medium">Manque de matière 1ère pour produire "Bloc Béton 20x20".</p>
-              <button className="w-full py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
-                <Factory size={14}/> {t.actionProduce}
+              <p className="text-xs text-slate-400 mb-4 font-medium">{t.sandDesc}</p>
+              <button onClick={handleProduce} disabled={producing} className="w-full py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(220,38,38,0.3)] disabled:opacity-70">
+                {producing ? <Loader2 size={14} className="animate-spin" /> : <Factory size={14}/>}
+                {t.actionProduce}
               </button>
             </div>
           </div>

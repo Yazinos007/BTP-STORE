@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-import { Package, Search, Plus, Edit2, Trash2, Loader2, AlertCircle, Layers, UploadCloud, Image as ImageIcon, RotateCcw, ShieldAlert } from 'lucide-react';
+import { 
+  Package, Search, Plus, Edit2, Trash2, Loader2, AlertCircle, Layers, 
+  UploadCloud, Image as ImageIcon, RotateCcw, ShieldAlert, 
+  AlertTriangle, ShoppingCart, Factory 
+} from 'lucide-react';
 
 const translations = {
   ar: {
@@ -15,7 +19,7 @@ const translations = {
     clickUpload: 'انقر هنا لرفع صورة', productName: 'اسم المنتج / المادة',
     placeholderName: 'مثال: إسمنت، حديد 10 ملم، أكياس تغليف...',
     category: 'التصنيف', qtyInit: 'كمية المخزون', unit: 'الوحدة',
-    cancel: 'إلغاء', save: 'حفظ العنصر', stockAlerts: 'تنبيهات نقص المخزون',
+    cancel: 'إلغاء', save: 'حفظ العنصر', stockAlerts: 'تنبيهات المخزون الذكية',
     optimalStock: 'جميع المواد بمستوى مخزون ممتاز.', outOfStock: 'نفدت الكمية',
     left: 'متبقي:', deleteConfirm: 'هل أنت متأكد من حذف هذا العنصر؟',
     errorSave: 'خطأ أثناء الحفظ', errorUpload: 'خطأ أثناء رفع الصورة', loading: 'جاري التحميل...',
@@ -29,7 +33,14 @@ const translations = {
     confirmDeleteEmpty: 'هل أنت متأكد من حذف جميع العناصر نافدة الكمية؟ (سيتم تجاهل العناصر المرتبطة بفواتير قديمة)',
     cats: { 'gros-oeuvre': 'مواد البناء الأساسية', 'electricite': 'الكهرباء', 'plomberie': 'السباكة', 'outillage': 'المعدات والأدوات' },
     units: { 'Unité': 'قطعة (Unité)', 'Kg': 'كيلوغرام (Kg)', 'Quintal': 'قنطار (q)', 'Tonne': 'طن (T)', 'Sac': 'كيس (Sac)', 'm2': 'متر مربع (m²)', 'm3': 'متر مكعب (m³)', 'ml': 'متر طولي (ml)', 'Palette': 'باليت (Palette)' },
-    types: { 'finished_good': '🏆 منتج نهائي', 'raw_material': '🧱 مادة خام', 'packaging': '📦 تعبئة وتغليف', 'consumable': '⚙️ مادة استهلاكية' }
+    types: { 'finished_good': '🏆 منتج نهائي', 'raw_material': '🧱 مادة خام', 'packaging': '📦 تعبئة وتغليف', 'consumable': '⚙️ مادة استهلاكية' },
+    // Smart Alerts Translations
+    runRateAlert: 'تنبيه نفاد وشيك', daysLeft: 'أيام متبقية',
+    rawMaterialAlert: 'نقص المادة الخام', productionRisk: 'خطر توقف الإنتاج',
+    actionOrder: 'إرسال طلب شراء', actionProduce: 'أمر إنتاج (OF)',
+    cementDesc: 'سرعة مبيعات عالية. نفاذ المخزون متوقع يوم الجمعة.',
+    sandDesc: 'نقص في المادة الخام لإنتاج "طوب خرساني 20x20".',
+    realStockAlerts: 'تنبيهات المخزون الفعلي (أقل من 1000 وحدة)'
   },
   fr: {
     title: 'Gestion du Stock Central', subtitle: 'Gérez votre catalogue, matières 1ères et quantités.',
@@ -41,7 +52,7 @@ const translations = {
     clickUpload: 'Cliquez pour télécharger une image', productName: 'Nom de l\'article',
     placeholderName: 'Ex: Ciment Portland, Fer à béton, Emballage...',
     category: 'Catégorie', qtyInit: 'Quantité Initiale', unit: 'Unité',
-    cancel: 'Annuler', save: 'Enregistrer', stockAlerts: 'Alertes de Stock',
+    cancel: 'Annuler', save: 'Enregistrer', stockAlerts: 'Alertes de Stock Intelligentes',
     optimalStock: 'Tout le stock est à un niveau optimal.', outOfStock: 'RUPTURE',
     left: 'Reste:', deleteConfirm: 'Supprimer cet article ?',
     errorSave: 'Erreur lors de l\'enregistrement', errorUpload: 'Erreur lors du téléchargement', loading: 'Chargement...',
@@ -55,7 +66,14 @@ const translations = {
     confirmDeleteEmpty: 'Supprimer les articles en rupture ? (Les articles liés à des factures seront ignorés)',
     cats: { 'gros-oeuvre': 'Gros Œuvre', 'electricite': 'Électricité', 'plomberie': 'Plomberie', 'outillage': 'Outillage' },
     units: { 'Unité': 'Unité (Pièce)', 'Kg': 'Kilogramme (Kg)', 'Quintal': 'Quintal (q)', 'Tonne': 'Tonne (T)', 'Sac': 'Sac', 'm2': 'Mètre Carré (m²)', 'm3': 'Mètre Cube (m³)', 'ml': 'Mètre Linéaire (ml)', 'Palette': 'Palette' },
-    types: { 'finished_good': '🏆 Produit Fini', 'raw_material': '🧱 Matière 1ère', 'packaging': '📦 Emballage', 'consumable': '⚙️ Consommable' }
+    types: { 'finished_good': '🏆 Produit Fini', 'raw_material': '🧱 Matière 1ère', 'packaging': '📦 Emballage', 'consumable': '⚙️ Consommable' },
+    // Smart Alerts Translations
+    runRateAlert: 'Rupture Imminente', daysLeft: 'Jours restants',
+    rawMaterialAlert: 'Manque Matière 1ère', productionRisk: 'Risque d\'arrêt de production',
+    actionOrder: 'Commander l\'usine', actionProduce: 'Ordre de Fab. (OF)',
+    cementDesc: 'Vitesse de vente élevée. Stock estimé à zéro ce Vendredi.',
+    sandDesc: 'Manque de matière 1ère pour produire "Bloc Béton 20x20".',
+    realStockAlerts: 'Alertes Stock Réel (Moins de 1000 unités)'
   },
   en: {
     title: 'Central Stock Management', subtitle: 'Manage your catalog, raw materials, and quantities.',
@@ -67,7 +85,7 @@ const translations = {
     clickUpload: 'Click to upload an image', productName: 'Item Name',
     placeholderName: 'Ex: Portland Cement, Rebar, Packaging...',
     category: 'Category', qtyInit: 'Initial Quantity', unit: 'Unit',
-    cancel: 'Cancel', save: 'Save Item', stockAlerts: 'Stock Alerts',
+    cancel: 'Cancel', save: 'Save Item', stockAlerts: 'Smart Stock Alerts',
     optimalStock: 'All stock is at optimal levels.', outOfStock: 'OUT OF STOCK',
     left: 'Left:', deleteConfirm: 'Are you sure you want to delete this item?',
     errorSave: 'Error saving', errorUpload: 'Error uploading image', loading: 'Loading...',
@@ -81,7 +99,14 @@ const translations = {
     confirmDeleteEmpty: 'Delete out-of-stock items? (Items linked to invoices will be ignored)',
     cats: { 'gros-oeuvre': 'Heavy Construction', 'electricite': 'Electricity', 'plomberie': 'Plumbing', 'outillage': 'Tools & Equipment' },
     units: { 'Unité': 'Unit (Piece)', 'Kg': 'Kilogram (Kg)', 'Quintal': 'Quintal (q)', 'Tonne': 'Tonne (T)', 'Sac': 'Bag', 'm2': 'Square Meter (m²)', 'm3': 'Cubic Meter (m³)', 'ml': 'Linear Meter (ml)', 'Palette': 'Palette' },
-    types: { 'finished_good': '🏆 Finished Good', 'raw_material': '🧱 Raw Material', 'packaging': '📦 Packaging', 'consumable': '⚙️ Consumable' }
+    types: { 'finished_good': '🏆 Finished Good', 'raw_material': '🧱 Raw Material', 'packaging': '📦 Packaging', 'consumable': '⚙️ Consumable' },
+    // Smart Alerts Translations
+    runRateAlert: 'Imminent Stockout', daysLeft: 'Days left',
+    rawMaterialAlert: 'Raw Material Shortage', productionRisk: 'Production halt risk',
+    actionOrder: 'Send Purchase Order', actionProduce: 'Production Order (PO)',
+    cementDesc: 'High sales velocity. Stock estimated zero by Friday.',
+    sandDesc: 'Raw material shortage to produce "Concrete Block 20x20".',
+    realStockAlerts: 'Real Stock Alerts (Under 1000 units)'
   }
 };
 
@@ -102,8 +127,6 @@ export default function SupplierStock() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  
-  // حالة القائمة المنسدلة للتنظيف
   const [showCleanMenu, setShowCleanMenu] = useState(false);
 
   const [formData, setFormData] = useState({ 
@@ -219,17 +242,12 @@ export default function SupplierStock() {
     }
   };
 
-  // 🧹 دالة تصفير المخزون
   const handleZeroStock = async () => {
     if (!window.confirm(t.confirmZero)) return;
     setIsProcessing(true);
     setShowCleanMenu(false);
     try {
-      const { error } = await supabase
-        .from('products')
-        .update({ stock_quantity: 0 })
-        .eq('supplier_id', supplier.id)
-        .eq('item_type', activeTab);
+      const { error } = await supabase.from('products').update({ stock_quantity: 0 }).eq('supplier_id', supplier.id).eq('item_type', activeTab);
       if (error) throw error;
       fetchProducts();
     } catch (err) {
@@ -238,23 +256,17 @@ export default function SupplierStock() {
     setIsProcessing(false);
   };
 
-  // 🗑️ دالة حذف المنتجات الفارغة
   const handleDeleteEmptyProducts = async () => {
     if (!window.confirm(t.confirmDeleteEmpty)) return;
     setIsProcessing(true);
     setShowCleanMenu(false);
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('supplier_id', supplier.id)
-        .eq('item_type', activeTab)
-        .eq('stock_quantity', 0);
+      const { error } = await supabase.from('products').delete().eq('supplier_id', supplier.id).eq('item_type', activeTab).eq('stock_quantity', 0);
       if (error) throw error;
       fetchProducts();
     } catch (err) {
       alert("بعض المنتجات مرتبطة بفواتير ولا يمكن حذفها نهائياً. تم تخطيها لحماية حساباتك.");
-      fetchProducts(); // تحديث القائمة على أي حال
+      fetchProducts();
     }
     setIsProcessing(false);
   };
@@ -265,6 +277,7 @@ export default function SupplierStock() {
   );
   
   const totalStockValue = filteredProducts.reduce((acc, p) => acc + (p.price * p.stock_quantity), 0);
+  const lowStockProducts = filteredProducts?.filter(p => p.stock_quantity < 1000);
 
   return (
     <div className="space-y-6 animate-fade-in text-white" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -318,8 +331,6 @@ export default function SupplierStock() {
         </div>
         
         <div className="flex w-full sm:w-auto gap-3 relative">
-          
-          {/* 🧹 زر تنظيف المخزون المنسدل */}
           <div className="relative">
             <button 
               onClick={() => setShowCleanMenu(!showCleanMenu)}
@@ -503,29 +514,73 @@ export default function SupplierStock() {
         </div>
       )}
 
-      <div className="bg-slate-800 border border-red-900/30 p-6 rounded-3xl shadow-lg relative overflow-hidden mt-6 text-start">
-        <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} top-0 w-24 h-24 bg-red-500/10 rounded-bl-full pointer-events-none`}></div>
-        <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
-          <span className="text-red-500">⚠️</span> {t.stockAlerts}
+      {/* 🧠 Smart Stock Intelligence (Alerts & Predictions) */}
+      <div className="mt-8">
+        <h3 className="text-xl font-black text-white flex items-center gap-2 mb-4">
+          <AlertTriangle className="text-orange-500" /> {t.stockAlerts}
         </h3>
-  
-        <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-          {filteredProducts?.filter(p => p.stock_quantity < 1000).length === 0 ? (
-            <p className="text-sm text-slate-400 font-medium">✅ {t.optimalStock}</p>
-          ) : (
-            filteredProducts?.filter(p => p.stock_quantity < 1000).map((product, idx) => (
-              <div key={idx} className="flex justify-between items-center p-3 bg-red-900/10 rounded-xl border border-red-900/20">
-                <span className="font-bold text-slate-200">{product.name}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-black bg-red-900/40 text-red-400 px-2 py-1 rounded-md">
-                    {product.stock_quantity === 0 ? t.outOfStock : `${t.left} ${product.stock_quantity}`}
-                  </span>
-                </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          {/* Predictive Alert 1: Run Rate */}
+          <div className="bg-orange-500/10 border border-orange-500/20 rounded-3xl p-6 group transition-colors hover:bg-orange-500/20">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-orange-500 animate-pulse"></div>
+                <h4 className="font-bold text-orange-400">{t.runRateAlert}</h4>
               </div>
-            )) 
-          )}
+              <span className="text-sm font-black text-orange-500 bg-orange-500/10 px-3 py-1 rounded-lg">4 {t.daysLeft}</span>
+            </div>
+            <p className="text-white font-black text-lg mb-2">Ciment Portland CPJ 45</p>
+            <p className="text-sm text-slate-400 mb-6 font-medium leading-relaxed">{t.cementDesc}</p>
+            <button className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(234,88,12,0.3)]">
+              <ShoppingCart size={18}/> {t.actionOrder}
+            </button>
+          </div>
+
+          {/* Predictive Alert 2: Raw Material Dependency */}
+          <div className="bg-red-500/10 border border-red-500/20 rounded-3xl p-6 group transition-colors hover:bg-red-500/20">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                <h4 className="font-bold text-red-400">{t.rawMaterialAlert}</h4>
+              </div>
+              <span className="text-sm font-black text-red-500 bg-red-500/10 px-3 py-1 rounded-lg">{t.productionRisk}</span>
+            </div>
+            <p className="text-white font-black text-lg mb-2">Sable de concassage</p>
+            <p className="text-sm text-slate-400 mb-6 font-medium leading-relaxed">{t.sandDesc}</p>
+            <button className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
+              <Factory size={18}/> {t.actionProduce}
+            </button>
+          </div>
+
+          {/* Real Stock Alerts (Low Stock Items from DB) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col max-h-[250px]">
+            <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <AlertCircle size={16} /> {t.realStockAlerts}
+            </h4>
+            <div className="space-y-3 overflow-y-auto custom-scrollbar pr-2 flex-1">
+              {lowStockProducts?.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center opacity-50">
+                  <CheckCircle size={32} className="text-emerald-500 mb-2" />
+                  <p className="text-sm font-bold text-slate-300">{t.optimalStock}</p>
+                </div>
+              ) : (
+                lowStockProducts?.map((product, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <span className="font-bold text-slate-200 truncate pr-2">{product.name}</span>
+                    <span className="text-xs font-black bg-red-500/20 text-red-400 px-2 py-1 rounded-md shrink-0">
+                      {product.stock_quantity === 0 ? t.outOfStock : `${t.left} ${product.stock_quantity}`}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
+
     </div>
   );
 }
