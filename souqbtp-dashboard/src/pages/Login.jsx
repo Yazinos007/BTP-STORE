@@ -90,7 +90,7 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        // 1. التسجيل وإرسال الميتا-داتا (التريجر سيعمل الآن ويكتب "متجر جديد")
+        // 1. إنشاء حساب المصادقة فقط
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -102,23 +102,24 @@ export default function Login() {
         if (signUpError) throw signUpError;
 
         if (authData?.user) {
-          // 🚀 2. الحيلة الذهبية: ننتظر ثانية واحدة، ثم نمسح ما كتبه التريجر ونضع بياناتنا!
-          setTimeout(async () => {
-            const { error: updateError } = await supabase
-              .from('suppliers')
-              .update({
-                store_name: storeName, // فرض الاسم الحقيقي
-                tier: role === 'wholesaler' ? 'enterprise' : 'starter',
-                supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail' // فرض نوع المتجر
-              })
-              .eq('id', authData.user.id);
+          // 🚀 2. إطلاق الدبابة (RPC) لفرض البيانات الصحيحة والسمات الدقيقة للكيان
+          const { error: rpcError } = await supabase.rpc('register_supplier_safe', {
+            p_user_id: authData.user.id,
+            p_store_name: storeName,
+            p_phone: phone || null,
+            p_role: 'supplier',
+            p_tier: role === 'wholesaler' ? 'enterprise' : 'starter',
+            p_supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
+          });
 
-            if (updateError) {
-              console.error("خطأ في تحديث البيانات بعد التسجيل:", updateError);
-            }
-          }, 1500); // تأخير لمدة 1.5 ثانية لضمان انتهاء التريجر
-
-          alert(t.regSuccess);
+          if (rpcError) {
+            console.error("خطأ في تسجيل البيانات عبر RPC:", rpcError);
+            setError("حدث خطأ أثناء حفظ بيانات المتجر.");
+          } else {
+            alert(t.regSuccess);
+            // إنعاش الصفحة لكسر أي تشنج قديم في الواجهة
+            window.location.reload(); 
+          }
         }
       }
     } catch (err) {
