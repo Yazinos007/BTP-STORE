@@ -94,13 +94,21 @@ export default function Login() {
         if (signUpError) throw signUpError;
 
         if (data?.user) {
-          const { error: profileError } = await supabase.from('suppliers').upsert([{
+          // 🚀 السحر هنا: نرسل جميع الخصائص المطلوبة بوضوح لكي يقرأها الماركت بليس
+          const supplierData = {
             id: data.user.id,
-            store_name: storeName,
-            phone: phone,
+            store_name: storeName, // إجبار النظام على أخذ هذا الاسم بدل "متجر جديد"
+            phone: phone || null,
             role: role,
+            tier: role === 'wholesaler' ? 'enterprise' : 'starter',
+            supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail', // هذا هو المفتاح السري للماركت بليس
             referral_code: data.user.id.substring(0, 8)
-          }], { onConflict: 'id' }); 
+          };
+
+          const { error: profileError } = await supabase
+            .from('suppliers')
+            .upsert([supplierData], { onConflict: 'id' }); 
+            
           if (profileError) throw profileError;
           
           alert(t.regSuccess);
@@ -125,18 +133,15 @@ export default function Login() {
   return (
     <div className={`min-h-screen flex items-center justify-center bg-gradient-to-br ${themeGradients} relative overflow-hidden transition-colors duration-700`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* أشكال هندسية */}
       <div className={`absolute top-[-10%] left-[-10%] w-96 h-96 ${isWholesaler ? 'bg-gray-600' : 'bg-blue-500'} rounded-full mix-blend-multiply filter blur-[128px] opacity-50 animate-blob transition-colors`}></div>
       <div className={`absolute bottom-[-10%] right-[-10%] w-96 h-96 ${isWholesaler ? 'bg-slate-500' : 'bg-purple-500'} rounded-full mix-blend-multiply filter blur-[128px] opacity-50 animate-blob animation-delay-2000 transition-colors`}></div>
 
-      {/* زر تغيير اللغة */}
       <button onClick={toggleLanguage} className="absolute top-6 right-6 lg:right-10 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full flex items-center gap-2 transition-all text-sm font-bold shadow-lg z-20">
         <Globe size={16} /> {language === 'fr' ? 'العربية' : language === 'ar' ? 'English' : 'Français'}
       </button>
 
       <div className="w-full max-w-md px-6 z-10 py-10">
         
-        {/* الشعار والنصوص */}
         <div className="text-center mb-8 animate-fade-in">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl mb-6 ring-4 ring-white/5">
             {isWholesaler ? <Factory size={40} className="text-white" /> : <Store size={40} className="text-white" />}
@@ -147,7 +152,6 @@ export default function Login() {
           <p className="text-gray-300 font-medium">{t.subtitle}</p>
         </div>
 
-        {/* بطاقة تسجيل الدخول / التسجيل */}
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
           <div className="p-8">
             
