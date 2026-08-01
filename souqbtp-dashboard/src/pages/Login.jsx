@@ -90,31 +90,28 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        // 1. التسجيل العادي (التريجر سيعمل ويجهز المحفظة ولوحة التحكم)
+        // 1. التسجيل الأساسي (فقط إيميل وباسورد لكي يعمل التريجر في هدوء ويجهز المحفظة)
         const { data, error: signUpError } = await supabase.auth.signUp({ 
           email: email, 
-          password: password,
-          options: {
-            data: {
-              store_name: storeName,
-              phone: phone || null,
-              role: role,
-              tier: role === 'wholesaler' ? 'enterprise' : 'starter',
-              supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
-            }
-          }
+          password: password 
         });
         
         if (signUpError) throw signUpError;
 
         if (data?.user) {
-          // 🚀 2. السلاح السري: استدعاء الدالة العليا لفرض الاسم المكتوب فوراً متجاوزة أي حظر!
-          const { error: rpcError } = await supabase.rpc('force_fix_supplier', {
-            user_id: data.user.id,
-            real_store_name: storeName
+          // 🚀 2. الضربة القاضية: استدعاء الدالة العليا وإرسال *كل* التفاصيل لتحديث الهيكل الفارغ
+          const { error: rpcError } = await supabase.rpc('complete_user_profile', {
+            p_user_id: data.user.id,
+            p_store_name: storeName,
+            p_phone: phone || null,
+            p_role: role,
+            p_tier: role === 'wholesaler' ? 'enterprise' : 'starter',
+            p_supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
           });
 
-          if (rpcError) console.error("RPC Error:", rpcError);
+          if (rpcError) {
+             console.error("فشل تحديث البيانات عبر RPC:", rpcError);
+          }
 
           alert(t.regSuccess);
         }
