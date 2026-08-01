@@ -90,25 +90,25 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
-        if (signUpError) throw signUpError;
-
-        if (data?.user) {
-          // 🚀 استخدام دالة update لتعديل الصف الذي أنشأه التريجر
-          const { error: profileError } = await supabase
-            .from('suppliers')
-            .update({
-              store_name: storeName, // إرسال الاسم المكتوب
+        // 🚀 السحر الحقيقي: إرسال الخصائص داخل options.data
+        const { data, error: signUpError } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            data: {
+              store_name: storeName, // سيتم إرساله كـ Metadata
               phone: phone || null,
               role: role,
               tier: role === 'wholesaler' ? 'enterprise' : 'starter',
-              supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail',
-              referral_code: data.user.id.substring(0, 8)
-            })
-            .eq('id', data.user.id); // التأكد من تعديل صف المستخدم الحالي فقط
-            
-          if (profileError) throw profileError;
-          
+              supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
+            }
+          }
+        });
+        
+        if (signUpError) throw signUpError;
+
+        if (data?.user) {
+          // لم نعد بحاجة لعمل update أو upsert هنا! التريجر سيقوم بكل العمل بناءً على الـ Metadata
           alert(t.regSuccess);
         }
       }
