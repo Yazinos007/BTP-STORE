@@ -90,7 +90,7 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        // نرسل البيانات كـ Metadata، والتريجر الذكي سيتكفل بالباقي!
+        // 1. الضربة الأولى: التسجيل وإرسال البيانات للتريجر (الذي نجح في قراءة النوع B2B)
         const { data, error: signUpError } = await supabase.auth.signUp({ 
           email: email, 
           password: password,
@@ -108,6 +108,11 @@ export default function Login() {
         if (signUpError) throw signUpError;
 
         if (data?.user) {
+          // 2. 🚀 الضربة المزدوجة: إجبار قاعدة البيانات على حفظ الاسم المكتوب فوراً لتصحيح تلاعب التريجر!
+          await supabase.from('suppliers').update({
+            store_name: storeName // أخذ الاسم المكتوب في الخانة وفرضه على النظام
+          }).eq('id', data.user.id);
+
           alert(t.regSuccess);
         }
       }
