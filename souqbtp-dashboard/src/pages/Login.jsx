@@ -90,7 +90,7 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        // 1. الضربة الأولى: التسجيل وإرسال البيانات للتريجر (الذي نجح في قراءة النوع B2B)
+        // 1. التسجيل العادي (التريجر سيعمل ويجهز المحفظة ولوحة التحكم)
         const { data, error: signUpError } = await supabase.auth.signUp({ 
           email: email, 
           password: password,
@@ -108,10 +108,13 @@ export default function Login() {
         if (signUpError) throw signUpError;
 
         if (data?.user) {
-          // 2. 🚀 الضربة المزدوجة: إجبار قاعدة البيانات على حفظ الاسم المكتوب فوراً لتصحيح تلاعب التريجر!
-          await supabase.from('suppliers').update({
-            store_name: storeName // أخذ الاسم المكتوب في الخانة وفرضه على النظام
-          }).eq('id', data.user.id);
+          // 🚀 2. السلاح السري: استدعاء الدالة العليا لفرض الاسم المكتوب فوراً متجاوزة أي حظر!
+          const { error: rpcError } = await supabase.rpc('force_fix_supplier', {
+            user_id: data.user.id,
+            real_store_name: storeName
+          });
+
+          if (rpcError) console.error("RPC Error:", rpcError);
 
           alert(t.regSuccess);
         }
