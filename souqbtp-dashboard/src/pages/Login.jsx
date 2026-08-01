@@ -90,28 +90,24 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        // 1. إنشاء الحساب في نظام المصادقة فقط
-        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+        // نرسل البيانات كـ Metadata، والتريجر الذكي سيتكفل بالباقي!
+        const { data, error: signUpError } = await supabase.auth.signUp({ 
+          email: email, 
+          password: password,
+          options: {
+            data: {
+              store_name: storeName,
+              phone: phone || null,
+              role: role,
+              tier: role === 'wholesaler' ? 'enterprise' : 'starter',
+              supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
+            }
+          }
+        });
+        
         if (signUpError) throw signUpError;
 
         if (data?.user) {
-          // 2. إدخال البيانات يدوياً ومباشرة في جدول الموردين (بدون تريجر!)
-          const { error: insertError } = await supabase.from('suppliers').insert([
-            {
-              id: data.user.id,
-              store_name: storeName, // سيتم أخذ الاسم المكتوب فوراً
-              phone: phone || null,
-              role: role,
-              // تطبيق الخصائص الهيكلية للتمييز بين بائع الجملة والتجزئة
-              tier: role === 'wholesaler' ? 'enterprise' : 'starter',
-              supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail',
-              referral_code: data.user.id.substring(0, 8),
-              status: 'pending'
-            }
-          ]);
-          
-          if (insertError) throw insertError;
-          
           alert(t.regSuccess);
         }
       }
