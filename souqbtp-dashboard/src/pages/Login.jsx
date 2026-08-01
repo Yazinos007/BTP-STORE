@@ -90,28 +90,33 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        // 1. التسجيل الأساسي (فقط إيميل وباسورد لكي يعمل التريجر في هدوء ويجهز المحفظة)
-        const { data, error: signUpError } = await supabase.auth.signUp({ 
-          email: email, 
-          password: password 
+        // 1. التسجيل وإرسال الميتا-داتا (التريجر سيعمل الآن ويكتب "متجر جديد")
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { store_name: storeName, role: role }
+          }
         });
         
         if (signUpError) throw signUpError;
 
-        if (data?.user) {
-          // 🚀 2. الضربة القاضية: استدعاء الدالة العليا وإرسال *كل* التفاصيل لتحديث الهيكل الفارغ
-          const { error: rpcError } = await supabase.rpc('complete_user_profile', {
-            p_user_id: data.user.id,
-            p_store_name: storeName,
-            p_phone: phone || null,
-            p_role: role,
-            p_tier: role === 'wholesaler' ? 'enterprise' : 'starter',
-            p_supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
-          });
+        if (authData?.user) {
+          // 🚀 2. الحيلة الذهبية: ننتظر ثانية واحدة، ثم نمسح ما كتبه التريجر ونضع بياناتنا!
+          setTimeout(async () => {
+            const { error: updateError } = await supabase
+              .from('suppliers')
+              .update({
+                store_name: storeName, // فرض الاسم الحقيقي
+                tier: role === 'wholesaler' ? 'enterprise' : 'starter',
+                supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail' // فرض نوع المتجر
+              })
+              .eq('id', authData.user.id);
 
-          if (rpcError) {
-             console.error("فشل تحديث البيانات عبر RPC:", rpcError);
-          }
+            if (updateError) {
+              console.error("خطأ في تحديث البيانات بعد التسجيل:", updateError);
+            }
+          }, 1500); // تأخير لمدة 1.5 ثانية لضمان انتهاء التريجر
 
           alert(t.regSuccess);
         }
