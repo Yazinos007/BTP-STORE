@@ -90,20 +90,21 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        // 🚀 السحر الحقيقي: إرسال الخصائص داخل options.data
+        // ابحث عن هذا الجزء داخل handleAuth
         const { data, error: signUpError } = await supabase.auth.signUp({ 
-          email, 
-          password,
-          options: {
-            data: {
-              store_name: storeName, // سيتم إرساله كـ Metadata
-              phone: phone || null,
-              role: role,
-              tier: role === 'wholesaler' ? 'enterprise' : 'starter',
-              supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
-            }
-          }
-        });
+        email: email, 
+        password: password,
+        // 🚀 هذا هو الجزء السحري الذي يجب إضافته:
+        options: {
+        data: {
+        store_name: storeName, // إرسال الاسم المكتوب بدقة
+        phone: phone || null,
+        role: role,
+        tier: role === 'wholesaler' ? 'enterprise' : 'starter',
+        supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
+      }
+    }
+  });
         
         if (signUpError) throw signUpError;
 
