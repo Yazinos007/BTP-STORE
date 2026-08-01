@@ -94,20 +94,18 @@ export default function Login() {
         if (signUpError) throw signUpError;
 
         if (data?.user) {
-          // 🚀 السحر هنا: نرسل جميع الخصائص المطلوبة بوضوح لكي يقرأها الماركت بليس
-          const supplierData = {
-            id: data.user.id,
-            store_name: storeName, // إجبار النظام على أخذ هذا الاسم بدل "متجر جديد"
-            phone: phone || null,
-            role: role,
-            tier: role === 'wholesaler' ? 'enterprise' : 'starter',
-            supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail', // هذا هو المفتاح السري للماركت بليس
-            referral_code: data.user.id.substring(0, 8)
-          };
-
+          // 🚀 استخدام دالة update لتعديل الصف الذي أنشأه التريجر
           const { error: profileError } = await supabase
             .from('suppliers')
-            .upsert([supplierData], { onConflict: 'id' }); 
+            .update({
+              store_name: storeName, // إرسال الاسم المكتوب
+              phone: phone || null,
+              role: role,
+              tier: role === 'wholesaler' ? 'enterprise' : 'starter',
+              supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail',
+              referral_code: data.user.id.substring(0, 8)
+            })
+            .eq('id', data.user.id); // التأكد من تعديل صف المستخدم الحالي فقط
             
           if (profileError) throw profileError;
           
