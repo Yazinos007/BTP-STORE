@@ -90,37 +90,29 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        // 1. إنشاء حساب المصادقة فقط
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        // 🚀 التسجيل وإرسال خصائص الكيان بدقة في حزمة الميتا-داتا
+        const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { store_name: storeName, role: role }
+            data: {
+              store_name: storeName,
+              phone: phone || null,
+              // تحديد السمات التي ستقرأها قاعدة البيانات للتمييز بين كيانات الجملة والتجزئة
+              tier: role === 'wholesaler' ? 'enterprise' : 'starter',
+              supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
+            }
           }
         });
         
         if (signUpError) throw signUpError;
 
-        if (authData?.user) {
-          // 🚀 2. إطلاق الدبابة (RPC) لفرض البيانات الصحيحة والسمات الدقيقة للكيان
-          const { error: rpcError } = await supabase.rpc('register_supplier_safe', {
-            p_user_id: authData.user.id,
-            p_store_name: storeName,
-            p_phone: phone || null,
-            p_role: 'supplier',
-            p_tier: role === 'wholesaler' ? 'enterprise' : 'starter',
-            p_supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
-          });
-
-          if (rpcError) {
-            console.error("خطأ في تسجيل البيانات عبر RPC:", rpcError);
-            setError("حدث خطأ أثناء حفظ بيانات المتجر.");
-          } else {
-            alert(t.regSuccess);
-            // إنعاش الصفحة لكسر أي تشنج قديم في الواجهة
-            window.location.reload(); 
-          }
-        }
+        alert(t.regSuccess);
+        
+        // إعادة تحميل الصفحة لتسجيل الدخول بسلاسة
+        setTimeout(() => {
+           window.location.reload();
+        }, 1000);
       }
     } catch (err) {
       console.error(err);
