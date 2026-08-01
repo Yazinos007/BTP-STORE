@@ -90,26 +90,28 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        // ابحث عن هذا الجزء داخل handleAuth
-        const { data, error: signUpError } = await supabase.auth.signUp({ 
-        email: email, 
-        password: password,
-        // 🚀 هذا هو الجزء السحري الذي يجب إضافته:
-        options: {
-        data: {
-        store_name: storeName, // إرسال الاسم المكتوب بدقة
-        phone: phone || null,
-        role: role,
-        tier: role === 'wholesaler' ? 'enterprise' : 'starter',
-        supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
-      }
-    }
-  });
-        
+        // 1. إنشاء الحساب في نظام المصادقة فقط
+        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
         if (signUpError) throw signUpError;
 
         if (data?.user) {
-          // لم نعد بحاجة لعمل update أو upsert هنا! التريجر سيقوم بكل العمل بناءً على الـ Metadata
+          // 2. إدخال البيانات يدوياً ومباشرة في جدول الموردين (بدون تريجر!)
+          const { error: insertError } = await supabase.from('suppliers').insert([
+            {
+              id: data.user.id,
+              store_name: storeName, // سيتم أخذ الاسم المكتوب فوراً
+              phone: phone || null,
+              role: role,
+              // تطبيق الخصائص الهيكلية للتمييز بين بائع الجملة والتجزئة
+              tier: role === 'wholesaler' ? 'enterprise' : 'starter',
+              supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail',
+              referral_code: data.user.id.substring(0, 8),
+              status: 'pending'
+            }
+          ]);
+          
+          if (insertError) throw insertError;
+          
           alert(t.regSuccess);
         }
       }
