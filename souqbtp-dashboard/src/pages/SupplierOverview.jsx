@@ -87,6 +87,50 @@ const translations = {
   }
 };
 
+// 🚀 دالة جديدة لتوليد الأشهر الستة الماضية وتجميع البيانات فيها
+const processChartData = (invoices, marketOrders, expenses, isArabic) => {
+  const result = [];
+  const date = new Date();
+  
+  const monthNamesAr = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
+  const monthNamesFr = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+  // 1. توليد هيكل الأشهر الستة الأخيرة
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(date.getFullYear(), date.getMonth() - i, 1);
+    const monthIndex = d.getMonth();
+    const year = d.getFullYear();
+    const monthKey = `${year}-${String(monthIndex + 1).padStart(2, '0')}`; // مثال: 2024-03
+    const monthLabel = isArabic ? monthNamesAr[monthIndex] : monthNamesFr[monthIndex];
+
+    result.push({ monthKey, month: monthLabel, sales: 0, costs: 0 });
+  }
+
+  // 2. دالة مساعدة لتوزيع المبالغ على الأشهر
+  const distributeToMonths = (items, amountKey, targetKey) => {
+    if (!items) return;
+    items.forEach(item => {
+      if (!item.created_at) return;
+      const itemDate = new Date(item.created_at);
+      const itemMonthKey = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      const targetMonth = result.find(m => m.monthKey === itemMonthKey);
+      if (targetMonth) {
+        targetMonth[targetKey] += Number(item[amountKey] || 0);
+      }
+    });
+  };
+
+  // 3. توزيع المبيعات (الفواتير وطلبات الماركت بليس)
+  distributeToMonths(invoices, 'total_amount', 'sales');
+  distributeToMonths(marketOrders, 'total_amount', 'sales');
+  
+  // 4. توزيع المصاريف
+  distributeToMonths(expenses, 'amount', 'costs');
+
+  return result;
+};
+
 export default function SupplierOverview() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
@@ -99,22 +143,26 @@ export default function SupplierOverview() {
     employeesCount: 0, payroll: 0, cash: 0, debts: 0, expenses: 0, vat: 0, netProfit: 0
   });
 
-  // Action Buttons States
+  // 🚀 حالة جديدة لتخزين بيانات الرسم البياني الديناميكية
+  const [chartData, setChartData] = useState([]);
+
   const [ordering, setOrdering] = useState(false);
   const [producing, setProducing] = useState(false);
 
   useEffect(() => {
     if (supplier?.id) fetchDashboardData();
-  }, [supplier]);
+  }, [supplier, language]); // إضافة اللغة ليتحدث الرسم البياني عند تغييرها
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
       const targetId = supplier.id;
 
+      // ⚠️ ملاحظة: تم إضافة 'created_at' لكل طلب استعلام لكي نتمكن من تجميعها حسب الشهر
       let totalSales = 0;
-      const { data: docs } = await supabase.from('documents').select('total_amount').eq('owner_id', targetId).eq('type', 'Facture');
-      const { data: marketOrders } = await supabase.from('marketplace_orders').select('total_amount').eq('supplier_id', targetId).in('order_status', ['delivered', 'shipped']);
+      const { data: docs } = await supabase.from('documents').select('total_amount, created_at').eq('owner_id', targetId).eq('type', 'Facture');
+      const { data: marketOrders } = await supabase.from('marketplace_orders').select('total_amount, created_at').eq('supplier_id', targetId).in('order_status', ['delivered', 'shipped']);
+      
       if (docs) docs.forEach(d => totalSales += Number(d.total_amount || 0));
       if (marketOrders) marketOrders.forEach(o => totalSales += Number(o.total_amount || 0));
 
@@ -156,7 +204,8 @@ export default function SupplierOverview() {
       if (clients) clients.forEach(c => debts += Number(c.total_debt || 0));
 
       let expenses = 0;
-      const { data: exps } = await supabase.from('expenses').select('amount').eq('supplier_id', targetId);
+      // ⚠️ ملاحظة: تم إضافة 'created_at' هنا أيضاً
+      const { data: exps } = await supabase.from('expenses').select('amount, created_at').eq('supplier_id', targetId);
       if (exps) exps.forEach(e => expenses += Number(e.amount || 0));
 
       const estimatedVat = (totalSales * 0.20) - (expenses * 0.20); 
@@ -167,6 +216,10 @@ export default function SupplierOverview() {
         employeesCount, payroll, cash, debts, expenses, vat: estimatedVat > 0 ? estimatedVat : 0, netProfit
       });
 
+      // 🚀 تشغيل دالة التجميع وتحديث الرسم البياني
+      const processedData = processChartData(docs, marketOrders, exps, isArabic);
+      setChartData(processedData);
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -174,7 +227,6 @@ export default function SupplierOverview() {
     }
   };
 
-  // Simulated Action Handlers
   const handleOrder = () => {
     setOrdering(true);
     setTimeout(() => {
@@ -191,16 +243,8 @@ export default function SupplierOverview() {
     }, 1500);
   };
 
-  // Dynamic Chart Data with Translated Months
-  const chartData = [
-    { month: isArabic ? 'فبراير' : 'Fév', sales: 45000, costs: 30000 },
-    { month: isArabic ? 'مارس' : 'Mar', sales: 52000, costs: 32000 },
-    { month: isArabic ? 'أبريل' : 'Avr', sales: 48000, costs: 29000 },
-    { month: isArabic ? 'ماي' : 'Mai', sales: 61000, costs: 35000 },
-    { month: isArabic ? 'يونيو' : 'Juin', sales: 75000, costs: 40000 },
-    { month: isArabic ? 'يوليوز' : 'Juil', sales: metrics.sales > 0 ? metrics.sales : 82000, costs: metrics.expenses > 0 ? metrics.expenses : 45000 },
-  ];
-  const maxChartValue = Math.max(...chartData.map(d => Math.max(d.sales, d.costs))) * 1.1;
+  // 🚀 استخراج أعلى قيمة لضبط ارتفاع الأعمدة (مع تجنب القسمة على الصفر)
+  const maxChartValue = Math.max(...chartData.map(d => Math.max(d.sales, d.costs)), 1) * 1.1;
 
   if (loading) {
     return (
@@ -384,7 +428,7 @@ export default function SupplierOverview() {
             </div>
           </div>
           
-          {/* CSS-based Area Chart (Ultra-fast, no libraries) */}
+          {/* CSS-based Area Chart */}
           <div className="h-64 flex items-end justify-between gap-2 relative border-b border-slate-800 pb-2">
             {chartData.map((data, index) => {
               const salesHeight = (data.sales / maxChartValue) * 100;
@@ -393,7 +437,9 @@ export default function SupplierOverview() {
               return (
                 <div key={index} className="relative w-full flex flex-col items-center justify-end h-full group">
                   <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 border border-slate-700 p-2 rounded-xl text-xs font-bold shadow-xl z-20 pointer-events-none whitespace-nowrap">
-                    <span className="text-emerald-400">{t.margin}: +{margin.toLocaleString()}</span>
+                    <span className={margin >= 0 ? "text-emerald-400" : "text-red-400"}>
+                      {t.margin}: {margin > 0 ? '+' : ''}{margin.toLocaleString()}
+                    </span>
                   </div>
                   
                   <div className="w-full flex justify-center items-end relative h-full">
