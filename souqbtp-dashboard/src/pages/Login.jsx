@@ -90,15 +90,18 @@ export default function Login() {
         if (loginError) throw loginError;
         
       } else {
-        // 🚀 التسجيل وإرسال خصائص الكيان بدقة في حزمة الميتا-داتا
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
+              // 🚀 قصف شامل: إرسال الاسم في كل المفاتيح المحتملة!
               store_name: storeName,
+              name: storeName,          // ليظهر بشكل صحيح في لوحة Auth
+              full_name: storeName,     // كبديل إضافي
+              company_name: storeName,  // كبديل لاسم الشركة
               phone: phone || null,
-              // تحديد السمات التي ستقرأها قاعدة البيانات للتمييز بين كيانات الجملة والتجزئة
+              role: role,
               tier: role === 'wholesaler' ? 'enterprise' : 'starter',
               supplier_type: role === 'wholesaler' ? 'wholesale' : 'retail'
             }
