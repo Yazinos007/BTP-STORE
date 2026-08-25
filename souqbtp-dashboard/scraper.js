@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 console.log("السكربت بدأ العمل الآن...");
 
