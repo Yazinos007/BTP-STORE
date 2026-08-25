@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://emioaqamotrycdonsswv.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtaW9hcWFtb3RyeWNkb25zc3d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzNTg1MzAsImV4cCI6MjA4MDkzNDUzMH0.ARIB-gbtSz_Bk4l3tj_34GkzRWL-0grI2XDPGfkYU5g';
+// 1. جلب القيم من ملف .env.local عبر أسماء المتغيرات
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL; 
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
+// 2. إنشاء الاتصال مع تمرير إعدادات المصادقة بشكل صحيح
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

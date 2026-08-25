@@ -44,14 +44,29 @@ export default function TenderRadar() {
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
 
   useEffect(() => {
-    console.log("الرادار بدأ العمل!");
-    fetchTenders();
-  }, []);
+  fetchTenders();
+
+  // تفعيل الرادار الحي للاستماع لأي صفقة جديدة تُضاف في قاعدة البيانات
+  const subscription = supabase
+    .channel('tenders-channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tenders' }, (payload) => {
+      console.log('صفقة جديدة على الرادار!', payload.new);
+      // إضافة الصفقة الجديدة في أعلى القائمة
+      setTenders((currentTenders) => [payload.new, ...currentTenders]);
+    })
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(subscription);
+  };
+}, []);
 
   async function fetchTenders() {
     try {
@@ -73,10 +88,21 @@ export default function TenderRadar() {
     }
   }
 
+  // 1. الفلترة حسب البحث
   const filteredTenders = tenders.filter(tender => {
-    const title = language === 'fr' ? tender.title_fr : language === 'en' ? (tender.title_en || tender.title_fr) : tender.title_ar;
-    return (title || '').toLowerCase().includes(searchTerm.toLowerCase());
+  const title = language === 'fr' ? tender.title_fr : language === 'en' ? (tender.title_en || tender.title_fr) : tender.title_ar;
+  return (title || '').toLowerCase().includes(searchTerm.toLowerCase());
   });
+
+  // 2. حساب عدد الصفحات وتقسيم البيانات
+  const totalPages = Math.ceil(filteredTenders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentTenders = filteredTenders.slice(startIndex, startIndex + itemsPerPage);
+
+  // إعادة تعيين الصفحة إلى 1 عند كتابة شيء في مربع البحث
+  useEffect(() => {
+  setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <div className="space-y-10 animate-fade-in text-slate-300" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -93,7 +119,10 @@ export default function TenderRadar() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors border border-slate-700">
+          <button 
+            onClick={() => alert("سيتم إضافة نافذة الفلاتر قريباً!")} 
+            className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors border border-slate-700"
+            >
             <Filter size={20} />
           </button>
         </div>
@@ -119,12 +148,49 @@ export default function TenderRadar() {
         </div>
       ) : filteredTenders.length > 0 ? (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 text-start">
-          {filteredTenders.map(tender => (
+          {currentTenders.map(tender => (
             <div key={tender.id} className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-8 rounded-[2rem] hover:border-blue-500/40 transition-all group relative overflow-hidden shadow-xl">
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Gavel size={120} />
               </div>
-              
+
+              {/* 📑 أزرار التصفح (Pagination) */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-12">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-6 py-3 bg-slate-800 text-white rounded-xl hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold"
+            >
+              السابق
+            </button>
+            
+            <div className="flex items-center gap-2">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold transition-all ${
+                    currentPage === i + 1 
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' 
+                      : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-6 py-3 bg-slate-800 text-white rounded-xl hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold"
+            >
+              التالي
+            </button>
+          </div>
+        )}
+          
               <div className="flex justify-between items-start mb-6">
                 <span className="px-4 py-1.5 bg-blue-600/10 text-blue-400 rounded-full text-xs font-black uppercase tracking-widest border border-blue-600/20">
                   {t.tenderType}
@@ -142,10 +208,15 @@ export default function TenderRadar() {
                 </div>
               </div>
 
-              <button className="w-full py-4 bg-slate-800 hover:bg-blue-600 text-white font-black rounded-2xl transition-all flex items-center justify-center gap-2 group/btn">
-                {t.viewDetails}
-                <ArrowUpRight size={18} className={`group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform ${language === 'ar' ? 'rotate-90 group-hover/btn:rotate-0' : ''}`} />
-              </button>
+              <a 
+              href={tender.url || tender.link || '#'} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full py-4 bg-slate-800 hover:bg-blue-600 text-white font-black rounded-2xl transition-all flex items-center justify-center gap-2 group/btn"
+              >
+              {t.viewDetails}
+              <ArrowUpRight size={18} className={`group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform ${language === 'ar' ? 'rotate-90 group-hover/btn:rotate-0' : ''}`} />
+              </a>
             </div>
           ))}
         </div>
