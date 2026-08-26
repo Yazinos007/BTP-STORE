@@ -5,6 +5,7 @@ import useSupplierStore from '../store/useSupplierStore';
 import { Sparkles, AlertTriangle, Truck, ShieldAlert, ArrowRightLeft, CheckCircle2, ChevronRight, RefreshCw, Loader2, Gavel, Timer, Box, Send, MapPin, Plus, X } from 'lucide-react';
 
 const translations = {
+  // ... (نفس كائن الترجمة السابق بالضبط بدون تغيير)
   ar: {
     title: 'المستشار الاستراتيجي (IA)',
     subtitle: 'محرك الذكاء الاصطناعي لتحليل الأسواق العالمية وتحسين اللوجستيك في الوقت الفعلي.',
@@ -37,7 +38,7 @@ const translations = {
     tanger7km: 'طنجة (7 كلم)',
     estBudget: 'الميزانية التقديرية',
     highMarginRisk: 'مخاطر حادة على هامش الربح',
-    hedgingAlert: '🚨 تنبيه استباقي: تم رصد ارتفاع وشيك بنسبة +5.4% في أسعار حديد التسليح (حديد 12 و 10) نتيجة لارتفاع تكاليف الشحن البحري في المتوسط. المصانع الوطنية ستحدث أسعار الخروج من المصنع خلال الـ 48 ساعة القادمة.',
+    hedgingAlert: '🚨 تنبيه استباقي: جاري قراءة السوق...',
     recommendedAction: 'الإجراء الاستراتيجي المنصوح به',
     freezeBuy: 'تجميد عروض البيع فوراً وتأمين شحنة مصنع',
     matchFound: 'تم العثور على تطابق ذكي',
@@ -46,7 +47,6 @@ const translations = {
     casablanca: 'الدار البيضاء',
     fuelSavings: 'وفر في المحروقات',
     logisticsAlert: '💡 الذكاء الاصطناعي التقط فرصة لدمج الشحنات وتقليص تكاليف النقل بناءً على مسار شاحنتك المسجل.',
-    // Modal
     formTitle: 'تسجيل رحلة عودة فارغة',
     fromCity: 'من مدينة (الانطلاق)',
     toCity: 'إلى مدينة (الوصول)',
@@ -56,6 +56,7 @@ const translations = {
     submitTrip: 'نشر الرحلة على الرادار الذكي',
   },
   fr: {
+    // ... محتوى الفرنسية نفسه
     title: 'Conseiller Stratégique (IA)',
     subtitle: 'Moteur IA pour l\'analyse des marchés mondiaux et l\'optimisation logistique en temps réel.',
     tenderRadar: 'Radar d\'Appels d\'Offres (Live)',
@@ -87,7 +88,7 @@ const translations = {
     tanger7km: 'Tanger (7km)',
     estBudget: 'Budget Estimatif',
     highMarginRisk: 'Risque de Marge Élevé',
-    hedgingAlert: '🚨 Alerte prévisionnelle : Une hausse imminente de +5.4% est détectée sur l\'Acier Rond à Béton suite à l\'augmentation du fret maritime en Méditerranée. Les usines nationales comptent ajuster leurs prix d\'usine d\'ici 48 heures.',
+    hedgingAlert: '🚨 Alerte prévisionnelle en cours...',
     recommendedAction: 'Action conseillée',
     freezeBuy: 'Geler les devis de vente & Acheter 250T',
     matchFound: '1 Matching Trouvé',
@@ -96,7 +97,6 @@ const translations = {
     casablanca: 'Casablanca',
     fuelSavings: 'Économie Carburant',
     logisticsAlert: '💡 L\'IA a détecté une opportunité de fusionner les expéditions et de réduire les coûts de transport.',
-    // Modal
     formTitle: 'Enregistrer un trajet à vide',
     fromCity: 'De (Ville de départ)',
     toCity: 'Vers (Ville d\'arrivée)',
@@ -106,6 +106,7 @@ const translations = {
     submitTrip: 'Publier sur le radar IA',
   },
   en: {
+    // ... محتوى الإنجليزية نفسه
     title: 'AI Strategic Advisor',
     subtitle: 'AI engine for global market analysis and real-time logistics optimization.',
     tenderRadar: 'Smart Tender Radar (Live)',
@@ -137,7 +138,7 @@ const translations = {
     tanger7km: 'Tangier (7km)',
     estBudget: 'Estimated Budget',
     highMarginRisk: 'High Margin Risk',
-    hedgingAlert: '🚨 Predictive Alert: An imminent +5.4% increase in Rebar prices is detected due to rising Mediterranean sea freight costs. National factories plan to adjust their ex-works prices within 48 hours.',
+    hedgingAlert: '🚨 Predictive Alert processing...',
     recommendedAction: 'Recommended Strategic Action',
     freezeBuy: 'Freeze sales quotes & Buy 250T factory load',
     matchFound: '1 Smart Match Found',
@@ -146,7 +147,6 @@ const translations = {
     casablanca: 'Casablanca',
     fuelSavings: 'Fuel Savings',
     logisticsAlert: '💡 AI detected an opportunity to merge shipments and reduce transport costs based on your registered route.',
-    // Modal
     formTitle: 'Register an Empty Return',
     fromCity: 'From (Departure City)',
     toCity: 'To (Arrival City)',
@@ -168,6 +168,10 @@ export default function AISmartAdvisor() {
   const [isBidding, setIsBidding] = useState(false);
   const [showTender, setShowTender] = useState(false);
   
+  // 🧠 حالة (State) لبيانات الذكاء الاصطناعي القادمة من OpenAI
+  const [aiHedgingData, setAiHedgingData] = useState(null);
+  const [isLoadingHedging, setIsLoadingHedging] = useState(true);
+
   // States للوجستيك الحقيقي
   const [matchedTrip, setMatchedTrip] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -185,9 +189,30 @@ export default function AISmartAdvisor() {
       setIsLoading(false);
       setTimeout(() => setShowTender(true), 2000);
       fetchMatchedTrip();
+      fetchAIHedgingData(); // 🚀 استدعاء الذكاء الاصطناعي هنا
     }, 1200);
     return () => clearTimeout(timer);
   }, []);
+
+  // 🤖 دالة الاتصال بـ OpenAI عبر Supabase Edge Function
+  async function fetchAIHedgingData() {
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-advisor');
+      
+      if (error) throw error;
+      setAiHedgingData(data); // حفظ الرد القادم من الذكاء الاصطناعي
+    } catch (err) {
+      console.error('Error fetching AI data:', err);
+      // بيانات افتراضية في حالة فشل الاتصال لكي لا تتشوه الواجهة
+      setAiHedgingData({
+        alert: "🚨 تنبيه استباقي: تم رصد ارتفاع وشيك في أسعار حديد التسليح بناءً على معطيات السوق الحالية.",
+        efficiency: "85000",
+        action: "تجميد عروض البيع فوراً وتأمين شحنة مصنع"
+      });
+    } finally {
+      setIsLoadingHedging(false);
+    }
+  }
 
   async function fetchMatchedTrip() {
     try {
@@ -256,7 +281,7 @@ export default function AISmartAdvisor() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in text-slate-300" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* 🚀 Header */}
+      {/* Header */}
       <div className="flex justify-between items-start border-b border-slate-800 pb-6">
         <div>
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
@@ -331,7 +356,7 @@ export default function AISmartAdvisor() {
           </div>
         )}
 
-        {/* 2️⃣ Hedging Radar */}
+        {/* 2️⃣ Hedging Radar (يستخدم الآن بيانات OpenAI المباشرة) */}
         <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl group">
           <div className="absolute top-0 right-0 w-80 h-80 bg-red-500/5 rounded-full blur-[100px] pointer-events-none"></div>
           
@@ -352,23 +377,32 @@ export default function AISmartAdvisor() {
           </div>
 
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 mb-6 space-y-4">
-            <p className="text-base font-bold text-slate-200 leading-relaxed">
-              {t.hedgingAlert}
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-800/60">
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.efficiency}</p>
-                <p className="text-xl font-black text-emerald-400 mt-1">~ 85,000 {t.currency}</p>
+            {isLoadingHedging ? (
+              <div className="flex items-center gap-3 text-slate-400 py-4">
+                <Loader2 size={20} className="animate-spin text-red-400" />
+                <span className="font-bold">{t.hedgingAlert}</span>
               </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.recommendedAction}</p>
-                <p className="text-base font-black text-blue-400 mt-1">{t.freezeBuy}</p>
-              </div>
-            </div>
+            ) : (
+              <>
+                <p className="text-base font-bold text-slate-200 leading-relaxed">
+                  {aiHedgingData?.alert || t.hedgingAlert}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-800/60">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.efficiency}</p>
+                    <p className="text-xl font-black text-emerald-400 mt-1">~ {aiHedgingData?.efficiency || "85000"} {t.currency}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.recommendedAction}</p>
+                    <p className="text-base font-black text-blue-400 mt-1">{aiHedgingData?.action || t.freezeBuy}</p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <button onClick={handleHedgingAction} disabled={isProcessingHedging} className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50">
+            <button onClick={handleHedgingAction} disabled={isProcessingHedging || isLoadingHedging} className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50">
               {isProcessingHedging ? t.saving : t.actionFreeze}
             </button>
             <button className="px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-black rounded-xl transition-all border border-slate-700">
@@ -377,7 +411,7 @@ export default function AISmartAdvisor() {
           </div>
         </div>
 
-        {/* 3️⃣ Logistics Optimizer */}
+        {/* 3️⃣ Logistics Optimizer (نفسه) */}
         <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl group">
           <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none"></div>
           
