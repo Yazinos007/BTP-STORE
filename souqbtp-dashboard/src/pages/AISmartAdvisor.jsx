@@ -5,7 +5,6 @@ import useSupplierStore from '../store/useSupplierStore';
 import { Sparkles, AlertTriangle, Truck, ShieldAlert, ArrowRightLeft, CheckCircle2, ChevronRight, RefreshCw, Loader2, Gavel, Timer, Box, Send, MapPin, Plus, X } from 'lucide-react';
 
 const translations = {
-  // ... (نفس كائن الترجمة السابق بالضبط بدون تغيير)
   ar: {
     title: 'المستشار الاستراتيجي (IA)',
     subtitle: 'محرك الذكاء الاصطناعي لتحليل الأسواق العالمية وتحسين اللوجستيك في الوقت الفعلي.',
@@ -23,7 +22,6 @@ const translations = {
     saving: 'جاري معالجة الأمر الحكيم...',
     currency: 'درهم',
     efficiency: 'نسبة التوفير المالي المتوقعة',
-    route: 'خط سير الرحلة المستهدف',
     emptyReturn: 'رحلة العودة الفارغة المكتشفة',
     timeLeft: 'الوقت المتبقي',
     location: 'موقع المشروع',
@@ -47,6 +45,7 @@ const translations = {
     casablanca: 'الدار البيضاء',
     fuelSavings: 'وفر في المحروقات',
     logisticsAlert: '💡 الذكاء الاصطناعي التقط فرصة لدمج الشحنات وتقليص تكاليف النقل بناءً على مسار شاحنتك المسجل.',
+    // 🌐 إضافات الترجمة الجديدة للفورم والذكاء الاصطناعي
     formTitle: 'تسجيل رحلة عودة فارغة',
     fromCity: 'من مدينة (الانطلاق)',
     toCity: 'إلى مدينة (الوصول)',
@@ -54,9 +53,16 @@ const translations = {
     truckType: 'نوع الشاحنة',
     capacity: 'السعة المتاحة (بالطن)',
     submitTrip: 'نشر الرحلة على الرادار الذكي',
+    fromCityPlace: 'مثال: طنجة',
+    toCityPlace: 'مثال: الدار البيضاء',
+    capacityPlace: 'مثال: 25',
+    truck1: 'رموك (Remorque)',
+    truck2: 'شاحنة 14 طن',
+    truck3: 'شاحنة 19 طن',
+    aiFallbackAlert: '🚨 تنبيه استباقي: تم رصد ارتفاع وشيك في أسعار حديد التسليح بناءً على معطيات السوق الحالية.',
+    aiFallbackAction: 'تجميد عروض البيع فوراً وتأمين شحنة مصنع'
   },
   fr: {
-    // ... محتوى الفرنسية نفسه
     title: 'Conseiller Stratégique (IA)',
     subtitle: 'Moteur IA pour l\'analyse des marchés mondiaux et l\'optimisation logistique en temps réel.',
     tenderRadar: 'Radar d\'Appels d\'Offres (Live)',
@@ -73,7 +79,6 @@ const translations = {
     saving: 'Traitement de l\'ordre intelligent...',
     currency: 'MAD',
     efficiency: 'Économie financière estimée',
-    route: 'Itinéraire cible',
     emptyReturn: 'Retour à vide détecté',
     timeLeft: 'Temps restant',
     location: 'Lieu du projet',
@@ -97,6 +102,7 @@ const translations = {
     casablanca: 'Casablanca',
     fuelSavings: 'Économie Carburant',
     logisticsAlert: '💡 L\'IA a détecté une opportunité de fusionner les expéditions et de réduire les coûts de transport.',
+    // 🌐 إضافات الترجمة الجديدة للفورم والذكاء الاصطناعي
     formTitle: 'Enregistrer un trajet à vide',
     fromCity: 'De (Ville de départ)',
     toCity: 'Vers (Ville d\'arrivée)',
@@ -104,9 +110,16 @@ const translations = {
     truckType: 'Type de camion',
     capacity: 'Capacité disponible (Tonnes)',
     submitTrip: 'Publier sur le radar IA',
+    fromCityPlace: 'Ex: Tanger',
+    toCityPlace: 'Ex: Casablanca',
+    capacityPlace: 'Ex: 25',
+    truck1: 'Semi-remorque',
+    truck2: 'Camion 14T',
+    truck3: 'Camion 19T',
+    aiFallbackAlert: '🚨 Alerte prévisionnelle : Une hausse imminente des prix de l\'acier est détectée selon les données actuelles du marché.',
+    aiFallbackAction: 'Geler les devis de vente immédiatement et sécuriser le stock d\'usine'
   },
   en: {
-    // ... محتوى الإنجليزية نفسه
     title: 'AI Strategic Advisor',
     subtitle: 'AI engine for global market analysis and real-time logistics optimization.',
     tenderRadar: 'Smart Tender Radar (Live)',
@@ -123,7 +136,6 @@ const translations = {
     saving: 'Processing intelligent order...',
     currency: 'MAD',
     efficiency: 'Estimated financial savings',
-    route: 'Target route',
     emptyReturn: 'Detected empty return',
     timeLeft: 'Time left',
     location: 'Project location',
@@ -147,6 +159,7 @@ const translations = {
     casablanca: 'Casablanca',
     fuelSavings: 'Fuel Savings',
     logisticsAlert: '💡 AI detected an opportunity to merge shipments and reduce transport costs based on your registered route.',
+    // 🌐 إضافات الترجمة الجديدة للفورم والذكاء الاصطناعي
     formTitle: 'Register an Empty Return',
     fromCity: 'From (Departure City)',
     toCity: 'To (Arrival City)',
@@ -154,6 +167,14 @@ const translations = {
     truckType: 'Truck Type',
     capacity: 'Available Capacity (Tons)',
     submitTrip: 'Publish on AI Radar',
+    fromCityPlace: 'e.g., Tangier',
+    toCityPlace: 'e.g., Casablanca',
+    capacityPlace: 'e.g., 25',
+    truck1: 'Semi-trailer',
+    truck2: '14T Truck',
+    truck3: '19T Truck',
+    aiFallbackAlert: '🚨 Predictive Alert: An imminent increase in steel prices is detected based on current market data.',
+    aiFallbackAction: 'Freeze sales quotes immediately and secure factory stock'
   }
 };
 
@@ -168,11 +189,9 @@ export default function AISmartAdvisor() {
   const [isBidding, setIsBidding] = useState(false);
   const [showTender, setShowTender] = useState(false);
   
-  // 🧠 حالة (State) لبيانات الذكاء الاصطناعي القادمة من OpenAI
   const [aiHedgingData, setAiHedgingData] = useState(null);
   const [isLoadingHedging, setIsLoadingHedging] = useState(true);
 
-  // States للوجستيك الحقيقي
   const [matchedTrip, setMatchedTrip] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -180,34 +199,41 @@ export default function AISmartAdvisor() {
     departureCity: '',
     arrivalCity: '',
     tripDate: '',
-    truckType: 'رموك (Remorque)',
+    truckType: t.truck1,
     capacity: ''
   });
+
+  // تحديث الذكاء الاصطناعي كلما تغيرت لغة المنصة
+  useEffect(() => {
+    setIsLoadingHedging(true);
+    fetchAIHedgingData();
+  }, [language]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
       setTimeout(() => setShowTender(true), 2000);
       fetchMatchedTrip();
-      fetchAIHedgingData(); // 🚀 استدعاء الذكاء الاصطناعي هنا
     }, 1200);
     return () => clearTimeout(timer);
   }, []);
 
-  // 🤖 دالة الاتصال بـ OpenAI عبر Supabase Edge Function
   async function fetchAIHedgingData() {
     try {
-      const { data, error } = await supabase.functions.invoke('ai-advisor');
+      // إرسال اللغة المطلوبة إلى الخادم
+      const { data, error } = await supabase.functions.invoke('ai-advisor', {
+        body: { lang: language }
+      });
       
       if (error) throw error;
-      setAiHedgingData(data); // حفظ الرد القادم من الذكاء الاصطناعي
+      setAiHedgingData(data);
     } catch (err) {
       console.error('Error fetching AI data:', err);
-      // بيانات افتراضية في حالة فشل الاتصال لكي لا تتشوه الواجهة
+      // استخدام النص المترجم محلياً في حالة الخطأ
       setAiHedgingData({
-        alert: "🚨 تنبيه استباقي: تم رصد ارتفاع وشيك في أسعار حديد التسليح بناءً على معطيات السوق الحالية.",
+        alert: t.aiFallbackAlert,
         efficiency: "85000",
-        action: "تجميد عروض البيع فوراً وتأمين شحنة مصنع"
+        action: t.aiFallbackAction
       });
     } finally {
       setIsLoadingHedging(false);
@@ -246,7 +272,7 @@ export default function AISmartAdvisor() {
       
       setIsModalOpen(false);
       alert(language === 'ar' ? '✅ تم نشر الرحلة بنجاح!' : '✅ Trajet publié !');
-      setFormData({ departureCity: '', arrivalCity: '', tripDate: '', truckType: 'رموك (Remorque)', capacity: '' });
+      setFormData({ departureCity: '', arrivalCity: '', tripDate: '', truckType: t.truck1, capacity: '' });
       fetchMatchedTrip(); 
     } catch (err) {
       alert("حدث خطأ.");
@@ -281,7 +307,6 @@ export default function AISmartAdvisor() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in text-slate-300" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Header */}
       <div className="flex justify-between items-start border-b border-slate-800 pb-6">
         <div>
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
@@ -356,7 +381,7 @@ export default function AISmartAdvisor() {
           </div>
         )}
 
-        {/* 2️⃣ Hedging Radar (يستخدم الآن بيانات OpenAI المباشرة) */}
+        {/* 2️⃣ Hedging Radar */}
         <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl group">
           <div className="absolute top-0 right-0 w-80 h-80 bg-red-500/5 rounded-full blur-[100px] pointer-events-none"></div>
           
@@ -411,7 +436,7 @@ export default function AISmartAdvisor() {
           </div>
         </div>
 
-        {/* 3️⃣ Logistics Optimizer (نفسه) */}
+        {/* 3️⃣ Logistics Optimizer */}
         <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl group">
           <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none"></div>
           
@@ -484,7 +509,6 @@ export default function AISmartAdvisor() {
             <ChevronRight size={16} className={language === 'ar' ? 'rotate-180' : ''} />
           </button>
         </div>
-
       </div>
 
       {/* 🛑 Modal */}
@@ -502,11 +526,11 @@ export default function AISmartAdvisor() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-400">{t.fromCity}</label>
-                  <input required type="text" value={formData.departureCity} onChange={(e) => setFormData({...formData, departureCity: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none" placeholder={language === 'en' ? "e.g., Tangier" : "مثال: طنجة"} />
+                  <input required type="text" value={formData.departureCity} onChange={(e) => setFormData({...formData, departureCity: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none" placeholder={t.fromCityPlace} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-400">{t.toCity}</label>
-                  <input required type="text" value={formData.arrivalCity} onChange={(e) => setFormData({...formData, arrivalCity: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none" placeholder={language === 'en' ? "e.g., Casablanca" : "مثال: الدار البيضاء"} />
+                  <input required type="text" value={formData.arrivalCity} onChange={(e) => setFormData({...formData, arrivalCity: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none" placeholder={t.toCityPlace} />
                 </div>
               </div>
 
@@ -519,14 +543,14 @@ export default function AISmartAdvisor() {
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-400">{t.truckType}</label>
                   <select value={formData.truckType} onChange={(e) => setFormData({...formData, truckType: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none">
-                    <option>رموك (Remorque)</option>
-                    <option>شاحنة 14 طن</option>
-                    <option>شاحنة 19 طن</option>
+                    <option>{t.truck1}</option>
+                    <option>{t.truck2}</option>
+                    <option>{t.truck3}</option>
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-400">{t.capacity}</label>
-                  <input required type="number" min="1" value={formData.capacity} onChange={(e) => setFormData({...formData, capacity: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none" placeholder="مثال: 25" />
+                  <input required type="number" min="1" value={formData.capacity} onChange={(e) => setFormData({...formData, capacity: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none" placeholder={t.capacityPlace} />
                 </div>
               </div>
 
