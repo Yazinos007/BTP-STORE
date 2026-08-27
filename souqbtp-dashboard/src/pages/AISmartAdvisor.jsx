@@ -24,7 +24,7 @@ const translations = {
     efficiency: 'نسبة التوفير المالي المتوقعة',
     emptyReturn: 'رحلة العودة الفارغة المكتشفة',
     timeLeft: 'الوقت المتبقي',
-    location: 'موقع المشروع',
+    location: 'صاحب المشروع',
     matchingStock: 'تطابق المخزون',
     tenderAlert: '🎯 تم رصد مناقصة جديدة قريبة منك!',
     alertHedging: '🔒 تم تجميد عروض الأسعار بنجاح! هامش ربحك محمي الآن.',
@@ -33,7 +33,6 @@ const translations = {
     loadingAI: 'يقوم الذكاء الاصطناعي بتحليل قاعدة البيانات الكبرى...',
     liveUpdate: 'تحديث حي مباشر',
     liveTender: 'مناقصة حية',
-    tanger7km: 'طنجة (7 كلم)',
     estBudget: 'الميزانية التقديرية',
     highMarginRisk: 'مخاطر حادة على هامش الربح',
     hedgingAlert: '🚨 تنبيه استباقي: جاري قراءة السوق...',
@@ -41,11 +40,8 @@ const translations = {
     freezeBuy: 'تجميد عروض البيع فوراً وتأمين شحنة مصنع',
     matchFound: 'تم العثور على تطابق ذكي',
     noMatch: 'الرادار اللوجستي يبحث... أضف رحلتك لتفعيل المطابقة.',
-    tanger: 'طنجة',
-    casablanca: 'الدار البيضاء',
     fuelSavings: 'وفر في المحروقات',
     logisticsAlert: '💡 الذكاء الاصطناعي التقط فرصة لدمج الشحنات وتقليص تكاليف النقل بناءً على مسار شاحنتك المسجل.',
-    // 🌐 إضافات الترجمة الجديدة للفورم والذكاء الاصطناعي
     formTitle: 'تسجيل رحلة عودة فارغة',
     fromCity: 'من مدينة (الانطلاق)',
     toCity: 'إلى مدينة (الوصول)',
@@ -59,7 +55,7 @@ const translations = {
     truck1: 'رموك (Remorque)',
     truck2: 'شاحنة 14 طن',
     truck3: 'شاحنة 19 طن',
-    aiFallbackAlert: '🚨 تنبيه استباقي: تم رصد ارتفاع وشيك في أسعار حديد التسليح بناءً على معطيات السوق الحالية.',
+    aiFallbackAlert: '🚨 تنبيه استباقي (وضع عدم الاتصال): تم رصد ارتفاع وشيك في أسعار حديد التسليح بناءً على معطيات السوق الحالية.',
     aiFallbackAction: 'تجميد عروض البيع فوراً وتأمين شحنة مصنع'
   },
   fr: {
@@ -81,7 +77,7 @@ const translations = {
     efficiency: 'Économie financière estimée',
     emptyReturn: 'Retour à vide détecté',
     timeLeft: 'Temps restant',
-    location: 'Lieu du projet',
+    location: 'Maître d\'ouvrage',
     matchingStock: 'Stock compatible',
     tenderAlert: '🎯 Nouvel appel d\'offres détecté à proximité !',
     alertHedging: '🔒 Devis gelés avec succès ! Votre marge est protégée.',
@@ -90,7 +86,6 @@ const translations = {
     loadingAI: 'L\'IA analyse la base de données globale...',
     liveUpdate: 'Mise à jour Live',
     liveTender: 'LIVE TENDER',
-    tanger7km: 'Tanger (7km)',
     estBudget: 'Budget Estimatif',
     highMarginRisk: 'Risque de Marge Élevé',
     hedgingAlert: '🚨 Alerte prévisionnelle en cours...',
@@ -98,11 +93,8 @@ const translations = {
     freezeBuy: 'Geler les devis de vente & Acheter 250T',
     matchFound: '1 Matching Trouvé',
     noMatch: 'Radar logistique en recherche... Ajoutez votre trajet.',
-    tanger: 'Tanger',
-    casablanca: 'Casablanca',
     fuelSavings: 'Économie Carburant',
     logisticsAlert: '💡 L\'IA a détecté une opportunité de fusionner les expéditions et de réduire les coûts de transport.',
-    // 🌐 إضافات الترجمة الجديدة للفورم والذكاء الاصطناعي
     formTitle: 'Enregistrer un trajet à vide',
     fromCity: 'De (Ville de départ)',
     toCity: 'Vers (Ville d\'arrivée)',
@@ -116,7 +108,7 @@ const translations = {
     truck1: 'Semi-remorque',
     truck2: 'Camion 14T',
     truck3: 'Camion 19T',
-    aiFallbackAlert: '🚨 Alerte prévisionnelle : Une hausse imminente des prix de l\'acier est détectée selon les données actuelles du marché.',
+    aiFallbackAlert: '🚨 Alerte prévisionnelle (Hors-ligne) : Une hausse imminente des prix de l\'acier est détectée selon les données du marché.',
     aiFallbackAction: 'Geler les devis de vente immédiatement et sécuriser le stock d\'usine'
   },
   en: {
@@ -138,7 +130,7 @@ const translations = {
     efficiency: 'Estimated financial savings',
     emptyReturn: 'Detected empty return',
     timeLeft: 'Time left',
-    location: 'Project location',
+    location: 'Project Owner',
     matchingStock: 'Stock match',
     tenderAlert: '🎯 New tender detected nearby!',
     alertHedging: '🔒 Quotes successfully frozen! Your profit margin is protected.',
@@ -147,7 +139,6 @@ const translations = {
     loadingAI: 'AI is analyzing the global database...',
     liveUpdate: 'Live Update',
     liveTender: 'LIVE TENDER',
-    tanger7km: 'Tangier (7km)',
     estBudget: 'Estimated Budget',
     highMarginRisk: 'High Margin Risk',
     hedgingAlert: '🚨 Predictive Alert processing...',
@@ -155,11 +146,8 @@ const translations = {
     freezeBuy: 'Freeze sales quotes & Buy 250T factory load',
     matchFound: '1 Smart Match Found',
     noMatch: 'Logistics radar searching... Add your trip to trigger matching.',
-    tanger: 'Tangier',
-    casablanca: 'Casablanca',
     fuelSavings: 'Fuel Savings',
     logisticsAlert: '💡 AI detected an opportunity to merge shipments and reduce transport costs based on your registered route.',
-    // 🌐 إضافات الترجمة الجديدة للفورم والذكاء الاصطناعي
     formTitle: 'Register an Empty Return',
     fromCity: 'From (Departure City)',
     toCity: 'To (Arrival City)',
@@ -173,7 +161,7 @@ const translations = {
     truck1: 'Semi-trailer',
     truck2: '14T Truck',
     truck3: '19T Truck',
-    aiFallbackAlert: '🚨 Predictive Alert: An imminent increase in steel prices is detected based on current market data.',
+    aiFallbackAlert: '🚨 Predictive Alert (Offline): An imminent increase in steel prices is detected based on market data.',
     aiFallbackAction: 'Freeze sales quotes immediately and secure factory stock'
   }
 };
@@ -187,6 +175,9 @@ export default function AISmartAdvisor() {
   const [isProcessingHedging, setIsProcessingHedging] = useState(false);
   const [isProcessingLogistics, setIsProcessingLogistics] = useState(false);
   const [isBidding, setIsBidding] = useState(false);
+  
+  // 🎯 بيانات المناقصة الحقيقية
+  const [latestTender, setLatestTender] = useState(null);
   const [showTender, setShowTender] = useState(false);
   
   const [aiHedgingData, setAiHedgingData] = useState(null);
@@ -203,33 +194,66 @@ export default function AISmartAdvisor() {
     capacity: ''
   });
 
-  // تحديث الذكاء الاصطناعي كلما تغيرت لغة المنصة
+  // تحديث الذكاء الاصطناعي عند تغير اللغة
   useEffect(() => {
     setIsLoadingHedging(true);
     fetchAIHedgingData();
   }, [language]);
 
+  // التهيئة الأولى وجلب البيانات
   useEffect(() => {
+    fetchLatestTender();
+    fetchMatchedTrip();
+
+    // 📡 الاستماع المباشر لأي صفقة جديدة لتعرض في المستشار الذكي
+    const subscription = supabase
+      .channel('advisor-tenders')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tenders' }, (payload) => {
+        setLatestTender(payload.new);
+        setShowTender(true);
+      })
+      .subscribe();
+
     const timer = setTimeout(() => {
       setIsLoading(false);
-      setTimeout(() => setShowTender(true), 2000);
-      fetchMatchedTrip();
     }, 1200);
-    return () => clearTimeout(timer);
+
+    return () => {
+      clearTimeout(timer);
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
+  // 1. جلب أحدث مناقصة حقيقية من قاعدة البيانات
+  async function fetchLatestTender() {
+    try {
+      const { data, error } = await supabase
+        .from('tenders')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+        
+      if (data) {
+        setLatestTender(data);
+        setTimeout(() => setShowTender(true), 1500); // إظهارها بتأثير بعد التحميل
+      }
+    } catch (err) {
+      console.error('Error fetching latest tender:', err);
+    }
+  }
+
+  // 2. جلب بيانات OpenAI
   async function fetchAIHedgingData() {
     try {
-      // إرسال اللغة المطلوبة إلى الخادم
       const { data, error } = await supabase.functions.invoke('ai-advisor', {
         body: { lang: language }
       });
-      
       if (error) throw error;
       setAiHedgingData(data);
     } catch (err) {
       console.error('Error fetching AI data:', err);
-      // استخدام النص المترجم محلياً في حالة الخطأ
       setAiHedgingData({
         alert: t.aiFallbackAlert,
         efficiency: "85000",
@@ -240,6 +264,7 @@ export default function AISmartAdvisor() {
     }
   }
 
+  // 3. اللوجستيك التشاركي
   async function fetchMatchedTrip() {
     try {
       const { data, error } = await supabase
@@ -281,16 +306,15 @@ export default function AISmartAdvisor() {
     }
   }
 
+  // أزرار التفاعل الوهمية
   const handleHedgingAction = () => {
     setIsProcessingHedging(true);
     setTimeout(() => { setIsProcessingHedging(false); alert(t.alertHedging); }, 1500);
   };
-
   const handleLogisticsAction = () => {
     setIsProcessingLogistics(true);
     setTimeout(() => { setIsProcessingLogistics(false); alert(t.alertLogistics); }, 1500);
   };
-
   const handleBidAction = () => {
     setIsBidding(true);
     setTimeout(() => { setIsBidding(false); setShowTender(false); alert(t.alertBid); }, 2000);
@@ -323,8 +347,8 @@ export default function AISmartAdvisor() {
 
       <div className="grid grid-cols-1 gap-8">
         
-        {/* 1️⃣ Tender Radar */}
-        {showTender && (
+        {/* 1️⃣ Tender Radar (الآن متصل بقاعدة البيانات الحقيقية!) */}
+        {showTender && latestTender && (
           <div className="bg-gradient-to-br from-indigo-900 to-slate-950 border-2 border-indigo-500/50 p-8 rounded-3xl relative overflow-hidden shadow-[0_0_50px_rgba(79,70,229,0.2)] animate-slide-up">
             <div className="absolute top-0 right-0 p-4 bg-indigo-500 text-white font-black text-xs uppercase tracking-widest rounded-bl-2xl">
               {t.liveTender}
@@ -346,7 +370,9 @@ export default function AISmartAdvisor() {
                   <div className="flex flex-wrap gap-6">
                     <div className="flex items-center gap-2">
                       <Box size={18} className="text-slate-500" />
-                      <span className="text-sm font-bold text-slate-300">50T Acier 12 | 1200 Sacs Ciment G55</span>
+                      <span className="text-sm font-bold text-slate-300 line-clamp-1">
+                        {language === 'fr' ? latestTender.title_fr : language === 'en' ? (latestTender.title_en || latestTender.title_fr) : latestTender.title_ar}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-emerald-400">
                       <CheckCircle2 size={18} />
@@ -354,7 +380,9 @@ export default function AISmartAdvisor() {
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin size={18} className="text-red-400" />
-                      <span className="text-sm font-bold text-slate-300">{t.location}: {t.tanger7km}</span>
+                      <span className="text-sm font-bold text-slate-300">
+                        {t.location}: {language === 'fr' ? latestTender.agency_fr : latestTender.agency_ar}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-amber-400">
@@ -367,7 +395,9 @@ export default function AISmartAdvisor() {
               <div className="w-full lg:w-72 space-y-3">
                 <div className="p-4 bg-black/40 rounded-2xl border border-white/5 text-center">
                   <p className="text-xs text-slate-500 uppercase font-black mb-1">{t.estBudget}</p>
-                  <p className="text-3xl font-black text-white">485,000 <span className="text-sm font-bold text-slate-400">{t.currency}</span></p>
+                  <p className="text-3xl font-black text-white">
+                    {latestTender.budget ? Number(latestTender.budget).toLocaleString() : '---'} <span className="text-sm font-bold text-slate-400">{t.currency}</span>
+                  </p>
                 </div>
                 <button 
                   onClick={handleBidAction} 
