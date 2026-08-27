@@ -24,7 +24,8 @@ const translations = {
     efficiency: 'نسبة التوفير المالي المتوقعة',
     emptyReturn: 'رحلة العودة الفارغة المكتشفة',
     timeLeft: 'الوقت المتبقي',
-    location: 'صاحب المشروع',
+    location: 'الجهة',
+    unknownAgency: 'جهة عمومية',
     matchingStock: 'تطابق المخزون',
     tenderAlert: '🎯 تم رصد مناقصة جديدة قريبة منك!',
     alertHedging: '🔒 تم تجميد عروض الأسعار بنجاح! هامش ربحك محمي الآن.',
@@ -49,12 +50,12 @@ const translations = {
     truckType: 'نوع الشاحنة',
     capacity: 'السعة المتاحة (بالطن)',
     submitTrip: 'نشر الرحلة على الرادار الذكي',
-    fromCityPlace: 'مثال: طنجة',
-    toCityPlace: 'مثال: الدار البيضاء',
-    capacityPlace: 'مثال: 25',
     truck1: 'رموك (Remorque)',
     truck2: 'شاحنة 14 طن',
     truck3: 'شاحنة 19 طن',
+    fromCityPlace: 'مثال: طنجة',
+    toCityPlace: 'مثال: الدار البيضاء',
+    capacityPlace: 'مثال: 25',
     aiFallbackAlert: '🚨 تنبيه استباقي (وضع عدم الاتصال): تم رصد ارتفاع وشيك في أسعار حديد التسليح بناءً على معطيات السوق الحالية.',
     aiFallbackAction: 'تجميد عروض البيع فوراً وتأمين شحنة مصنع'
   },
@@ -78,6 +79,7 @@ const translations = {
     emptyReturn: 'Retour à vide détecté',
     timeLeft: 'Temps restant',
     location: 'Maître d\'ouvrage',
+    unknownAgency: 'Entité Publique',
     matchingStock: 'Stock compatible',
     tenderAlert: '🎯 Nouvel appel d\'offres détecté à proximité !',
     alertHedging: '🔒 Devis gelés avec succès ! Votre marge est protégée.',
@@ -102,12 +104,12 @@ const translations = {
     truckType: 'Type de camion',
     capacity: 'Capacité disponible (Tonnes)',
     submitTrip: 'Publier sur le radar IA',
-    fromCityPlace: 'Ex: Tanger',
-    toCityPlace: 'Ex: Casablanca',
-    capacityPlace: 'Ex: 25',
     truck1: 'Semi-remorque',
     truck2: 'Camion 14T',
     truck3: 'Camion 19T',
+    fromCityPlace: 'Ex: Tanger',
+    toCityPlace: 'Ex: Casablanca',
+    capacityPlace: 'Ex: 25',
     aiFallbackAlert: '🚨 Alerte prévisionnelle (Hors-ligne) : Une hausse imminente des prix de l\'acier est détectée selon les données du marché.',
     aiFallbackAction: 'Geler les devis de vente immédiatement et sécuriser le stock d\'usine'
   },
@@ -131,6 +133,7 @@ const translations = {
     emptyReturn: 'Detected empty return',
     timeLeft: 'Time left',
     location: 'Project Owner',
+    unknownAgency: 'Public Entity',
     matchingStock: 'Stock match',
     tenderAlert: '🎯 New tender detected nearby!',
     alertHedging: '🔒 Quotes successfully frozen! Your profit margin is protected.',
@@ -155,12 +158,12 @@ const translations = {
     truckType: 'Truck Type',
     capacity: 'Available Capacity (Tons)',
     submitTrip: 'Publish on AI Radar',
-    fromCityPlace: 'e.g., Tangier',
-    toCityPlace: 'e.g., Casablanca',
-    capacityPlace: 'e.g., 25',
     truck1: 'Semi-trailer',
     truck2: '14T Truck',
     truck3: '19T Truck',
+    fromCityPlace: 'e.g., Tangier',
+    toCityPlace: 'e.g., Casablanca',
+    capacityPlace: 'e.g., 25',
     aiFallbackAlert: '🚨 Predictive Alert (Offline): An imminent increase in steel prices is detected based on market data.',
     aiFallbackAction: 'Freeze sales quotes immediately and secure factory stock'
   }
@@ -296,7 +299,7 @@ export default function AISmartAdvisor() {
       if (error) throw error;
       
       setIsModalOpen(false);
-      alert(language === 'ar' ? '✅ تم نشر الرحلة بنجاح!' : '✅ Trajet publié !');
+      alert(language === 'ar' ? '✅ تم نشر الرحلة بنجاح!' : (language === 'fr' ? '✅ Trajet publié !' : '✅ Trip Published!'));
       setFormData({ departureCity: '', arrivalCity: '', tripDate: '', truckType: t.truck1, capacity: '' });
       fetchMatchedTrip(); 
     } catch (err) {
@@ -370,8 +373,11 @@ export default function AISmartAdvisor() {
                   <div className="flex flex-wrap gap-6">
                     <div className="flex items-center gap-2">
                       <Box size={18} className="text-slate-500" />
+                      {/* ⚠️ هنا السحر: الواجهة تبحث الآن عن objet إذا لم تجد title */}
                       <span className="text-sm font-bold text-slate-300 line-clamp-1">
-                        {language === 'fr' ? latestTender.title_fr : language === 'en' ? (latestTender.title_en || latestTender.title_fr) : latestTender.title_ar}
+                        {language === 'fr' ? (latestTender?.objet || latestTender?.title_fr) : 
+                         language === 'en' ? (latestTender?.title_en || latestTender?.objet || latestTender?.title_fr) : 
+                         (latestTender?.title_ar !== 'صفقة جديدة' ? latestTender?.title_ar : (latestTender?.objet || latestTender?.title_fr))}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-emerald-400">
@@ -381,7 +387,7 @@ export default function AISmartAdvisor() {
                     <div className="flex items-center gap-2">
                       <MapPin size={18} className="text-red-400" />
                       <span className="text-sm font-bold text-slate-300">
-                        {t.location}: {language === 'fr' ? latestTender.agency_fr : latestTender.agency_ar}
+                        {t.location}: {(language === 'fr' ? latestTender?.agency_fr : latestTender?.agency_ar) || t.unknownAgency}
                       </span>
                     </div>
                   </div>
