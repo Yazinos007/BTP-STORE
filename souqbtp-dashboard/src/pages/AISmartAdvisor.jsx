@@ -227,20 +227,19 @@ export default function AISmartAdvisor() {
     };
   }, []);
 
-  // 1. جلب أحدث مناقصة حقيقية من قاعدة البيانات
+  // 1. جلب أحدث مناقصة حقيقية من قاعدة البيانات (تم إزالة الفلتر المزعج)
   async function fetchLatestTender() {
     try {
       const { data, error } = await supabase
         .from('tenders')
         .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .order('created_at', { ascending: false }) // رتبها من الأحدث للأقدم
+        .limit(1) // خذ واحدة فقط
         .maybeSingle();
         
       if (data) {
         setLatestTender(data);
-        setTimeout(() => setShowTender(true), 1500); // إظهارها بتأثير بعد التحميل
+        setTimeout(() => setShowTender(true), 1500); 
       }
     } catch (err) {
       console.error('Error fetching latest tender:', err);

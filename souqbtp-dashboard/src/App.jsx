@@ -3,8 +3,9 @@ import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react
 import { supabase } from './lib/supabase';
 import { 
   Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
-  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase 
+  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft
 } from 'lucide-react';
+
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
 import RawMaterialPurchases from './pages/RawMaterialPurchases';
 import SupplierStock from './pages/SupplierStock';
@@ -51,6 +52,7 @@ import SupplierTeam from './pages/SupplierTeam';
 import SupplierProduction from './pages/SupplierProduction';
 import MarketplaceOrders from './pages/MarketplaceOrders';
 import FleetManagement from './pages/FleetManagement';
+import LogisticsBourse from './pages/LogisticsBourse';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
@@ -107,17 +109,17 @@ const WholesalerDashboard = ({ supplier, children }) => {
     fr: { 
       upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", 
       groups: { achats: "Achats & Fournisseurs", marketplace: "Gestion Marketplace", ventes: "Gestion des Ventes" },
-      items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs & Prestataires", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", production: "Production", marketOrders: "Commandes Marketplace", fleetMarket: "Suivi des Commandes", clients: "Clients & Dettes", posB2B: "Ventes Directes (POS)", orders: "Commandes Reçues (B2B)", fleetB2B: "Suivi des Commandes (B2B)", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance" } 
+      items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs & Prestataires", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", production: "Production", marketOrders: "Commandes Marketplace", fleetMarket: "Suivi des Commandes", clients: "Clients & Dettes", posB2B: "Ventes Directes (POS)", orders: "Commandes Reçues (B2B)", fleetB2B: "Suivi des Commandes (B2B)", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", logisticsBourse: "Bourse de Fret", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance" } 
     },
     ar: { 
       upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
       groups: { achats: "المشتريات والموردون", marketplace: "إدارة الماركت بليس", ventes: "إدارة المبيعات" },
-      items: { overview: "لوحة القيادة", rawSuppliers: "الموردون والشركاء", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", production: "الإنتاج (المعمل)", marketOrders: "طلبات الماركت بليس", fleetMarket: "تتبع شحنات المتجر", clients: "العملاء والديون (CRM)", posB2B: "المبيعات المباشرة (POS)", orders: "طلبات التزويد (B2B)", fleetB2B: "تتبع شحنات التزويد", contracts: "العقود والتوقيعات", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق" } 
+      items: { overview: "لوحة القيادة", rawSuppliers: "الموردون والشركاء", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", production: "الإنتاج (المعمل)", marketOrders: "طلبات الماركت بليس", fleetMarket: "تتبع شحنات المتجر", clients: "العملاء والديون (CRM)", posB2B: "المبيعات المباشرة (POS)", orders: "طلبات التزويد (B2B)", fleetB2B: "تتبع شحنات التزويد", contracts: "العقود والتوقيعات", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", logisticsBourse: "بورصة اللوجستيك", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق" } 
     },
     en: { 
       upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", 
       groups: { achats: "Purchases & Suppliers", marketplace: "Marketplace Management", ventes: "Sales Management" },
-      items: { overview: "Dashboard", rawSuppliers: "Suppliers & Partners", rawPurchases: "Purchases & Procurement", stock: "Central Stock", production: "Production", marketOrders: "Marketplace Orders", fleetMarket: "Order Tracking", clients: "Clients & Debts", posB2B: "Direct Sales (POS)", orders: "Received Orders (B2B)", fleetB2B: "B2B Tracking", contracts: "Contracts & Signatures", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", team: "Users & Permissions", settings: "Settings & Trust" } 
+      items: { overview: "Dashboard", rawSuppliers: "Suppliers & Partners", rawPurchases: "Purchases & Procurement", stock: "Central Stock", production: "Production", marketOrders: "Marketplace Orders", fleetMarket: "Order Tracking", clients: "Clients & Debts", posB2B: "Direct Sales (POS)", orders: "Received Orders (B2B)", fleetB2B: "B2B Tracking", contracts: "Contracts & Signatures", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", logisticsBourse: "Freight Exchange",team: "Users & Permissions", settings: "Settings & Trust" } 
     }
   };
   const t = tLayout[language] || tLayout['fr'];
@@ -180,6 +182,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
     { path: '/analytics', icon: BarChart3, label: t.items.analytics },
     { path: '/ai-advisor', icon: Sparkles, label: t.items.ai },
     { path: '/tender-radar', icon: Radar, label: t.items.radar },
+    { path: '/logistics-bourse', icon: ArrowRightLeft, label: t.items.logisticsBourse },
     { path: '/team', icon: Users, label: t.items.team },
     { path: '/settings', icon: Settings, label: t.items.settings }
   ];
@@ -209,8 +212,8 @@ const WholesalerDashboard = ({ supplier, children }) => {
     if (['/hr', '/team'].includes(path)) 
       return "bg-pink-600/20 text-pink-400 border border-pink-500/60 shadow-[0_0_20px_rgba(236,72,153,0.35)] animate-pulse";
 
-    // الذكاء الاصطناعي والتحليلات -> سماوي (Cyan)
-    if (['/analytics', '/ai-advisor', '/tender-radar'].includes(path)) 
+    // ✨ تم إضافة /logistics-bourse إلى المجموعة السماوية الساطعة
+    if (['/analytics', '/ai-advisor', '/tender-radar', '/logistics-bourse'].includes(path)) 
       return "bg-cyan-600/20 text-cyan-400 border border-cyan-500/60 shadow-[0_0_20px_rgba(6,182,212,0.35)] animate-pulse";
 
     // الإعدادات -> رمادي
@@ -521,10 +524,8 @@ function App() {
             <Route path="/caisses" element={<Caisses isWholesaler={true} />} />
             <Route path="/fiscal" element={<Fiscal isWholesaler={true} />} />  
             <Route path="/orders" element={<SupplierOrders />} />
-            {/* 🎯 تم فصل الأسطول هنا لمنع التداخل */}
             <Route path="/fleet-b2b" element={<Fleet />} />
             <Route path="/fleet-market" element={<FleetManagement />} /> 
-            
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/invoices" element={<SupplierInvoices />} />
             <Route path="/hr" element={<SupplierHR />} />
@@ -533,6 +534,7 @@ function App() {
             <Route path="/analytics" element={<AnalyticsB2B />} />
             <Route path="/ai-advisor" element={<AISmartAdvisor />} />
             <Route path="/tender-radar" element={<TenderRadar />} />
+            <Route path="/logistics-bourse" element={<LogisticsBourse />} />
             <Route path="/settings" element={<SupplierSettings />} />
             <Route path="/subscription" element={<SupplierSubscription />} />
             <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />

@@ -3,7 +3,7 @@ import {
   LayoutDashboard, MonitorPlay, Package, ShoppingCart, Wallet, 
   Settings, LogOut, Receipt, Users, FileText, Briefcase, Landmark,
   ChevronDown, ChevronRight, CreditCard, Globe, Calculator,
-  Truck, ShoppingBag, Zap 
+  Truck, ShoppingBag, Zap, ArrowRightLeft 
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -22,7 +22,7 @@ const translations = {
     gestionCaisses: 'إدارة الصناديق', caisses: 'الصناديق والحسابات',
     rh: 'الموارد البشرية', gestionEmployes: 'إدارة الموظفين',
     fiscal: 'النظام الجبائي', decTva: 'إقرارات TVA', chargesEnt: 'مصاريف الشركة', gestionCharges: 'إدارة المصاريف',
-    accounting: 'المحاسبة العامة', logout: 'تسجيل الخروج',
+    accounting: 'المحاسبة العامة', logout: 'تسجيل الخروج', logisticsBourse: 'بورصة اللوجستيك',
     profileSettings: 'الملف الشخصي للمتجر',
     upgrade: 'ارتقِ إلى Enterprise',
     manageSub: 'إدارة الاشتراك',
@@ -40,7 +40,7 @@ const translations = {
     gestionCaisses: 'GESTION DES CAISSES', caisses: 'Caisses & Banques',
     rh: 'RESSOURCES HUMAINES', gestionEmployes: 'Gestion des Employés',
     fiscal: 'SYSTÈME FISCAL', decTva: 'Déclarations TVA', chargesEnt: 'CHARGES ENTREPRISE', gestionCharges: 'Gestion des Charges',
-    accounting: 'Comptabilité & Bilan', logout: 'Déconnexion',
+    accounting: 'Comptabilité & Bilan', logout: 'Déconnexion', logisticsBourse: 'Bourse de Fret',
     profileSettings: 'Profil du Magasin', 
     upgrade: "Passer à l'Enterprise",
     manageSub: "Gérer l'Abonnement",
@@ -58,7 +58,7 @@ const translations = {
     gestionCaisses: 'CASHIER MANAGEMENT', caisses: 'Registers & Accounts',
     rh: 'HUMAN RESOURCES', gestionEmployes: 'Employee Management',
     fiscal: 'TAX SYSTEM', decTva: 'VAT Returns', chargesEnt: 'COMPANY EXPENSES', gestionCharges: 'Expense Management',
-    accounting: 'General Accounting', logout: 'Logout',
+    accounting: 'General Accounting', logout: 'Logout', logisticsBourse: 'Freight Exchange',
     profileSettings: 'Store Profile',
     upgrade: 'Upgrade to Enterprise',
     manageSub: 'Manage Subscription',
@@ -70,16 +70,17 @@ const translations = {
 export default function Sidebar() {
   const { supplier, isLoading } = useSupplierStore();
   const { language, setLanguage } = useSettingsStore();
+  
   const handleLanguageChange = () => {
-  if (language === 'fr') setLanguage('ar');
-  else if (language === 'ar') setLanguage('en');
-  else setLanguage('fr');
-};
+    if (language === 'fr') setLanguage('ar');
+    else if (language === 'ar') setLanguage('en');
+    else setLanguage('fr');
+  };
+  
   const location = useLocation();
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState({});
 
-  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
 
   if (isLoading) return <div className={`w-[280px] h-screen bg-[#2d2252] shrink-0 ${language === 'fr' || language === 'en' ? 'border-r' : 'border-l'} border-white/10 animate-pulse`} />;
@@ -106,7 +107,8 @@ export default function Sidebar() {
       group: t.gestionAchats, icon: Truck, requiredPermission: 'products',
       subItems: [
         { name: t.fournisseurs, path: '/suppliers' },
-        { name: t.achats, path: '/purchases' }
+        { name: t.achats, path: '/purchases' },
+        { name: t.logisticsBourse, path: '/logistics-bourse' } // 🚛 تمت الإضافة هنا كخدمة لوجستية للمؤسسات
       ]
     },
     {
