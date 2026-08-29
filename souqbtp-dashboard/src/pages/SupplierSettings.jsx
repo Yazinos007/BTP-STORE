@@ -4,7 +4,7 @@ import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { 
   ShieldCheck, UploadCloud, FileText, CheckCircle2, 
-  AlertTriangle, Lock, Award, Building2, CreditCard, Loader2, Star, Save, Camera
+  AlertTriangle, Lock, Award, Building2, CreditCard, Loader2, Star, Save, Camera, MessageCircle
 } from 'lucide-react';
 
 const translations = {
@@ -34,7 +34,8 @@ const translations = {
     saveInfo: 'حفظ التعديلات',
     successVerify: '✅ تم إرسال ملفاتك بنجاح! فريق الإدارة سيقوم بمراجعتها قريباً.',
     successSave: '✅ تم تحديث بيانات الشركة بنجاح!',
-    errorSave: 'حدث خطأ أثناء الحفظ.'
+    errorSave: 'حدث خطأ أثناء الحفظ.',
+    connectTelegram: 'ربط الحساب بالتلغرام (VIP)'
   },
   fr: {
     title: 'Centre de Confiance & Paramètres',
@@ -62,7 +63,8 @@ const translations = {
     saveInfo: 'Enregistrer les infos',
     successVerify: '✅ Documents envoyés avec succès pour examen !',
     successSave: '✅ Informations enregistrées !',
-    errorSave: 'Erreur lors de la sauvegarde.'
+    errorSave: 'Erreur lors de la sauvegarde.',
+    connectTelegram: 'Lier avec Telegram (VIP)'
   },
   en: {
     title: 'Trust Center & Settings',
@@ -90,7 +92,8 @@ const translations = {
     saveInfo: 'Save Information',
     successVerify: '✅ Documents successfully sent for review!',
     successSave: '✅ Information successfully saved!',
-    errorSave: 'Error while saving.'
+    errorSave: 'Error while saving.',
+    connectTelegram: 'Connect Telegram (VIP)'
   }
 };
 
@@ -98,7 +101,6 @@ export default function SupplierSettings() {
   const { language } = useSettingsStore();
   const { supplier, updateProfile, uploadLogo, isLoading } = useSupplierStore();
   
-  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
   const navigate = useNavigate();
 
@@ -294,6 +296,23 @@ export default function SupplierSettings() {
               <button onClick={handleSaveStoreInfo} disabled={isSavingInfo} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 mt-2 flex justify-center items-center gap-2 disabled:opacity-70">
                 {isSavingInfo ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {isSavingInfo ? t.saving : t.saveInfo}
               </button>
+
+              {/* 🚀 الزر السحري لربط التلغرام (VIP) */}
+              <div className="pt-4 mt-4 border-t border-slate-800">
+                <a 
+                  href={`https://t.me/YazinosBot?start=${supplier?.id}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-black rounded-xl transition-all shadow-lg shadow-[#2AABEE]/30"
+                >
+                  <MessageCircle size={20} className="fill-current text-[#2AABEE]" /> 
+                  <span className="text-white drop-shadow-sm">{t.connectTelegram}</span>
+                </a>
+                <p className="text-[10px] text-center text-slate-500 mt-2 font-bold leading-relaxed">
+                  {language === 'ar' ? 'اربط حسابك لتلقي إشعارات الشاحنات الفارغة القريبة منك فوراً.' : 'Liez votre compte pour recevoir des alertes de camions vides à proximité.'}
+                </p>
+              </div>
+
             </div>
           </div>
         </div>
