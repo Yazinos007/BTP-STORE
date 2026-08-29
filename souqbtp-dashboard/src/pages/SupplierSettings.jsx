@@ -300,7 +300,7 @@ export default function SupplierSettings() {
               {/* 🚀 الزر السحري لربط التلغرام (VIP) */}
               <div className="pt-4 mt-4 border-t border-slate-800">
                 <a 
-                  href={`https://t.me/YazinosBot?start=${supplier?.id}`} 
+                  href={`https://t.me/SouqBTP_Bot?start=${supplier?.id}`}
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-3 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-black rounded-xl transition-all shadow-lg shadow-[#2AABEE]/30"
