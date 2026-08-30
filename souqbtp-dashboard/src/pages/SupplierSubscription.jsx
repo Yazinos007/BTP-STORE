@@ -217,9 +217,7 @@ export default function SupplierSubscription() {
         setShowPaymentModal(false);
         setPaymentSuccess(false);
         setReceiptFile(null);
-        alert(t.successMsg);
-        navigate('/');
-      }, 2500);
+      }, 4000); // إبقاء رسالة النجاح لـ 4 ثواني ليقرأها بوضوح
     }, 2000);
   };
 
@@ -363,23 +361,51 @@ export default function SupplierSubscription() {
             
             <div className="flex justify-between items-center p-6 border-b border-slate-800 bg-slate-950">
               <h3 className="text-2xl font-black text-white flex items-center gap-2">
-                <ShieldCheck className="text-emerald-500" /> {language === 'ar' ? 'إتمام عملية الدفع' : 'Finaliser le paiement'}
+                <ShieldCheck className="text-emerald-500" /> 
+                {selectedPlan?.name === 'Enterprise (Verified)' ? (language === 'ar' ? 'خدمة كبار العملاء VIP' : 'Service Client VIP') : (language === 'ar' ? 'إتمام عملية الدفع' : 'Finaliser le paiement')}
               </h3>
               <button onClick={() => setShowPaymentModal(false)} className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors">
                 <X size={20} />
               </button>
             </div>
 
-            {paymentSuccess ? (
+            {/* 👑 معالجة خاصة لباقة Enterprise */}
+            {selectedPlan?.name === 'Enterprise (Verified)' ? (
+              <div className="p-8 text-center flex flex-col items-center justify-center space-y-6">
+                <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)]">
+                  <Star size={40} className="text-black fill-current" />
+                </div>
+                <div>
+                  <h4 className="text-2xl font-black text-amber-400 mb-2">{language === 'ar' ? 'مرحباً بك في نادي النخبة' : 'Bienvenue dans le club d\'élite'}</h4>
+                  <p className="text-slate-300">
+                    {language === 'ar' 
+                      ? 'لأنك اخترت الباقة الأقوى، خصصنا لك مدير حسابات شخصي للإجابة على استفساراتك وتجهيز عقدك فوراً.' 
+                      : 'Un manager de compte dédié est prêt à répondre à vos questions et préparer votre contrat.'}
+                  </p>
+                </div>
+                
+                <a 
+                  href={`https://wa.me/212700715399?text=${encodeURIComponent(language === 'ar' ? 'مرحباً، أود الاستفسار عن باقة Enterprise السنوية لمنصة SouqBTP.' : 'Bonjour, je souhaite me renseigner sur le plan Enterprise annuel de SouqBTP.')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black rounded-xl transition-all shadow-lg hover:scale-105 flex justify-center items-center gap-3 text-lg"
+                >
+                  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                  {language === 'ar' ? 'تحدث معنا عبر WhatsApp' : 'Contactez-nous sur WhatsApp'}
+                </a>
+              </div>
+            ) : paymentSuccess ? (
+              // شاشة النجاح العادية לבاقة Pro
               <div className="p-12 text-center flex flex-col items-center justify-center">
                 <div className="w-24 h-24 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mb-6">
                   <CheckCircle2 size={50} />
                 </div>
                 <h4 className="text-3xl font-black text-white mb-2">{language === 'ar' ? 'تم إرسال الوصل بنجاح!' : 'Reçu envoyé avec succès !'}</h4>
-                <p className="text-slate-400 font-medium text-lg">{language === 'ar' ? 'سيتم تفعيل حسابك خلال دقائق بعد التحقق.' : 'Votre compte sera activé dans quelques minutes après vérification.'}</p>
+                <p className="text-slate-400 font-medium text-lg">{language === 'ar' ? 'جاري التحقق من التحويل. سيتم تفعيل حسابك قريباً.' : 'Vérification en cours. Votre compte sera activé sous peu.'}</p>
               </div>
             ) : (
-              <div className="p-6 overflow-y-auto">
+              // واجهة الدفع لباقة Pro
+              <div className="p-6 overflow-y-auto custom-scrollbar">
                 <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mb-8 flex justify-between items-center">
                   <div>
                     <p className="text-slate-400 font-bold text-sm">{language === 'ar' ? 'الباقة المحددة' : 'Plan sélectionné'}</p>
@@ -408,7 +434,7 @@ export default function SupplierSubscription() {
                   </button>
                 </div>
 
-                {/* Bank Details based on provided PDF */}
+                {/* تفاصيل التحويل */}
                 <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl mb-8">
                   {paymentMethod === 'virement' && (
                     <div className="space-y-4">
@@ -441,11 +467,11 @@ export default function SupplierSubscription() {
                         </div>
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
                           <span className="text-slate-500 block mb-1">{language === 'ar' ? 'رقم البطاقة الوطنية' : 'N° CIN'}</span>
-                          <strong className="text-white tracking-widest" dir="ltr">----</strong>
+                          <strong className="text-white tracking-widest" dir="ltr">IA83571</strong>
                         </div>
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 md:col-span-2">
                           <span className="text-slate-500 block mb-1">{language === 'ar' ? 'رقم الهاتف' : 'Téléphone'}</span>
-                          <strong className="text-amber-400 text-lg tracking-widest font-mono" dir="ltr">06 -- -- -- --</strong>
+                          <strong className="text-amber-400 text-lg tracking-widest font-mono" dir="ltr">07 00 71 53 99</strong>
                         </div>
                       </div>
                     </div>
@@ -466,9 +492,9 @@ export default function SupplierSubscription() {
                   <button 
                     onClick={submitPayment} 
                     disabled={!receiptFile || isSubmitting}
-                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl transition-all shadow-lg shadow-emerald-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                   >
-                    {isSubmitting ? <Loader2 size={24} className="animate-spin" /> : (language === 'ar' ? 'تأكيد الدفع' : 'Confirmer le paiement')}
+                    {isSubmitting ? <Loader2 size={24} className="animate-spin" /> : (language === 'ar' ? 'تأكيد وإرسال الوصل' : 'Confirmer et envoyer le reçu')}
                   </button>
                 </div>
               </div>

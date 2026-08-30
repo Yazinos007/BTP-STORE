@@ -557,33 +557,36 @@ function App() {
       {isWholesaler ? (
         <WholesalerDashboard supplier={supplier}>
           <Routes>
+            {/* ✅ أقسام باقة Starter (مجانية ودائمة) */}
             <Route path="/" element={<SupplierOverview />} />
             <Route path="/stock" element={<SupplierStock isWholesaler={true} />} />
-            <Route path="/clients" element={<Clients isWholesaler={true} />} />
-            <Route path="/caisses" element={<Caisses isWholesaler={true} />} />
-            <Route path="/fiscal" element={<Fiscal isWholesaler={true} />} />  
-            <Route path="/orders" element={<SupplierOrders />} />
-            <Route path="/fleet-b2b" element={<Fleet />} />
-            <Route path="/fleet-market" element={<FleetManagement />} /> 
-            <Route path="/contracts" element={<Contracts />} />
             <Route path="/invoices" element={<SupplierInvoices />} />
-            <Route path="/hr" element={<SupplierHR />} />
-            <Route path="/expenses" element={<SupplierExpenses />} />
-            <Route path="/accounting" element={<SupplierAccounting />} />
-            <Route path="/settings" element={<SupplierSettings />} />
-            <Route path="/subscription" element={<SupplierSubscription />} />
             <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
             <Route path="/raw-purchases" element={<RawMaterialPurchases />} />
             <Route path="/pos-b2b" element={<SupplierPOS />} />
-            <Route path="/production" element={<SupplierProduction />} />
-            <Route path="/team" element={<SupplierTeam />} />
-            <Route path="/market-orders" element={<MarketplaceOrders />} />
+            <Route path="/orders" element={<SupplierOrders />} />
+            <Route path="/settings" element={<SupplierSettings />} />
+            <Route path="/subscription" element={<SupplierSubscription />} />
 
-            {/* 🛑 الأقسام المحمية (Premium) */}
+            {/* 🔒 أقسام باقة Pro ERP (تُقفل بعد 7 أيام) */}
+            <Route path="/clients" element={<PremiumGuard><Clients isWholesaler={true} /></PremiumGuard>} />
+            <Route path="/contracts" element={<PremiumGuard><Contracts /></PremiumGuard>} />
+            <Route path="/fleet-b2b" element={<PremiumGuard><Fleet /></PremiumGuard>} />
+            <Route path="/hr" element={<PremiumGuard><SupplierHR /></PremiumGuard>} />
+            <Route path="/expenses" element={<PremiumGuard><SupplierExpenses /></PremiumGuard>} />
+            <Route path="/accounting" element={<PremiumGuard><SupplierAccounting /></PremiumGuard>} />
+            <Route path="/fiscal" element={<PremiumGuard><Fiscal isWholesaler={true} /></PremiumGuard>} />
+            <Route path="/team" element={<PremiumGuard><SupplierTeam /></PremiumGuard>} />
+            <Route path="/caisses" element={<PremiumGuard><Caisses isWholesaler={true} /></PremiumGuard>} />
+            <Route path="/production" element={<PremiumGuard><SupplierProduction /></PremiumGuard>} />
+
+            {/* 🛑 أقسام باقة Enterprise (تُقفل بعد 7 أيام) */}
             <Route path="/analytics" element={<PremiumGuard><AnalyticsB2B /></PremiumGuard>} />
             <Route path="/ai-advisor" element={<PremiumGuard><AISmartAdvisor /></PremiumGuard>} />
             <Route path="/tender-radar" element={<PremiumGuard><TenderRadar /></PremiumGuard>} />
             <Route path="/logistics-bourse" element={<PremiumGuard><LogisticsBourse /></PremiumGuard>} />
+            <Route path="/fleet-market" element={<PremiumGuard><FleetManagement /></PremiumGuard>} /> 
+            <Route path="/market-orders" element={<PremiumGuard><MarketplaceOrders /></PremiumGuard>} />
           </Routes>
         </WholesalerDashboard>
       ) : (
