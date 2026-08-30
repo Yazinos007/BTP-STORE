@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSettingsStore from '../store/useSettingsStore';
-import { ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, Minus, Loader2 } from 'lucide-react';
+import { 
+  ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, Minus, Loader2,
+  X, Building2, CreditCard, Wallet, UploadCloud 
+} from 'lucide-react';
 
 const translations = {
   ar: {
@@ -173,13 +176,18 @@ const translations = {
 
 export default function SupplierSubscription() {
   const { language } = useSettingsStore();
-  
-  // 🛡️ الترياق السحري للترجمة
   const t = translations[language] || translations['fr'];
   
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  // Modal States
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('virement');
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   const prices = {
     starter: { monthly: 0, annual: 0 },
@@ -187,15 +195,32 @@ export default function SupplierSubscription() {
     enterprise: { monthly: 1499, annual: 14390 }
   };
 
-  const handleSubscribe = (tier) => {
+  const handleUpgradeClick = (tierKey) => {
+    const planData = t.plans[tierKey];
+    const price = isAnnual ? prices[tierKey].annual : prices[tierKey].monthly;
+    setSelectedPlan({ name: planData.name, price: price });
+    setShowPaymentModal(true);
+  };
+
+  const handleReceiptUpload = (e) => {
+    if (e.target.files[0]) {
+      setReceiptFile(e.target.files[0].name);
+    }
+  };
+
+  const submitPayment = () => {
     setIsSubmitting(true);
-    console.log(`تم اختيار الباقة الاستراتيجية: ${tier}`);
-    
     setTimeout(() => {
       setIsSubmitting(false);
-      alert(t.successMsg);
-      navigate('/'); 
-    }, 1500);
+      setPaymentSuccess(true);
+      setTimeout(() => {
+        setShowPaymentModal(false);
+        setPaymentSuccess(false);
+        setReceiptFile(null);
+        alert(t.successMsg);
+        navigate('/');
+      }, 2500);
+    }, 2000);
   };
 
   return (
@@ -235,7 +260,6 @@ export default function SupplierSubscription() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start mt-12">
-        
         {/* Starter */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 hover:border-slate-700 transition-all duration-300 relative shadow-xl text-start">
           <h3 className="text-2xl font-black text-white mb-2">{t.plans.starter.name}</h3>
@@ -277,11 +301,11 @@ export default function SupplierSubscription() {
             <span className="text-slate-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
           <button 
-            onClick={() => handleSubscribe('pro')} 
+            onClick={() => handleUpgradeClick('pro')} 
             disabled={isSubmitting}
             className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm"
           >
-            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <>{t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} /></>}
+            <>{t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} /></>
           </button>
           <div className="space-y-4">
             {t.plans.pro.features.map((feat, i) => (
@@ -315,11 +339,11 @@ export default function SupplierSubscription() {
             <span className="text-slate-400 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
           <button 
-            onClick={() => handleSubscribe('enterprise')}
+            onClick={() => handleUpgradeClick('enterprise')}
             disabled={isSubmitting}
             className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-xl transition-all shadow-lg shadow-amber-500/30 mb-8 relative z-10 flex justify-center items-center gap-2 text-sm"
           >
-            {isSubmitting ? <Loader2 size={18} className="animate-spin text-black" /> : <>{t.contactSales} <Star size={16} className="fill-black" /></>}
+            <>{t.contactSales} <Star size={16} className="fill-black" /></>
           </button>
           <div className="space-y-4 relative z-10">
             {t.plans.enterprise.features.map((feat, i) => (
@@ -330,8 +354,128 @@ export default function SupplierSubscription() {
             ))}
           </div>
         </div>
-
       </div>
+
+      {/* 💳 Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
+            
+            <div className="flex justify-between items-center p-6 border-b border-slate-800 bg-slate-950">
+              <h3 className="text-2xl font-black text-white flex items-center gap-2">
+                <ShieldCheck className="text-emerald-500" /> {language === 'ar' ? 'إتمام عملية الدفع' : 'Finaliser le paiement'}
+              </h3>
+              <button onClick={() => setShowPaymentModal(false)} className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            {paymentSuccess ? (
+              <div className="p-12 text-center flex flex-col items-center justify-center">
+                <div className="w-24 h-24 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mb-6">
+                  <CheckCircle2 size={50} />
+                </div>
+                <h4 className="text-3xl font-black text-white mb-2">{language === 'ar' ? 'تم إرسال الوصل بنجاح!' : 'Reçu envoyé avec succès !'}</h4>
+                <p className="text-slate-400 font-medium text-lg">{language === 'ar' ? 'سيتم تفعيل حسابك خلال دقائق بعد التحقق.' : 'Votre compte sera activé dans quelques minutes après vérification.'}</p>
+              </div>
+            ) : (
+              <div className="p-6 overflow-y-auto">
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mb-8 flex justify-between items-center">
+                  <div>
+                    <p className="text-slate-400 font-bold text-sm">{language === 'ar' ? 'الباقة المحددة' : 'Plan sélectionné'}</p>
+                    <p className="text-xl font-black text-white">{selectedPlan?.name}</p>
+                  </div>
+                  <div className={language === 'ar' ? 'text-left' : 'text-right'}>
+                    <p className="text-slate-400 font-bold text-sm">{language === 'ar' ? 'المبلغ الإجمالي' : 'Total à payer'}</p>
+                    <p className="text-2xl font-black text-emerald-400" dir="ltr">{selectedPlan?.price} MAD</p>
+                  </div>
+                </div>
+
+                <h4 className="font-bold text-white mb-4">{language === 'ar' ? 'اختر وسيلة الدفع:' : 'Choisissez votre méthode de paiement :'}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  <button onClick={() => setPaymentMethod('virement')} className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'virement' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-500'}`}>
+                    <Building2 size={28} />
+                    <span className="font-bold text-sm">{language === 'ar' ? 'تحويل بنكي' : 'Virement Bancaire'}</span>
+                  </button>
+                  <button onClick={() => setPaymentMethod('cash')} className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'cash' ? 'border-amber-500 bg-amber-500/10 text-amber-400' : 'border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-500'}`}>
+                    <Wallet size={28} />
+                    <span className="font-bold text-sm">Cash Plus / Wafacash</span>
+                  </button>
+                  <button disabled className="p-4 rounded-xl border-2 border-slate-800 bg-slate-900/50 text-slate-600 flex flex-col items-center gap-2 cursor-not-allowed relative overflow-hidden">
+                    <CreditCard size={28} />
+                    <span className="font-bold text-sm">{language === 'ar' ? 'البطاقة البنكية' : 'Carte Bancaire'}</span>
+                    <div className="absolute top-2 right-2 bg-slate-800 text-[10px] font-black px-2 py-0.5 rounded text-slate-400">{language === 'ar' ? 'قريباً' : 'Bientôt'}</div>
+                  </button>
+                </div>
+
+                {/* Bank Details based on provided PDF */}
+                <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl mb-8">
+                  {paymentMethod === 'virement' && (
+                    <div className="space-y-4">
+                      <p className="text-sm font-medium text-slate-400 mb-4">{language === 'ar' ? 'يرجى إجراء تحويل بنكي للحساب المهني التالي:' : 'Veuillez effectuer un virement vers le compte professionnel suivant :'}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                          <span className="text-slate-500 block mb-1">{language === 'ar' ? 'المستفيد (المقاول الذاتي)' : 'Bénéficiaire (Auto-Entrepreneur)'}</span>
+                          <strong className="text-white">BACHIR YASSINE</strong>
+                        </div>
+                        <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                          <span className="text-slate-500 block mb-1">{language === 'ar' ? 'رقم التعريف الموحد ICE' : 'ICE'}</span>
+                          <strong className="text-white tracking-widest" dir="ltr">003460220000095</strong>
+                        </div>
+                        <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 md:col-span-2">
+                          <span className="text-slate-500 block mb-1">RIB (Relevé d'Identité Bancaire)</span>
+                          <strong className="text-emerald-400 text-lg tracking-widest font-mono" dir="ltr">225 104 0447028246010126 97</strong>
+                          <p className="text-xs mt-1 text-slate-500">{language === 'ar' ? 'البنك' : 'Banque'}: CREDIT AGRICOLE DU MAROC</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {paymentMethod === 'cash' && (
+                    <div className="space-y-4">
+                      <p className="text-sm font-medium text-slate-400 mb-4">{language === 'ar' ? 'يرجى إجراء تحويل عبر كاش بلوس للمستفيد التالي:' : 'Veuillez effectuer un transfert via Cash Plus ou Wafacash à :'}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                          <span className="text-slate-500 block mb-1">{language === 'ar' ? 'الاسم الكامل' : 'Nom Complet'}</span>
+                          <strong className="text-white">BACHIR Yassine</strong>
+                        </div>
+                        <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                          <span className="text-slate-500 block mb-1">{language === 'ar' ? 'رقم البطاقة الوطنية' : 'N° CIN'}</span>
+                          <strong className="text-white tracking-widest" dir="ltr">----</strong>
+                        </div>
+                        <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 md:col-span-2">
+                          <span className="text-slate-500 block mb-1">{language === 'ar' ? 'رقم الهاتف' : 'Téléphone'}</span>
+                          <strong className="text-amber-400 text-lg tracking-widest font-mono" dir="ltr">06 -- -- -- --</strong>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-2 border-dashed border-slate-700 hover:border-blue-500 bg-slate-900/50 rounded-2xl p-8 text-center transition-colors">
+                  <UploadCloud size={40} className="mx-auto text-slate-500 mb-3" />
+                  <p className="text-white font-bold mb-1">{language === 'ar' ? 'ارفع وصل الدفع (Reçu)' : 'Télécharger le reçu de paiement'}</p>
+                  <p className="text-sm text-slate-500 mb-4">{language === 'ar' ? 'صورة أو ملف (JPG, PNG, PDF)' : 'Photo ou scan du reçu (JPG, PNG, PDF)'}</p>
+                  <label className="cursor-pointer bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-bold transition-colors inline-block">
+                    {receiptFile ? <span className="text-emerald-400 flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile}</span> : (language === 'ar' ? "اختر الملف" : "Choisir un fichier")}
+                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={handleReceiptUpload} />
+                  </label>
+                </div>
+
+                <div className="mt-8">
+                  <button 
+                    onClick={submitPayment} 
+                    disabled={!receiptFile || isSubmitting}
+                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl transition-all shadow-lg shadow-emerald-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                  >
+                    {isSubmitting ? <Loader2 size={24} className="animate-spin" /> : (language === 'ar' ? 'تأكيد الدفع' : 'Confirmer le paiement')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
