@@ -53,6 +53,7 @@ import SupplierProduction from './pages/SupplierProduction';
 import MarketplaceOrders from './pages/MarketplaceOrders';
 import FleetManagement from './pages/FleetManagement';
 import LogisticsBourse from './pages/LogisticsBourse';
+import TrialBanner from './components/TrialBanner';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
@@ -371,6 +372,10 @@ const WholesalerDashboard = ({ supplier, children }) => {
             </div>
           </div>
         </header>
+
+        {/* ⏳ شريط الفترة التجريبية (العداد التنازلي) */}
+        <TrialBanner />
+        
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-10 w-full max-w-full relative z-10">
           {children}
         </div>
