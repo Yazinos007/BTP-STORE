@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { 
   Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
-  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft
+  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft, Lock
 } from 'lucide-react';
 
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
@@ -53,12 +53,60 @@ import SupplierProduction from './pages/SupplierProduction';
 import MarketplaceOrders from './pages/MarketplaceOrders';
 import FleetManagement from './pages/FleetManagement';
 import LogisticsBourse from './pages/LogisticsBourse';
+
+// 🚀 شريط الفترة التجريبية
 import TrialBanner from './components/TrialBanner';
 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
 
-// 🛡️ لوحة المورد الكبير المحصنة (مع ذكاء اصطناعي لتجربة الهاتف)
+// 🛑 الحارس الإلكتروني (الجدار الزجاجي) للأقسام المدفوعة
+const PremiumGuard = ({ children }) => {
+  const { language } = useSettingsStore();
+  const navigate = useNavigate();
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const trialStartDate = localStorage.getItem('trial_start_date');
+    if (trialStartDate) {
+      const start = new Date(trialStartDate);
+      const now = new Date();
+      const diffDays = Math.floor(Math.abs(now - start) / (1000 * 60 * 60 * 24));
+      if (7 - diffDays <= 0) {
+        setIsExpired(true);
+      }
+    }
+  }, []);
+
+  if (isExpired) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        <div className="w-24 h-24 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+          <Lock size={48} />
+        </div>
+        <h2 className="text-3xl md:text-4xl font-black text-white">
+          {language === 'ar' ? 'عذراً، انتهت الفترة التجريبية!' : 'Période d\'essai expirée !'}
+        </h2>
+        <p className="text-slate-400 max-w-lg text-lg font-medium leading-relaxed">
+          {language === 'ar' 
+            ? 'لقد انتهت صلاحية استخدامك المجاني لهذه الميزة الحصرية. قم بالترقية الآن لباقة Pro ERP لاستعادة الوصول فوراً ومضاعفة أرباحك.' 
+            : 'Votre accès gratuit à cette fonctionnalité a expiré. Mettez à niveau vers Pro ERP pour y accéder à nouveau et sécuriser vos marges.'}
+        </p>
+        <button 
+          onClick={() => navigate('/subscription')}
+          className="bg-gradient-to-r from-amber-500 to-orange-500 text-black px-8 py-4 rounded-xl font-black text-lg hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-amber-500/20 mt-4"
+        >
+          <Zap size={24} className="fill-black" />
+          {language === 'ar' ? 'ترقية الحساب الآن' : 'Mettre à niveau maintenant'}
+        </button>
+      </div>
+    );
+  }
+
+  return children;
+};
+
+// 🛡️ لوحة المورد الكبير المحصنة
 const WholesalerDashboard = ({ supplier, children }) => {
   const { language, setLanguage } = useSettingsStore();
   const location = useLocation();
@@ -67,14 +115,12 @@ const WholesalerDashboard = ({ supplier, children }) => {
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
 
-  // 🎯 حالة القوائم المنسدلة (Accordions)
   const [openMenus, setOpenMenus] = useState({
     achats: false,
     marketplace: false,
     ventes: false
   });
 
-  // فتح القائمة المنسدلة تلقائياً بناءً على المسار الحالي
   useEffect(() => {
     const p = location.pathname;
     if (['/raw-suppliers', '/raw-purchases'].includes(p)) setOpenMenus(prev => ({...prev, achats: true}));
@@ -145,7 +191,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
     return () => supabase.removeChannel(channel);
   }, [supplier]);
   
-  // 🎯 هندسة القوائم الجديدة حسب رسمتك
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
     {
@@ -188,40 +233,31 @@ const WholesalerDashboard = ({ supplier, children }) => {
     { path: '/settings', icon: Settings, label: t.items.settings }
   ];
 
-  // 🎯 التمييز البصري المتقدم للقطاعات
   const getActiveStyle = (path) => {
     const isActive = location.pathname === path;
     if (!isActive) return "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent";
     
-    // المبيعات (Ventes) -> أزرق
     if (['/clients', '/pos-b2b', '/orders', '/fleet-b2b', '/contracts'].includes(path)) 
       return "bg-blue-600/20 text-blue-400 border border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.35)] animate-pulse";
     
-    // الماركت بليس -> أرجواني
     if (['/market-orders', '/fleet-market'].includes(path)) 
       return "bg-purple-600/20 text-purple-400 border border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.35)] animate-pulse";
     
-    // المشتريات والمخزون -> أخضر (زمردي)
     if (['/raw-suppliers', '/raw-purchases', '/stock', '/production'].includes(path)) 
       return "bg-emerald-600/20 text-emerald-400 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-pulse";
 
-    // المالية والمحاسبة -> برتقالي
     if (['/invoices', '/caisses', '/expenses', '/fiscal', '/accounting'].includes(path)) 
       return "bg-orange-600/20 text-orange-400 border border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.35)] animate-pulse";
 
-    // الموارد البشرية والفريق -> وردي
     if (['/hr', '/team'].includes(path)) 
       return "bg-pink-600/20 text-pink-400 border border-pink-500/60 shadow-[0_0_20px_rgba(236,72,153,0.35)] animate-pulse";
 
-    // ✨ تم إضافة /logistics-bourse إلى المجموعة السماوية الساطعة
     if (['/analytics', '/ai-advisor', '/tender-radar', '/logistics-bourse'].includes(path)) 
       return "bg-cyan-600/20 text-cyan-400 border border-cyan-500/60 shadow-[0_0_20px_rgba(6,182,212,0.35)] animate-pulse";
 
-    // الإعدادات -> رمادي
     if (path === '/settings') 
       return "bg-slate-700/50 text-slate-300 border border-slate-500/60 shadow-[0_0_20px_rgba(148,163,184,0.35)] animate-pulse";
     
-    // لوحة القيادة (الرئيسية) -> اللون النيلي الساطع
     return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)] animate-pulse";
   };
 
@@ -262,7 +298,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
           
           <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar pb-24">
             {menuItems.map((item) => {
-              // 🎯 إذا كان هناك عناصر فرعية (Dropdown)
               if (item.children) {
                 const isOpen = openMenus[item.id];
                 return (
@@ -305,7 +340,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
                 );
               }
 
-              // 🎯 الأزرار العادية
               const isActive = location.pathname === item.path;
               return (
                 <Link 
@@ -372,8 +406,8 @@ const WholesalerDashboard = ({ supplier, children }) => {
             </div>
           </div>
         </header>
-
-        {/* ⏳ شريط الفترة التجريبية (العداد التنازلي) */}
+        
+        {/* ⏳ شريط الفترة التجريبية */}
         <TrialBanner />
         
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-10 w-full max-w-full relative z-10">
@@ -536,10 +570,6 @@ function App() {
             <Route path="/hr" element={<SupplierHR />} />
             <Route path="/expenses" element={<SupplierExpenses />} />
             <Route path="/accounting" element={<SupplierAccounting />} />
-            <Route path="/analytics" element={<AnalyticsB2B />} />
-            <Route path="/ai-advisor" element={<AISmartAdvisor />} />
-            <Route path="/tender-radar" element={<TenderRadar />} />
-            <Route path="/logistics-bourse" element={<LogisticsBourse />} />
             <Route path="/settings" element={<SupplierSettings />} />
             <Route path="/subscription" element={<SupplierSubscription />} />
             <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
@@ -548,6 +578,12 @@ function App() {
             <Route path="/production" element={<SupplierProduction />} />
             <Route path="/team" element={<SupplierTeam />} />
             <Route path="/market-orders" element={<MarketplaceOrders />} />
+
+            {/* 🛑 الأقسام المحمية (Premium) */}
+            <Route path="/analytics" element={<PremiumGuard><AnalyticsB2B /></PremiumGuard>} />
+            <Route path="/ai-advisor" element={<PremiumGuard><AISmartAdvisor /></PremiumGuard>} />
+            <Route path="/tender-radar" element={<PremiumGuard><TenderRadar /></PremiumGuard>} />
+            <Route path="/logistics-bourse" element={<PremiumGuard><LogisticsBourse /></PremiumGuard>} />
           </Routes>
         </WholesalerDashboard>
       ) : (
