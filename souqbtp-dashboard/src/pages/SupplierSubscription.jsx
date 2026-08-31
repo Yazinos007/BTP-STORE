@@ -49,7 +49,7 @@ const translations = {
       enterprise: {
         name: 'Enterprise (Verified)',
         desc: 'قوة الذكاء الاصطناعي واقتناص المناقصات الجغرافية لكبار الموردين.',
-        badge: 'SouqBTP Verified 🛡️',
+        badge: 'SouqBTP موثق 🛡️',
         features: [
           'كل ما في باقة Pro ERP',
           'شارة "مورد معتمد" الذهبية للماركت بليس',
@@ -114,7 +114,7 @@ const translations = {
       enterprise: {
         name: 'Enterprise (Verified)',
         desc: 'La puissance de l\'IA et la capture d\'appels d\'offres pour les leaders du marché.',
-        badge: 'SouqBTP Verified 🛡️',
+        badge: 'SouqBTP Vérifié 🛡️',
         features: [
           'Tout de l\'offre Pro ERP',
           'Badge d\'Or "Fournisseur Certifié"',
