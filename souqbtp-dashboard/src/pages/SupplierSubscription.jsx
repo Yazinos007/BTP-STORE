@@ -10,166 +10,64 @@ const translations = {
   ar: {
     title: 'ترقية باقة الإمبراطورية (B2B)',
     subtitle: 'استثمر في النظام الذي يضاعف مبيعاتك ويحمي أرباحك. اختر الباقة التي تناسب حجم طموحك.',
-    monthly: 'دفع شهري',
-    annual: 'دفع سنوي',
-    save20: 'وفر 20%',
-    currency: 'درهم',
-    mo: '/ شهر',
-    yr: '/ سنة',
-    currentPlan: 'باقتك الحالية',
-    upgradeBtn: 'الترقية الآن',
-    contactSales: 'تواصل مع المبيعات',
-    successMsg: '🌟 تم تفعيل الباقة وتحديث صلاحيات النظام بنجاح!',
+    monthly: 'دفع شهري', annual: 'دفع سنوي', save20: 'وفر 20%', currency: 'درهم', mo: '/ شهر', yr: '/ سنة',
+    currentPlan: 'باقتك الحالية', upgradeBtn: 'الترقية الآن', contactSales: 'تواصل مع المبيعات', successMsg: '🌟 تم تفعيل الباقة وتحديث صلاحيات النظام بنجاح!',
     plans: {
-      starter: {
-        name: 'Starter B2B',
-        desc: 'مثالية للموردين الجدد لتنظيم المخزون وإصدار الفواتير القانونية السريعة.',
-        features: [
-          'إدارة المخزون المركزي الأساسية',
-          'إصدار فواتير B2B غير محدودة',
-          'حد أقصى 50 عميل في النظام',
-          'لوحة تحكم إحصائيات بسيطة',
-        ],
-        missing: ['المحاسبة المتقدمة والـ CPC', 'الـ CRM الذكي للعملاء', 'رادار المناقصات الحية']
-      },
-      pro: {
-        name: 'Pro ERP',
-        desc: 'نظام متكامل لإدارة التجارة الكبرى، المحاسبة، وعلاقات العملاء وعقودهم.',
-        badge: 'الأكثر شعبية',
-        features: [
-          'كل ما في باقة Starter',
-          'نظام المحاسبة والـ CPC التلقائي',
-          'الـ CRM الذكي (تصنيف العملاء)',
-          'إرسال رسائل واتساب للتحصيل المباشر',
-          'نظام "الرجوع عامر" التشاركي (لوجستيك)',
-          'عدد عملاء وثائق غير محدود'
-        ],
-        missing: ['شارة SouqBTP Verified الذهبية', 'رادار المناقصات الحية']
-      },
-      enterprise: {
-        name: 'Enterprise (Verified)',
-        desc: 'قوة الذكاء الاصطناعي واقتناص المناقصات الجغرافية لكبار الموردين.',
-        badge: 'SouqBTP Verified 🛡️',
-        features: [
-          'كل ما في باقة Pro ERP',
-          'شارة "مورد معتمد" الذهبية للماركت بليس',
-          'رادار المناقصات الحية (الفرص المحلية القريبة)',
-          'رادار التنبؤ وتقلبات الأسعار الاستباقي',
-          'مدير حساب شخصي ومحاسب مخصص لك',
-          'أولوية الظهور المطلقة للتجار والمقاولين'
-        ],
-        missing: []
-      }
+      starter: { name: 'Starter B2B', desc: 'مثالية للموردين الجدد لتنظيم المخزون وإصدار الفواتير القانونية السريعة.', features: ['إدارة المخزون المركزي الأساسية', 'إصدار فواتير B2B غير محدودة', 'حد أقصى 50 عميل في النظام', 'لوحة تحكم إحصائيات بسيطة'], missing: ['المحاسبة المتقدمة والـ CPC', 'الـ CRM الذكي للعملاء', 'رادار المناقصات الحية'] },
+      pro: { name: 'Pro ERP', desc: 'نظام متكامل لإدارة التجارة الكبرى، المحاسبة، وعلاقات العملاء وعقودهم.', badge: 'الأكثر شعبية', features: ['كل ما في باقة Starter', 'نظام المحاسبة والـ CPC التلقائي', 'الـ CRM الذكي (تصنيف العملاء)', 'إرسال رسائل واتساب للتحصيل المباشر', 'نظام "الرجوع عامر" التشاركي (لوجستيك)', 'عدد عملاء وثائق غير محدود'], missing: ['شارة SouqBTP Verified الذهبية', 'رادار المناقصات الحية'] },
+      enterprise: { name: 'Enterprise (Verified)', desc: 'قوة الذكاء الاصطناعي واقتناص المناقصات الجغرافية لكبار الموردين.', badge: 'SouqBTP Verified 🛡️', features: ['كل ما في باقة Pro ERP', 'شارة "مورد معتمد" الذهبية للماركت بليس', 'رادار المناقصات الحية (الفرص المحلية القريبة)', 'رادار التنبؤ وتقلبات الأسعار الاستباقي', 'مدير حساب شخصي ومحاسب مخصص لك', 'أولوية الظهور المطلقة للتجار والمقاولين'], missing: [] }
+    },
+    modal: {
+      vipTitle: 'خدمة كبار العملاء VIP', vipWelcome: 'مرحباً بك في نادي النخبة', vipDesc: 'لأنك اخترت الباقة الأقوى، خصصنا لك مدير حسابات شخصي.',
+      waBtn: 'تحدث معنا عبر WhatsApp', payDirectBtn: 'أفضل الدفع مباشرة', paymentTitle: 'إتمام عملية الدفع',
+      plan: 'الباقة المحددة', total: 'المبلغ الإجمالي', chooseMethod: 'اختر وسيلة الدفع:',
+      bank: 'تحويل بنكي', cash: 'كاش بلوس / وفاكاش', card: 'البطاقة البنكية', soon: 'قريباً',
+      bankMsg: 'يرجى إجراء تحويل بنكي للحساب المهني التالي:', ben: 'المستفيد (المقاول الذاتي)', ice: 'رقم التعريف ICE',
+      cashMsg: 'يرجى إجراء تحويل عبر كاش بلوس للمستفيد التالي:', name: 'الاسم الكامل', cin: 'رقم البطاقة الوطنية', phone: 'رقم الهاتف',
+      uploadTitle: 'ارفع وصل الدفع (Reçu)', uploadDesc: 'صورة أو ملف (JPG, PNG, PDF)', chooseFile: 'اختر الملف',
+      confirmBtn: 'تأكيد وإرسال الوصل', successTitle: 'تم إرسال الوصل بنجاح!', successDesc: 'جاري التحقق من التحويل. سيتم تفعيل حسابك قريباً.'
     }
   },
   fr: {
     title: 'Abonnements Empire (B2B)',
     subtitle: 'Investissez dans le système qui multiplie vos ventes et protège vos marges. Choisissez l\'excellence.',
-    monthly: 'Mensuel',
-    annual: 'Annuel',
-    save20: 'Économisez 20%',
-    currency: 'MAD',
-    mo: '/ mois',
-    yr: '/ an',
-    currentPlan: 'Votre plan actuel',
-    upgradeBtn: 'Mettre à niveau',
-    contactSales: 'Contacter les ventes',
-    successMsg: '🌟 Plan mis à jour avec succès et permissions activées !',
+    monthly: 'Mensuel', annual: 'Annuel', save20: 'Économisez 20%', currency: 'MAD', mo: '/ mois', yr: '/ an',
+    currentPlan: 'Votre plan actuel', upgradeBtn: 'Mettre à niveau', contactSales: 'Contacter les ventes', successMsg: '🌟 Plan mis à jour avec succès et permissions activées !',
     plans: {
-      starter: {
-        name: 'Starter B2B',
-        desc: 'Idéal pour démarrer, organiser le stock et facturer légalement.',
-        features: [
-          'Gestion centralisée du stock',
-          'Facturation B2B illimitée',
-          'Jusqu\'à 50 clients',
-          'Tableau de bord basique',
-        ],
-        missing: ['Comptabilité avancée & CPC', 'CRM Intelligent', 'Radar d\'Appels d\'Offres']
-      },
-      pro: {
-        name: 'Pro ERP',
-        desc: 'Le système complet pour gérer le commerce, la compta B2B et le CRM.',
-        badge: 'Le plus populaire',
-        features: [
-          'Tout de l\'offre Starter',
-          'Comptabilité & Bilan CPC automatisé',
-          'CRM Intelligent (Segmentation)',
-          'Relance client via WhatsApp',
-          'Optimiseur Logistique (Retour Chargé)',
-          'Clients et documents illimités'
-        ],
-        missing: ['Badge SouqBTP Verified', 'Radar d\'Appels d\'Offres Live']
-      },
-      enterprise: {
-        name: 'Enterprise (Verified)',
-        desc: 'La puissance de l\'IA et la capture d\'appels d\'offres pour les leaders du marché.',
-        badge: 'SouqBTP Verified 🛡️',
-        features: [
-          'Tout de l\'offre Pro ERP',
-          'Badge d\'Or "Fournisseur Certifié"',
-          'Radar d\'Appels d\'Offres Live Géo-localisé',
-          'Radar de Prédiction des Prix',
-          'Account Manager Dédié',
-          'Priorité absolue dans le Marketplace'
-        ],
-        missing: []
-      }
+      starter: { name: 'Starter B2B', desc: 'Idéal pour démarrer, organiser le stock et facturer légalement.', features: ['Gestion centralisée du stock', 'Facturation B2B illimitée', 'Jusqu\'à 50 clients', 'Tableau de bord basique'], missing: ['Comptabilité avancée & CPC', 'CRM Intelligent', 'Radar d\'Appels d\'Offres'] },
+      pro: { name: 'Pro ERP', desc: 'Le système complet pour gérer le commerce, la compta B2B et le CRM.', badge: 'Le plus populaire', features: ['Tout de l\'offre Starter', 'Comptabilité & Bilan CPC automatisé', 'CRM Intelligent (Segmentation)', 'Relance client via WhatsApp', 'Optimiseur Logistique (Retour Chargé)', 'Clients et documents illimités'], missing: ['Badge SouqBTP Verified', 'Radar d\'Appels d\'Offres Live'] },
+      enterprise: { name: 'Enterprise (Verified)', desc: 'La puissance de l\'IA et la capture d\'appels d\'offres pour les leaders du marché.', badge: 'SouqBTP Verified 🛡️', features: ['Tout de l\'offre Pro ERP', 'Badge d\'Or "Fournisseur Certifié"', 'Radar d\'Appels d\'Offres Live Géo-localisé', 'Radar de Prédiction des Prix', 'Account Manager Dédié', 'Priorité absolue dans le Marketplace'], missing: [] }
+    },
+    modal: {
+      vipTitle: 'Service Client VIP', vipWelcome: 'Bienvenue dans le club d\'élite', vipDesc: 'Un manager de compte dédié est prêt à répondre à vos questions.',
+      waBtn: 'Contactez-nous sur WhatsApp', payDirectBtn: 'Je préfère payer directement', paymentTitle: 'Finaliser le paiement',
+      plan: 'Plan sélectionné', total: 'Total à payer', chooseMethod: 'Choisissez votre méthode de paiement :',
+      bank: 'Virement Bancaire', cash: 'Cash Plus / Wafacash', card: 'Carte Bancaire', soon: 'Bientôt',
+      bankMsg: 'Veuillez effectuer un virement vers le compte professionnel suivant :', ben: 'Bénéficiaire', ice: 'ICE',
+      cashMsg: 'Veuillez effectuer un transfert via Cash Plus ou Wafacash à :', name: 'Nom Complet', cin: 'N° CIN', phone: 'Téléphone',
+      uploadTitle: 'Télécharger le reçu', uploadDesc: 'Photo ou scan du reçu (JPG, PNG, PDF)', chooseFile: 'Choisir un fichier',
+      confirmBtn: 'Confirmer et envoyer', successTitle: 'Reçu envoyé avec succès !', successDesc: 'Vérification en cours. Votre compte sera activé sous peu.'
     }
   },
   en: {
     title: 'Empire B2B Subscriptions',
     subtitle: 'Invest in the system that multiplies your sales and protects your margins. Choose excellence.',
-    monthly: 'Monthly',
-    annual: 'Annual',
-    save20: 'Save 20%',
-    currency: 'MAD',
-    mo: '/ month',
-    yr: '/ year',
-    currentPlan: 'Your current plan',
-    upgradeBtn: 'Upgrade Now',
-    contactSales: 'Contact Sales',
-    successMsg: '🌟 Plan successfully updated and permissions enabled!',
+    monthly: 'Monthly', annual: 'Annual', save20: 'Save 20%', currency: 'MAD', mo: '/ month', yr: '/ year',
+    currentPlan: 'Your current plan', upgradeBtn: 'Upgrade Now', contactSales: 'Contact Sales', successMsg: '🌟 Plan successfully updated and permissions enabled!',
     plans: {
-      starter: {
-        name: 'Starter B2B',
-        desc: 'Ideal for starting, organizing inventory, and issuing legal invoices.',
-        features: [
-          'Centralized inventory management',
-          'Unlimited B2B invoicing',
-          'Up to 50 clients in the system',
-          'Simple analytics dashboard',
-        ],
-        missing: ['Advanced Accounting & CPC', 'Smart Client CRM', 'Live Tenders Radar']
-      },
-      pro: {
-        name: 'Pro ERP',
-        desc: 'Complete system to manage major trade, accounting, CRM, and contracts.',
-        badge: 'Most Popular',
-        features: [
-          'Everything in Starter',
-          'Automated accounting & CPC system',
-          'Smart CRM (Segmentation)',
-          'WhatsApp reminders for collection',
-          'Shared Logistics Optimizer',
-          'Unlimited clients and documents'
-        ],
-        missing: ['SouqBTP Verified Gold Badge', 'Live Tenders Radar']
-      },
-      enterprise: {
-        name: 'Enterprise (Verified)',
-        desc: 'AI power and geographic tender capture for major suppliers.',
-        badge: 'SouqBTP Verified 🛡️',
-        features: [
-          'Everything in Pro ERP',
-          'Gold "Certified Supplier" badge',
-          'Live Geo-localized Tenders Radar',
-          'Proactive Price Prediction Radar',
-          'Dedicated Account Manager & Accountant',
-          'Absolute priority visibility for merchants'
-        ],
-        missing: []
-      }
+      starter: { name: 'Starter B2B', desc: 'Ideal for starting, organizing inventory, and issuing legal invoices.', features: ['Centralized inventory management', 'Unlimited B2B invoicing', 'Up to 50 clients in the system', 'Simple analytics dashboard'], missing: ['Advanced Accounting & CPC', 'Smart Client CRM', 'Live Tenders Radar'] },
+      pro: { name: 'Pro ERP', desc: 'Complete system to manage major trade, accounting, CRM, and contracts.', badge: 'Most Popular', features: ['Everything in Starter', 'Automated accounting & CPC system', 'Smart CRM (Segmentation)', 'WhatsApp reminders for collection', 'Shared Logistics Optimizer', 'Unlimited clients and documents'], missing: ['SouqBTP Verified Gold Badge', 'Live Tenders Radar'] },
+      enterprise: { name: 'Enterprise (Verified)', desc: 'AI power and geographic tender capture for major suppliers.', badge: 'SouqBTP Verified 🛡️', features: ['Everything in Pro ERP', 'Gold "Certified Supplier" badge', 'Live Geo-localized Tenders Radar', 'Proactive Price Prediction Radar', 'Dedicated Account Manager & Accountant', 'Absolute priority visibility for merchants'], missing: [] }
+    },
+    modal: {
+      vipTitle: 'VIP Client Service', vipWelcome: 'Welcome to the Elite Club', vipDesc: 'A dedicated account manager is ready to assist you.',
+      waBtn: 'Chat with us on WhatsApp', payDirectBtn: 'I prefer to pay directly', paymentTitle: 'Finalize Payment',
+      plan: 'Selected Plan', total: 'Total to pay', chooseMethod: 'Choose payment method:',
+      bank: 'Bank Transfer', cash: 'Cash Plus / Wafacash', card: 'Credit Card', soon: 'Soon',
+      bankMsg: 'Please make a bank transfer to the following professional account:', ben: 'Beneficiary', ice: 'ICE',
+      cashMsg: 'Please make a transfer via Cash Plus or Wafacash to:', name: 'Full Name', cin: 'ID Number', phone: 'Phone',
+      uploadTitle: 'Upload Payment Receipt', uploadDesc: 'Photo or scan (JPG, PNG, PDF)', chooseFile: 'Choose file',
+      confirmBtn: 'Confirm and Send', successTitle: 'Receipt sent successfully!', successDesc: 'Verification in progress. Your account will be activated shortly.'
     }
   }
 };
@@ -206,7 +104,7 @@ export default function SupplierSubscription() {
   };
 
   const handleReceiptUpload = (e) => {
-    if (e.target.files[0]) {
+    if (e.target.files && e.target.files[0]) {
       setReceiptFile(e.target.files[0].name);
     }
   };
@@ -220,7 +118,7 @@ export default function SupplierSubscription() {
         setShowPaymentModal(false);
         setPaymentSuccess(false);
         setReceiptFile(null);
-      }, 4000);
+      }, 4000); 
     }, 2000);
   };
 
@@ -357,8 +255,8 @@ export default function SupplierSubscription() {
         </div>
       </div>
 
-      {/* 💳 Payment Modal */}
-      {showPaymentModal && (
+      {/* 🛡️ شرط التأكد من جاهزية البيانات (يمنع الشبح الأبيض نهائياً) */}
+      {showPaymentModal && selectedPlan && m && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
             
@@ -435,7 +333,6 @@ export default function SupplierSubscription() {
                   </button>
                 </div>
 
-                {/* تفاصيل التحويل */}
                 <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl mb-8">
                   {paymentMethod === 'virement' && (
                     <div className="space-y-4">
