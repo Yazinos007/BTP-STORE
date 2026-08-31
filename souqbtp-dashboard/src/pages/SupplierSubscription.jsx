@@ -10,12 +10,56 @@ const translations = {
   ar: {
     title: 'ترقية باقة الإمبراطورية (B2B)',
     subtitle: 'استثمر في النظام الذي يضاعف مبيعاتك ويحمي أرباحك. اختر الباقة التي تناسب حجم طموحك.',
-    monthly: 'دفع شهري', annual: 'دفع سنوي', save20: 'وفر 20%', currency: 'درهم', mo: '/ شهر', yr: '/ سنة',
-    currentPlan: 'باقتك الحالية', upgradeBtn: 'الترقية الآن', contactSales: 'تواصل مع المبيعات', successMsg: '🌟 تم تفعيل الباقة وتحديث صلاحيات النظام بنجاح!',
+    monthly: 'دفع شهري',
+    annual: 'دفع سنوي',
+    save20: 'وفر 20%',
+    currency: 'درهم',
+    mo: '/ شهر',
+    yr: '/ سنة',
+    currentPlan: 'باقتك الحالية',
+    upgradeBtn: 'الترقية الآن',
+    contactSales: 'تواصل مع المبيعات',
+    successMsg: '🌟 تم تفعيل الباقة وتحديث صلاحيات النظام بنجاح!',
     plans: {
-      starter: { name: 'Starter B2B', desc: 'مثالية للموردين الجدد لتنظيم المخزون وإصدار الفواتير القانونية السريعة.', features: ['إدارة المخزون المركزي الأساسية', 'إصدار فواتير B2B غير محدودة', 'حد أقصى 50 عميل في النظام', 'لوحة تحكم إحصائيات بسيطة'], missing: ['المحاسبة المتقدمة والـ CPC', 'الـ CRM الذكي للعملاء', 'رادار المناقصات الحية'] },
-      pro: { name: 'Pro ERP', desc: 'نظام متكامل لإدارة التجارة الكبرى، المحاسبة، وعلاقات العملاء وعقودهم.', badge: 'الأكثر شعبية', features: ['كل ما في باقة Starter', 'نظام المحاسبة والـ CPC التلقائي', 'الـ CRM الذكي (تصنيف العملاء)', 'إرسال رسائل واتساب للتحصيل المباشر', 'نظام "الرجوع عامر" التشاركي (لوجستيك)', 'عدد عملاء وثائق غير محدود'], missing: ['شارة SouqBTP Verified الذهبية', 'رادار المناقصات الحية'] },
-      enterprise: { name: 'Enterprise (Verified)', desc: 'قوة الذكاء الاصطناعي واقتناص المناقصات الجغرافية لكبار الموردين.', badge: 'SouqBTP Verified 🛡️', features: ['كل ما في باقة Pro ERP', 'شارة "مورد معتمد" الذهبية للماركت بليس', 'رادار المناقصات الحية (الفرص المحلية القريبة)', 'رادار التنبؤ وتقلبات الأسعار الاستباقي', 'مدير حساب شخصي ومحاسب مخصص لك', 'أولوية الظهور المطلقة للتجار والمقاولين'], missing: [] }
+      starter: {
+        name: 'Starter B2B',
+        desc: 'مثالية للموردين الجدد لتنظيم المخزون وإصدار الفواتير القانونية السريعة.',
+        features: [
+          'إدارة المخزون المركزي الأساسية',
+          'إصدار فواتير B2B غير محدودة',
+          'حد أقصى 50 عميل في النظام',
+          'لوحة تحكم إحصائيات بسيطة',
+        ],
+        missing: ['المحاسبة المتقدمة والـ CPC', 'الـ CRM الذكي للعملاء', 'رادار المناقصات الحية']
+      },
+      pro: {
+        name: 'Pro ERP',
+        desc: 'نظام متكامل لإدارة التجارة الكبرى، المحاسبة، وعلاقات العملاء وعقودهم.',
+        badge: 'الأكثر شعبية',
+        features: [
+          'كل ما في باقة Starter',
+          'نظام المحاسبة والـ CPC التلقائي',
+          'الـ CRM الذكي (تصنيف العملاء)',
+          'إرسال رسائل واتساب للتحصيل المباشر',
+          'نظام "الرجوع عامر" التشاركي (لوجستيك)',
+          'عدد عملاء وثائق غير محدود'
+        ],
+        missing: ['شارة SouqBTP Verified الذهبية', 'رادار المناقصات الحية']
+      },
+      enterprise: {
+        name: 'Enterprise (Verified)',
+        desc: 'قوة الذكاء الاصطناعي واقتناص المناقصات الجغرافية لكبار الموردين.',
+        badge: 'SouqBTP Verified 🛡️',
+        features: [
+          'كل ما في باقة Pro ERP',
+          'شارة "مورد معتمد" الذهبية للماركت بليس',
+          'رادار المناقصات الحية (الفرص المحلية القريبة)',
+          'رادار التنبؤ وتقلبات الأسعار الاستباقي',
+          'مدير حساب شخصي ومحاسب مخصص لك',
+          'أولوية الظهور المطلقة للتجار والمقاولين'
+        ],
+        missing: []
+      }
     },
     modal: {
       vipTitle: 'خدمة كبار العملاء VIP', vipWelcome: 'مرحباً بك في نادي النخبة', vipDesc: 'لأنك اخترت الباقة الأقوى، خصصنا لك مدير حسابات شخصي.',
@@ -31,12 +75,56 @@ const translations = {
   fr: {
     title: 'Abonnements Empire (B2B)',
     subtitle: 'Investissez dans le système qui multiplie vos ventes et protège vos marges. Choisissez l\'excellence.',
-    monthly: 'Mensuel', annual: 'Annuel', save20: 'Économisez 20%', currency: 'MAD', mo: '/ mois', yr: '/ an',
-    currentPlan: 'Votre plan actuel', upgradeBtn: 'Mettre à niveau', contactSales: 'Contacter les ventes', successMsg: '🌟 Plan mis à jour avec succès et permissions activées !',
+    monthly: 'Mensuel',
+    annual: 'Annuel',
+    save20: 'Économisez 20%',
+    currency: 'MAD',
+    mo: '/ mois',
+    yr: '/ an',
+    currentPlan: 'Votre plan actuel',
+    upgradeBtn: 'Mettre à niveau',
+    contactSales: 'Contacter les ventes',
+    successMsg: '🌟 Plan mis à jour avec succès et permissions activées !',
     plans: {
-      starter: { name: 'Starter B2B', desc: 'Idéal pour démarrer, organiser le stock et facturer légalement.', features: ['Gestion centralisée du stock', 'Facturation B2B illimitée', 'Jusqu\'à 50 clients', 'Tableau de bord basique'], missing: ['Comptabilité avancée & CPC', 'CRM Intelligent', 'Radar d\'Appels d\'Offres'] },
-      pro: { name: 'Pro ERP', desc: 'Le système complet pour gérer le commerce, la compta B2B et le CRM.', badge: 'Le plus populaire', features: ['Tout de l\'offre Starter', 'Comptabilité & Bilan CPC automatisé', 'CRM Intelligent (Segmentation)', 'Relance client via WhatsApp', 'Optimiseur Logistique (Retour Chargé)', 'Clients et documents illimités'], missing: ['Badge SouqBTP Verified', 'Radar d\'Appels d\'Offres Live'] },
-      enterprise: { name: 'Enterprise (Verified)', desc: 'La puissance de l\'IA et la capture d\'appels d\'offres pour les leaders du marché.', badge: 'SouqBTP Verified 🛡️', features: ['Tout de l\'offre Pro ERP', 'Badge d\'Or "Fournisseur Certifié"', 'Radar d\'Appels d\'Offres Live Géo-localisé', 'Radar de Prédiction des Prix', 'Account Manager Dédié', 'Priorité absolue dans le Marketplace'], missing: [] }
+      starter: {
+        name: 'Starter B2B',
+        desc: 'Idéal pour démarrer, organiser le stock et facturer légalement.',
+        features: [
+          'Gestion centralisée du stock',
+          'Facturation B2B illimitée',
+          'Jusqu\'à 50 clients',
+          'Tableau de bord basique',
+        ],
+        missing: ['Comptabilité avancée & CPC', 'CRM Intelligent', 'Radar d\'Appels d\'Offres']
+      },
+      pro: {
+        name: 'Pro ERP',
+        desc: 'Le système complet pour gérer le commerce, la compta B2B et le CRM.',
+        badge: 'Le plus populaire',
+        features: [
+          'Tout de l\'offre Starter',
+          'Comptabilité & Bilan CPC automatisé',
+          'CRM Intelligent (Segmentation)',
+          'Relance client via WhatsApp',
+          'Optimiseur Logistique (Retour Chargé)',
+          'Clients et documents illimités'
+        ],
+        missing: ['Badge SouqBTP Verified', 'Radar d\'Appels d\'Offres Live']
+      },
+      enterprise: {
+        name: 'Enterprise (Verified)',
+        desc: 'La puissance de l\'IA et la capture d\'appels d\'offres pour les leaders du marché.',
+        badge: 'SouqBTP Verified 🛡️',
+        features: [
+          'Tout de l\'offre Pro ERP',
+          'Badge d\'Or "Fournisseur Certifié"',
+          'Radar d\'Appels d\'Offres Live Géo-localisé',
+          'Radar de Prédiction des Prix',
+          'Account Manager Dédié',
+          'Priorité absolue dans le Marketplace'
+        ],
+        missing: []
+      }
     },
     modal: {
       vipTitle: 'Service Client VIP', vipWelcome: 'Bienvenue dans le club d\'élite', vipDesc: 'Un manager de compte dédié est prêt à répondre à vos questions.',
@@ -52,12 +140,56 @@ const translations = {
   en: {
     title: 'Empire B2B Subscriptions',
     subtitle: 'Invest in the system that multiplies your sales and protects your margins. Choose excellence.',
-    monthly: 'Monthly', annual: 'Annual', save20: 'Save 20%', currency: 'MAD', mo: '/ month', yr: '/ year',
-    currentPlan: 'Your current plan', upgradeBtn: 'Upgrade Now', contactSales: 'Contact Sales', successMsg: '🌟 Plan successfully updated and permissions enabled!',
+    monthly: 'Monthly',
+    annual: 'Annual',
+    save20: 'Save 20%',
+    currency: 'MAD',
+    mo: '/ month',
+    yr: '/ year',
+    currentPlan: 'Your current plan',
+    upgradeBtn: 'Upgrade Now',
+    contactSales: 'Contact Sales',
+    successMsg: '🌟 Plan successfully updated and permissions enabled!',
     plans: {
-      starter: { name: 'Starter B2B', desc: 'Ideal for starting, organizing inventory, and issuing legal invoices.', features: ['Centralized inventory management', 'Unlimited B2B invoicing', 'Up to 50 clients in the system', 'Simple analytics dashboard'], missing: ['Advanced Accounting & CPC', 'Smart Client CRM', 'Live Tenders Radar'] },
-      pro: { name: 'Pro ERP', desc: 'Complete system to manage major trade, accounting, CRM, and contracts.', badge: 'Most Popular', features: ['Everything in Starter', 'Automated accounting & CPC system', 'Smart CRM (Segmentation)', 'WhatsApp reminders for collection', 'Shared Logistics Optimizer', 'Unlimited clients and documents'], missing: ['SouqBTP Verified Gold Badge', 'Live Tenders Radar'] },
-      enterprise: { name: 'Enterprise (Verified)', desc: 'AI power and geographic tender capture for major suppliers.', badge: 'SouqBTP Verified 🛡️', features: ['Everything in Pro ERP', 'Gold "Certified Supplier" badge', 'Live Geo-localized Tenders Radar', 'Proactive Price Prediction Radar', 'Dedicated Account Manager & Accountant', 'Absolute priority visibility for merchants'], missing: [] }
+      starter: {
+        name: 'Starter B2B',
+        desc: 'Ideal for starting, organizing inventory, and issuing legal invoices.',
+        features: [
+          'Centralized inventory management',
+          'Unlimited B2B invoicing',
+          'Up to 50 clients in the system',
+          'Simple analytics dashboard',
+        ],
+        missing: ['Advanced Accounting & CPC', 'Smart Client CRM', 'Live Tenders Radar']
+      },
+      pro: {
+        name: 'Pro ERP',
+        desc: 'Complete system to manage major trade, accounting, CRM, and contracts.',
+        badge: 'Most Popular',
+        features: [
+          'Everything in Starter',
+          'Automated accounting & CPC system',
+          'Smart CRM (Segmentation)',
+          'WhatsApp reminders for collection',
+          'Shared Logistics Optimizer',
+          'Unlimited clients and documents'
+        ],
+        missing: ['SouqBTP Verified Gold Badge', 'Live Tenders Radar']
+      },
+      enterprise: {
+        name: 'Enterprise (Verified)',
+        desc: 'AI power and geographic tender capture for major suppliers.',
+        badge: 'SouqBTP Verified 🛡️',
+        features: [
+          'Everything in Pro ERP',
+          'Gold "Certified Supplier" badge',
+          'Live Geo-localized Tenders Radar',
+          'Proactive Price Prediction Radar',
+          'Dedicated Account Manager & Accountant',
+          'Absolute priority visibility for merchants'
+        ],
+        missing: []
+      }
     },
     modal: {
       vipTitle: 'VIP Client Service', vipWelcome: 'Welcome to the Elite Club', vipDesc: 'A dedicated account manager is ready to assist you.',
@@ -104,7 +236,7 @@ export default function SupplierSubscription() {
   };
 
   const handleReceiptUpload = (e) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files[0]) {
       setReceiptFile(e.target.files[0].name);
     }
   };
@@ -222,10 +354,11 @@ export default function SupplierSubscription() {
           </div>
         </div>
 
-        {/* Enterprise */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/50 rounded-3xl p-8 relative overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.1)] group hover:border-amber-400 transition-all duration-300 text-start">
+        {/* Enterprise - تمت إزالة overflow-hidden هنا */}
+        <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/50 rounded-3xl p-8 relative shadow-[0_0_50px_rgba(245,158,11,0.1)] group hover:border-amber-400 transition-all duration-300 text-start">
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none"></div>
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-400 text-black px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-lg shadow-amber-500/20">
+          {/* إضافة z-20 للشارة لتظهر دائماً فوق كل شيء */}
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-400 text-black px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-lg shadow-amber-500/20 z-20">
             <ShieldCheck size={14} /> {t.plans.enterprise.badge}
           </div>
           
@@ -255,7 +388,7 @@ export default function SupplierSubscription() {
         </div>
       </div>
 
-      {/* 🛡️ شرط التأكد من جاهزية البيانات (يمنع الشبح الأبيض نهائياً) */}
+      {/* 💳 Payment Modal */}
       {showPaymentModal && selectedPlan && m && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
