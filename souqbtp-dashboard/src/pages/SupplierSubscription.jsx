@@ -177,6 +177,7 @@ const translations = {
 export default function SupplierSubscription() {
   const { language } = useSettingsStore();
   const t = translations[language] || translations['fr'];
+  const m = t.modal;
   
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -188,6 +189,7 @@ export default function SupplierSubscription() {
   const [paymentMethod, setPaymentMethod] = useState('virement');
   const [receiptFile, setReceiptFile] = useState(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [skipVip, setSkipVip] = useState(false);
 
   const prices = {
     starter: { monthly: 0, annual: 0 },
@@ -199,6 +201,7 @@ export default function SupplierSubscription() {
     const planData = t.plans[tierKey];
     const price = isAnnual ? prices[tierKey].annual : prices[tierKey].monthly;
     setSelectedPlan({ name: planData.name, price: price });
+    setSkipVip(false);
     setShowPaymentModal(true);
   };
 
@@ -217,7 +220,7 @@ export default function SupplierSubscription() {
         setShowPaymentModal(false);
         setPaymentSuccess(false);
         setReceiptFile(null);
-      }, 4000); // إبقاء رسالة النجاح لـ 4 ثواني ليقرأها بوضوح
+      }, 4000);
     }, 2000);
   };
 
@@ -362,7 +365,7 @@ export default function SupplierSubscription() {
             <div className="flex justify-between items-center p-6 border-b border-slate-800 bg-slate-950">
               <h3 className="text-2xl font-black text-white flex items-center gap-2">
                 <ShieldCheck className="text-emerald-500" /> 
-                {selectedPlan?.name === 'Enterprise (Verified)' ? (language === 'ar' ? 'خدمة كبار العملاء VIP' : 'Service Client VIP') : (language === 'ar' ? 'إتمام عملية الدفع' : 'Finaliser le paiement')}
+                {selectedPlan?.name === 'Enterprise (Verified)' && !skipVip ? m.vipTitle : m.paymentTitle}
               </h3>
               <button onClick={() => setShowPaymentModal(false)} className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors">
                 <X size={20} />
@@ -370,67 +373,65 @@ export default function SupplierSubscription() {
             </div>
 
             {/* 👑 معالجة خاصة لباقة Enterprise */}
-            {selectedPlan?.name === 'Enterprise (Verified)' ? (
+            {selectedPlan?.name === 'Enterprise (Verified)' && !skipVip ? (
               <div className="p-8 text-center flex flex-col items-center justify-center space-y-6">
                 <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)]">
                   <Star size={40} className="text-black fill-current" />
                 </div>
                 <div>
-                  <h4 className="text-2xl font-black text-amber-400 mb-2">{language === 'ar' ? 'مرحباً بك في نادي النخبة' : 'Bienvenue dans le club d\'élite'}</h4>
-                  <p className="text-slate-300">
-                    {language === 'ar' 
-                      ? 'لأنك اخترت الباقة الأقوى، خصصنا لك مدير حسابات شخصي للإجابة على استفساراتك وتجهيز عقدك فوراً.' 
-                      : 'Un manager de compte dédié est prêt à répondre à vos questions et préparer votre contrat.'}
-                  </p>
+                  <h4 className="text-2xl font-black text-amber-400 mb-2">{m.vipWelcome}</h4>
+                  <p className="text-slate-300">{m.vipDesc}</p>
                 </div>
                 
                 <a 
-                  href={`https://wa.me/212700715399?text=${encodeURIComponent(language === 'ar' ? 'مرحباً، أود الاستفسار عن باقة Enterprise السنوية لمنصة SouqBTP.' : 'Bonjour, je souhaite me renseigner sur le plan Enterprise annuel de SouqBTP.')}`}
+                  href={`https://wa.me/212700715399?text=${encodeURIComponent(language === 'ar' ? 'مرحباً، أود الاستفسار عن باقة Enterprise السنوية.' : 'Bonjour, je souhaite me renseigner sur le plan Enterprise.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black rounded-xl transition-all shadow-lg hover:scale-105 flex justify-center items-center gap-3 text-lg"
                 >
                   <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                  {language === 'ar' ? 'تحدث معنا عبر WhatsApp' : 'Contactez-nous sur WhatsApp'}
+                  {m.waBtn}
                 </a>
+                
+                <button onClick={() => setSkipVip(true)} className="text-slate-400 font-bold text-sm hover:text-white transition-colors underline decoration-slate-600 underline-offset-4 mt-2">
+                  {m.payDirectBtn}
+                </button>
               </div>
             ) : paymentSuccess ? (
-              // شاشة النجاح العادية לבاقة Pro
               <div className="p-12 text-center flex flex-col items-center justify-center">
                 <div className="w-24 h-24 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mb-6">
                   <CheckCircle2 size={50} />
                 </div>
-                <h4 className="text-3xl font-black text-white mb-2">{language === 'ar' ? 'تم إرسال الوصل بنجاح!' : 'Reçu envoyé avec succès !'}</h4>
-                <p className="text-slate-400 font-medium text-lg">{language === 'ar' ? 'جاري التحقق من التحويل. سيتم تفعيل حسابك قريباً.' : 'Vérification en cours. Votre compte sera activé sous peu.'}</p>
+                <h4 className="text-3xl font-black text-white mb-2">{m.successTitle}</h4>
+                <p className="text-slate-400 font-medium text-lg">{m.successDesc}</p>
               </div>
             ) : (
-              // واجهة الدفع لباقة Pro
               <div className="p-6 overflow-y-auto custom-scrollbar">
                 <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mb-8 flex justify-between items-center">
                   <div>
-                    <p className="text-slate-400 font-bold text-sm">{language === 'ar' ? 'الباقة المحددة' : 'Plan sélectionné'}</p>
+                    <p className="text-slate-400 font-bold text-sm">{m.plan}</p>
                     <p className="text-xl font-black text-white">{selectedPlan?.name}</p>
                   </div>
                   <div className={language === 'ar' ? 'text-left' : 'text-right'}>
-                    <p className="text-slate-400 font-bold text-sm">{language === 'ar' ? 'المبلغ الإجمالي' : 'Total à payer'}</p>
+                    <p className="text-slate-400 font-bold text-sm">{m.total}</p>
                     <p className="text-2xl font-black text-emerald-400" dir="ltr">{selectedPlan?.price} MAD</p>
                   </div>
                 </div>
 
-                <h4 className="font-bold text-white mb-4">{language === 'ar' ? 'اختر وسيلة الدفع:' : 'Choisissez votre méthode de paiement :'}</h4>
+                <h4 className="font-bold text-white mb-4">{m.chooseMethod}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                   <button onClick={() => setPaymentMethod('virement')} className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'virement' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-500'}`}>
                     <Building2 size={28} />
-                    <span className="font-bold text-sm">{language === 'ar' ? 'تحويل بنكي' : 'Virement Bancaire'}</span>
+                    <span className="font-bold text-sm">{m.bank}</span>
                   </button>
                   <button onClick={() => setPaymentMethod('cash')} className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'cash' ? 'border-amber-500 bg-amber-500/10 text-amber-400' : 'border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-500'}`}>
                     <Wallet size={28} />
-                    <span className="font-bold text-sm">Cash Plus / Wafacash</span>
+                    <span className="font-bold text-sm">{m.cash}</span>
                   </button>
                   <button disabled className="p-4 rounded-xl border-2 border-slate-800 bg-slate-900/50 text-slate-600 flex flex-col items-center gap-2 cursor-not-allowed relative overflow-hidden">
                     <CreditCard size={28} />
-                    <span className="font-bold text-sm">{language === 'ar' ? 'البطاقة البنكية' : 'Carte Bancaire'}</span>
-                    <div className="absolute top-2 right-2 bg-slate-800 text-[10px] font-black px-2 py-0.5 rounded text-slate-400">{language === 'ar' ? 'قريباً' : 'Bientôt'}</div>
+                    <span className="font-bold text-sm">{m.card}</span>
+                    <div className="absolute top-2 right-2 bg-slate-800 text-[10px] font-black px-2 py-0.5 rounded text-slate-400">{m.soon}</div>
                   </button>
                 </div>
 
@@ -438,18 +439,18 @@ export default function SupplierSubscription() {
                 <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl mb-8">
                   {paymentMethod === 'virement' && (
                     <div className="space-y-4">
-                      <p className="text-sm font-medium text-slate-400 mb-4">{language === 'ar' ? 'يرجى إجراء تحويل بنكي للحساب المهني التالي:' : 'Veuillez effectuer un virement vers le compte professionnel suivant :'}</p>
+                      <p className="text-sm font-medium text-slate-400 mb-4">{m.bankMsg}</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
-                          <span className="text-slate-500 block mb-1">{language === 'ar' ? 'المستفيد (المقاول الذاتي)' : 'Bénéficiaire (Auto-Entrepreneur)'}</span>
+                          <span className="text-slate-500 block mb-1">{m.ben}</span>
                           <strong className="text-white">BACHIR YASSINE</strong>
                         </div>
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
-                          <span className="text-slate-500 block mb-1">{language === 'ar' ? 'رقم التعريف الموحد ICE' : 'ICE'}</span>
+                          <span className="text-slate-500 block mb-1">{m.ice}</span>
                           <strong className="text-white tracking-widest" dir="ltr">003460220000095</strong>
                         </div>
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 md:col-span-2">
-                          <span className="text-slate-500 block mb-1">RIB (Relevé d'Identité Bancaire)</span>
+                          <span className="text-slate-500 block mb-1">RIB</span>
                           <strong className="text-emerald-400 text-lg tracking-widest font-mono" dir="ltr">225 104 0447028246010126 97</strong>
                           <p className="text-xs mt-1 text-slate-500">{language === 'ar' ? 'البنك' : 'Banque'}: CREDIT AGRICOLE DU MAROC</p>
                         </div>
@@ -459,18 +460,18 @@ export default function SupplierSubscription() {
 
                   {paymentMethod === 'cash' && (
                     <div className="space-y-4">
-                      <p className="text-sm font-medium text-slate-400 mb-4">{language === 'ar' ? 'يرجى إجراء تحويل عبر كاش بلوس للمستفيد التالي:' : 'Veuillez effectuer un transfert via Cash Plus ou Wafacash à :'}</p>
+                      <p className="text-sm font-medium text-slate-400 mb-4">{m.cashMsg}</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
-                          <span className="text-slate-500 block mb-1">{language === 'ar' ? 'الاسم الكامل' : 'Nom Complet'}</span>
+                          <span className="text-slate-500 block mb-1">{m.name}</span>
                           <strong className="text-white">BACHIR Yassine</strong>
                         </div>
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
-                          <span className="text-slate-500 block mb-1">{language === 'ar' ? 'رقم البطاقة الوطنية' : 'N° CIN'}</span>
+                          <span className="text-slate-500 block mb-1">{m.cin}</span>
                           <strong className="text-white tracking-widest" dir="ltr">IA83571</strong>
                         </div>
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 md:col-span-2">
-                          <span className="text-slate-500 block mb-1">{language === 'ar' ? 'رقم الهاتف' : 'Téléphone'}</span>
+                          <span className="text-slate-500 block mb-1">{m.phone}</span>
                           <strong className="text-amber-400 text-lg tracking-widest font-mono" dir="ltr">07 00 71 53 99</strong>
                         </div>
                       </div>
@@ -480,10 +481,10 @@ export default function SupplierSubscription() {
 
                 <div className="border-2 border-dashed border-slate-700 hover:border-blue-500 bg-slate-900/50 rounded-2xl p-8 text-center transition-colors">
                   <UploadCloud size={40} className="mx-auto text-slate-500 mb-3" />
-                  <p className="text-white font-bold mb-1">{language === 'ar' ? 'ارفع وصل الدفع (Reçu)' : 'Télécharger le reçu de paiement'}</p>
-                  <p className="text-sm text-slate-500 mb-4">{language === 'ar' ? 'صورة أو ملف (JPG, PNG, PDF)' : 'Photo ou scan du reçu (JPG, PNG, PDF)'}</p>
+                  <p className="text-white font-bold mb-1">{m.uploadTitle}</p>
+                  <p className="text-sm text-slate-500 mb-4">{m.uploadDesc}</p>
                   <label className="cursor-pointer bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-bold transition-colors inline-block">
-                    {receiptFile ? <span className="text-emerald-400 flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile}</span> : (language === 'ar' ? "اختر الملف" : "Choisir un fichier")}
+                    {receiptFile ? <span className="text-emerald-400 flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile}</span> : m.chooseFile}
                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={handleReceiptUpload} />
                   </label>
                 </div>
@@ -494,7 +495,7 @@ export default function SupplierSubscription() {
                     disabled={!receiptFile || isSubmitting}
                     className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                   >
-                    {isSubmitting ? <Loader2 size={24} className="animate-spin" /> : (language === 'ar' ? 'تأكيد وإرسال الوصل' : 'Confirmer et envoyer le reçu')}
+                    {isSubmitting ? <Loader2 size={24} className="animate-spin" /> : m.confirmBtn}
                   </button>
                 </div>
               </div>
