@@ -22,6 +22,7 @@ import Contracts from './pages/Contracts';
 import AnalyticsB2B from './pages/AnalyticsB2B'; 
 import SupplierSettings from './pages/SupplierSettings';
 import SupplierSubscription from './pages/SupplierSubscription';
+import EmpireLanding from './pages/EmpireLanding'; 
 import RetailerSettings from './pages/Settings'; 
 import RetailerSubscription from './pages/RetailerSubscription';
 import TenderRadar from './pages/TenderRadar';
@@ -572,6 +573,7 @@ function App() {
             <Route path="/orders" element={<SupplierOrders />} />
             <Route path="/settings" element={<SupplierSettings />} />
             <Route path="/subscription" element={<SupplierSubscription />} />
+            <Route path="/empire" element={<EmpireLanding />} />
 
             {/* 🔒 أقسام باقة Pro ERP (تُقفل بعد 7 أيام) */}
             <Route path="/clients" element={<PremiumGuard><Clients isWholesaler={true} /></PremiumGuard>} />
