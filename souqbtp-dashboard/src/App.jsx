@@ -514,6 +514,19 @@ function App() {
     );
   }
 
+  // 🚀 استثناء صفحة الهبوط لتكون عامة وتظهر للجميع القادمين من الإعلانات
+  const isEmpireLanding = window.location.pathname === '/empire';
+
+  if (isEmpireLanding) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/empire" element={<EmpireLanding />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+  
   if (loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
