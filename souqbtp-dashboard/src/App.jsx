@@ -22,7 +22,8 @@ import Contracts from './pages/Contracts';
 import AnalyticsB2B from './pages/AnalyticsB2B'; 
 import SupplierSettings from './pages/SupplierSettings';
 import SupplierSubscription from './pages/SupplierSubscription';
-import EmpireLanding from './pages/EmpireLanding'; 
+import EmpireLanding from './pages/EmpireLanding';
+import RetailLanding from './pages/RetailLanding'; 
 import RetailerSettings from './pages/Settings'; 
 import RetailerSubscription from './pages/RetailerSubscription';
 import TenderRadar from './pages/TenderRadar';
@@ -521,6 +522,13 @@ function App() {
     return <EmpireLanding />;
   }
   
+  // 🚀 استثناء صفحة هبوط التجزئة لتكون عامة وتظهر للإعلانات
+  const isRetailLanding = window.location.pathname.includes('/pro') || window.location.hostname === 'pro.souqbtp.ma';
+  
+  if (isRetailLanding) {
+    return <RetailLanding />; // تأكد من عمل import لـ RetailLanding في أعلى الملف
+  }
+
   if (loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
@@ -581,6 +589,7 @@ function App() {
             <Route path="/settings" element={<SupplierSettings />} />
             <Route path="/subscription" element={<SupplierSubscription />} />
             <Route path="/empire" element={<EmpireLanding />} />
+            <Route path="/pro" element={<RetailLanding />} />
 
             {/* 🔒 أقسام باقة Pro ERP (تُقفل بعد 7 أيام) */}
             <Route path="/clients" element={<PremiumGuard><Clients isWholesaler={true} /></PremiumGuard>} />
