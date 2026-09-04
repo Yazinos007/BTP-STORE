@@ -514,17 +514,9 @@ function App() {
     );
   }
 
-  // 🚀 استثناء صفحة الهبوط لتكون عامة وتظهر للجميع القادمين من الإعلانات
-  const isEmpireLanding = window.location.pathname === '/empire';
-
-  if (isEmpireLanding) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/empire" element={<EmpireLanding />} />
-        </Routes>
-      </BrowserRouter>
-    );
+  // 🚀 استثناء صفحة الهبوط لتكون عامة وتظهر للجميع
+  if (window.location.pathname.includes('/empire')) {
+    return <EmpireLanding />;
   }
   
   if (loading) {
