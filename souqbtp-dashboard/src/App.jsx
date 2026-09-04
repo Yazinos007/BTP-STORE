@@ -515,7 +515,9 @@ function App() {
   }
 
   // 🚀 استثناء صفحة الهبوط لتكون عامة وتظهر للجميع
-  if (window.location.pathname.includes('/empire')) {
+  const isEmpireLanding = window.location.pathname.includes('/empire') || window.location.hostname === 'empire.souqbtp.ma';
+  
+  if (isEmpireLanding) {
     return <EmpireLanding />;
   }
   
