@@ -515,12 +515,14 @@ function App() {
     );
   }
 
-  // 🚀 استثناء صفحات الهبوط لتكون عامة وتظهر للإعلانات
   const hostname = window.location.hostname;
   const pathname = window.location.pathname;
 
-  const isEmpireLanding = pathname.includes('/empire') || hostname === 'empire.souqbtp.ma';
-  const isRetailLanding = pathname.includes('/pro') || hostname === 'pro.souqbtp.ma';
+  // 🟢 استثناء صفحات الدخول والتسجيل لكي تعمل الأزرار
+  const isAuthPage = pathname.includes('/login') || pathname.includes('/register');
+
+  const isEmpireLanding = !isAuthPage && (pathname.includes('/empire') || hostname === 'empire.souqbtp.ma');
+  const isRetailLanding = !isAuthPage && (pathname.includes('/pro') || hostname === 'pro.souqbtp.ma');
 
   if (isEmpireLanding) {
     return (

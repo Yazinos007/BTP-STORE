@@ -21,7 +21,7 @@ export default function RetailLanding() {
           <span className="font-black text-2xl tracking-tight text-slate-800">SouqBTP <span className="text-blue-600">Retail</span></span>
         </div>
         <button 
-          onClick={() => navigate('/login')}
+          onClick={() => window.location.href = '/login'}
           className="text-slate-600 font-bold hover:text-blue-600 transition-colors px-4 py-2"
         >
           تسجيل الدخول
@@ -49,7 +49,7 @@ export default function RetailLanding() {
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button 
-            onClick={() => navigate('/register')}
+            onClick={() => window.location.href = '/register'}
             className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-2xl shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-1 flex items-center justify-center gap-2"
           >
             <Smartphone size={24} />
@@ -201,7 +201,7 @@ export default function RetailLanding() {
         <h2 className="text-2xl font-black text-slate-900 mb-4">واجد باش تطور حانوتك وتزيد فمبيعاتك؟</h2>
         <p className="text-slate-600 mb-6">جرب المنصة اليوم بالمجان، وبلا ما تدخل لا كارطة لا والو.</p>
         <button 
-          onClick={() => navigate('/register')}
+          onClick={() => window.location.href = '/register'}
           className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors inline-flex items-center gap-2"
         >
           <span>افتح حسابك دابا</span>
