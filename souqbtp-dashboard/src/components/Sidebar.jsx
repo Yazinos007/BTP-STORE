@@ -88,17 +88,20 @@ export default function Sidebar() {
   const safeSupplier = supplier || { 
     store_name: 'Mon Magasin', 
     tier: 'starter', 
-    role: 'admin',
-    permissions: { sales: true, products: true, invoices: true, accounting: true, hr: true }
+    role: 'admin'
   };
 
   const tier = safeSupplier.tier || 'starter';
   const role = safeSupplier.role || 'admin';
-  const isEnterprise = tier === 'enterprise';
+  
+  // 🚀 متغيرات التحكم في الباقات
+  const isEnterpriseOnly = tier === 'enterprise';
+  const isProPlus = ['pro', 'enterprise'].includes(tier); // لصلاحيات Pro وما فوق
+  const isPremiumPlus = ['premium', 'pro', 'enterprise'].includes(tier); // لصلاحيات Premium وما فوق
 
   const toggleMenu = (menuName) => setOpenMenus(prev => ({ ...prev, [menuName]: !prev[menuName] }));
 
-  // القائمة الموحدة لجميع الباقات (مع إخفاء الخصائص الحصرية الخاصة بـ Enterprise إذا لم يكن المشترك كذلك)
+  // القائمة الموحدة مع شروط الباقات
   const unifiedMenu = [
     { name: t.dashboard, icon: LayoutDashboard, path: '/', alwaysShow: true },
     {
@@ -106,7 +109,7 @@ export default function Sidebar() {
       subItems: [
         { name: t.fournisseurs, path: '/suppliers' },
         { name: t.achats, path: '/purchases' },
-        ...(isEnterprise ? [{ name: t.logisticsBourse, path: '/logistics-bourse' }] : []) // حصري للإمبراطورية
+        ...(isEnterpriseOnly ? [{ name: t.logisticsBourse, path: '/logistics-bourse' }] : []) 
       ]
     },
     {
@@ -127,34 +130,43 @@ export default function Sidebar() {
       group: t.gestionFactures, icon: FileText,
       subItems: [
         { name: t.factures, path: '/invoices' }, 
-        { name: t.devis, path: '/devis' },
-        { name: t.bc, path: '/bc' }, 
-        { name: t.fe, path: '/fiches-expedition' }, 
-        { name: t.bl, path: '/bl' },
-        { name: t.avoir, path: '/avoir' },
-        { name: t.facturesAchat, path: '/factures-achat' },
+        // 🔒 إخفاء الفواتير المتقدمة عن الباقة المجانية
+        ...(isPremiumPlus ? [
+          { name: t.devis, path: '/devis' },
+          { name: t.bc, path: '/bc' }, 
+          { name: t.fe, path: '/fiches-expedition' }, 
+          { name: t.bl, path: '/bl' },
+          { name: t.avoir, path: '/avoir' },
+          { name: t.facturesAchat, path: '/factures-achat' },
+        ] : [])
       ]
     },
-    {
+    // 🔒 الموارد البشرية: فقط لـ Pro و Enterprise
+    ...(isProPlus ? [{
       group: t.rh, icon: Briefcase,
       subItems: [{ name: t.gestionEmployes, path: '/hr' }]
-    },
-    {
+    }] : []),
+    // 🔒 الصناديق المتعددة: فقط لـ Pro و Enterprise
+    ...(isProPlus ? [{
       group: t.gestionCaisses, icon: Wallet,
       subItems: [{ name: t.caisses, path: '/caisses' }]
-    },
-    {
+    }] : []),
+    // 🔒 إدارة المصاريف: لـ Premium وما فوق
+    ...(isPremiumPlus ? [{
       group: t.chargesEnt, icon: CreditCard,
       subItems: [{ name: t.gestionCharges, path: '/expenses' }]
-    },
-    {
+    }] : []),
+    // 🔒 الضرائب: فقط لـ Pro و Enterprise
+    ...(isProPlus ? [{
       group: t.fiscal, icon: Landmark,
       subItems: [{ name: t.decTva, path: '/fiscal' }]
-    },
-    {
+    }] : []),
+    // 🔒 المحاسبة: فقط لـ Pro و Enterprise
+    ...(isProPlus ? [{
       group: t.accounting, icon: Calculator,
       subItems: [{ name: t.accounting, path: '/accounting' }]
-    },
+    }] : []),
+    
     { name: t.profileSettings, icon: Settings, path: '/settings', adminOnly: true }
   ];
 
@@ -178,7 +190,7 @@ export default function Sidebar() {
               </h2>
               
               <div className="flex flex-wrap gap-2">
-                <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${tier === 'enterprise' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : tier === 'pro' ? 'bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/30' : 'bg-gray-600 text-white'}`}>
+                <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${tier === 'enterprise' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : tier === 'pro' ? 'bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/30' : tier === 'premium' ? 'bg-blue-400 text-white shadow-lg shadow-blue-400/30' : 'bg-gray-600 text-white'}`}>
                   {tier}
                 </span>
                 <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${role === 'admin' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white/10 text-gray-300'}`}>
