@@ -21,7 +21,7 @@ export default function RetailLanding() {
           <span className="font-black text-2xl tracking-tight text-slate-800">SouqBTP <span className="text-blue-600">Retail</span></span>
         </div>
         <button 
-          onClick={() => window.location.href = '/login'}
+          onClick={() => window.location.href = 'https://souqbtp.ma/login'}
           className="text-slate-600 font-bold hover:text-blue-600 transition-colors px-4 py-2"
         >
           تسجيل الدخول
@@ -49,7 +49,7 @@ export default function RetailLanding() {
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button 
-            onClick={() => window.location.href = '/register'}
+            onClick={() => window.location.href = 'https://souqbtp.ma/register'}
             className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-2xl shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-1 flex items-center justify-center gap-2"
           >
             <Smartphone size={24} />
@@ -160,7 +160,12 @@ export default function RetailLanding() {
                 <li className="flex items-center gap-3"><CheckCircle2 className="text-emerald-400" size={20}/> إدارة المخزون الأساسية</li>
                 <li className="flex items-center gap-3"><CheckCircle2 className="text-emerald-400" size={20}/> حتى لـ 50 كليان</li>
               </ul>
-              <button className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-colors">ابدا فابور</button>
+              <button 
+                onClick={() => window.location.href = 'https://souqbtp.ma/register'}
+                className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-colors"
+              >
+                ابدا فابور
+              </button>
             </div>
 
             {/* Premium (Highlighted) */}
@@ -176,7 +181,12 @@ export default function RetailLanding() {
                 <li className="flex items-center gap-3"><CheckCircle2 className="text-amber-400" size={20}/> إدارة دقيقة للكريدي</li>
                 <li className="flex items-center gap-3"><CheckCircle2 className="text-amber-400" size={20}/> كليان وسلع بدون حدود</li>
               </ul>
-              <button className="w-full py-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-lg transition-colors shadow-lg shadow-amber-400/20">اشترك الآن</button>
+              <button 
+                onClick={() => window.location.href = 'https://souqbtp.ma/register'}
+                className="w-full py-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-lg transition-colors shadow-lg shadow-amber-400/20"
+              >
+               اشترك الآن
+              </button>
             </div>
 
             {/* Pro */}
@@ -190,7 +200,12 @@ export default function RetailLanding() {
                 <li className="flex items-center gap-3"><CheckCircle2 className="text-emerald-400" size={20}/> تسيير الموظفين والصناديق</li>
                 <li className="flex items-center gap-3"><CheckCircle2 className="text-emerald-400" size={20}/> تصدير مباشر للكونتابل</li>
               </ul>
-              <button className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-colors">تواصل معنا</button>
+              <button 
+                onClick={() => window.location.href = 'https://wa.me/212700715399'} 
+                className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-colors"
+              >
+                تواصل معنا
+              </button>
             </div>
           </div>
         </div>
@@ -201,7 +216,7 @@ export default function RetailLanding() {
         <h2 className="text-2xl font-black text-slate-900 mb-4">واجد باش تطور حانوتك وتزيد فمبيعاتك؟</h2>
         <p className="text-slate-600 mb-6">جرب المنصة اليوم بالمجان، وبلا ما تدخل لا كارطة لا والو.</p>
         <button 
-          onClick={() => window.location.href = '/register'}
+          onClick={() => window.location.href = 'https://souqbtp.ma/register'}
           className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors inline-flex items-center gap-2"
         >
           <span>افتح حسابك دابا</span>
