@@ -515,26 +515,30 @@ function App() {
     );
   }
 
-  // 🚀 استثناء صفحة الهبوط لتكون عامة وتظهر للجميع
-  const isEmpireLanding = window.location.pathname.includes('/empire') || window.location.hostname === 'empire.souqbtp.ma';
-  
+  // 🚀 استثناء صفحات الهبوط لتكون عامة وتظهر للإعلانات
+  const hostname = window.location.hostname;
+  const pathname = window.location.pathname;
+
+  const isEmpireLanding = pathname.includes('/empire') || hostname === 'empire.souqbtp.ma';
+  const isRetailLanding = pathname.includes('/pro') || hostname === 'pro.souqbtp.ma';
+
   if (isEmpireLanding) {
-    return <EmpireLanding />;
-  }
-  
-  // 🚀 استثناء صفحة هبوط التجزئة لتكون عامة وتظهر للإعلانات
-  const isRetailLanding = window.location.pathname.includes('/pro') || window.location.hostname === 'pro.souqbtp.ma';
-  
-  if (isRetailLanding) {
-    return <RetailLanding />; // تأكد من عمل import لـ RetailLanding في أعلى الملف
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="*" element={<EmpireLanding />} />
+        </Routes>
+      </BrowserRouter>
+    );
   }
 
-  if (loading) {
+  if (isRetailLanding) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
-        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-        <p className="font-bold text-slate-400">{language === 'fr' ? 'Chargement...' : language === 'en' ? 'Loading...' : 'جاري التحميل...'}</p>
-      </div>
+      <BrowserRouter>
+        <Routes>
+          <Route path="*" element={<RetailLanding />} />
+        </Routes>
+      </BrowserRouter>
     );
   }
 
