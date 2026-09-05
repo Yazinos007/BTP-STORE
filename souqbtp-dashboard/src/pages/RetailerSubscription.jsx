@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
 import { Store, CheckCircle2, Zap, ArrowRight, Minus, Loader2, Shield } from 'lucide-react';
+// 👇 استدعاء مكون الدفع (تأكد من صحة المسار حسب بنية مجلداتك)
+import PaymentModal from '../components/PaymentModal'; 
 
 const translations = {
   ar: {
@@ -17,8 +19,8 @@ const translations = {
     currentPlan: 'باقتك الحالية',
     upgradeBtn: 'اشترك الآن',
     contactSales: 'تواصل معنا',
-    successMsg: '🌟 تهانينا! تم تفعيل الباقة بنجاح، جميع الأقسام الاحترافية مفتوحة الآن.',
-    errorActivation: 'حدث خطأ أثناء التفعيل، يرجى المحاولة لاحقاً.',
+    successMsg: 'تم إرسال طلب الترقية بنجاح! سنقوم بمراجعة الوصل وتفعيل الباقة قريباً.', // تم التعديل
+    errorActivation: 'حدث خطأ أثناء إرسال الطلب، يرجى المحاولة لاحقاً.',
     errorConnection: 'خطأ في الاتصال بالخادم.',
     plans: {
       basic: {
@@ -74,8 +76,8 @@ const translations = {
     currentPlan: 'Votre plan actuel',
     upgradeBtn: 'S\'abonner',
     contactSales: 'Nous contacter',
-    successMsg: '🌟 Félicitations ! Votre abonnement a été activé avec succès. Toutes les fonctionnalités sont débloquées.',
-    errorActivation: 'Erreur lors de l\'activation. Veuillez réessayer plus tard.',
+    successMsg: 'Votre demande a été envoyée avec succès ! Nous allons vérifier le reçu et activer votre plan sous peu.', // تم التعديل
+    errorActivation: 'Erreur lors de l\'envoi. Veuillez réessayer plus tard.',
     errorConnection: 'Erreur de connexion au serveur.',
     plans: {
       basic: {
@@ -131,8 +133,8 @@ const translations = {
     currentPlan: 'Your current plan',
     upgradeBtn: 'Subscribe Now',
     contactSales: 'Contact Us',
-    successMsg: '🌟 Congratulations! Your subscription has been successfully activated. All pro features are now unlocked.',
-    errorActivation: 'Error during activation. Please try again later.',
+    successMsg: 'Request sent successfully! We will verify the receipt and activate your plan shortly.', // تم التعديل
+    errorActivation: 'Error during submission. Please try again later.',
     errorConnection: 'Connection error to the server.',
     plans: {
       basic: {
@@ -182,8 +184,12 @@ export default function RetailerSubscription() {
   const { language } = useSettingsStore();
   const { updateProfile } = useSupplierStore();
   const t = translations[language] || translations['fr'];
+  
   const [isAnnual, setIsAnnual] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // 👇 متغيرات التحكم في النافذة المنبثقة
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  
   const navigate = useNavigate();
 
   const prices = {
@@ -192,22 +198,24 @@ export default function RetailerSubscription() {
     pro: { monthly: 299, annual: 2870 } 
   };
 
-  const handleSubscribe = async (tier) => {
-    setIsSubmitting(true);
+  // 👇 دالة فتح النافذة
+  const handleUpgradeClick = (tierCode, planName, planPrice) => {
+    setSelectedPlan({ tier: tierCode, name: planName, price: planPrice });
+    setShowPaymentModal(true);
+  };
+
+  // 👇 دالة تنفيذ الطلب بعد رفع الوصل
+  const handlePaymentSubmit = async (plan, method, file) => {
     try {
-      const result = await updateProfile({ tier: tier });
+      // هنا مستقبلاً ستقوم برفع الصورة `file` إلى Supabase Storage 
+      // وإدراج سطر في جدول `upgrade_requests`
       
-      if (result.success) {
-        alert(t.successMsg);
-        navigate('/'); 
-      } else {
-        alert(t.errorActivation);
-      }
+      alert(t.successMsg);
+      setShowPaymentModal(false);
+      navigate('/');
     } catch (error) {
       console.error(error);
       alert(t.errorConnection);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -229,7 +237,6 @@ export default function RetailerSubscription() {
               {t.annual}
               <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${isAnnual ? 'bg-emerald-500 text-white shadow-sm' : 'bg-emerald-100 text-emerald-600'}`}>{t.save20}</span>
             </button>
-            {/* 🎯 تعديل اتجاه التبديل ليتوافق مع اللغة العربية RTL */}
             <div className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white border border-gray-200 rounded-xl transition-all duration-300 ease-out shadow-sm" style={{ [language === 'ar' ? 'right' : 'left']: isAnnual ? 'calc(50% + 3px)' : '6px' }}></div>
           </div>
         </div>
@@ -264,8 +271,12 @@ export default function RetailerSubscription() {
             <span className="text-5xl font-black text-blue-600">{isAnnual ? prices.premium.annual.toLocaleString() : prices.premium.monthly.toLocaleString()}</span>
             <span className="text-gray-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
-          <button onClick={() => handleSubscribe('pro')} disabled={isSubmitting} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm">
-            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <><Zap size={18} className="fill-white" /> {t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} /></>}
+          {/* 👇 تعديل زر الترقية لفتح النافذة */}
+          <button 
+            onClick={() => handleUpgradeClick('pro', t.plans.premium.name, isAnnual ? prices.premium.annual : prices.premium.monthly)} 
+            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm"
+          >
+            <Zap size={18} className="fill-white" /> {t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
           </button>
           <div className="space-y-4">
             {t.plans.premium.features.map((feat, i) => (
@@ -286,8 +297,12 @@ export default function RetailerSubscription() {
             <span className="text-5xl font-black text-gray-900">{isAnnual ? prices.pro.annual.toLocaleString() : prices.pro.monthly.toLocaleString()}</span>
             <span className="text-gray-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
-          <button onClick={() => handleSubscribe('enterprise')} disabled={isSubmitting} className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black rounded-xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 text-sm">
-            {isSubmitting ? <Loader2 size={18} className="animate-spin text-white" /> : <><Shield size={16} /> {t.upgradeBtn}</>}
+          {/* 👇 تعديل زر الترقية لفتح النافذة */}
+          <button 
+            onClick={() => handleUpgradeClick('enterprise', t.plans.pro.name, isAnnual ? prices.pro.annual : prices.pro.monthly)} 
+            className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black rounded-xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 text-sm"
+          >
+            <Shield size={16} /> {t.upgradeBtn}
           </button>
           <div className="space-y-4">
             {t.plans.pro.features.map((feat, i) => (
@@ -295,8 +310,16 @@ export default function RetailerSubscription() {
             ))}
           </div>
         </div>
-
       </div>
+
+      {/* 👇 استدعاء النافذة المنبثقة */}
+      {showPaymentModal && (
+        <PaymentModal 
+          plan={selectedPlan}
+          onClose={() => setShowPaymentModal(false)}
+          onSubmit={handlePaymentSubmit}
+        />
+      )}
     </div>
   );
 }
