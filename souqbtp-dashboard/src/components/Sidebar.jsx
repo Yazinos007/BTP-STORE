@@ -109,8 +109,7 @@ export default function Sidebar() {
       group: t.gestionAchats, icon: Truck,
       subItems: [
         { name: t.fournisseurs, path: '/suppliers' },
-        { name: t.achats, path: '/purchases' },
-        ...(isProOnly ? [{ name: t.logisticsBourse, path: '/logistics-bourse' }] : []) 
+        { name: t.achats, path: '/purchases' }
       ]
     },
     {
