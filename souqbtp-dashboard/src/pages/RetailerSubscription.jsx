@@ -273,7 +273,7 @@ export default function RetailerSubscription() {
           </div>
           {/* 👇 تعديل زر الترقية لفتح النافذة */}
           <button 
-            onClick={() => handleUpgradeClick('pro', t.plans.premium.name, isAnnual ? prices.premium.annual : prices.premium.monthly)} 
+            onClick={() => handleUpgradeClick('Premium', t.plans.premium.name, isAnnual ? prices.premium.annual : prices.premium.monthly)} 
             className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm"
           >
             <Zap size={18} className="fill-white" /> {t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
@@ -299,7 +299,7 @@ export default function RetailerSubscription() {
           </div>
           {/* 👇 تعديل زر الترقية لفتح النافذة */}
           <button 
-            onClick={() => handleUpgradeClick('enterprise', t.plans.pro.name, isAnnual ? prices.pro.annual : prices.pro.monthly)} 
+            onClick={() => handleUpgradeClick('pro', t.plans.pro.name, isAnnual ? prices.pro.annual : prices.pro.monthly)} 
             className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black rounded-xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 text-sm"
           >
             <Shield size={16} /> {t.upgradeBtn}

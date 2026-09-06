@@ -94,14 +94,15 @@ export default function Sidebar() {
   const tier = safeSupplier.tier || 'starter';
   const role = safeSupplier.role || 'admin';
   
-  // 🚀 متغيرات التحكم في الباقات
-  const isEnterpriseOnly = tier === 'enterprise';
-  const isProPlus = ['pro', 'enterprise'].includes(tier); // لصلاحيات Pro وما فوق
-  const isPremiumPlus = ['premium', 'pro', 'enterprise'].includes(tier); // لصلاحيات Premium وما فوق
+  // 🚀 متغيرات التحكم الجديدة (تطابق تام بين البرمجة والتسويق)
+  // باقة Pro (أعلى باقة)
+  const isProOnly = ['pro', 'enterprise'].includes(tier); 
+  // باقة Premium وما فوق
+  const isPremiumPlus = ['premium', 'pro', 'enterprise'].includes(tier); 
 
   const toggleMenu = (menuName) => setOpenMenus(prev => ({ ...prev, [menuName]: !prev[menuName] }));
 
-  // القائمة الموحدة مع شروط الباقات
+  // القائمة الموحدة مع شروط الباقات الصحيحة
   const unifiedMenu = [
     { name: t.dashboard, icon: LayoutDashboard, path: '/', alwaysShow: true },
     {
@@ -109,7 +110,7 @@ export default function Sidebar() {
       subItems: [
         { name: t.fournisseurs, path: '/suppliers' },
         { name: t.achats, path: '/purchases' },
-        ...(isEnterpriseOnly ? [{ name: t.logisticsBourse, path: '/logistics-bourse' }] : []) 
+        ...(isProOnly ? [{ name: t.logisticsBourse, path: '/logistics-bourse' }] : []) 
       ]
     },
     {
@@ -130,7 +131,7 @@ export default function Sidebar() {
       group: t.gestionFactures, icon: FileText,
       subItems: [
         { name: t.factures, path: '/invoices' }, 
-        // 🔒 إخفاء الفواتير المتقدمة عن الباقة المجانية
+        // 🔒 إخفاء الفواتير المتقدمة عن الباقة المجانية (تظهر لـ Premium و Pro)
         ...(isPremiumPlus ? [
           { name: t.devis, path: '/devis' },
           { name: t.bc, path: '/bc' }, 
@@ -141,13 +142,13 @@ export default function Sidebar() {
         ] : [])
       ]
     },
-    // 🔒 الموارد البشرية: فقط لـ Pro و Enterprise
-    ...(isProPlus ? [{
+    // 🔒 الموارد البشرية: فقط لـ Pro
+    ...(isProOnly ? [{
       group: t.rh, icon: Briefcase,
       subItems: [{ name: t.gestionEmployes, path: '/hr' }]
     }] : []),
-    // 🔒 الصناديق المتعددة: فقط لـ Pro و Enterprise
-    ...(isProPlus ? [{
+    // 🔒 الصناديق المتعددة: فقط لـ Pro
+    ...(isProOnly ? [{
       group: t.gestionCaisses, icon: Wallet,
       subItems: [{ name: t.caisses, path: '/caisses' }]
     }] : []),
@@ -156,13 +157,13 @@ export default function Sidebar() {
       group: t.chargesEnt, icon: CreditCard,
       subItems: [{ name: t.gestionCharges, path: '/expenses' }]
     }] : []),
-    // 🔒 الضرائب: فقط لـ Pro و Enterprise
-    ...(isProPlus ? [{
+    // 🔒 الضرائب: فقط لـ Pro
+    ...(isProOnly ? [{
       group: t.fiscal, icon: Landmark,
       subItems: [{ name: t.decTva, path: '/fiscal' }]
     }] : []),
-    // 🔒 المحاسبة: فقط لـ Pro و Enterprise
-    ...(isProPlus ? [{
+    // 🔒 المحاسبة: فقط لـ Pro
+    ...(isProOnly ? [{
       group: t.accounting, icon: Calculator,
       subItems: [{ name: t.accounting, path: '/accounting' }]
     }] : []),
@@ -190,8 +191,9 @@ export default function Sidebar() {
               </h2>
               
               <div className="flex flex-wrap gap-2">
-                <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${tier === 'enterprise' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : tier === 'pro' ? 'bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/30' : tier === 'premium' ? 'bg-blue-400 text-white shadow-lg shadow-blue-400/30' : 'bg-gray-600 text-white'}`}>
-                  {tier}
+                {/* 🎯 الشارات الآن تتطابق برمجياً وتسويقياً */}
+                <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${isProOnly ? 'bg-gray-800 text-white shadow-lg shadow-gray-800/30' : tier === 'premium' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-gray-600 text-white'}`}>
+                  {isProOnly ? 'Pro Retailer' : tier === 'premium' ? 'Premium Shop' : 'Basic POS'}
                 </span>
                 <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${role === 'admin' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white/10 text-gray-300'}`}>
                   {role === 'admin' ? t.owner : t.employee}
@@ -228,13 +230,13 @@ export default function Sidebar() {
             <button 
               onClick={() => navigate('/subscription')}
               className={`w-full py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg hover:-translate-y-0.5 cursor-pointer ${
-                tier !== 'enterprise' && tier !== 'pro' 
+                !isProOnly 
                   ? 'bg-gradient-to-r from-[#eab308] to-orange-500 hover:from-[#ca8a04] hover:to-orange-600 text-slate-900 shadow-yellow-500/20' 
                   : 'bg-white/10 hover:bg-white/20 text-white border border-white/10' 
               }`}
             >
-              <Zap size={18} className={tier !== 'enterprise' && tier !== 'pro' ? "fill-slate-900" : "text-amber-400"} />
-              {tier !== 'enterprise' && tier !== 'pro' ? t.upgrade : t.manageSub}
+              <Zap size={18} className={!isProOnly ? "fill-slate-900" : "text-amber-400"} />
+              {!isProOnly ? t.upgrade : t.manageSub}
             </button>
           </div>
         )}
