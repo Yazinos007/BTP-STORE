@@ -36,7 +36,7 @@ export default function RetailLanding() {
         </div>
         
         <h1 className="text-5xl md:text-7xl font-black text-slate-900 mb-8 leading-[1.2]">
-          لوّح كارني الكريدي المقطّع.. <br/>
+          لوح كارني الكريدي المقطّع.. <br/>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
             وسير حانوتك كامل من تليفونك!
           </span>
@@ -44,7 +44,7 @@ export default function RetailLanding() {
         
         <p className="text-xl text-slate-600 mb-10 max-w-3xl mx-auto font-medium leading-relaxed">
           منظومة ذكية كتحسب ليك أرباحك، كتضبط السلعة، وكتفكر الكليان فالكريدي بلا ما تحرج راسك. 
-          <strong className="text-slate-900 bg-yellow-200 px-2 rounded ml-1">والجديد:</strong> دخل السلعة للسيستيم، وغتبان أوتوماتيكياً فالماركت بليس باش يشوفوها كليان جداد فمدينتك!
+          <strong className="text-slate-900 bg-yellow-200 px-2 rounded ml-1">والجديد:</strong> دخل السلعة للسيستم، وغتبان أوتوماتيكياً فالماركت بليس باش يشوفوها كليان جداد فمدينتك!
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -82,7 +82,7 @@ export default function RetailLanding() {
               <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertTriangle size={32} />
               </div>
-              <h3 className="text-xl font-black mb-3">السلعة كتسلى على غفلة</h3>
+              <h3 className="text-xl font-black mb-3">السلعة كتسلس على غفلة</h3>
               <p className="text-slate-600 font-medium">كيجيك الكليان على بياسة، كتلقاها تقادات ومجبتيش ليها الروتور فالوقت المناسب.</p>
             </div>
 
@@ -91,7 +91,7 @@ export default function RetailLanding() {
                 <TrendingDown size={32} />
               </div>
               <h3 className="text-xl font-black mb-3">فين مشاو الأرباح؟</h3>
-              <p className="text-slate-600 font-medium">كتبيع وتدير الروواج، وفي العشية ملي كتحسب الصندوق كتلقى الديكالاج ومكتعرفش راسك واش رابح ولا خاسر.</p>
+              <p className="text-slate-600 font-medium">كتبيع وتدير الرواج، وفي العشية ملي كتحسب الصندوق كتلقى الديكالاج ومكتعرفش راسك واش رابح ولا خاسر.</p>
             </div>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function RetailLanding() {
             </div>
             <div>
               <h3 className="text-xl font-black mb-2 text-slate-900">بيع فالحانوت وفالأنترنيت دقة وحدة</h3>
-              <p className="text-slate-600 font-medium leading-relaxed">دخل السلعة ديالك للسيستيم مرة وحدة، وغتنشر أوتوماتيكياً فـ Marketplace ديالنا باش يشوفوها مقاولين وكليان جداد فمدينتك. ضاعف مبيعاتك بلا مجهود!</p>
+              <p className="text-slate-600 font-medium leading-relaxed">دخل السلعة ديالك للسيستم مرة وحدة، وغادا تبان أوتوماتيكياً فـ Marketplace ديالنا باش يشوفوها مقاولين وكليان جداد فمدينتك. ضاعف مبيعاتك بلا مجهود!</p>
             </div>
           </div>
 
@@ -118,7 +118,7 @@ export default function RetailLanding() {
             </div>
             <div>
               <h3 className="text-xl font-black mb-2 text-slate-900">إدارة الكريدي بالواتساب</h3>
-              <p className="text-slate-600 font-medium leading-relaxed">قيد الكريدي بضغطة زر، والسيستيم غيصيفط رسالة أدبية للكليان في الواتساب كيفكرو بالخلاص (باش تبقى ديما بوجهك حمر).</p>
+              <p className="text-slate-600 font-medium leading-relaxed">قيد الكريدي بضغطة زر، والسيستم غيصيفط رسالة أدبية للكليان في الواتساب كيفكرو بالخلاص (باش تبقى ديما بوجهك حمر).</p>
             </div>
           </div>
 
@@ -128,7 +128,7 @@ export default function RetailLanding() {
             </div>
             <div>
               <h3 className="text-xl font-black mb-2 text-slate-900">كيس (POS) صاروخي من التليفون</h3>
-              <p className="text-slate-600 font-medium leading-relaxed">دوز المبيعات ديالك في ثواني، طبع التوصيل، ونقص السلعة من الستوك أوتوماتيكياً. خدام فالتليفون، الطابليط، ولا البيسي.</p>
+              <p className="text-slate-600 font-medium leading-relaxed">دوز المبيعات ديالك في ثواني، طبع التوصيل، وغادي تنقص السلعة من الستوك أوتوماتيكياً. خدام فالتليفون، الطابليط، ولا البيسي.</p>
             </div>
           </div>
 
@@ -172,7 +172,7 @@ export default function RetailLanding() {
             <div className="bg-gradient-to-b from-blue-600 to-indigo-700 rounded-3xl p-8 border border-blue-400 shadow-2xl shadow-blue-900/50 transform md:-translate-y-4 flex flex-col relative">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-400 text-slate-900 font-black text-xs px-4 py-1 rounded-full uppercase tracking-wider">الأكثر طلباً</div>
               <h3 className="text-2xl font-black mb-2 text-white">Premium Shop</h3>
-              <p className="text-blue-200 font-medium mb-6">الحل الشامل لتهنى من الكريدي</p>
+              <p className="text-blue-200 font-medium mb-6">الحل الشامل باش تهنى من الكريدي</p>
               <div className="text-4xl font-black mb-8 text-white">1430 <span className="text-xl text-blue-200">درهم/سنوياً</span></div>
               <ul className="space-y-4 mb-8 flex-1 font-medium">
                 <li className="flex items-center gap-3"><CheckCircle2 className="text-amber-400" size={20}/> كل مزايا المجاني</li>
@@ -192,7 +192,7 @@ export default function RetailLanding() {
             {/* Pro */}
             <div className="bg-slate-800 rounded-3xl p-8 border border-slate-700 flex flex-col">
               <h3 className="text-2xl font-black mb-2">Pro Retailer</h3>
-              <p className="text-slate-400 font-medium mb-6">سيستيم ERP متكامل للكبار</p>
+              <p className="text-slate-400 font-medium mb-6">سيستم ERP متكامل للكبار</p>
               <div className="text-4xl font-black mb-8">2870 <span className="text-xl text-slate-400">درهم/سنوياً</span></div>
               <ul className="space-y-4 mb-8 flex-1">
                 <li className="flex items-center gap-3"><CheckCircle2 className="text-emerald-400" size={20}/> كل مزايا Premium</li>
