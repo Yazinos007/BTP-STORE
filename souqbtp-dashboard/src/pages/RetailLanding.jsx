@@ -170,12 +170,12 @@ export default function RetailLanding() {
                 <Sparkles size={24} />
               </div>
               <h3 className="text-xl font-bold mb-2">إعداد الحساب بالكامل</h3>
-              <p className="text-slate-300 text-sm leading-relaxed">غادي نتكلفو بإدخال أول 100 منتج ديالك للسيستيم، وإعداد إعدادات المحل باش تبدا تبيع مباشرة بلا ما تضيع وقتك.</p>
+              <p className="text-slate-300 text-sm leading-relaxed">غادي نتكلفو بإدخال أول 100 منتج ديالك للسيستم، وإعداد إعدادات المحل باش تبدا تبيع مباشرة بلا ما تضيع وقتك.</p>
             </div>
             
             {/* التعديل هنا: قارئ الباركود بدلاً من القوالب */}
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-6 rounded-3xl hover:bg-white/15 transition-all relative overflow-hidden">
-              <div className="absolute -right-6 top-6 bg-amber-500 text-slate-900 font-black text-[10px] px-8 py-1 transform rotate-45 shadow-lg">ملموسة للمحل</div>
+              <div className="absolute -right-6 top-6 bg-amber-500 text-slate-900 font-black text-[10px] px-8 py-1 transform rotate-45 shadow-lg"> هدية للمحل </div>
               <div className="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center mb-4">
                 <ScanBarcode size={24} />
               </div>
