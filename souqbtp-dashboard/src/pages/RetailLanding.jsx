@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Smartphone, BookX, AlertTriangle, TrendingDown, 
   MessageCircle, Globe, Calculator, CheckCircle2, 
-  ArrowLeft, Store, Zap, ShieldCheck
+  ArrowLeft, Store, Zap, ShieldCheck, Gift, Clock, Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,7 +22,7 @@ export default function RetailLanding() {
         </div>
         <button
           onClick={() => window.open('https://souqbtp.ma/app/auth.html',  '_blank')}
-          className="text-slate-400 font-medium text-sm hover:text-slate-600 transition-colors px-4 py-2"
+          className="text-slate-400 font-medium text-sm hover:text-slate-600 transition-colors px-4 py-2 cursor-pointer"
         >
           تسجيل الدخول
         </button>
@@ -32,7 +32,7 @@ export default function RetailLanding() {
       <section className="max-w-7xl mx-auto px-6 pt-12 pb-24 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 font-bold text-sm mb-8 animate-fade-in-down">
           <Zap size={16} className="fill-blue-700" />
-          الحل رقم 1 لتجار العقاقير ومواد البناء
+          الحل رقم 1 لتجار العقاقير ومواد البناء بالمغرب
         </div>
         
         <h1 className="text-5xl md:text-7xl font-black text-slate-900 mb-8 leading-[1.2]">
@@ -50,24 +50,29 @@ export default function RetailLanding() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button 
             onClick={() => window.open('https://souqbtp.ma/app/supplier-register.php', '_blank')}
-            className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-2xl shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-1 flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-2xl shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden group"
           >
-          <Smartphone size={24} />
-            ابدأ الآن مجاناً
+            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
+            <Smartphone size={24} className="relative z-10" />
+            <span className="relative z-10">ابدأ تجربتك المجانية (14 يوم)</span>
           </button>
           <button 
             onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
-            className="w-full sm:w-auto px-8 py-4 bg-white text-slate-700 font-black text-lg rounded-2xl shadow-sm border border-slate-200 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-8 py-4 bg-white text-slate-700 font-black text-lg rounded-2xl shadow-sm border border-slate-200 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             اكتشف المميزات
           </button>
         </div>
+        <p className="mt-4 text-sm font-bold text-slate-500 flex items-center justify-center gap-2">
+          <Clock size={16} className="text-amber-500" />
+          تجربة مجانية شاملة لمدة 14 يوماً • بدون إدخال بطاقة بنكية
+        </p>
       </section>
 
       {/* Pain Points Section */}
       <section className="bg-white py-20 border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-black text-center mb-16 text-slate-800">واش حتى نتا كتعاني من هاد المشاكل؟</h2>
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-16 text-slate-800">واش حتى نتا تتعاني من هاد المشاكل؟</h2>
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-red-50/50 border border-red-100 p-8 rounded-3xl text-center">
@@ -82,7 +87,7 @@ export default function RetailLanding() {
               <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertTriangle size={32} />
               </div>
-              <h3 className="text-xl font-black mb-3">السلعة كتسلس على غفلة</h3>
+              <h3 className="text-xl font-black mb-3">السلعة تتسلي على غفلة</h3>
               <p className="text-slate-600 font-medium">كيجيك الكليان على بياسة، كتلقاها تقادات ومجبتيش ليها الروتور فالوقت المناسب.</p>
             </div>
 
@@ -91,7 +96,7 @@ export default function RetailLanding() {
                 <TrendingDown size={32} />
               </div>
               <h3 className="text-xl font-black mb-3">فين مشاو الأرباح؟</h3>
-              <p className="text-slate-600 font-medium">كتبيع وتدير الرواج، وفي العشية ملي كتحسب الصندوق كتلقى الديكالاج ومكتعرفش راسك واش رابح ولا خاسر.</p>
+              <p className="text-slate-600 font-medium">تتبيع وتدير الرواج، وفي العشية ملي تتحسب الصندوق كتلقى الديكالاج ومكتعرفش راسك واش رابح ولا خاسر.</p>
             </div>
           </div>
         </div>
@@ -144,10 +149,57 @@ export default function RetailLanding() {
         </div>
       </section>
 
+      {/* Gifts & Bonuses Section */}
+      <section className="bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 py-20 text-white relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-blue-500 rounded-full blur-3xl opacity-20"></div>
+        <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-amber-500 rounded-full blur-3xl opacity-20"></div>
+        
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-400/20 text-amber-400 mb-6 border border-amber-400/30 shadow-[0_0_30px_rgba(251,191,36,0.3)]">
+              <Gift size={32} />
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black mb-4">هدايا حصرية عند اشتراكك اليوم! 🎁</h2>
+            <p className="text-blue-200 text-lg max-w-2xl mx-auto">لأننا بغيناك تنجح من النهار الأول، غنقدمو ليك هاد الهدايا فابور ملي تفعل الباقة المدفوعة ديالك:</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-6 rounded-3xl hover:bg-white/15 transition-all">
+              <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center mb-4">
+                <Sparkles size={24} />
+              </div>
+              <h3 className="text-xl font-bold mb-2">إعداد الحساب بالكامل</h3>
+              <p className="text-slate-300 text-sm leading-relaxed">غادي نتكلفو بإدخال أول 100 منتج ديالك للسيستيم، وإعداد إعدادات المحل باش تبدا تبيع مباشرة بلا ما تضيع وقتك.</p>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-6 rounded-3xl hover:bg-white/15 transition-all">
+              <div className="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center mb-4">
+                <MessageCircle size={24} />
+              </div>
+              <h3 className="text-xl font-bold mb-2">قوالب رسائل الواتساب</h3>
+              <p className="text-slate-300 text-sm leading-relaxed">ملف حصري فيه أحسن الرسائل المكتوبة بالدارجة، لي تقدر تصيفطها للكليان باش تطلب الكريدي ديالك بلا ما تحرجهم أو تخسرهم.</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-6 rounded-3xl hover:bg-white/15 transition-all">
+              <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center mb-4">
+                <ShieldCheck size={24} />
+              </div>
+              <h3 className="text-xl font-bold mb-2">تدريب شخصي لك ولعمالك</h3>
+              <p className="text-slate-300 text-sm leading-relaxed">حصة تدريبية عن بعد (Zoom أو فيديو) ليك وللخدامة ديالك باش نعلموكم كيفاش تخرجو أقصى منفعة من السيستيم.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section className="bg-slate-900 text-white py-24">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl md:text-5xl font-black text-center mb-16">اختار الباقة لي تناسب حجم حانوتك</h2>
+          <h2 className="text-3xl md:text-5xl font-black text-center mb-4">اختار الباقة لي تناسب حجم حانوتك</h2>
+          <p className="text-slate-400 text-center mb-16 font-bold flex items-center justify-center gap-2">
+            <Clock size={18} className="text-emerald-400" />
+            جميع الباقات المدفوعة تشمل تجربة مجانية لمدة 14 يوماً
+          </p>
           
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Basic */}
@@ -162,7 +214,7 @@ export default function RetailLanding() {
               </ul>
               <button 
                 onClick={() => window.open('https://souqbtp.ma/app/supplier-register.php', '_blank')}
-                className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-colors"
+                className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-colors cursor-pointer"
               >
                 ابدا فابور
               </button>
@@ -170,8 +222,10 @@ export default function RetailLanding() {
 
             {/* Premium (Highlighted) */}
             <div className="bg-gradient-to-b from-blue-600 to-indigo-700 rounded-3xl p-8 border border-blue-400 shadow-2xl shadow-blue-900/50 transform md:-translate-y-4 flex flex-col relative">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-400 text-slate-900 font-black text-xs px-4 py-1 rounded-full uppercase tracking-wider">الأكثر طلباً</div>
-              <h3 className="text-2xl font-black mb-2 text-white">Premium Shop</h3>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-400 text-slate-900 font-black text-xs px-4 py-1 rounded-full uppercase tracking-wider shadow-lg">الأكثر طلباً</div>
+              <div className="absolute -right-3 top-10 bg-emerald-500 text-white font-black text-[10px] px-3 py-1 rounded-l-lg shadow-md transform rotate-3">14 يوم فابور!</div>
+              
+              <h3 className="text-2xl font-black mb-2 text-white mt-4">Premium Shop</h3>
               <p className="text-blue-200 font-medium mb-6">الحل الشامل باش تهنى من الكريدي</p>
               <div className="text-4xl font-black mb-8 text-white">1430 <span className="text-xl text-blue-200">درهم/سنوياً</span></div>
               <ul className="space-y-4 mb-8 flex-1 font-medium">
@@ -183,14 +237,14 @@ export default function RetailLanding() {
               </ul>
               <button 
                 onClick={() => window.open('https://souqbtp.ma/app/supplier-register.php', '_blank')}
-                className="w-full py-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-lg transition-colors shadow-lg shadow-amber-400/20"
+                className="w-full py-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-lg transition-colors shadow-lg shadow-amber-400/20 cursor-pointer"
               >
-                اشترك الآن
+                جرب دابا (14 يوم فابور)
               </button>
             </div>
 
             {/* Pro */}
-            <div className="bg-slate-800 rounded-3xl p-8 border border-slate-700 flex flex-col">
+            <div className="bg-slate-800 rounded-3xl p-8 border border-slate-700 flex flex-col relative">
               <h3 className="text-2xl font-black mb-2">Pro Retailer</h3>
               <p className="text-slate-400 font-medium mb-6">سيستم ERP متكامل للكبار</p>
               <div className="text-4xl font-black mb-8">2870 <span className="text-xl text-slate-400">درهم/سنوياً</span></div>
@@ -202,10 +256,10 @@ export default function RetailLanding() {
               </ul>
               <button 
                 onClick={() => {
-                  const message = encodeURIComponent("مرحباً، أنا تاجر مهتم بباقة Pro Retailer، وأريد الاستفادة من نظام التسيير المتكامل للمحلات.");
+                  const message = encodeURIComponent("مرحباً، أنا تاجر مهتم بباقة Pro Retailer، وأريد الاستفادة من التجربة المجانية.");
                   window.open(`https://wa.me/212700715399?text=${message}`, '_blank');
                 }} 
-                  className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-colors"
+                  className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-colors cursor-pointer"
               >
                 تواصل معنا
               </button>
@@ -217,10 +271,13 @@ export default function RetailLanding() {
       {/* Footer CTA */}
       <footer className="bg-white py-12 text-center border-t border-slate-100">
         <h2 className="text-2xl font-black text-slate-900 mb-4">واجد باش تطور حانوتك وتزيد فمبيعاتك؟</h2>
-        <p className="text-slate-600 mb-6">جرب المنصة اليوم بالمجان، وبلا ما تدخل لا كارطة لا والو.</p>
+        <p className="text-slate-600 mb-6 font-medium flex items-center justify-center gap-2">
+          <Clock size={16} className="text-blue-600" />
+          جرب المنصة اليوم لمدة 14 يوماً بالمجان، وبلا ما تدخل لا كارطة لا والو.
+        </p>
         <button 
           onClick={() => window.open('https://souqbtp.ma/app/supplier-register.php', '_blank')}
-          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors inline-flex items-center gap-2"
+          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors inline-flex items-center gap-2 cursor-pointer"
         >
           <span>افتح حسابك دابا</span>
           <ArrowLeft size={20} />
