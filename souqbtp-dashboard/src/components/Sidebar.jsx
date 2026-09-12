@@ -1,170 +1,247 @@
 import { useState } from 'react';
 import { 
-  LayoutDashboard, Package, ShoppingCart, Wallet, 
-  Settings, Receipt, Users, FileText, Briefcase, Landmark,
+  LayoutDashboard, MonitorPlay, Package, ShoppingCart, Wallet, 
+  Settings, LogOut, Receipt, Users, FileText, Briefcase, Landmark,
   ChevronDown, ChevronRight, CreditCard, Globe, Calculator,
-  Truck, Store, MessageCircle, Video, Image, UserCircle, Home, Zap
+  Truck, ShoppingBag, Zap, ArrowRightLeft 
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import useSupplierStore from '../store/useSupplierStore';
 import useSettingsStore from '../store/useSettingsStore';
 
 const translations = {
   ar: {
-    // ترجمات التاجر والمورد
-    overview: 'نظرة عامة', pos: 'نقطة البيع (POS)', products: 'المنتجات', clients: 'العملاء والديون',
+    overview: 'نظرة عامة', pos: 'نقطة البيع (POS)', products: 'المنتجات',
+    clients: 'العملاء والديون',
     orders: 'الطلبات', invoices: 'إصدار الفواتير', expenses: 'المصاريف والربح', wallet: 'المحفظة', settings: 'الإعدادات',
     dashboard: 'لوحة القيادة', gestionVentes: 'إدارة المبيعات', gestionProduits: 'إدارة المنتجات',
     gestionAchats: 'الموردون والمشتريات', fournisseurs: 'الموردون', achats: 'مشتريات (Stock In)',
     gestionFactures: 'إدارة الفواتير', factures: 'الفواتير', devis: 'عروض الأسعار',
     bc: 'أوامر الشراء', fe: 'قسائم الشحن', bl: 'سندات التسليم', avoir: 'المرتجعات (Avoir)', facturesAchat: 'فواتير الشراء',
-    gestionCaisses: 'الصناديق والحسابات', caisses: 'الصناديق البنكية', rh: 'الموارد البشرية', gestionEmployes: 'إدارة الموظفين',
+    gestionCaisses: 'الصناديق والحسابات', caisses: 'الصناديق البنكية',
+    rh: 'الموارد البشرية', gestionEmployes: 'إدارة الموظفين',
     fiscal: 'النظام الجبائي', decTva: 'إقرارات TVA', chargesEnt: 'المصاريف والرسوم', gestionCharges: 'إدارة المصاريف',
-    accounting: 'المحاسبة العامة', profileSettings: 'الملف الشخصي', upgrade: 'ترقية الحساب (Pro)',
-    manageSub: 'إدارة الاشتراك', owner: 'المالك', employee: 'موظف', foundingPartner: 'شريك مؤسس', changeLangTitle: 'تغيير لغة النظام',
-    
-    // ترجمات الأقسام المشتركة
-    marketplace: 'سوق مواد البناء', messages: 'صندوق الرسائل',
-
-    // ترجمات المقاول
-    contractorDash: 'إدارة الأوراش', costCalc: 'حاسبة التكاليف',
-
-    // ترجمات المهندس
-    archOverview: 'مكتب الدراسات', archProfile: 'الهوية الهندسية', archProjects: 'الرقابة والمصادقات', 
-    archLive: 'محاكي العمليات (Live)', archSub: 'الباقة والاشتراك',
-
-    // ترجمات الحرفي
-    artisanHome: 'لوحة التحكم', artisanProfile: 'بيانات الحرفي', artisanPortfolio: 'معرض المشاريع', artisanLive: 'إرسال تقرير مصور'
+    accounting: 'المحاسبة العامة', logout: 'تسجيل الخروج', logisticsBourse: 'بورصة اللوجستيك',
+    profileSettings: 'الملف الشخصي',
+    upgrade: 'ترقية الحساب (Pro)',
+    manageSub: 'إدارة الاشتراك',
+    owner: 'المالك', employee: 'موظف', foundingPartner: 'شريك مؤسس',
+    changeLangTitle: 'تغيير لغة النظام'
   },
   fr: {
-    // (تم اختصار الترجمات الفرنسية والإنجليزية هنا للحفاظ على مساحة الكود، يمكنك إضافتها بنفس النسق)
-    marketplace: 'Marketplace BTP', messages: 'Messagerie', contractorDash: 'Gestion des Chantiers', costCalc: 'Calculateur des Coûts',
-    archOverview: 'Bureau d\'études', archProfile: 'Profil Architecte', archProjects: 'Projets & Validations', archLive: 'Salle Visio (Live)', archSub: 'Abonnement',
-    artisanHome: 'Tableau de bord', artisanProfile: 'Profil Artisan', artisanPortfolio: 'Portfolio', artisanLive: 'Rapport Vidéo'
+    overview: 'Aperçu', pos: 'Point de Vente (POS)', products: 'Produits',
+    clients: 'Clients & Dettes',
+    orders: 'Commandes', invoices: 'Éditer Factures', expenses: 'Charges et Résultat', wallet: 'Portefeuille', settings: 'Paramètres',
+    dashboard: 'Tableau de bord', gestionVentes: 'VENTES & COMMANDES', gestionProduits: 'GESTION DES PRODUITS',
+    gestionAchats: 'ACHATS & FOURNISSEURS', fournisseurs: 'Fournisseurs', achats: 'Achats (Stock In)',
+    gestionFactures: 'GESTION DES FACTURES', factures: 'Factures Clients', devis: 'Devis',
+    bc: 'Bons de Commande', fe: 'Fiches d\'Expédition', bl: 'Bons de Livraison', avoir: 'Avoir', facturesAchat: 'Factures d\'Achat',
+    gestionCaisses: 'CAISSES & BANQUES', caisses: 'Comptes Bancaires',
+    rh: 'RESSOURCES HUMAINES', gestionEmployes: 'Gestion des Employés',
+    fiscal: 'SYSTÈME FISCAL', decTva: 'Déclarations TVA', chargesEnt: 'CHARGES & DÉPENSES', gestionCharges: 'Gestion des Charges',
+    accounting: 'Comptabilité & Bilan', logout: 'Déconnexion', logisticsBourse: 'Bourse de Fret',
+    profileSettings: 'Profil du Magasin', 
+    upgrade: "Passer à Pro ERP",
+    manageSub: "Gérer l'Abonnement",
+    owner: 'Propriétaire', employee: 'Employé', foundingPartner: 'Partenaire Fondateur',
+    changeLangTitle: 'Changer la langue'
   },
   en: {
-    marketplace: 'BTP Marketplace', messages: 'Inbox', contractorDash: 'Site Management', costCalc: 'Cost Calculator',
-    archOverview: 'Firm Overview', archProfile: 'Architect Profile', archProjects: 'Projects & Approvals', archLive: 'Live Room', archSub: 'Subscription',
-    artisanHome: 'Dashboard', artisanProfile: 'Provider Profile', artisanPortfolio: 'Portfolio', artisanLive: 'Live Report'
+    overview: 'Overview', pos: 'Point of Sale (POS)', products: 'Products',
+    clients: 'Clients & Debts',
+    orders: 'Orders', invoices: 'Issue Invoices', expenses: 'Expenses & Profit', wallet: 'Wallet', settings: 'Settings',
+    dashboard: 'Dashboard', gestionVentes: 'SALES & ORDERS', gestionProduits: 'PRODUCT MANAGEMENT',
+    gestionAchats: 'PURCHASES & SUPPLIERS', fournisseurs: 'Suppliers', achats: 'Purchases (Stock In)',
+    gestionFactures: 'INVOICE MANAGEMENT', factures: 'Client Invoices', devis: 'Quotations',
+    bc: 'Purchase Orders', fe: 'Shipping Slips', bl: 'Delivery Notes', avoir: 'Returns (Avoir)', facturesAchat: 'Purchase Invoices',
+    gestionCaisses: 'CASH & BANKS', caisses: 'Bank Accounts',
+    rh: 'HUMAN RESOURCES', gestionEmployes: 'Employee Management',
+    fiscal: 'TAX SYSTEM', decTva: 'VAT Returns', chargesEnt: 'EXPENSES & FEES', gestionCharges: 'Expense Management',
+    accounting: 'General Accounting', logout: 'Logout', logisticsBourse: 'Freight Exchange',
+    profileSettings: 'Store Profile',
+    upgrade: 'Upgrade to Pro ERP',
+    manageSub: 'Manage Subscription',
+    owner: 'Owner', employee: 'Employee', foundingPartner: 'Founding Partner',
+    changeLangTitle: 'Change System Language'
   }
 };
 
-// 🚀 إضافة prop لمعرفة نوع الحساب (accountType)
-export default function Sidebar({ accountType = 'retailer' }) {
+export default function Sidebar() {
   const { supplier, isLoading } = useSupplierStore();
   const { language, setLanguage } = useSettingsStore();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [openMenus, setOpenMenus] = useState({});
-
+  
   const handleLanguageChange = () => {
     if (language === 'fr') setLanguage('ar');
     else if (language === 'ar') setLanguage('en');
     else setLanguage('fr');
   };
-
-  const t = translations[language] || translations['ar'];
-
-  if (isLoading) return <div className={`w-[280px] h-screen bg-[#2d2252] shrink-0 border-white/10 animate-pulse`} />;
   
-  const safeSupplier = supplier || { store_name: 'SouqBTP User', tier: 'starter', role: 'admin' };
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [openMenus, setOpenMenus] = useState({});
+
+  const t = translations[language] || translations['fr'];
+
+  if (isLoading) return <div className={`w-[280px] h-screen bg-[#2d2252] shrink-0 ${language === 'fr' || language === 'en' ? 'border-r' : 'border-l'} border-white/10 animate-pulse`} />;
+  
+  const safeSupplier = supplier || { 
+    store_name: 'Mon Magasin', 
+    tier: 'starter', 
+    role: 'admin'
+  };
+
   const tier = safeSupplier.tier || 'starter';
   const role = safeSupplier.role || 'admin';
+  
+  // 🚀 متغيرات التحكم الجديدة (تطابق تام بين البرمجة والتسويق)
+  // باقة Pro (أعلى باقة)
   const isProOnly = ['pro', 'enterprise'].includes(tier); 
+  // باقة Premium وما فوق
   const isPremiumPlus = ['premium', 'pro', 'enterprise'].includes(tier); 
 
   const toggleMenu = (menuName) => setOpenMenus(prev => ({ ...prev, [menuName]: !prev[menuName] }));
 
-  // 1. القائمة المشتركة للجميع (تظهر في الأسفل دائماً)
-  const sharedMenu = [
-    { name: t.messages, icon: MessageCircle, path: '/messages' },
-    { name: t.marketplace, icon: Store, path: '/marketplace' }
-  ];
-
-  // 2. القوائم المخصصة حسب نوع الحساب
-  const roleMenus = {
-    // 🛠️ قائمة المقاول (Contractor)
-    contractor: [
-      { name: t.contractorDash, icon: LayoutDashboard, path: '/contractor-dashboard' },
-      { name: t.costCalc, icon: Calculator, path: '/cost-calculator' },
-    ],
+  // القائمة الموحدة مع شروط الباقات الصحيحة
+  const unifiedMenu = [
+    { name: t.dashboard, icon: LayoutDashboard, path: '/', alwaysShow: true },
+    {
+      group: t.gestionAchats, icon: Truck,
+      subItems: [
+        { name: t.fournisseurs, path: '/suppliers' },
+        { name: t.achats, path: '/purchases' }
+      ]
+    },
+    {
+      group: t.gestionProduits, icon: Package,
+      subItems: [
+        { name: t.products, path: '/products' }
+      ]
+    },
+    {
+      group: t.gestionVentes, icon: ShoppingCart,
+      subItems: [
+        { name: t.pos, path: '/pos' },
+        { name: t.orders, path: '/orders' },
+        { name: t.clients, path: '/clients' }
+      ]
+    },
+    {
+      group: t.gestionFactures, icon: FileText,
+      subItems: [
+        { name: t.factures, path: '/invoices' }, 
+        // 🔒 إخفاء الفواتير المتقدمة عن الباقة المجانية (تظهر لـ Premium و Pro)
+        ...(isPremiumPlus ? [
+          { name: t.devis, path: '/devis' },
+          { name: t.bc, path: '/bc' }, 
+          { name: t.fe, path: '/fiches-expedition' }, 
+          { name: t.bl, path: '/bl' },
+          { name: t.avoir, path: '/avoir' },
+          { name: t.facturesAchat, path: '/factures-achat' },
+        ] : [])
+      ]
+    },
+    // 🔒 الموارد البشرية: فقط لـ Pro
+    ...(isProOnly ? [{
+      group: t.rh, icon: Briefcase,
+      subItems: [{ name: t.gestionEmployes, path: '/hr' }]
+    }] : []),
+    // 🔒 الصناديق المتعددة: فقط لـ Pro
+    ...(isProOnly ? [{
+      group: t.gestionCaisses, icon: Wallet,
+      subItems: [{ name: t.caisses, path: '/caisses' }]
+    }] : []),
+    // 🔒 إدارة المصاريف: لـ Premium وما فوق
+    ...(isPremiumPlus ? [{
+      group: t.chargesEnt, icon: CreditCard,
+      subItems: [{ name: t.gestionCharges, path: '/expenses' }]
+    }] : []),
+    // 🔒 الضرائب: فقط لـ Pro
+    ...(isProOnly ? [{
+      group: t.fiscal, icon: Landmark,
+      subItems: [{ name: t.decTva, path: '/fiscal' }]
+    }] : []),
+    // 🔒 المحاسبة: فقط لـ Pro
+    ...(isProOnly ? [{
+      group: t.accounting, icon: Calculator,
+      subItems: [{ name: t.accounting, path: '/accounting' }]
+    }] : []),
     
-    // 📐 قائمة المهندس (Architect)
-    architect: [
-      { name: t.archOverview, icon: LayoutDashboard, path: '/architect-overview' },
-      { name: t.archProfile, icon: UserCircle, path: '/architect-profile' },
-      { name: t.archProjects, icon: Briefcase, path: '/architect-projects' },
-      { name: t.archLive, icon: Video, path: '/architect-live-room' },
-      { name: t.archSub, icon: CreditCard, path: '/architect-subscription' },
-    ],
-
-    // 👷 قائمة المعلم/الحرفي (Artisan)
-    artisan: [
-      { name: t.artisanHome, icon: Home, path: '/artisan-home' },
-      { name: t.artisanProfile, icon: UserCircle, path: '/artisan-profile' },
-      { name: t.artisanPortfolio, icon: Image, path: '/artisan-portfolio' },
-      { name: t.artisanLive, icon: Video, path: '/artisan-live-room' },
-    ],
-
-    // 🏪 قائمة تاجر التجزئة والمورد (Retailer & Wholesale) - وهي القائمة القديمة
-    retailer: [
-      { name: t.dashboard, icon: LayoutDashboard, path: '/' },
-      { group: t.gestionAchats, icon: Truck, subItems: [{ name: t.fournisseurs, path: '/suppliers' }, { name: t.achats, path: '/purchases' }] },
-      { group: t.gestionProduits, icon: Package, subItems: [{ name: t.products, path: '/products' }] },
-      { group: t.gestionVentes, icon: ShoppingCart, subItems: [{ name: t.pos, path: '/pos' }, { name: t.orders, path: '/orders' }, { name: t.clients, path: '/clients' }] },
-      { group: t.gestionFactures, icon: FileText, subItems: [
-          { name: t.factures, path: '/invoices' }, 
-          ...(isPremiumPlus ? [{ name: t.devis, path: '/devis' }, { name: t.bc, path: '/bc' }, { name: t.fe, path: '/fiches-expedition' }, { name: t.bl, path: '/bl' }, { name: t.avoir, path: '/avoir' }, { name: t.facturesAchat, path: '/factures-achat' }] : [])
-        ]
-      },
-      ...(isProOnly ? [{ group: t.rh, icon: Briefcase, subItems: [{ name: t.gestionEmployes, path: '/hr' }] }] : []),
-      ...(isProOnly ? [{ group: t.gestionCaisses, icon: Wallet, subItems: [{ name: t.caisses, path: '/caisses' }] }] : []),
-      ...(isPremiumPlus ? [{ group: t.chargesEnt, icon: CreditCard, subItems: [{ name: t.gestionCharges, path: '/expenses' }] }] : []),
-      ...(isProOnly ? [{ group: t.fiscal, icon: Landmark, subItems: [{ name: t.decTva, path: '/fiscal' }] }] : []),
-      ...(isProOnly ? [{ group: t.accounting, icon: Calculator, subItems: [{ name: t.accounting, path: '/accounting' }] }] : []),
-      { name: t.profileSettings, icon: Settings, path: '/settings', adminOnly: true }
-    ],
-    // يمكن نسخ مسارات Retailer إلى Wholesale إذا كانا يتشاركان نفس الواجهة في تطبيق React حالياً
-    wholesale: [] 
-  };
-
-  // دمج القائمة المخصصة مع القائمة المشتركة
-  const activeRoleMenu = roleMenus[accountType] || roleMenus['retailer'];
-  if (accountType === 'wholesale' && activeRoleMenu.length === 0) {
-      activeRoleMenu.push(...roleMenus['retailer']); // مؤقتاً حتى تفصل المورد إن أردت
-  }
-  
-  const currentMenu = [...activeRoleMenu, ...sharedMenu];
+    { name: t.profileSettings, icon: Settings, path: '/settings', adminOnly: true }
+  ];
 
   return (
     <div className={`w-[280px] h-screen bg-[#2d2252] text-gray-200 flex flex-col ${language === 'ar' ? 'border-l border-white/10' : 'border-r border-white/10'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="p-6 border-b border-white/10 flex flex-col gap-5 shrink-0">
+        
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 min-w-[64px] rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center text-white font-black text-3xl shadow-xl border-2 border-white/10 overflow-hidden shrink-0">
-              {supplier?.logo_url ? <img src={supplier.logo_url} alt="Logo" className="w-full h-full object-cover" /> : safeSupplier.store_name?.charAt(0)?.toUpperCase() || 'S'}
+              {supplier?.logo_url ? (
+                <img src={supplier.logo_url} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                safeSupplier.store_name?.charAt(0)?.toUpperCase() || 'S'
+              )}
             </div>
+            
             <div className="flex flex-col overflow-hidden justify-center h-16 text-start">
               <h2 className="text-white font-black text-xl leading-tight truncate w-[140px] mb-1.5" title={safeSupplier.store_name}>
                 {safeSupplier.store_name || 'SouqBTP'}
               </h2>
+              
               <div className="flex flex-wrap gap-2">
-                <span className={`text-[10px] px-2 py-0.5 rounded-md uppercase font-black tracking-wide bg-white/20 text-white`}>
-                  {accountType}
+                {/* 🎯 الشارات الآن تتطابق برمجياً وتسويقياً */}
+                <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${isProOnly ? 'bg-gray-800 text-white shadow-lg shadow-gray-800/30' : tier === 'premium' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-gray-600 text-white'}`}>
+                  {isProOnly ? 'Pro Retailer' : tier === 'premium' ? 'Premium Shop' : 'Basic POS'}
+                </span>
+                <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${role === 'admin' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white/10 text-gray-300'}`}>
+                  {role === 'admin' ? t.owner : t.employee}
                 </span>
               </div>
             </div>
           </div>
-          <button onClick={handleLanguageChange} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white flex flex-col items-center justify-center min-w-[48px] cursor-pointer" title={t.changeLangTitle}>
+
+          <button 
+            onClick={handleLanguageChange}
+            className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white flex flex-col items-center justify-center min-w-[48px] cursor-pointer"
+            title={t.changeLangTitle}
+          >
             <Globe size={20} />
             <span className="text-[11px] font-bold mt-1 uppercase">{language}</span>
           </button>
         </div>
+
+        {supplier?.is_founding_partner && (
+          <div className="flex items-center justify-center gap-3 px-4 py-3 mt-1 rounded-xl bg-gradient-to-r from-amber-500/10 via-yellow-500/15 to-orange-500/10 border border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)] relative overflow-hidden group w-full">
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"></div>
+            <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 uppercase tracking-widest z-10 drop-shadow-md">
+              {t.foundingPartner}
+            </span>
+            <span className="text-amber-400 text-lg z-10 drop-shadow-md">🏆</span>
+          </div>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar text-start pb-24">
+        
+        {role === 'admin' && (
+          <div className="px-4 mb-6">
+            <button 
+              onClick={() => navigate('/subscription')}
+              className={`w-full py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg hover:-translate-y-0.5 cursor-pointer ${
+                !isProOnly 
+                  ? 'bg-gradient-to-r from-[#eab308] to-orange-500 hover:from-[#ca8a04] hover:to-orange-600 text-slate-900 shadow-yellow-500/20' 
+                  : 'bg-white/10 hover:bg-white/20 text-white border border-white/10' 
+              }`}
+            >
+              <Zap size={18} className={!isProOnly ? "fill-slate-900" : "text-amber-400"} />
+              {!isProOnly ? t.upgrade : t.manageSub}
+            </button>
+          </div>
+        )}
+
         <div className="space-y-1">
-          {currentMenu.map((item, idx) => {
+          {unifiedMenu.map((item, idx) => {
             if (item.adminOnly && role !== 'admin') return null;
 
             if (!item.group) {
