@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom'; // 🚀 استدعاء قارئ الإضاءة
 import { 
   Calculator, Star, MessageCircle, Briefcase, Camera, Wallet, 
   FolderOpen, LifeBuoy, CheckCircle2, AlertCircle, Upload, 
-  Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft, Sun, Moon
+  Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft
 } from 'lucide-react';
 
 export default function ContractorDashboard() {
+  const { isDarkMode } = useOutletContext(); // 🚀 قراءة الإضاءة من الغلاف الرئيسي مباشرة
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false); 
   
+  // States للبيانات
   const [profile, setProfile] = useState({ full_name: '', phone: '', city: '', project_name: '' });
   const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0 });
   const [conversations, setConversations] = useState([]);
@@ -105,7 +106,6 @@ export default function ContractorDashboard() {
       const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', user.id);
       if (appsData) setAppointments(appsData);
 
-      // محاكاة الأرقام لتطابق جمالية الصورة رقم 3
       const stagesMock = [
         { id: 1, name: 'التخطيط', icon: '📝', color: '#3b82f6', percent: 56, completed: 5, total: 9 },
         { id: 2, name: 'التنفيذ', icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
@@ -216,7 +216,6 @@ export default function ContractorDashboard() {
   const budgetPercent = Math.min((budget.spent / budget.total) * 100, 100);
 
   return (
-    // 🎨 حاوية رئيسية بخلفية مريحة جداً ونقوش هندسية (Grid Pattern)
     <div className={`min-h-screen p-4 md:p-8 transition-colors duration-700 relative overflow-hidden ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#eef8f2]'}`} dir="rtl">
       
       {/* 🌟 التأثيرات الفنية للخلفية (توهج + شبكة) */}
@@ -224,22 +223,13 @@ export default function ContractorDashboard() {
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
-      {/* 🚀 شريط الإضاءة العلوي (Switch) */}
-      <div className="relative z-10 flex justify-between items-center mb-8 bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/30 shadow-sm">
-        <h1 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-[#0f3b25]'}`}>مكتب المقاول</h1>
-        <button 
-          onClick={() => setIsDarkMode(!isDarkMode)} 
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all shadow-lg hover:scale-105 z-20 cursor-pointer ${
-            isDarkMode ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-[#0f3b25] text-white border border-[#0f3b25]'
-          }`}
-        >
-          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          <span className="hidden sm:inline">{isDarkMode ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن'}</span>
-        </button>
-      </div>
-
       <div className="relative z-10 space-y-8 animate-fade-in pb-24">
         
+        {/* عنوان الصفحة الصافي بعد نقل المفتاح للغلاف */}
+        <div className="mb-8">
+          <h1 className={`text-4xl font-black tracking-tight ${isDarkMode ? 'text-white drop-shadow-md' : 'text-[#0f3b25] drop-shadow-sm'}`}>إدارة الأوراش والميدان</h1>
+        </div>
+
         {/* الأزرار السريعة */}
         <div className="flex flex-wrap gap-4">
           <Link to="/v2/cost-calculator" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
@@ -289,7 +279,7 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* 🚀 كاميرا الورشة وتقارير الميدان (مطابقة تماماً للصورة 1_4) */}
+        {/* 🚀 كاميرا الورشة */}
         <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
             <div>
@@ -307,12 +297,9 @@ export default function ContractorDashboard() {
             ) : (
               reports.map(r => (
                 <div key={r.id} className={`min-w-[260px] rounded-xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
-                  {/* زر الحذف الأحمر */}
                   <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className="absolute top-2 left-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm">
                     <Trash2 size={16}/>
                   </button>
-                  
-                  {/* الصورة مع تدرج لوني والتاريخ */}
                   <div className="relative h-40 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
                     <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
@@ -320,8 +307,6 @@ export default function ContractorDashboard() {
                       🕒 {new Date(r.created_at).toLocaleDateString('ar-MA', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>
-                  
-                  {/* التفاصيل أسفل الصورة */}
                   <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
                     <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>
                       {r.description || 'لقطة ميدانية تفاعلية من الورش'}
@@ -377,10 +362,9 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* بيانات المقاولة والتقدم حسب المرحلة (متناسق جنباً إلى جنب) */}
+        {/* بيانات المقاولة والتقدم حسب المرحلة */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           
-          {/* بيانات المقاولة */}
           <div className={cardClass}>
             <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> بيانات المقاولة</h2>
             <form onSubmit={handleProfileUpdate} className="space-y-5">
@@ -394,7 +378,6 @@ export default function ContractorDashboard() {
             </form>
           </div>
 
-          {/* 🚀 إحصائيات تفصيلية (تم التخلص من القسم الفارغ وإبقاء الدوائر المطابقة للصورة 3) */}
           <div className={cardClass}>
             <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 إحصائيات تفصيلية</h2>
             <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>التقدم حسب المرحلة:</p>
@@ -404,7 +387,6 @@ export default function ContractorDashboard() {
                   <div className="font-bold mb-4 text-lg flex items-center gap-2">
                     {stage.name} {stage.icon}
                   </div>
-                  {/* رسم الدائرة الإحصائية المجوفة */}
                   <div 
                     className="relative w-28 h-28 rounded-full flex items-center justify-center mb-4 shadow-inner"
                     style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}
@@ -528,9 +510,15 @@ export default function ContractorDashboard() {
 
       </div>
 
-      {/* زر الاستغاثة العائم */}
-      <button onClick={() => setIsSosOpen(true)} className="fixed bottom-8 left-8 bg-gradient-to-br from-red-500 to-red-700 text-white px-6 py-4 rounded-full font-black text-lg flex items-center gap-3 shadow-[0_10px_35px_rgba(239,68,68,0.6)] hover:scale-110 transition-transform z-40 border-2 border-red-400/50">
-        <LifeBuoy className="animate-pulse" size={24} /> استغاثة تقنية
+      {/* 🚀 زر الاستغاثة العائم (ذكي يتمدد عند مرور الماوس ولا يغطي السايدبار) */}
+      <button 
+        onClick={() => setIsSosOpen(true)} 
+        className="group fixed bottom-6 left-6 flex items-center bg-red-500/40 hover:bg-gradient-to-br hover:from-red-500 hover:to-red-700 text-white rounded-full transition-all duration-500 overflow-hidden z-50 backdrop-blur-sm hover:backdrop-blur-none border border-red-400/30 hover:border-red-400/80 w-14 h-14 hover:w-48 shadow-lg hover:shadow-[0_0_30px_rgba(239,68,68,0.8)]"
+      >
+        <div className="w-14 h-14 shrink-0 flex items-center justify-center">
+          <LifeBuoy className="group-hover:animate-spin-slow" size={24} />
+        </div>
+        <span className="whitespace-nowrap font-black text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">استغاثة تقنية</span>
       </button>
 
       {/* نافذة الاستغاثة */}
