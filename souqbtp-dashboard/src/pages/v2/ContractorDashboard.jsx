@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Link, useOutletContext } from 'react-router-dom'; // 🚀 استدعاء قارئ الإضاءة
+import { Link, useOutletContext } from 'react-router-dom';
 import { 
   Calculator, Star, MessageCircle, Briefcase, Camera, Wallet, 
   FolderOpen, LifeBuoy, CheckCircle2, AlertCircle, Upload, 
-  Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft
+  Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft, Sun, Moon
 } from 'lucide-react';
 
 export default function ContractorDashboard() {
-  const { isDarkMode } = useOutletContext(); // 🚀 قراءة الإضاءة من الغلاف الرئيسي مباشرة
+  // 🚀 قراءة الإضاءة واللغة من الغلاف الرئيسي
+  const { isDarkMode, language = 'ar' } = useOutletContext(); 
+  const isRtl = language === 'ar';
+
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   
-  // States للبيانات
   const [profile, setProfile] = useState({ full_name: '', phone: '', city: '', project_name: '' });
   const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0 });
   const [conversations, setConversations] = useState([]);
@@ -30,6 +32,189 @@ export default function ContractorDashboard() {
   const [saveStatus, setSaveStatus] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
 
+  // 🌍 قاموس الترجمة الشامل
+  const translations = {
+    ar: {
+      pageTitle: "إدارة الأوراش والميدان",
+      calcBtn: "الحاسبة الذكية لتكاليف الورش",
+      rateBtn: "تقييم الحرفيين",
+      inboxTitle: "صندوق الرسائل",
+      onlineStatus: "متصل - يوجد",
+      available: "متاحين",
+      noChats: "📭 لا توجد محادثات حتى الآن.",
+      voiceMsg: "🎤 رسالة صوتية",
+      chatStarted: "بدأت المحادثة",
+      enterChat: "دخول للمحادثة",
+      camTitle: "كاميرا الورشة وتقارير الميدان",
+      camSub: "أحدث اللقطات من ميدان الورش",
+      liveBtn: "طلب بث مباشر من الورشة",
+      noReports: "لا توجد لقطات حديثة من الورشة.",
+      interactiveShot: "لقطة ميدانية تفاعلية من الورش",
+      souqTeam: "فريق SouqBTP",
+      budgetTitle: "💰 ميزانية الورش الإجمالية",
+      pdfBtn: "تحميل PDF",
+      waBtn: "مشاركة واتساب",
+      editBudgetBtn: "تعديل الميزانية",
+      noBudget: "لم تقم بحساب الميزانية بعد.",
+      budgetCalculated: "تم حساب الميزانية (تفاصيل بالأسفل)",
+      progTitle: "تقدم المشروع",
+      tasksDone: "المهام المنجزة",
+      tasksLeft: "المهام المتبقية",
+      compData: "بيانات المقاولة",
+      compName: "اسم الشركة",
+      phone: "رقم الهاتف",
+      city: "المدينة",
+      currentSite: "الورش الحالي",
+      saveBtn: "💾 حفظ التغييرات",
+      statsTitle: "إحصائيات تفصيلية",
+      progByStage: "التقدم حسب المرحلة:",
+      taskUnit: "مهمة",
+      teamTitle: "فريق عمل الورش",
+      noTeam: "لم تقم بتعيين أي فريق عمل حتى الآن.",
+      master: "معلم",
+      vaultTitle: "خزانة مستندات الورش",
+      uploadBtn: "رفع مستند",
+      uploading: "جاري الرفع...",
+      emptyVault: "الخزانة فارغة.",
+      radarTitle: "رادار الميزانية",
+      spent: "الفعلي:",
+      estimated: "المقدر:",
+      currency: "درهم",
+      sosBtn: "استغاثة تقنية",
+      sosTitle: "طلب تدخل خبير تقني",
+      issueTitle: "عنوان المشكلة",
+      sosUrgent: "🔴 عاجل جداً (توقف العمل)",
+      sosNormal: "🟢 استشارة فنية",
+      sosDetails: "التفاصيل...",
+      sosSend: "إرسال النداء",
+      cancel: "إلغاء",
+      loading: "جاري تجهيز مكتبك الميداني...",
+      days: ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت']
+    },
+    fr: {
+      pageTitle: "Gestion des Chantiers",
+      calcBtn: "Calculateur Intelligent",
+      rateBtn: "Évaluation Artisans",
+      inboxTitle: "Boîte de Réception",
+      onlineStatus: "En ligne -",
+      available: "disponibles",
+      noChats: "📭 Aucune conversation.",
+      voiceMsg: "🎤 Message vocal",
+      chatStarted: "Conversation démarrée",
+      enterChat: "Accéder",
+      camTitle: "Caméra & Rapports",
+      camSub: "Dernières captures du chantier",
+      liveBtn: "Demander le Direct",
+      noReports: "Aucune capture récente.",
+      interactiveShot: "Capture de terrain interactive",
+      souqTeam: "Équipe SouqBTP",
+      budgetTitle: "💰 Budget Global",
+      pdfBtn: "Télécharger PDF",
+      waBtn: "Partager WhatsApp",
+      editBudgetBtn: "Modifier le Budget",
+      noBudget: "Budget non calculé.",
+      budgetCalculated: "Budget calculé (détails en bas)",
+      progTitle: "Progression du Projet",
+      tasksDone: "Tâches Terminées",
+      tasksLeft: "Tâches Restantes",
+      compData: "Données de l'Entreprise",
+      compName: "Nom de l'entreprise",
+      phone: "Téléphone",
+      city: "Ville",
+      currentSite: "Chantier actuel",
+      saveBtn: "💾 Enregistrer",
+      statsTitle: "Statistiques Détaillées",
+      progByStage: "Progression par étape :",
+      taskUnit: "tâche(s)",
+      teamTitle: "Équipe du Chantier",
+      noTeam: "Aucune équipe assignée.",
+      master: "Artisan",
+      vaultTitle: "Armoire à Documents",
+      uploadBtn: "Téléverser",
+      uploading: "En cours...",
+      emptyVault: "L'armoire est vide.",
+      radarTitle: "Radar du Budget",
+      spent: "Dépensé :",
+      estimated: "Estimé :",
+      currency: "MAD",
+      sosBtn: "Alerte Technique",
+      sosTitle: "Demande d'Intervention",
+      issueTitle: "Titre du problème",
+      sosUrgent: "🔴 Très urgent (Arrêt)",
+      sosNormal: "🟢 Consultation technique",
+      sosDetails: "Détails...",
+      sosSend: "Envoyer l'alerte",
+      cancel: "Annuler",
+      loading: "Préparation de votre bureau...",
+      days: ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+    },
+    en: {
+      pageTitle: "Site Management",
+      calcBtn: "Smart Cost Calculator",
+      rateBtn: "Artisan Ratings",
+      inboxTitle: "Inbox",
+      onlineStatus: "Online -",
+      available: "available",
+      noChats: "📭 No conversations yet.",
+      voiceMsg: "🎤 Voice message",
+      chatStarted: "Conversation started",
+      enterChat: "Enter Chat",
+      camTitle: "Site Camera & Reports",
+      camSub: "Latest shots from the field",
+      liveBtn: "Request Live Broadcast",
+      noReports: "No recent shots.",
+      interactiveShot: "Interactive field shot",
+      souqTeam: "SouqBTP Team",
+      budgetTitle: "💰 Total Site Budget",
+      pdfBtn: "Download PDF",
+      waBtn: "Share via WhatsApp",
+      editBudgetBtn: "Edit Budget",
+      noBudget: "Budget not calculated yet.",
+      budgetCalculated: "Budget calculated (details below)",
+      progTitle: "Project Progress",
+      tasksDone: "Completed Tasks",
+      tasksLeft: "Remaining Tasks",
+      compData: "Company Data",
+      compName: "Company Name",
+      phone: "Phone Number",
+      city: "City",
+      currentSite: "Current Site",
+      saveBtn: "💾 Save Changes",
+      statsTitle: "Detailed Statistics",
+      progByStage: "Progress by Stage:",
+      taskUnit: "task(s)",
+      teamTitle: "Site Team",
+      noTeam: "No team assigned yet.",
+      master: "Master",
+      vaultTitle: "Documents Vault",
+      uploadBtn: "Upload Doc",
+      uploading: "Uploading...",
+      emptyVault: "Vault is empty.",
+      radarTitle: "Budget Radar",
+      spent: "Spent:",
+      estimated: "Estimated:",
+      currency: "MAD",
+      sosBtn: "Technical SOS",
+      sosTitle: "Technical Support Request",
+      issueTitle: "Issue Title",
+      sosUrgent: "🔴 Very Urgent (Stopped)",
+      sosNormal: "🟢 Consultation",
+      sosDetails: "Details...",
+      sosSend: "Send Alert",
+      cancel: "Cancel",
+      loading: "Preparing your office...",
+      days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    }
+  };
+
+  const t = translations[language] || translations.ar;
+
+  const categoryOptions = {
+    ar: ['رخصة بناء', 'تصميم هندسي', 'فاتورة / توصيل', 'عقد عمل', 'أخرى'],
+    fr: ['Permis de construire', 'Conception architecturale', 'Facture / Livraison', 'Contrat de travail', 'Autre'],
+    en: ['Building permit', 'Architectural design', 'Invoice / Delivery', 'Work contract', 'Other']
+  };
+
   // 💎 كلاس موحد للبطاقات مع تأثير 3D وإضاءة مشعة 
   const cardClass = `relative z-10 rounded-3xl p-6 transition-all duration-500 transform hover:-translate-y-2 border-2 ${
     isDarkMode 
@@ -39,7 +224,7 @@ export default function ContractorDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [language]); // أضفنا اللغة كمراقب لتحديث البيانات عند التغيير
 
   const fetchDashboardData = async () => {
     try {
@@ -66,7 +251,7 @@ export default function ContractorDashboard() {
             partnerId = c.architect_id; icon = '📐';
           } else if (c.provider_id) {
             const { data: prov } = await supabase.from('providers').select('full_name').eq('id', c.provider_id).single();
-            name = prov ? prov.full_name : 'معلم';
+            name = prov ? prov.full_name : t.master;
             partnerId = c.provider_id; icon = '👷';
           }
           const { data: msgs } = await supabase.from('messages').select('content, created_at, sender_type').eq('conversation_id', c.id).is('deleted_by_client', false).order('created_at', { ascending: false }).limit(1);
@@ -106,11 +291,12 @@ export default function ContractorDashboard() {
       const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', user.id);
       if (appsData) setAppointments(appsData);
 
+      // محاكاة الأرقام لتطابق جمالية الصورة رقم 3 مع الترجمة
       const stagesMock = [
-        { id: 1, name: 'التخطيط', icon: '📝', color: '#3b82f6', percent: 56, completed: 5, total: 9 },
-        { id: 2, name: 'التنفيذ', icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
-        { id: 3, name: 'التشطيب', icon: '🎨', color: '#a855f7', percent: 50, completed: 2, total: 4 },
-        { id: 4, name: 'التحفيظ', icon: '📜', color: '#22c55e', percent: 25, completed: 1, total: 4 }
+        { id: 1, name: language === 'ar' ? 'التخطيط' : language === 'fr' ? 'Planification' : 'Planning', icon: '📝', color: '#3b82f6', percent: 56, completed: 5, total: 9 },
+        { id: 2, name: language === 'ar' ? 'التنفيذ' : language === 'fr' ? 'Exécution' : 'Execution', icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
+        { id: 3, name: language === 'ar' ? 'التشطيب' : language === 'fr' ? 'Finition' : 'Finishing', icon: '🎨', color: '#a855f7', percent: 50, completed: 2, total: 4 },
+        { id: 4, name: language === 'ar' ? 'التحفيظ' : language === 'fr' ? 'Enregistrement' : 'Registration', icon: '📜', color: '#22c55e', percent: 25, completed: 1, total: 4 }
       ];
       setStageProgress(stagesMock);
 
@@ -196,7 +382,7 @@ export default function ContractorDashboard() {
           <div className="mt-1 space-y-1">
             {dayApps.map(app => (
               <div key={app.id} className={`text-[10px] p-1 rounded-md truncate ${app.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'}`} title={app.notes}>
-                👷 {app.providers?.full_name || 'حرفي'}
+                👷 {app.providers?.full_name || t.master}
               </div>
             ))}
           </div>
@@ -209,14 +395,15 @@ export default function ContractorDashboard() {
   if (loading) return (
     <div className={`flex flex-col items-center justify-center h-screen ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#e0f2e9]'} gap-4 transition-colors duration-700`}>
       <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      <p className={`font-bold text-xl ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>جاري تجهيز مكتبك الميداني...</p>
+      <p className={`font-bold text-xl ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{t.loading}</p>
     </div>
   );
 
   const budgetPercent = Math.min((budget.spent / budget.total) * 100, 100);
 
   return (
-    <div className={`min-h-screen p-4 md:p-8 transition-colors duration-700 relative overflow-hidden ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#eef8f2]'}`} dir="rtl">
+    // 🎨 حاوية رئيسية بخلفية مريحة جداً ونقوش هندسية (Grid Pattern)
+    <div className={`min-h-screen p-4 md:p-8 transition-colors duration-700 relative overflow-hidden ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#eef8f2]'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
       {/* 🌟 التأثيرات الفنية للخلفية (توهج + شبكة) */}
       <div className={`absolute inset-0 z-0 opacity-20 pointer-events-none ${isDarkMode ? 'bg-[radial-gradient(#475569_1px,transparent_1px)]' : 'bg-[radial-gradient(#94a3b8_1px,transparent_1px)]'}`} style={{ backgroundSize: '30px 30px' }}></div>
@@ -225,50 +412,50 @@ export default function ContractorDashboard() {
 
       <div className="relative z-10 space-y-8 animate-fade-in pb-24">
         
-        {/* عنوان الصفحة الصافي بعد نقل المفتاح للغلاف */}
+        {/* عنوان الصفحة */}
         <div className="mb-8">
-          <h1 className={`text-4xl font-black tracking-tight ${isDarkMode ? 'text-white drop-shadow-md' : 'text-[#0f3b25] drop-shadow-sm'}`}>إدارة الأوراش والميدان</h1>
+          <h1 className={`text-4xl font-black tracking-tight ${isDarkMode ? 'text-white drop-shadow-md' : 'text-[#0f3b25] drop-shadow-sm'}`}>{t.pageTitle}</h1>
         </div>
 
         {/* الأزرار السريعة */}
         <div className="flex flex-wrap gap-4">
           <Link to="/v2/cost-calculator" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
-            <Calculator className="text-blue-500" size={24} /> الحاسبة الذكية لتكاليف الورش
+            <Calculator className="text-blue-500" size={24} /> {t.calcBtn}
           </Link>
           <Link to="/v2/reviews" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
-            <Star className="text-yellow-500" size={24} /> تقييم الحرفيين
+            <Star className="text-yellow-500" size={24} /> {t.rateBtn}
           </Link>
         </div>
 
         {/* صندوق الرسائل */}
         <div className={`${cardClass} border-t-4 border-t-blue-500`}>
           <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
-            <h2 className="text-xl font-black flex items-center gap-2"><MessageCircle className="text-blue-500" /> صندوق الرسائل</h2>
+            <h2 className="text-xl font-black flex items-center gap-2"><MessageCircle className="text-blue-500" /> {t.inboxTitle}</h2>
             <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/30 px-4 py-1.5 rounded-full">
-              <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> متصل - يوجد ({onlineProviders.length}) متاحين
+              <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> {t.onlineStatus} ({onlineProviders.length}) {t.available}
             </span>
           </div>
           
           <div className="overflow-x-auto">
             {conversations.length === 0 ? (
-              <div className={`text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>📭 لا توجد محادثات حتى الآن.</div>
+              <div className={`text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noChats}</div>
             ) : (
-              <table className="w-full text-right border-collapse">
+              <table className={`w-full ${isRtl ? 'text-right' : 'text-left'} border-collapse`}>
                 <tbody>
                   {conversations.map(c => {
                     const isOnline = onlineProviders.includes(c.partnerId?.toString());
-                    const msgText = c.lastMsg?.content?.startsWith('AUDIO_MSG') ? '🎤 رسالة صوتية' : (c.lastMsg?.content || 'بدأت المحادثة');
+                    const msgText = c.lastMsg?.content?.startsWith('AUDIO_MSG') ? t.voiceMsg : (c.lastMsg?.content || t.chatStarted);
                     const token = Array.from(c.id.toString()).map(ch => ch.charCodeAt(0).toString(16)).join('');
                     return (
                       <tr key={c.id} className={`border-b transition-colors ${isDarkMode ? 'border-slate-700/50 hover:bg-slate-700/40' : 'border-slate-100 hover:bg-slate-50'} ${c.unread > 0 ? (isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50/70') : ''}`}>
                         <td className="p-4 font-bold flex items-center gap-3">
                           <span className={`w-3 h-3 rounded-full ${isOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-slate-300'}`}></span>
                           {c.icon} {c.partnerName}
-                          {c.unread > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse shadow-lg">{c.unread}</span>}
+                          {c.unread > 0 && <span className={`bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse shadow-lg ${isRtl ? 'mr-2' : 'ml-2'}`}>{c.unread}</span>}
                         </td>
                         <td className={`p-4 text-sm max-w-[200px] truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{msgText}</td>
-                        <td className="p-4 text-left">
-                          <Link to={`/v2/chat/${token}`} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg hover:shadow-blue-500/30">دخول للمحادثة</Link>
+                        <td className={`p-4 ${isRtl ? 'text-left' : 'text-right'}`}>
+                          <Link to={`/v2/chat/${token}`} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg hover:shadow-blue-500/30">{t.enterChat}</Link>
                         </td>
                       </tr>
                     )
@@ -279,40 +466,42 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* 🚀 كاميرا الورشة */}
+        {/* 🚀 كاميرا الورشة وتقارير الميدان */}
         <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
             <div>
-              <h2 className="text-xl font-black flex items-center gap-2"><Camera className="text-blue-500" /> كاميرا الورشة وتقارير الميدان</h2>
-              <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>أحدث اللقطات من ميدان الورش</p>
+              <h2 className="text-xl font-black flex items-center gap-2"><Camera className="text-blue-500" /> {t.camTitle}</h2>
+              <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.camSub}</p>
             </div>
             <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all hover:scale-105">
-              <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></span> طلب بث مباشر من الورشة
+              <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></span> {t.liveBtn}
             </button>
           </div>
           
           <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar snap-x">
             {reports.length === 0 ? (
-              <div className={`w-full text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>لا توجد لقطات حديثة من الورشة.</div>
+              <div className={`w-full text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noReports}</div>
             ) : (
               reports.map(r => (
                 <div key={r.id} className={`min-w-[260px] rounded-xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
-                  <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className="absolute top-2 left-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm">
+                  <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm`}>
                     <Trash2 size={16}/>
                   </button>
+                  
                   <div className="relative h-40 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
                     <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-                    <span className="absolute bottom-2 right-2 text-white text-[11px] font-bold">
-                      🕒 {new Date(r.created_at).toLocaleDateString('ar-MA', { day: 'numeric', month: 'short' })}
+                    <span className={`absolute bottom-2 ${isRtl ? 'right-2' : 'left-2'} text-white text-[11px] font-bold`}>
+                      🕒 {new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>
+                  
                   <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
                     <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>
-                      {r.description || 'لقطة ميدانية تفاعلية من الورش'}
+                      {r.description || t.interactiveShot}
                     </p>
                     <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1">
-                      👷 {r.provider_name || 'فريق SouqBTP'}
+                      👷 {r.provider_name || t.souqTeam}
                     </p>
                   </div>
                 </div>
@@ -324,40 +513,40 @@ export default function ContractorDashboard() {
         {/* قسم الميزانية الإجمالية */}
         <div className={cardClass}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
-            <h2 className="text-xl font-black flex items-center gap-2">💰 ميزانية الورش الإجمالية</h2>
+            <h2 className="text-xl font-black flex items-center gap-2">{t.budgetTitle}</h2>
             <div className="flex gap-2 flex-wrap">
               <button className="bg-[#e74c3c] hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-500/20 transition-all hover:-translate-y-1">
-                <FileText size={18} /> تحميل PDF
+                <FileText size={18} /> {t.pdfBtn}
               </button>
               <button className="bg-[#25D366] hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-green-500/20 transition-all hover:-translate-y-1">
-                📲 مشاركة واتساب
+                📲 {t.waBtn}
               </button>
               <Link to="/v2/cost-calculator" className={`px-5 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-1 ${isDarkMode ? 'border border-slate-600 hover:bg-slate-700 text-slate-200' : 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm'}`}>
-                تعديل الميزانية
+                {t.editBudgetBtn}
               </Link>
             </div>
           </div>
           {budget.total === 250000 && budget.spent === 0 ? (
             <div className={`text-center py-8 rounded-xl mt-4 border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>
-              لم تقم بحساب الميزانية بعد.
+              {t.noBudget}
             </div>
           ) : (
-            <div className="text-center font-bold text-xl text-blue-500 mt-4">تم حساب الميزانية (تفاصيل بالأسفل)</div>
+            <div className="text-center font-bold text-xl text-blue-500 mt-4">{t.budgetCalculated}</div>
           )}
         </div>
 
         {/* البطاقات الإحصائية المتوهجة 3D */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 cursor-default border border-white/10">
-            <span className="text-sm font-bold opacity-90 mb-2">تقدم المشروع</span>
+            <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
             <span className="text-6xl font-black drop-shadow-md">{stats.progress}%</span>
           </div>
           <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 cursor-default border border-white/10">
-            <span className="text-sm font-bold opacity-90 mb-2">المهام المنجزة</span>
+            <span className="text-sm font-bold opacity-90 mb-2">{t.tasksDone}</span>
             <span className="text-6xl font-black drop-shadow-md">{stats.completed}</span>
           </div>
           <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(6,182,212,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 cursor-default border border-white/10">
-            <span className="text-sm font-bold opacity-90 mb-2">المهام المتبقية</span>
+            <span className="text-sm font-bold opacity-90 mb-2">{t.tasksLeft}</span>
             <span className="text-6xl font-black drop-shadow-md">{stats.remaining}</span>
           </div>
         </div>
@@ -365,22 +554,24 @@ export default function ContractorDashboard() {
         {/* بيانات المقاولة والتقدم حسب المرحلة */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           
+          {/* بيانات المقاولة */}
           <div className={cardClass}>
-            <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> بيانات المقاولة</h2>
+            <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
             <form onSubmit={handleProfileUpdate} className="space-y-5">
-              <input type="text" placeholder="اسم الشركة" value={profile.full_name || ''} onChange={e => setProfile({...profile, full_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-              <input type="tel" placeholder="رقم الهاتف" value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              <input type="text" placeholder={t.compName} value={profile.full_name || ''} onChange={e => setProfile({...profile, full_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              <input type="tel" placeholder={t.phone} value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
               <div className="grid grid-cols-2 gap-4">
-                <input type="text" placeholder="المدينة" value={profile.city || ''} onChange={e => setProfile({...profile, city: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                <input type="text" placeholder="الورش الحالي" value={profile.project_name || ''} onChange={e => setProfile({...profile, project_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+                <input type="text" placeholder={t.city} value={profile.city || ''} onChange={e => setProfile({...profile, city: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+                <input type="text" placeholder={t.currentSite} value={profile.project_name || ''} onChange={e => setProfile({...profile, project_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
               </div>
-              <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1">💾 حفظ التغييرات</button>
+              <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1">{t.saveBtn}</button>
             </form>
           </div>
 
+          {/* 🚀 إحصائيات تفصيلية */}
           <div className={cardClass}>
-            <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 إحصائيات تفصيلية</h2>
-            <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>التقدم حسب المرحلة:</p>
+            <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
+            <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
             <div className="grid grid-cols-2 sm:grid-cols-2 gap-6">
               {stageProgress.map(stage => (
                 <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all hover:scale-105 flex flex-col items-center justify-center ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
@@ -396,7 +587,7 @@ export default function ContractorDashboard() {
                     </div>
                   </div>
                   <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                    {stage.completed} / {stage.total} مهمة
+                    {stage.completed} / {stage.total} {t.taskUnit}
                   </div>
                 </div>
               ))}
@@ -406,18 +597,18 @@ export default function ContractorDashboard() {
 
         {/* فريق العمل */}
         <div className={cardClass}>
-          <h2 className="text-xl font-black mb-6 pb-4 border-b border-slate-200/20">👷 فريق عمل الورش</h2>
+          <h2 className="text-xl font-black mb-6 pb-4 border-b border-slate-200/20">👷 {t.teamTitle}</h2>
           {team.length === 0 ? (
-             <p className={`text-center ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>لم تقم بتعيين أي فريق عمل حتى الآن.</p>
+             <p className={`text-center ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.noTeam}</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {team.map(t => (
-                <div key={t.id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-slate-900/80 border-slate-700 shadow-md' : 'bg-white border-slate-100 shadow-sm'}`}>
+              {team.map(worker => (
+                <div key={worker.id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-slate-900/80 border-slate-700 shadow-md' : 'bg-white border-slate-100 shadow-sm'}`}>
                   <div>
-                    <h4 className="font-bold text-lg">{t.worker_name}</h4>
-                    <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>📞 {t.worker_phone || 'SouqBTP'}</p>
+                    <h4 className="font-bold text-lg">{worker.worker_name}</h4>
+                    <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>📞 {worker.worker_phone || 'SouqBTP'}</p>
                   </div>
-                  <span className="bg-indigo-500/10 text-indigo-500 px-4 py-1.5 rounded-full text-sm font-bold border border-indigo-500/20">معلم</span>
+                  <span className="bg-indigo-500/10 text-indigo-500 px-4 py-1.5 rounded-full text-sm font-bold border border-indigo-500/20">{t.master}</span>
                 </div>
               ))}
             </div>
@@ -427,40 +618,35 @@ export default function ContractorDashboard() {
         {/* خزانة المستندات */}
         <div className={cardClass}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
-            <h2 className="text-xl font-black flex items-center gap-2"><FolderOpen className="text-blue-500" /> خزانة مستندات الورش</h2>
+            <h2 className="text-xl font-black flex items-center gap-2"><FolderOpen className="text-blue-500" /> {t.vaultTitle}</h2>
             <div className="flex gap-2">
               <select 
                 value={docCategory} 
                 onChange={e => setDocCategory(e.target.value)} 
                 className={`p-2.5 border rounded-xl text-sm font-bold outline-none cursor-pointer transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 shadow-sm'}`}
               >
-                <option>رخصة بناء</option>
-                <option>تصميم هندسي</option>
-                <option>فاتورة / توصيل</option>
-                <option>عقد عمل</option>
-                <option>أخرى</option>
+                {categoryOptions[language]?.map((cat, idx) => <option key={idx}>{cat}</option>)}
               </select>
               <label className={`bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 cursor-pointer shadow-lg shadow-blue-500/20 transition-all ${uploadingDoc ? 'opacity-50' : 'hover:-translate-y-1 hover:bg-blue-700'}`}>
-                <Upload size={18} /> {uploadingDoc ? 'جاري الرفع...' : 'رفع مستند'}
+                <Upload size={18} /> {uploadingDoc ? t.uploading : t.uploadBtn}
                 <input type="file" className="hidden" multiple onChange={handleDocumentUpload} disabled={uploadingDoc} />
               </label>
             </div>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5">
-            {documents.length === 0 ? <p className="col-span-full text-center text-slate-400 py-4">الخزانة فارغة.</p> :
+            {documents.length === 0 ? <p className="col-span-full text-center text-slate-400 py-4">{t.emptyVault}</p> :
               documents.map(doc => {
                 let Icon = FileText;
-                if(doc.category === 'تصميم هندسي') Icon = FileImage;
-                if(doc.category === 'رخصة بناء') Icon = FileSignature;
-                if(doc.category.includes('فاتورة')) Icon = Receipt;
+                if(doc.category === categoryOptions[language]?.[1]) Icon = FileImage; // تصميم هندسي
+                if(doc.category === categoryOptions[language]?.[0]) Icon = FileSignature; // رخصة
+                if(doc.category === categoryOptions[language]?.[2]) Icon = Receipt; // فاتورة
 
                 return (
                   <div key={doc.id} className={`p-5 rounded-2xl text-center border-2 relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${isDarkMode ? 'bg-slate-900/90 border-slate-700 hover:border-blue-500/50' : 'bg-white border-slate-100 hover:border-blue-400'}`}>
                     <button 
                       onClick={(e) => { e.stopPropagation(); deleteDocument(doc.id); }} 
-                      className="absolute -top-3 -left-3 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-[0_5px_15px_rgba(239,68,68,0.5)] hover:scale-110"
-                      title="حذف المستند"
+                      className={`absolute -top-3 ${isRtl ? '-left-3' : '-right-3'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-[0_5px_15px_rgba(239,68,68,0.5)] hover:scale-110`}
                     >
                       <Trash2 size={16}/>
                     </button>
@@ -480,12 +666,12 @@ export default function ContractorDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className={cardClass}>
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
-              <h2 className="text-xl font-black flex items-center gap-2"><Wallet className="text-blue-500" /> رادار الميزانية</h2>
+              <h2 className="text-xl font-black flex items-center gap-2"><Wallet className="text-blue-500" /> {t.radarTitle}</h2>
             </div>
             <div className={`p-6 rounded-2xl border-2 mb-6 ${isDarkMode ? 'bg-slate-900/80 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
               <div className="flex justify-between font-bold mb-4 text-lg">
-                <span>الفعلي: <span className="text-orange-500 drop-shadow-sm">{budget.spent.toLocaleString()}</span> درهم</span>
-                <span>المقدر: <span className="text-emerald-500 drop-shadow-sm">{budget.total.toLocaleString()}</span> درهم</span>
+                <span>{t.spent} <span className="text-orange-500 drop-shadow-sm">{budget.spent.toLocaleString()}</span> {t.currency}</span>
+                <span>{t.estimated} <span className="text-emerald-500 drop-shadow-sm">{budget.total.toLocaleString()}</span> {t.currency}</span>
               </div>
               <div className={`w-full h-5 rounded-full overflow-hidden shadow-inner ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
                 <div className="h-full bg-gradient-to-r from-emerald-400 to-orange-400" style={{ width: `${budgetPercent}%` }}></div>
@@ -495,12 +681,16 @@ export default function ContractorDashboard() {
 
           <div className={cardClass}>
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
-              <button onClick={() => changeMonth(-1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}><ChevronRight size={20}/></button>
-              <h3 className="text-xl font-black">{calendarDate.toLocaleDateString('ar-MA', { month: 'long', year: 'numeric' })}</h3>
-              <button onClick={() => changeMonth(1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}><ChevronLeft size={20}/></button>
+              <button onClick={() => changeMonth(-1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
+                <ChevronRight size={20} className={isRtl ? '' : 'rotate-180'}/>
+              </button>
+              <h3 className="text-xl font-black">{calendarDate.toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })}</h3>
+              <button onClick={() => changeMonth(1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
+                <ChevronLeft size={20} className={isRtl ? '' : 'rotate-180'}/>
+              </button>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center mb-3">
-              {['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'].map(d => <div key={d} className={`text-sm font-black ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{d}</div>)}
+              {t.days.map(d => <div key={d} className={`text-sm font-black ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{d}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-1.5">
               {renderCalendarDays()}
@@ -510,30 +700,33 @@ export default function ContractorDashboard() {
 
       </div>
 
-      {/* 🚀 زر الاستغاثة العائم (ذكي يتمدد عند مرور الماوس ولا يغطي السايدبار) */}
+      {/* 🚀 زر الاستغاثة العائم (ذكي يتمدد ويتجاوب مع اتجاه اللغة) */}
       <button 
         onClick={() => setIsSosOpen(true)} 
-        className="group fixed bottom-6 left-6 flex items-center bg-red-500/40 hover:bg-gradient-to-br hover:from-red-500 hover:to-red-700 text-white rounded-full transition-all duration-500 overflow-hidden z-50 backdrop-blur-sm hover:backdrop-blur-none border border-red-400/30 hover:border-red-400/80 w-14 h-14 hover:w-48 shadow-lg hover:shadow-[0_0_30px_rgba(239,68,68,0.8)]"
+        className={`group fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} flex items-center bg-red-500/40 hover:bg-gradient-to-br hover:from-red-500 hover:to-red-700 text-white rounded-full transition-all duration-500 overflow-hidden z-50 backdrop-blur-sm hover:backdrop-blur-none border border-red-400/30 hover:border-red-400/80 w-14 h-14 hover:w-56 shadow-lg hover:shadow-[0_0_30px_rgba(239,68,68,0.8)]`}
       >
         <div className="w-14 h-14 shrink-0 flex items-center justify-center">
           <LifeBuoy className="group-hover:animate-spin-slow" size={24} />
         </div>
-        <span className="whitespace-nowrap font-black text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">استغاثة تقنية</span>
+        <span className={`whitespace-nowrap font-black text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isRtl ? 'mr-1' : 'ml-1'}`}>{t.sosBtn}</span>
       </button>
 
       {/* نافذة الاستغاثة */}
       {isSosOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setIsSosOpen(false)}>
           <div className={`rounded-3xl p-8 w-full max-w-md shadow-2xl animate-fade-in border-2 ${isDarkMode ? 'bg-slate-800 border-slate-600' : 'bg-white border-white'}`} onClick={e => e.stopPropagation()}>
-            <h2 className="text-2xl font-black text-red-500 border-b-2 border-red-500/20 pb-4 mb-6 flex items-center gap-2"><AlertCircle size={28}/> طلب تدخل خبير تقني</h2>
+            <h2 className="text-2xl font-black text-red-500 border-b-2 border-red-500/20 pb-4 mb-6 flex items-center gap-2"><AlertCircle size={28}/> {t.sosTitle}</h2>
             <div className="space-y-5">
-              <input type="text" placeholder="عنوان المشكلة" className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-              <select className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`}><option>🔴 عاجل جداً (توقف العمل)</option><option>🟢 استشارة فنية</option></select>
-              <textarea rows="4" placeholder="التفاصيل..." className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`}></textarea>
+              <input type="text" placeholder={t.issueTitle} className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              <select className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`}>
+                <option>{t.sosUrgent}</option>
+                <option>{t.sosNormal}</option>
+              </select>
+              <textarea rows="4" placeholder={t.sosDetails} className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`}></textarea>
             </div>
             <div className="flex gap-4 mt-8">
-              <button className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl shadow-[0_10px_20px_rgba(239,68,68,0.4)] transition-all hover:-translate-y-1">🚀 إرسال النداء</button>
-              <button onClick={() => setIsSosOpen(false)} className={`px-8 font-black py-4 rounded-xl transition-all ${isDarkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>إلغاء</button>
+              <button className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl shadow-[0_10px_20px_rgba(239,68,68,0.4)] transition-all hover:-translate-y-1">🚀 {t.sosSend}</button>
+              <button onClick={() => setIsSosOpen(false)} className={`px-8 font-black py-4 rounded-xl transition-all ${isDarkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{t.cancel}</button>
             </div>
           </div>
         </div>
