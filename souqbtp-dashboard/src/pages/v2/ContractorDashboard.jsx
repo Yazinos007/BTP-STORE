@@ -10,9 +10,8 @@ import {
 export default function ContractorDashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false); // تم التبديل للوضع الفاتح كافتراضي لرؤية الخلفية المريحة
+  const [isDarkMode, setIsDarkMode] = useState(false); 
   
-  // States للبيانات
   const [profile, setProfile] = useState({ full_name: '', phone: '', city: '', project_name: '' });
   const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0 });
   const [conversations, setConversations] = useState([]);
@@ -30,11 +29,11 @@ export default function ContractorDashboard() {
   const [saveStatus, setSaveStatus] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
 
-  // 💎 كلاس موحد للبطاقات مع تأثير 3D وإضاءة مشعة عند التمرير (Glow Effect)
-  const cardClass = `rounded-3xl p-6 transition-all duration-500 transform hover:-translate-y-2 border-2 ${
+  // 💎 كلاس موحد للبطاقات مع تأثير 3D وإضاءة مشعة 
+  const cardClass = `relative z-10 rounded-3xl p-6 transition-all duration-500 transform hover:-translate-y-2 border-2 ${
     isDarkMode 
       ? 'bg-slate-800/90 backdrop-blur-xl border-slate-700/50 text-slate-200 shadow-xl hover:shadow-[0_0_35px_rgba(59,130,246,0.5)] hover:border-blue-500' 
-      : 'bg-white/95 backdrop-blur-xl border-white text-slate-800 shadow-lg hover:shadow-[0_0_35px_rgba(59,130,246,0.4)] hover:border-blue-400'
+      : 'bg-white/90 backdrop-blur-xl border-white text-slate-800 shadow-lg hover:shadow-[0_0_35px_rgba(59,130,246,0.4)] hover:border-blue-400'
   }`;
 
   useEffect(() => {
@@ -172,8 +171,6 @@ export default function ContractorDashboard() {
     setReports(reports.filter(r => r.id !== id));
   };
 
-  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-  const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
   const changeMonth = (offset) => {
     const newDate = new Date(calendarDate);
     newDate.setMonth(newDate.getMonth() + offset);
@@ -183,22 +180,17 @@ export default function ContractorDashboard() {
   const renderCalendarDays = () => {
     const year = calendarDate.getFullYear();
     const month = calendarDate.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDay = getFirstDayOfMonth(year, month);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
     const days = [];
-
     for (let i = 0; i < firstDay; i++) days.push(<div key={`empty-${i}`} className="min-h-[60px]"></div>);
-    
     for (let i = 1; i <= daysInMonth; i++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
       const dayApps = appointments.filter(a => a.appointment_date === dateStr);
       const isToday = new Date().toISOString().split('T')[0] === dateStr;
-
       days.push(
         <div key={i} className={`min-h-[60px] p-1 md:p-2 border rounded-xl transition-all ${
-          isToday 
-            ? 'bg-orange-500/20 border-orange-400 text-orange-400 shadow-inner' 
-            : isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
+          isToday ? 'bg-orange-500/20 border-orange-400 text-orange-400 shadow-inner' : isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
         }`}>
           <span className="text-sm font-bold">{i}</span>
           <div className="mt-1 space-y-1">
@@ -215,24 +207,29 @@ export default function ContractorDashboard() {
   };
 
   if (loading) return (
-    <div className={`flex flex-col items-center justify-center h-screen ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#98d8b8]'} gap-4 transition-colors duration-700`}>
-      <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-      <p className="font-bold text-white text-xl">جاري تجهيز مكتبك الميداني...</p>
+    <div className={`flex flex-col items-center justify-center h-screen ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#e0f2e9]'} gap-4 transition-colors duration-700`}>
+      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <p className={`font-bold text-xl ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>جاري تجهيز مكتبك الميداني...</p>
     </div>
   );
 
   const budgetPercent = Math.min((budget.spent / budget.total) * 100, 100);
 
   return (
-    // 🎨 تم تفعيل الخلفية الخضراء المريحة (sage green) للوضع الفاتح والخلفية العميقة للوضع الداكن
-    <div className={`min-h-screen p-4 md:p-8 transition-colors duration-700 ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#a3e6cd]'}`} dir="rtl">
+    // 🎨 حاوية رئيسية بخلفية مريحة جداً ونقوش هندسية (Grid Pattern)
+    <div className={`min-h-screen p-4 md:p-8 transition-colors duration-700 relative overflow-hidden ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#eef8f2]'}`} dir="rtl">
       
+      {/* 🌟 التأثيرات الفنية للخلفية (توهج + شبكة) */}
+      <div className={`absolute inset-0 z-0 opacity-20 pointer-events-none ${isDarkMode ? 'bg-[radial-gradient(#475569_1px,transparent_1px)]' : 'bg-[radial-gradient(#94a3b8_1px,transparent_1px)]'}`} style={{ backgroundSize: '30px 30px' }}></div>
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
       {/* 🚀 شريط الإضاءة العلوي (Switch) */}
-      <div className="flex justify-between items-center mb-8 bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/30 shadow-sm">
+      <div className="relative z-10 flex justify-between items-center mb-8 bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/30 shadow-sm">
         <h1 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-[#0f3b25]'}`}>مكتب المقاول</h1>
         <button 
           onClick={() => setIsDarkMode(!isDarkMode)} 
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all shadow-lg hover:scale-105 ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all shadow-lg hover:scale-105 z-20 cursor-pointer ${
             isDarkMode ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-[#0f3b25] text-white border border-[#0f3b25]'
           }`}
         >
@@ -241,7 +238,7 @@ export default function ContractorDashboard() {
         </button>
       </div>
 
-      <div className="space-y-8 animate-fade-in pb-24">
+      <div className="relative z-10 space-y-8 animate-fade-in pb-24">
         
         {/* الأزرار السريعة */}
         <div className="flex flex-wrap gap-4">
@@ -292,8 +289,8 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* 🚀 كاميرا الورشة (تطابق الصورة 1 تماماً) */}
-        <div className={`${cardClass} border-t-4 border-t-blue-500`}>
+        {/* 🚀 كاميرا الورشة وتقارير الميدان (مطابقة تماماً للصورة 1_4) */}
+        <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
             <div>
               <h2 className="text-xl font-black flex items-center gap-2"><Camera className="text-blue-500" /> كاميرا الورشة وتقارير الميدان</h2>
@@ -304,30 +301,34 @@ export default function ContractorDashboard() {
             </button>
           </div>
           
-          <div className="flex gap-4 overflow-x-auto pb-4 pt-2 custom-scrollbar snap-x">
+          <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar snap-x">
             {reports.length === 0 ? (
               <div className={`w-full text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>لا توجد لقطات حديثة من الورشة.</div>
             ) : (
               reports.map(r => (
-                <div key={r.id} className={`min-w-[240px] rounded-xl overflow-hidden border-2 snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.2)] ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:border-slate-500' : 'bg-white border-slate-100 hover:border-slate-300'}`}>
+                <div key={r.id} className={`min-w-[260px] rounded-xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
                   {/* زر الحذف الأحمر */}
-                  <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className="absolute top-2 left-2 bg-red-500/90 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm">
+                  <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className="absolute top-2 left-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm">
                     <Trash2 size={16}/>
                   </button>
                   
-                  {/* الصورة والتاريخ */}
-                  <div className="relative h-36" onClick={() => window.open(r.image_url, '_blank')}>
-                    <img src={r.image_url} alt="report" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                    <span className="absolute bottom-2 right-2 text-white text-xs font-bold flex items-center gap-1">
+                  {/* الصورة مع تدرج لوني والتاريخ */}
+                  <div className="relative h-40 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
+                    <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                    <span className="absolute bottom-2 right-2 text-white text-[11px] font-bold">
                       🕒 {new Date(r.created_at).toLocaleDateString('ar-MA', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>
                   
-                  {/* التفاصيل */}
-                  <div className="p-3" onClick={() => window.open(r.image_url, '_blank')}>
-                    <p className={`text-sm font-bold truncate mb-1 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`} title={r.description}>{r.description || 'لقطة ميدانية تفاعلية من الورش'}</p>
-                    <p className="text-xs text-slate-500 font-bold">👷 {r.provider_name || 'فريق SouqBTP'}</p>
+                  {/* التفاصيل أسفل الصورة */}
+                  <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
+                    <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>
+                      {r.description || 'لقطة ميدانية تفاعلية من الورش'}
+                    </p>
+                    <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1">
+                      👷 {r.provider_name || 'فريق SouqBTP'}
+                    </p>
                   </div>
                 </div>
               ))
@@ -360,7 +361,7 @@ export default function ContractorDashboard() {
           )}
         </div>
 
-        {/* البطاقات الإحصائية المتوهجة */}
+        {/* البطاقات الإحصائية المتوهجة 3D */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 cursor-default border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">تقدم المشروع</span>
@@ -376,7 +377,7 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* بيانات المقاولة والتقدم حسب المرحلة */}
+        {/* بيانات المقاولة والتقدم حسب المرحلة (متناسق جنباً إلى جنب) */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           
           {/* بيانات المقاولة */}
@@ -393,7 +394,7 @@ export default function ContractorDashboard() {
             </form>
           </div>
 
-          {/* 🚀 إحصائيات تفصيلية (الدوائر المطابقة للصورة 3) */}
+          {/* 🚀 إحصائيات تفصيلية (تم التخلص من القسم الفارغ وإبقاء الدوائر المطابقة للصورة 3) */}
           <div className={cardClass}>
             <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 إحصائيات تفصيلية</h2>
             <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>التقدم حسب المرحلة:</p>
@@ -403,7 +404,7 @@ export default function ContractorDashboard() {
                   <div className="font-bold mb-4 text-lg flex items-center gap-2">
                     {stage.name} {stage.icon}
                   </div>
-                  {/* رسم الدائرة الإحصائية */}
+                  {/* رسم الدائرة الإحصائية المجوفة */}
                   <div 
                     className="relative w-28 h-28 rounded-full flex items-center justify-center mb-4 shadow-inner"
                     style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}

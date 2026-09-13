@@ -1,15 +1,18 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
 import V2Layout from '../../components/v2/V2Layout';
 import ContractorDashboard from './ContractorDashboard';
 
-// صفحة قيد الإنشاء لباقي الأقسام
-const UnderConstruction = ({ title, icon }) => (
-  <div className="flex flex-col items-center justify-center h-[75vh] text-center bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-3xl border border-slate-200 dark:border-slate-700 m-4">
-    <div className="text-6xl mb-6 drop-shadow-lg">{icon || '🚧'}</div>
-    <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-3">{title}</h1>
-    <p className="text-slate-500 dark:text-slate-400 font-bold">سيتم برمجة هذا القسم قريباً في بيئة V2...</p>
-  </div>
-);
+// صفحة قيد الإنشاء ذكية تتجاوب مع لون الغلاف
+const UnderConstruction = ({ title, icon }) => {
+  const { isDarkMode } = useOutletContext(); // 🚀 قراءة الإضاءة من الغلاف
+  return (
+    <div className={`flex flex-col items-center justify-center h-[75vh] text-center backdrop-blur-md rounded-3xl border-2 m-4 shadow-xl transition-colors duration-700 ${isDarkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-white/90 border-white'}`}>
+      <div className="text-7xl mb-6 drop-shadow-xl hover:scale-110 transition-transform cursor-pointer">{icon || '🚧'}</div>
+      <h1 className={`text-4xl font-black mb-4 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{title}</h1>
+      <p className={`font-bold text-lg ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>سيتم برمجة هذا القسم قريباً في بيئة V2...</p>
+    </div>
+  );
+};
 
 export default function V2Router({ session, supplier }) {
   const accountType = session?.user?.user_metadata?.account_type || supplier?.supplier_type || 'contractor';
