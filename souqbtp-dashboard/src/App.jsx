@@ -699,9 +699,15 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
               </h2>
             </div>
             <div className="flex items-center gap-3 md:gap-4 shrink-0">
+
+              <Link to="/v2" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3 py-2 md:px-4 rounded-lg font-black flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all whitespace-nowrap animate-pulse">
+                🚀 معاينة V2
+              </Link>
+
               <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
                  <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
               </Link>
+              
               <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
                 {storeInitial}
               </div>
