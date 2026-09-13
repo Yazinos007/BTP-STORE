@@ -55,13 +55,12 @@ import SupplierProduction from './pages/SupplierProduction';
 import MarketplaceOrders from './pages/MarketplaceOrders';
 import FleetManagement from './pages/FleetManagement';
 import LogisticsBourse from './pages/LogisticsBourse';
-
 // 🚀 أشرطة الفترة التجريبية
 import TrialBanner from './components/TrialBanner'; // للمورد
 import RetailTrialBanner from './components/RetailTrialBanner'; // 🚀 استدعاء الشريط الجديد للتاجر
-
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
+import V2Router from './pages/v2/V2Router';
 
 // 🛑 الحارس الإلكتروني (الجدار الزجاجي) للأقسام المدفوعة
 const PremiumGuard = ({ children }) => {
@@ -582,76 +581,87 @@ function App() {
 
   return (
     <BrowserRouter>
-      {isWholesaler ? (
-        <WholesalerDashboard supplier={supplier}>
-          <Routes>
-            {/* ✅ أقسام باقة Starter (مجانية ودائمة) */}
-            <Route path="/" element={<SupplierOverview />} />
-            <Route path="/stock" element={<SupplierStock isWholesaler={true} />} />
-            <Route path="/invoices" element={<SupplierInvoices />} />
-            <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
-            <Route path="/raw-purchases" element={<RawMaterialPurchases />} />
-            <Route path="/pos-b2b" element={<SupplierPOS />} />
-            <Route path="/orders" element={<SupplierOrders />} />
-            <Route path="/settings" element={<SupplierSettings />} />
-            <Route path="/subscription" element={<SupplierSubscription />} />
-            <Route path="/empire" element={<EmpireLanding />} />
-            <Route path="/pro" element={<RetailLanding />} />
+      {/* 🚀 إضافة Routes خارجية لتحتضن العالمين (V2 والقديم) 🚀 */}
+      <Routes>
+        
+        {/* البوابة السرية لبيئة V2 المستقلة تماماً */}
+        <Route path="/v2/*" element={<V2Router session={session} supplier={supplier} />} />
 
-            {/* 🔒 أقسام باقة Pro ERP (تُقفل بعد 7 أيام) */}
-            <Route path="/clients" element={<PremiumGuard><Clients isWholesaler={true} /></PremiumGuard>} />
-            <Route path="/contracts" element={<PremiumGuard><Contracts /></PremiumGuard>} />
-            <Route path="/fleet-b2b" element={<PremiumGuard><Fleet /></PremiumGuard>} />
-            <Route path="/hr" element={<PremiumGuard><SupplierHR /></PremiumGuard>} />
-            <Route path="/expenses" element={<PremiumGuard><SupplierExpenses /></PremiumGuard>} />
-            <Route path="/accounting" element={<PremiumGuard><SupplierAccounting /></PremiumGuard>} />
-            <Route path="/fiscal" element={<PremiumGuard><Fiscal isWholesaler={true} /></PremiumGuard>} />
-            <Route path="/team" element={<PremiumGuard><SupplierTeam /></PremiumGuard>} />
-            <Route path="/caisses" element={<PremiumGuard><Caisses isWholesaler={true} /></PremiumGuard>} />
-            <Route path="/production" element={<PremiumGuard><SupplierProduction /></PremiumGuard>} />
+        {/* 🛡️ المنصة القديمة: تمت إضافة /* في المسار وإغلاق الأقواس في الأسفل */}
+        <Route path="/*" element={
+          isWholesaler ? (
+            <WholesalerDashboard supplier={supplier}>
+              <Routes>
+                {/* ✅ أقسام باقة Starter (مجانية ودائمة) */}
+                <Route path="/" element={<SupplierOverview />} />
+                <Route path="/stock" element={<SupplierStock isWholesaler={true} />} />
+                <Route path="/invoices" element={<SupplierInvoices />} />
+                <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
+                <Route path="/raw-purchases" element={<RawMaterialPurchases />} />
+                <Route path="/pos-b2b" element={<SupplierPOS />} />
+                <Route path="/orders" element={<SupplierOrders />} />
+                <Route path="/settings" element={<SupplierSettings />} />
+                <Route path="/subscription" element={<SupplierSubscription />} />
+                <Route path="/empire" element={<EmpireLanding />} />
+                <Route path="/pro" element={<RetailLanding />} />
 
-            {/* 🛑 أقسام باقة Enterprise (تُقفل بعد 7 أيام) */}
-            <Route path="/analytics" element={<PremiumGuard><AnalyticsB2B /></PremiumGuard>} />
-            <Route path="/ai-advisor" element={<PremiumGuard><AISmartAdvisor /></PremiumGuard>} />
-            <Route path="/tender-radar" element={<PremiumGuard><TenderRadar /></PremiumGuard>} />
-            <Route path="/logistics-bourse" element={<PremiumGuard><LogisticsBourse /></PremiumGuard>} />
-            <Route path="/fleet-market" element={<PremiumGuard><FleetManagement /></PremiumGuard>} /> 
-            <Route path="/market-orders" element={<PremiumGuard><MarketplaceOrders /></PremiumGuard>} />
-          </Routes>
-        </WholesalerDashboard>
-      ) : (
-        <RetailerLayout storeName={storeName} storeInitial={storeInitial} language={language}>
-          <Routes>
-            <Route path="/" element={<Overview />} />
-            <Route path="/products" element={<Products />} />                     
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/wallet" element={<RetailerWallet />} />
-            <Route path="/settings" element={<RetailerSettings />} />
-            <Route path="/pos" element={<POS />} />
-            <Route path="/expenses" element={<Expenses />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/hr" element={<HR />} />
-            <Route path="/fiscal" element={<Fiscal />} />
-            <Route path="/caisses" element={<Caisses />} />
-            <Route path="/devis" element={<Devis />} />
-            <Route path="/bc" element={<BC />} />
-            <Route path="/bl" element={<BL />} />
-            <Route path="/avoir" element={<Avoir />} />
-            <Route path="/fiches-expedition" element={<Expeditions />} />
-            <Route path="/factures-achat" element={<FacturesAchat />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/accounting" element={<Accounting />} />
-            <Route path="/suppliers" element={<ExternalSuppliers />} />
-            <Route path="/purchases" element={<Purchases />} />
-            <Route path="/subscription" element={<RetailerSubscription />} />
-          </Routes>
-        </RetailerLayout>
-      )}
+                {/* 🔒 أقسام باقة Pro ERP */}
+                <Route path="/clients" element={<PremiumGuard><Clients isWholesaler={true} /></PremiumGuard>} />
+                <Route path="/contracts" element={<PremiumGuard><Contracts /></PremiumGuard>} />
+                <Route path="/fleet-b2b" element={<PremiumGuard><Fleet /></PremiumGuard>} />
+                <Route path="/hr" element={<PremiumGuard><SupplierHR /></PremiumGuard>} />
+                <Route path="/expenses" element={<PremiumGuard><SupplierExpenses /></PremiumGuard>} />
+                <Route path="/accounting" element={<PremiumGuard><SupplierAccounting /></PremiumGuard>} />
+                <Route path="/fiscal" element={<PremiumGuard><Fiscal isWholesaler={true} /></PremiumGuard>} />
+                <Route path="/team" element={<PremiumGuard><SupplierTeam /></PremiumGuard>} />
+                <Route path="/caisses" element={<PremiumGuard><Caisses isWholesaler={true} /></PremiumGuard>} />
+                <Route path="/production" element={<PremiumGuard><SupplierProduction /></PremiumGuard>} />
+
+                {/* 🛑 أقسام باقة Enterprise */}
+                <Route path="/analytics" element={<PremiumGuard><AnalyticsB2B /></PremiumGuard>} />
+                <Route path="/ai-advisor" element={<PremiumGuard><AISmartAdvisor /></PremiumGuard>} />
+                <Route path="/tender-radar" element={<PremiumGuard><TenderRadar /></PremiumGuard>} />
+                <Route path="/logistics-bourse" element={<PremiumGuard><LogisticsBourse /></PremiumGuard>} />
+                <Route path="/fleet-market" element={<PremiumGuard><FleetManagement /></PremiumGuard>} /> 
+                <Route path="/market-orders" element={<PremiumGuard><MarketplaceOrders /></PremiumGuard>} />
+              </Routes>
+            </WholesalerDashboard>
+          ) : (
+            <RetailerLayout storeName={storeName} storeInitial={storeInitial} language={language}>
+              <Routes>
+                <Route path="/" element={<Overview />} />
+                <Route path="/products" element={<Products />} />                     
+                <Route path="/orders" element={<Orders />} />
+                <Route path="/wallet" element={<RetailerWallet />} />
+                <Route path="/settings" element={<RetailerSettings />} />
+                <Route path="/pos" element={<POS />} />
+                <Route path="/expenses" element={<Expenses />} />
+                <Route path="/invoices" element={<Invoices />} />
+                <Route path="/hr" element={<HR />} />
+                <Route path="/fiscal" element={<Fiscal />} />
+                <Route path="/caisses" element={<Caisses />} />
+                <Route path="/devis" element={<Devis />} />
+                <Route path="/bc" element={<BC />} />
+                <Route path="/bl" element={<BL />} />
+                <Route path="/avoir" element={<Avoir />} />
+                <Route path="/fiches-expedition" element={<Expeditions />} />
+                <Route path="/factures-achat" element={<FacturesAchat />} />
+                <Route path="/clients" element={<Clients />} />
+                <Route path="/accounting" element={<Accounting />} />
+                <Route path="/suppliers" element={<ExternalSuppliers />} />
+                <Route path="/purchases" element={<Purchases />} />
+                <Route path="/subscription" element={<RetailerSubscription />} />
+              </Routes>
+            </RetailerLayout>
+          )
+        } />  {/* 🎯 تم إصلاح الخطأ 1: إغلاق عنصر الـ Route الخارجي هنا */}
+
+      </Routes> {/* 🎯 تم إصلاح الخطأ 2: إغلاق الوسم الشامل */}
     </BrowserRouter>
   );
 }
 
-// 💎 مكون التاجر الداعم لإخفاء السيدبار السلس
+// 💎 مكون التاجر الداعم لإخفاء السيدبار السلس (يبقى كما هو بدون تغيير)
 const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
