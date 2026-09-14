@@ -128,9 +128,14 @@ export default function ProjectPath() {
     }
   }[language];
 
-  // 🚀 القاموس الاعتراضي لترجمة البيانات القادمة من قاعدة البيانات ديناميكياً
+  // 🚀 القاموس الاعتراضي الشامل لترجمة البيانات القادمة من قاعدة البيانات ديناميكياً
   const dbTranslations = {
     "تصميم معماري": { fr: "Conception Architecturale", en: "Architectural Design" },
+    "التصميم المعماري (البلان)": { fr: "Conception Architecturale (Plan)", en: "Architectural Design (Plan)" },
+    "الرفع الطبوغرافي": { fr: "Relevé Topographique", en: "Topographic Survey" },
+    "دراسة التربة (Laboratoire)": { fr: "Étude de Sol (Laboratoire)", en: "Soil Study (Laboratory)" },
+    "دراسات الخرسانة والحديد": { fr: "Études de Béton et Acier", en: "Concrete & Steel Studies" },
+    "استخراج رخصة البناء": { fr: "Obtention du Permis de Construire", en: "Building Permit" },
     "هندسة ودراسات": { fr: "Ingénierie et Études", en: "Engineering & Studies" },
     "خدمات استشارية": { fr: "Services de Conseil", en: "Consulting Services" },
     "التصاميم الهندسية": { fr: "Conceptions Techniques", en: "Technical Designs" },
@@ -141,12 +146,25 @@ export default function ProjectPath() {
     "تكاليف الوكالة الحضرية والوقاية المدنية": { fr: "Frais Agence Urbaine & Protection Civile", en: "Urban Agency & Civil Protection Fees" },
     "وثائق الملكية": { fr: "Documents de Propriété", en: "Property Documents" },
     "تكلفة المشروع": { fr: "Coût du Projet", en: "Project Cost" },
-    "عقود المهندسين": { fr: "Contrats d'Ingénieurs", en: "Engineers Contracts" }
+    "عقود المهندسين": { fr: "Contrats d'Ingénieurs", en: "Engineers Contracts" },
+    "رخصة": { fr: "Licence", en: "License" },
+    "إجمالي": { fr: "Total", en: "Total" },
+    "متر": { fr: "Mètre", en: "Meter" },
+    "متر مربع": { fr: "Mètre Carré", en: "Square Meter" },
+    "يوم": { fr: "Jour", en: "Day" }
   };
 
   const translateDB = (text) => {
+    if (!text) return text;
     if (language === 'ar') return text;
-    return dbTranslations[text]?.[language] || text;
+    const clean = text.trim();
+    if (dbTranslations[clean] && dbTranslations[clean][language]) {
+      return dbTranslations[clean][language];
+    }
+    for (const [arKey, trans] of Object.entries(dbTranslations)) {
+      if (clean.includes(arKey)) return trans[language];
+    }
+    return text;
   };
 
   // 💎 كلاسات التصميم المتجاوبة مع الإضاءة
@@ -158,11 +176,18 @@ export default function ProjectPath() {
   }, []);
 
   useEffect(() => {
-    if (user || !user) {
-      loadStageData(selectedStage);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStage, user]);
+    loadStageData(selectedStage);
+    
+    // 🚀 استماع لـ Session لحل مشكلة التأخر
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        loadStageData(selectedStage, session.user);
+      }
+    });
+    return () => { if(authListener) authListener.subscription.unsubscribe(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStage, language]);
 
   const initData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -170,7 +195,7 @@ export default function ProjectPath() {
     setLoading(false); 
   };
 
-  const loadStageData = async (stageId) => {
+  const loadStageData = async (stageId, passedUser = user) => {
     setLoading(true);
     setProviders([]);
     setSelectedService(null);
@@ -178,8 +203,8 @@ export default function ProjectPath() {
       const [servicesRes, checklistsRes, progressRes, teamRes, totalTasksRes] = await Promise.all([
         supabase.from('services').select('*').eq('stage_id', stageId),
         supabase.from('checklists').select('*').order('sort_order'),
-        user ? supabase.from('user_progress').select('task_id').eq('user_id', user.id) : { data: [] },
-        user ? supabase.from('milestone_assignments').select('*').eq('user_id', user.id).eq('stage_id', stageId) : { data: [] },
+        passedUser ? supabase.from('user_progress').select('task_id').eq('user_id', passedUser.id) : { data: [] },
+        passedUser ? supabase.from('milestone_assignments').select('*').eq('user_id', passedUser.id).eq('stage_id', stageId) : { data: [] },
         supabase.from('checklists').select('id', { count: 'exact', head: true })
       ]);
 

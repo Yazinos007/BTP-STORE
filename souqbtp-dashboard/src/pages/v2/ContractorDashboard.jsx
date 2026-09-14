@@ -15,7 +15,6 @@ export default function ContractorDashboard() {
   const [user, setUser] = useState(null);
   
   const [profile, setProfile] = useState({ full_name: '', phone: '', city: '', project_name: '' });
-  // 🚀 إعطاء قيم افتراضية 0 لمنع ظهور البطاقات فارغة قبل التحميل
   const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0 });
   const [conversations, setConversations] = useState([]);
   const [onlineProviders, setOnlineProviders] = useState([]);
@@ -25,9 +24,7 @@ export default function ContractorDashboard() {
   const [documents, setDocuments] = useState([]);
   const [docCategory, setDocCategory] = useState('رخصة بناء');
   
-  // 🚀 حالة الميزانية الجديدة
   const [budget, setBudget] = useState({ total: 0, spent: 0, isCalculated: false });
-  
   const [appointments, setAppointments] = useState([]);
   const [calendarDate, setCalendarDate] = useState(new Date());
   
@@ -35,7 +32,6 @@ export default function ContractorDashboard() {
   const [saveStatus, setSaveStatus] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
 
-  // 🌍 قاموس الترجمة الشامل 
   const translations = {
     ar: {
       pageTitle: "إدارة الأوراش والميدان",
@@ -239,10 +235,21 @@ export default function ContractorDashboard() {
       : 'bg-white/90 backdrop-blur-xl border-white text-slate-800 shadow-lg hover:shadow-[0_0_35px_rgba(59,130,246,0.4)] hover:border-blue-400'
   }`;
 
+  // 🚀 حل مشكلة التحديث: استماع دائم لحالة المستخدم (Session)
   useEffect(() => {
     fetchDashboardData();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        fetchDashboardData();
+      }
+    });
+
+    return () => {
+      if(authListener) authListener.subscription.unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, [language]); 
 
   const fetchDashboardData = async () => {
     try {
@@ -261,7 +268,6 @@ export default function ContractorDashboard() {
       if (user) {
         setUser(user);
 
-        // جلب البيانات المتزامنة
         const [servicesRes, checklistsRes, progressRes, profileRes] = await Promise.all([
           supabase.from('services').select('id, stage_id'),
           supabase.from('checklists').select('id, service_id'),
@@ -302,7 +308,6 @@ export default function ContractorDashboard() {
           remaining: Math.max(0, totalOverallTasks - totalCompletedTasks)
         };
 
-        // 🚀 محرك الميزانية: جلب إجمالي ما تم حسابه في "الحاسبة الذكية" وخصم المصاريف
         const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
         const { data: expenses } = await supabase.from('project_expenses').select('amount').eq('user_id', user.id);
         
@@ -311,7 +316,6 @@ export default function ContractorDashboard() {
         
         currentBudget = { total: estBudget, spent: totalSpent, isCalculated: estBudget > 0 };
 
-        // المحادثات والبيانات الأخرى
         const { data: convos } = await supabase.from('conversations').select('id, provider_id, architect_id').eq('client_id', user.id);
         if (convos) {
           const convosWithDetails = await Promise.all(convos.map(async (c) => {
@@ -357,7 +361,6 @@ export default function ContractorDashboard() {
         if (appsData) setAppointments(appsData);
         
       } else {
-        // حالة الزائر: إظهار إحصائيات مبهرة لتسويق المنصة
         syncedStages = [
           { id: 1, icon: '📝', color: '#3b82f6', percent: 100, completed: 9, total: 9 },
           { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
@@ -365,8 +368,6 @@ export default function ContractorDashboard() {
           { id: 4, icon: '📜', color: '#22c55e', percent: 0, completed: 0, total: 4 }
         ];
         syncedStats = { progress: 57, completed: 16, remaining: 12 };
-        
-        // 🚀 أرقام وهمية للرادار التسويقي
         currentBudget = { total: 320500, spent: 145000, isCalculated: true }; 
       }
 
@@ -473,7 +474,6 @@ export default function ContractorDashboard() {
     </div>
   );
 
-  // 🚀 حساب نسبة شريط الميزانية ولونه النفسي
   const budgetPercent = budget.total > 0 ? Math.min((budget.spent / budget.total) * 100, 100) : 0;
   
   let radarColor = "from-emerald-400 to-emerald-600";
@@ -593,7 +593,6 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* 🚀 قسم الميزانية الإجمالية المربوط بالحاسبة */}
         <div className={cardClass}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
             <h2 className="text-xl font-black flex items-center gap-2">{t.budgetTitle}</h2>
@@ -610,14 +609,13 @@ export default function ContractorDashboard() {
             </div>
           </div>
           
-          {/* إظهار رسالة التشجيع إذا لم يحسب الميزانية، أو عرض الميزانية بوضوح */}
           {!budget.isCalculated ? (
-            <div className={`text-center py-8 rounded-xl mt-4 border border-dashed flex flex-col items-center justify-center gap-4 ${isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-slate-300 bg-blue-50/50'}`}>
-              <p className={`font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.noBudget}</p>
-              <Link to="/v2/cost-calculator" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-black shadow-lg shadow-blue-500/30 transition-transform hover:-translate-y-1">
-                {t.calcBtn}
-              </Link>
-            </div>
+             <div className={`text-center py-8 rounded-xl mt-4 border border-dashed flex flex-col items-center justify-center gap-4 ${isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-slate-300 bg-blue-50/50'}`}>
+               <p className={`font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.noBudget}</p>
+               <Link to="/v2/cost-calculator" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-black shadow-lg shadow-blue-500/30 transition-transform hover:-translate-y-1">
+                 {t.calcBtn}
+               </Link>
+             </div>
           ) : (
             <div className={`text-center py-6 rounded-xl mt-4 border-2 ${isDarkMode ? 'bg-slate-900/50 border-emerald-500/30' : 'bg-emerald-50/50 border-emerald-200'}`}>
               <p className="font-bold text-slate-500 mb-1">{t.budgetCalculated}</p>
@@ -742,7 +740,6 @@ export default function ContractorDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
-          {/* 🚀 رادار الميزانية الذكي (متصل بالكامل مع الحاسبة) */}
           <div className={cardClass}>
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
               <h2 className="text-xl font-black flex items-center gap-2"><Wallet className="text-blue-500" /> {t.radarTitle}</h2>
