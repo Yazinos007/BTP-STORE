@@ -28,7 +28,7 @@ export default function ProjectPath() {
   const [assignType, setAssignType] = useState('private');
   const [assignForm, setAssignForm] = useState({ name: '', phone: '', providerId: '' });
 
-  // 🌍 قاموس الترجمة الشامل
+  // 🌍 قاموس الترجمة الشامل للنصوص الثابتة
   const t = {
     ar: {
       title: "رحلة بناء مشروعك",
@@ -128,6 +128,27 @@ export default function ProjectPath() {
     }
   }[language];
 
+  // 🚀 القاموس الاعتراضي لترجمة البيانات القادمة من قاعدة البيانات ديناميكياً
+  const dbTranslations = {
+    "تصميم معماري": { fr: "Conception Architecturale", en: "Architectural Design" },
+    "هندسة ودراسات": { fr: "Ingénierie et Études", en: "Engineering & Studies" },
+    "خدمات استشارية": { fr: "Services de Conseil", en: "Consulting Services" },
+    "التصاميم الهندسية": { fr: "Conceptions Techniques", en: "Technical Designs" },
+    "التحقق من التصاميم الهندسية": { fr: "Vérification des Conceptions", en: "Design Verification" },
+    "التوقيع على النسخة النهائية من التصميم": { fr: "Signature Version Finale", en: "Final Design Signature" },
+    "دراسات تقنية": { fr: "Études Techniques", en: "Technical Studies" },
+    "حساب تكاليف هيكلية": { fr: "Calcul des Coûts Structurels", en: "Structural Cost Calculation" },
+    "تكاليف الوكالة الحضرية والوقاية المدنية": { fr: "Frais Agence Urbaine & Protection Civile", en: "Urban Agency & Civil Protection Fees" },
+    "وثائق الملكية": { fr: "Documents de Propriété", en: "Property Documents" },
+    "تكلفة المشروع": { fr: "Coût du Projet", en: "Project Cost" },
+    "عقود المهندسين": { fr: "Contrats d'Ingénieurs", en: "Engineers Contracts" }
+  };
+
+  const translateDB = (text) => {
+    if (language === 'ar') return text;
+    return dbTranslations[text]?.[language] || text;
+  };
+
   // 💎 كلاسات التصميم المتجاوبة مع الإضاءة
   const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-800 shadow-md';
   const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
@@ -137,15 +158,15 @@ export default function ProjectPath() {
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user || !user) {
       loadStageData(selectedStage);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStage, user]);
 
   const initData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) setUser(user);
-    // إخفاء التحميل حتى لو لم يكن هناك مستخدم لإظهار التصميم
     setLoading(false); 
   };
 
@@ -168,7 +189,7 @@ export default function ProjectPath() {
         const completedIds = progressRes.data.map(p => p.task_id);
         setUserProgress(completedIds);
         
-        // حساب التقدم الإجمالي
+        // 🚀 حساب التقدم الإجمالي
         const total = totalTasksRes.count || 28;
         const pct = total > 0 ? Math.round((completedIds.length / total) * 100) : 0;
         setOverallProgress(pct);
@@ -200,8 +221,7 @@ export default function ProjectPath() {
 
     setUserProgress(newProgress);
     
-    // تحديث النسبة فورياً في الواجهة
-    const total = checklists.length > 0 ? checklists.length : 28; // fallback
+    const total = checklists.length > 0 ? checklists.length : 28;
     setOverallProgress(Math.round((newProgress.length / total) * 100));
   };
 
@@ -224,10 +244,9 @@ export default function ProjectPath() {
       alert(t.loginRequired);
       return;
     }
-    if (!confirm(`${t.bookConfirm} "${providerName}" (${selectedService?.name})?`)) return;
+    if (!confirm(`${t.bookConfirm} "${providerName}" (${translateDB(selectedService?.name)})?`)) return;
 
     try {
-      // البحث عن محادثة قائمة
       const { data: existingChat } = await supabase.from('conversations')
         .select('id').eq('client_id', user.id).eq('provider_id', providerId).maybeSingle();
       
@@ -239,7 +258,7 @@ export default function ProjectPath() {
           client_id: user.id, 
           client_name: userData.user?.user_metadata?.full_name || 'Client',
           provider_id: providerId, 
-          last_message: `Inquiry: ${selectedService.name}`
+          last_message: `Inquiry: ${translateDB(selectedService.name)}`
         }]).select().single();
         
         chatId = newChat.id;
@@ -250,14 +269,12 @@ export default function ProjectPath() {
         }]);
       }
 
-      // إضافة موعد مبدئي
       const today = new Date().toISOString().split('T')[0];
       await supabase.from('appointments').insert([{
           user_id: user.id, provider_id: providerId, service_id: selectedService.id,
           appointment_date: today, status: 'pending', notes: `طلب من صفحة المراحل: ${selectedService.name}`
       }]);
 
-      // التوجيه للمحادثة
       const token = chatId.toString().split('').map(c => c.charCodeAt(0).toString(16)).join('');
       navigate(`/v2/chat/${token}`);
 
@@ -306,7 +323,7 @@ export default function ProjectPath() {
           </button>
         </div>
         
-        {/* شريط التقدم الرائع */}
+        {/* شريط التقدم */}
         <div className={`w-full h-8 rounded-full overflow-hidden shadow-inner p-1 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
           <div 
             className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-black text-xs transition-all duration-1000 ease-out"
@@ -332,7 +349,7 @@ export default function ProjectPath() {
         )}
       </div>
 
-      {/* 🧭 أزرار اختيار المراحل (Tabs) */}
+      {/* 🧭 أزرار اختيار المراحل */}
       <div className="flex flex-wrap gap-3 mb-8">
         {t.stages.map(stage => {
           const isActive = selectedStage === stage.id;
@@ -371,8 +388,10 @@ export default function ProjectPath() {
               
               return (
                 <div key={service.id} className={`rounded-3xl border-2 p-6 transition-all hover:shadow-xl ${cardBg} hover:-translate-y-1`}>
+                  
+                  {/* 🚀 ترجمة اسم الخدمة القادمة من قاعدة البيانات */}
                   <h3 className={`text-xl font-black mb-5 pb-3 border-b ${isDarkMode ? 'border-slate-700 text-blue-300' : 'border-slate-100 text-blue-900'}`}>
-                    {service.name}
+                    {translateDB(service.name)} 
                   </h3>
                   
                   <div className="space-y-3 mb-6">
@@ -391,7 +410,8 @@ export default function ProjectPath() {
                           <div className={`mt-0.5 shrink-0 ${isDone ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`}>
                             {isDone ? <CheckCircle2 size={20} className="fill-emerald-100 dark:fill-emerald-900" /> : <Circle size={20} />}
                           </div>
-                          <span className="font-bold text-sm leading-snug">{task.task_description}</span>
+                          {/* 🚀 ترجمة اسم المهمة القادمة من قاعدة البيانات */}
+                          <span className="font-bold text-sm leading-snug">{translateDB(task.task_description)}</span>
                         </div>
                       )
                     })}
@@ -412,11 +432,11 @@ export default function ProjectPath() {
         )}
       </div>
 
-      {/* 👷 نافذة مزودي الخدمة (تظهر في الأسفل عند الضغط) */}
+      {/* 👷 نافذة مزودي الخدمة */}
       {selectedService && (
         <div className={`p-6 md:p-8 rounded-3xl border-2 animate-slide-up ${cardBg}`}>
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-black">{t.providersFor} <span className="text-blue-500">{selectedService.name}</span></h3>
+            <h3 className="text-xl font-black">{t.providersFor} <span className="text-blue-500">{translateDB(selectedService.name)}</span></h3>
             <button onClick={() => setSelectedService(null)} className="p-2 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors"><X size={20}/></button>
           </div>
           
@@ -442,7 +462,7 @@ export default function ProjectPath() {
         </div>
       )}
 
-      {/* 👤 نافذة تعيين مسؤول للمرحلة (Modal) */}
+      {/* 👤 نافذة تعيين مسؤول للمرحلة */}
       {isAssignModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsAssignModalOpen(false)}>
           <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl animate-fade-in border-2 ${isDarkMode ? 'bg-slate-800 border-slate-600' : 'bg-white border-white'}`} onClick={e => e.stopPropagation()}>

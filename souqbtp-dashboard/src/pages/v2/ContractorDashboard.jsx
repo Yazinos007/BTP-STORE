@@ -18,7 +18,7 @@ export default function ContractorDashboard() {
   const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0 });
   const [conversations, setConversations] = useState([]);
   const [onlineProviders, setOnlineProviders] = useState([]);
-  const [stageProgress, setStageProgress] = useState([]); // 🚀 أصبحت تخزن الأرقام فقط
+  const [stageProgress, setStageProgress] = useState([]); 
   const [team, setTeam] = useState([]);
   const [reports, setReports] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -31,12 +31,13 @@ export default function ContractorDashboard() {
   const [saveStatus, setSaveStatus] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
 
-  // 🌍 قاموس الترجمة الشامل (بما فيه أسماء المراحل)
+  // 🌍 قاموس الترجمة الشامل 
   const translations = {
     ar: {
       pageTitle: "إدارة الأوراش والميدان",
       calcBtn: "الحاسبة الذكية لتكاليف الورش",
       rateBtn: "تقييم الحرفيين",
+      projectPathBtn: "مسار الورش",
       inboxTitle: "صندوق الرسائل",
       onlineStatus: "متصل - يوجد",
       available: "متاحين",
@@ -67,10 +68,7 @@ export default function ContractorDashboard() {
       saveBtn: "💾 حفظ التغييرات",
       statsTitle: "إحصائيات تفصيلية",
       progByStage: "التقدم حسب المرحلة:",
-      stage1: "التخطيط",
-      stage2: "التنفيذ",
-      stage3: "التشطيب",
-      stage4: "التحفيظ",
+      stageNames: { 1: "التخطيط", 2: "التنفيذ", 3: "التشطيب", 4: "التحفيظ" },
       taskUnit: "مهمة",
       teamTitle: "فريق عمل الورش",
       noTeam: "لم تقم بتعيين أي فريق عمل حتى الآن.",
@@ -98,6 +96,7 @@ export default function ContractorDashboard() {
       pageTitle: "Gestion des Chantiers",
       calcBtn: "Calculateur Intelligent",
       rateBtn: "Évaluation Artisans",
+      projectPathBtn: "Parcours du Projet",
       inboxTitle: "Boîte de Réception",
       onlineStatus: "En ligne -",
       available: "disponibles",
@@ -128,10 +127,7 @@ export default function ContractorDashboard() {
       saveBtn: "💾 Enregistrer",
       statsTitle: "Statistiques Détaillées",
       progByStage: "Progression par étape :",
-      stage1: "Planification",
-      stage2: "Exécution",
-      stage3: "Finition",
-      stage4: "Enregistrement",
+      stageNames: { 1: "Planification", 2: "Exécution", 3: "Finition", 4: "Enregistrement" },
       taskUnit: "tâche(s)",
       teamTitle: "Équipe du Chantier",
       noTeam: "Aucune équipe assignée.",
@@ -159,6 +155,7 @@ export default function ContractorDashboard() {
       pageTitle: "Site Management",
       calcBtn: "Smart Cost Calculator",
       rateBtn: "Artisan Ratings",
+      projectPathBtn: "Project Path",
       inboxTitle: "Inbox",
       onlineStatus: "Online -",
       available: "available",
@@ -189,10 +186,7 @@ export default function ContractorDashboard() {
       saveBtn: "💾 Save Changes",
       statsTitle: "Detailed Statistics",
       progByStage: "Progress by Stage:",
-      stage1: "Planning",
-      stage2: "Execution",
-      stage3: "Finishing",
-      stage4: "Registration",
+      stageNames: { 1: "Planning", 2: "Execution", 3: "Finishing", 4: "Registration" },
       taskUnit: "task(s)",
       teamTitle: "Site Team",
       noTeam: "No team assigned yet.",
@@ -234,83 +228,135 @@ export default function ContractorDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
   const fetchDashboardData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUser(user);
 
-      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      if (profileData) setProfile(profileData);
+      // 🚀 بيانات المراحل الأساسية
+      let syncedStages = [
+        { id: 1, icon: '📝', color: '#3b82f6', percent: 0, completed: 0, total: 9 },
+        { id: 2, icon: '🏗️', color: '#f97316', percent: 0, completed: 0, total: 11 },
+        { id: 3, icon: '🎨', color: '#a855f7', percent: 0, completed: 0, total: 4 },
+        { id: 4, icon: '📜', color: '#22c55e', percent: 0, completed: 0, total: 4 }
+      ];
+      
+      let syncedStats = { progress: 0, completed: 0, remaining: 0 };
 
-      const { count: totalTasks } = await supabase.from('checklists').select('*', { count: 'exact', head: true });
-      const { count: completedTasks } = await supabase.from('user_progress').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
-      const total = totalTasks || 28;
-      const completed = completedTasks || 0;
-      setStats({ progress: total > 0 ? Math.round((completed / total) * 100) : 0, completed, remaining: total - completed });
+      if (user) {
+        setUser(user);
 
-      const { data: convos } = await supabase.from('conversations').select('id, provider_id, architect_id').eq('client_id', user.id);
-      if (convos) {
-        const convosWithDetails = await Promise.all(convos.map(async (c) => {
-          let name = 'غير معروف', icon = '👤', partnerId = null;
-          if (c.architect_id) {
-            const { data: arch } = await supabase.from('architects').select('full_name, agency_name').eq('id', c.architect_id).single();
-            name = arch ? `${arch.full_name} (${arch.agency_name || 'مهندس'})` : 'مهندس';
-            partnerId = c.architect_id; icon = '📐';
-          } else if (c.provider_id) {
-            const { data: prov } = await supabase.from('providers').select('full_name').eq('id', c.provider_id).single();
-            name = prov ? prov.full_name : t.master;
-            partnerId = c.provider_id; icon = '👷';
+        // 🚀 1. جلب المهام والخدمات وتقدم المستخدم في نفس اللحظة لضمان التطابق التام
+        const [servicesRes, checklistsRes, progressRes, profileRes] = await Promise.all([
+          supabase.from('services').select('id, stage_id'),
+          supabase.from('checklists').select('id, service_id'),
+          supabase.from('user_progress').select('task_id').eq('user_id', user.id),
+          supabase.from('profiles').select('*').eq('id', user.id).single()
+        ]);
+
+        if (profileRes.data) setProfile(profileRes.data);
+
+        const services = servicesRes.data || [];
+        const checklists = checklistsRes.data || [];
+        const userProgress = progressRes.data?.map(p => p.task_id) || [];
+
+        // 🚀 2. بناء الدوائر السفلية وحساب نسبة كل مرحلة
+        syncedStages = [1, 2, 3, 4].map(stageId => {
+          const stageServices = services.filter(s => s.stage_id === stageId).map(s => s.id);
+          const stageTasks = checklists.filter(t => stageServices.includes(t.service_id));
+          const stageTotal = stageTasks.length > 0 ? stageTasks.length : syncedStages.find(s=>s.id === stageId).total;
+          
+          const stageTaskIds = stageTasks.map(t => t.id);
+          const stageCompleted = userProgress.filter(id => stageTaskIds.includes(id)).length;
+          
+          return {
+            id: stageId,
+            icon: syncedStages.find(s=>s.id === stageId).icon,
+            color: syncedStages.find(s=>s.id === stageId).color,
+            completed: stageCompleted,
+            total: stageTotal,
+            percent: stageTotal > 0 ? Math.round((stageCompleted / stageTotal) * 100) : 0
+          };
+        });
+
+        // 🚀 3. المزامنة العظمى: بناء البطاقات العلوية من مجموع الدوائر السفلية مباشرة لتستحيل مخالفتها
+        const totalOverallTasks = syncedStages.reduce((acc, stage) => acc + stage.total, 0) || 28;
+        const totalCompletedTasks = syncedStages.reduce((acc, stage) => acc + stage.completed, 0);
+        
+        syncedStats = {
+          progress: totalOverallTasks > 0 ? Math.round((totalCompletedTasks / totalOverallTasks) * 100) : 0,
+          completed: totalCompletedTasks,
+          remaining: Math.max(0, totalOverallTasks - totalCompletedTasks)
+        };
+
+        // باقي البيانات...
+        const { data: convos } = await supabase.from('conversations').select('id, provider_id, architect_id').eq('client_id', user.id);
+        if (convos) {
+          const convosWithDetails = await Promise.all(convos.map(async (c) => {
+            let name = 'غير معروف', icon = '👤', partnerId = null;
+            if (c.architect_id) {
+              const { data: arch } = await supabase.from('architects').select('full_name, agency_name').eq('id', c.architect_id).single();
+              name = arch ? `${arch.full_name} (${arch.agency_name || 'مهندس'})` : 'مهندس';
+              partnerId = c.architect_id; icon = '📐';
+            } else if (c.provider_id) {
+              const { data: prov } = await supabase.from('providers').select('full_name').eq('id', c.provider_id).single();
+              name = prov ? prov.full_name : t.master;
+              partnerId = c.provider_id; icon = '👷';
+            }
+            const { data: msgs } = await supabase.from('messages').select('content, created_at, sender_type').eq('conversation_id', c.id).is('deleted_by_client', false).order('created_at', { ascending: false }).limit(1);
+            const { count: unread } = await supabase.from('messages').select('*', { count: 'exact', head: true }).eq('conversation_id', c.id).eq('sender_type', 'provider').is('is_read', false);
+            return { ...c, partnerName: name, partnerId, icon, lastMsg: msgs?.[0], unread: unread || 0 };
+          }));
+          setConversations(convosWithDetails);
+        }
+
+        const globalChannel = supabase.channel('global_radar_room', { config: { presence: { key: 'client_' + user.id } } });
+        globalChannel.on('presence', { event: 'sync' }, () => {
+          const state = globalChannel.presenceState();
+          const onlineIds = [];
+          for (const key in state) {
+            if (state[key][0]?.type === 'provider') onlineIds.push(state[key][0].id.toString());
           }
-          const { data: msgs } = await supabase.from('messages').select('content, created_at, sender_type').eq('conversation_id', c.id).is('deleted_by_client', false).order('created_at', { ascending: false }).limit(1);
-          const { count: unread } = await supabase.from('messages').select('*', { count: 'exact', head: true }).eq('conversation_id', c.id).eq('sender_type', 'provider').is('is_read', false);
-          return { ...c, partnerName: name, partnerId, icon, lastMsg: msgs?.[0], unread: unread || 0 };
-        }));
-        setConversations(convosWithDetails);
+          setOnlineProviders(onlineIds);
+        }).subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') await globalChannel.track({ type: 'client', id: user.id });
+        });
+
+        const { data: teamData } = await supabase.from('milestone_assignments').select('*').eq('user_id', user.id).order('stage_id', { ascending: true });
+        if (teamData) setTeam(teamData);
+
+        const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        const { data: expenses } = await supabase.from('project_expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+        const estBudget = estimate ? parseFloat(estimate.total_cost || estimate.total_budget || 250000) : 250000;
+        const totalSpent = expenses ? expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) : 0;
+        setBudget({ total: estBudget, spent: totalSpent, expenses: expenses || [] });
+
+        const { data: reportsData } = await supabase.from('site_reports').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10);
+        if (reportsData) setReports(reportsData);
+
+        const { data: docsData } = await supabase.from('project_documents').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+        if (docsData) setDocuments(docsData);
+
+        const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', user.id);
+        if (appsData) setAppointments(appsData);
+        
+      } else {
+        // حالة الزائر (بيانات وهمية متطابقة بنسبة 100%)
+        syncedStages = [
+          { id: 1, icon: '📝', color: '#3b82f6', percent: 56, completed: 5, total: 9 },
+          { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
+          { id: 3, icon: '🎨', color: '#a855f7', percent: 50, completed: 2, total: 4 },
+          { id: 4, icon: '📜', color: '#22c55e', percent: 25, completed: 1, total: 4 }
+        ];
+        syncedStats = { progress: 54, completed: 15, remaining: 13 }; // المجموع مطابق تماماً: 5+7+2+1 = 15
       }
 
-      const globalChannel = supabase.channel('global_radar_room', { config: { presence: { key: 'client_' + user.id } } });
-      globalChannel.on('presence', { event: 'sync' }, () => {
-        const state = globalChannel.presenceState();
-        const onlineIds = [];
-        for (const key in state) {
-          if (state[key][0]?.type === 'provider') onlineIds.push(state[key][0].id.toString());
-        }
-        setOnlineProviders(onlineIds);
-      }).subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') await globalChannel.track({ type: 'client', id: user.id });
-      });
-
-      const { data: teamData } = await supabase.from('milestone_assignments').select('*').eq('user_id', user.id).order('stage_id', { ascending: true });
-      if (teamData) setTeam(teamData);
-
-      const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-      const { data: expenses } = await supabase.from('project_expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-      const estBudget = estimate ? parseFloat(estimate.total_cost || estimate.total_budget || 250000) : 250000;
-      const totalSpent = expenses ? expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) : 0;
-      setBudget({ total: estBudget, spent: totalSpent, expenses: expenses || [] });
-
-      const { data: reportsData } = await supabase.from('site_reports').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10);
-      if (reportsData) setReports(reportsData);
-
-      const { data: docsData } = await supabase.from('project_documents').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-      if (docsData) setDocuments(docsData);
-
-      const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', user.id);
-      if (appsData) setAppointments(appsData);
-
-      // 🚀 تم إزالة الأسماء من هنا لمنع ضياعها، وسيتم قراءتها مباشرة من القاموس أثناء العرض
-      const stagesMock = [
-        { id: 1, percent: 56, completed: 5, total: 9 },
-        { id: 2, percent: 64, completed: 7, total: 11 },
-        { id: 3, percent: 50, completed: 2, total: 4 },
-        { id: 4, percent: 25, completed: 1, total: 4 }
-      ];
-      setStageProgress(stagesMock);
-
+      setStageProgress(syncedStages);
+      setStats(syncedStats);
       setLoading(false);
+
     } catch (error) {
       console.error("Error fetching data:", error);
       setLoading(false);
@@ -411,14 +457,6 @@ export default function ContractorDashboard() {
 
   const budgetPercent = Math.min((budget.spent / budget.total) * 100, 100);
 
-  // 🚀 البناء المباشر لمصفوفة المراحل أثناء العرض (Dynamic Rendering) لضمان الترجمة الفورية
-  const stagesDisplay = [
-    { id: 1, name: t.stage1, icon: '📝', color: '#3b82f6', percent: stageProgress.find(s => s.id === 1)?.percent || 56, completed: stageProgress.find(s => s.id === 1)?.completed || 5, total: stageProgress.find(s => s.id === 1)?.total || 9 },
-    { id: 2, name: t.stage2, icon: '🏗️', color: '#f97316', percent: stageProgress.find(s => s.id === 2)?.percent || 64, completed: stageProgress.find(s => s.id === 2)?.completed || 7, total: stageProgress.find(s => s.id === 2)?.total || 11 },
-    { id: 3, name: t.stage3, icon: '🎨', color: '#a855f7', percent: stageProgress.find(s => s.id === 3)?.percent || 50, completed: stageProgress.find(s => s.id === 3)?.completed || 2, total: stageProgress.find(s => s.id === 3)?.total || 4 },
-    { id: 4, name: t.stage4, icon: '📜', color: '#22c55e', percent: stageProgress.find(s => s.id === 4)?.percent || 25, completed: stageProgress.find(s => s.id === 4)?.completed || 1, total: stageProgress.find(s => s.id === 4)?.total || 4 }
-  ];
-
   return (
     <div className={`min-h-screen p-4 md:p-8 transition-colors duration-700 relative overflow-hidden ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#eef8f2]'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
@@ -437,7 +475,7 @@ export default function ContractorDashboard() {
             <Calculator className="text-blue-500" size={24} /> {t.calcBtn}
           </Link>
           <Link to="/v2/project-path" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
-            <FolderOpen className="text-orange-500" size={24} /> {t.progTitle}
+            <FolderOpen className="text-orange-500" size={24} /> {t.projectPathBtn}
           </Link>
         </div>
 
@@ -546,6 +584,7 @@ export default function ContractorDashboard() {
           )}
         </div>
 
+        {/* 🚀 البطاقات العلوية الإجمالية - أصبحت متزامنة 100% */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
@@ -580,19 +619,13 @@ export default function ContractorDashboard() {
             <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
             <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
             <div className="grid grid-cols-2 sm:grid-cols-2 gap-6">
-              {/* 🚀 رسم وتحديث بيانات المراحل بشكل ديناميكي كامل */}
-              {stagesDisplay.map(stage => (
+              {stageProgress.map(stage => (
                 <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all hover:scale-105 flex flex-col items-center justify-center ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
-                  <div className="font-bold mb-4 text-lg flex items-center gap-2">
-                    {stage.name} {stage.icon}
+                  <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
+                    {t.stageNames[stage.id]} {stage.icon}
                   </div>
-                  <div 
-                    className="relative w-28 h-28 rounded-full flex items-center justify-center mb-4 shadow-inner"
-                    style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}
-                  >
-                    <div className={`absolute rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`} style={{ width: '82%', height: '82%' }}>
-                      <span className="text-2xl font-black" style={{ color: stage.color }}>{stage.percent}%</span>
-                    </div>
+                  <div className="relative w-28 h-28 rounded-full flex items-center justify-center mb-4 shadow-inner" style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}>
+                    <div className={`absolute rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`} style={{ width: '82%', height: '82%' }}><span className="text-2xl font-black" style={{ color: stage.color }}>{stage.percent}%</span></div>
                   </div>
                   <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                     {stage.completed} / {stage.total} {t.taskUnit}

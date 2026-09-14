@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Link, useOutletContext } from 'react-router-dom';
-import { Calculator, LayoutDashboard, Map, Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Calculator, LayoutDashboard, Map, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function CostCalculator() {
   const { isDarkMode, language = 'ar' } = useOutletContext();
@@ -19,7 +19,7 @@ export default function CostCalculator() {
   const [currency, setCurrency] = useState('MAD');
   const [saveStatus, setSaveStatus] = useState(null);
 
-  // 🌍 قاموس الترجمة الشامل
+  // 🌍 قاموس الترجمة الشامل للنصوص الثابتة في الواجهة
   const t = {
     ar: {
       title: "حاسبة التكاليف",
@@ -47,17 +47,18 @@ export default function CostCalculator() {
       ttc: "المجموع الشامل (TTC)",
       estDetails: "تفاصيل التقدير",
       noEst: "لم تتم إضافة أي عناصر بعد",
-      saveBtn: "💾 حفظ التقدير وإرسال الفرصة",
+      saveBtn: "💾 حفظ التقدير",
       errInput: "⚠️ الرجاء إدخال الكمية والسعر بشكل صحيح",
       successAdd: "✅ تمت العملية بنجاح!",
       saving: "جاري الحفظ...",
-      saveSuccess: "✅ تم حفظ التقدير بنجاح!"
+      saveSuccess: "✅ تم حفظ التقدير بنجاح!",
+      currency: "درهم"
     },
     fr: {
       title: "Calculateur de Coûts",
       subtitle: "Estimez le coût de votre projet avec précision",
       backDash: "Tableau de bord",
-      backPath: "Parcours Projet",
+      backPath: "Parcours",
       stages: [
         { id: 1, name: "Planification", desc: "Conception et études", icon: "📋" },
         { id: 2, name: "Exécution", desc: "Construction", icon: "🏗️" },
@@ -71,19 +72,20 @@ export default function CostCalculator() {
       total: "Total",
       addBtn: "➕ Ajouter",
       updateBtn: "🔄 Mettre à jour",
-      loadingItems: "Chargement des éléments...",
+      loadingItems: "Chargement...",
       noItems: "Aucun élément de coût pour cette étape.",
       summaryTitle: "📊 Résumé de l'Estimation",
       ht: "Total Net (HT)",
       tvaLabel: "Taxe (TVA",
       ttc: "Total Global (TTC)",
       estDetails: "Détails de l'estimation",
-      noEst: "Aucun élément ajouté pour le moment",
-      saveBtn: "💾 Enregistrer l'estimation",
+      noEst: "Aucun élément ajouté",
+      saveBtn: "💾 Enregistrer",
       errInput: "⚠️ Veuillez entrer une quantité et un prix valides",
       successAdd: "✅ Opération réussie !",
       saving: "Enregistrement...",
-      saveSuccess: "✅ Estimation enregistrée avec succès !"
+      saveSuccess: "✅ Estimation enregistrée avec succès !",
+      currency: "MAD"
     },
     en: {
       title: "Cost Calculator",
@@ -103,7 +105,7 @@ export default function CostCalculator() {
       total: "Total",
       addBtn: "➕ Add",
       updateBtn: "🔄 Update",
-      loadingItems: "Loading cost items...",
+      loadingItems: "Loading...",
       noItems: "No cost items for this stage yet.",
       summaryTitle: "📊 Estimate Summary",
       ht: "Net Total (HT)",
@@ -115,23 +117,46 @@ export default function CostCalculator() {
       errInput: "⚠️ Please enter valid quantity and price",
       successAdd: "✅ Operation successful!",
       saving: "Saving...",
-      saveSuccess: "✅ Estimate saved successfully!"
+      saveSuccess: "✅ Estimate saved successfully!",
+      currency: "MAD"
     }
   }[language];
 
+  // 🚀 القاموس الاعتراضي لترجمة البيانات القادمة من قاعدة البيانات
+  const dbTranslations = {
+    "التصميم المعماري (البلان)": { fr: "Conception Architecturale (Plan)", en: "Architectural Design (Plan)" },
+    "الرفع الطبوغرافي": { fr: "Relevé Topographique", en: "Topographic Survey" },
+    "دراسة التربة (Laboratoire)": { fr: "Étude de Sol (Laboratoire)", en: "Soil Study (Laboratory)" },
+    "رخصة": { fr: "Licence", en: "License" },
+    "متر": { fr: "Mètre", en: "Meter" },
+    "متر مربع": { fr: "Mètre Carré", en: "Square Meter" },
+    "يوم": { fr: "Jour", en: "Day" }
+  };
+
+  const translateDB = (text) => {
+    if (!text) return text;
+    if (language === 'ar') return text;
+    return dbTranslations[text.trim()]?.[language] || text;
+  };
+
+  // 💎 كلاسات التصميم المتجاوبة مع الإضاءة
+  const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-800 shadow-md';
+  const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
+
   useEffect(() => {
     initCalculator();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     loadCostItems(selectedStage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStage]);
 
   const initCalculator = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) setUser(user);
 
-    // جلب الإعدادات المالية إذا وجدت
     try {
       const { data: settings } = await supabase.from('platform_settings').select('*').limit(1).maybeSingle();
       if (settings) {
@@ -151,9 +176,8 @@ export default function CostCalculator() {
         .eq('stage_id', stageId)
         .order('sort_order', { ascending: true });
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         setCostItems(data);
-        // تهيئة الحقول
         const newInputs = { ...inputs };
         data.forEach(item => {
           if (!newInputs[item.id]) {
@@ -166,10 +190,11 @@ export default function CostCalculator() {
         });
         setInputs(newInputs);
       } else {
-        // Mock data للتجربة إذا كانت القاعدة فارغة لكي يرى المستخدم التصميم
+        // Mock data ثابت باللغة العربية ليتم ترجمته ديناميكياً
         const mockData = [
-          { id: stageId * 10 + 1, name: language === 'ar' ? 'التصميم المعماري (البلان)' : 'Design', min_price: 8000, max_price: 25000, unit: 'رخصة' },
-          { id: stageId * 10 + 2, name: language === 'ar' ? 'الرفع الطبوغرافي' : 'Topography', min_price: 1500, max_price: 3500, unit: 'رخصة' }
+          { id: stageId * 10 + 1, name: 'التصميم المعماري (البلان)', min_price: 8000, max_price: 25000, unit: 'رخصة' },
+          { id: stageId * 10 + 2, name: 'الرفع الطبوغرافي', min_price: 1500, max_price: 3500, unit: 'رخصة' },
+          { id: stageId * 10 + 3, name: 'دراسة التربة (Laboratoire)', min_price: 2000, max_price: 4000, unit: 'رخصة' }
         ];
         setCostItems(mockData);
         const newInputs = { ...inputs };
@@ -218,7 +243,6 @@ export default function CostCalculator() {
     if (estimate.length === 0) return;
     setSaveStatus({ type: 'loading', msg: t.saving });
     try {
-      // محاكاة الحفظ في قاعدة البيانات
       await new Promise(resolve => setTimeout(resolve, 1000));
       setSaveStatus({ type: 'success', msg: t.saveSuccess });
       setTimeout(() => setSaveStatus(null), 3000);
@@ -227,19 +251,13 @@ export default function CostCalculator() {
     }
   };
 
-  // 🧮 الحسابات
   const subTotal = estimate.reduce((sum, item) => sum + item.subtotal, 0);
   const tvaAmount = subTotal * (globalTva / 100);
   const grandTotal = subTotal + tvaAmount;
 
-  // 💎 كلاسات التصميم المتجاوبة مع الإضاءة
-  const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800';
-  const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200';
-
   return (
-    <div className="animate-fade-in pb-24 max-w-6xl mx-auto">
+    <div className="animate-fade-in pb-24 max-w-6xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 الترويسة الزرقاء المطابقة للصورة */}
       <div className="bg-gradient-to-r from-blue-800 to-blue-600 rounded-3xl p-6 md:p-8 mb-8 flex flex-col md:flex-row justify-between items-center gap-6 shadow-lg shadow-blue-900/20">
         <div className={`flex gap-3 w-full md:w-auto ${isRtl ? 'md:order-2' : ''}`}>
           <Link to="/v2/contractor-dashboard" className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl font-bold transition-all backdrop-blur-sm">
@@ -255,7 +273,6 @@ export default function CostCalculator() {
         </div>
       </div>
 
-      {/* رسائل التنبيه */}
       {saveStatus && (
         <div className={`p-4 rounded-2xl mb-6 font-bold flex items-center gap-3 animate-fade-in ${
           saveStatus.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
@@ -264,7 +281,6 @@ export default function CostCalculator() {
         </div>
       )}
 
-      {/* 🌟 محدد المراحل (البطاقات العلوية) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {t.stages.map(stage => {
           const isActive = selectedStage === stage.id;
@@ -288,7 +304,6 @@ export default function CostCalculator() {
         })}
       </div>
 
-      {/* 📋 منطقة الحساب (عناصر المرحلة) */}
       <div className={`p-6 md:p-8 rounded-3xl border mb-8 shadow-sm ${cardBg}`}>
         <h2 className="text-2xl font-black text-blue-600 mb-2">{t.stagePrefix} {t.stages.find(s => s.id === selectedStage)?.name}</h2>
         <p className={`font-bold mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.stageSub}</p>
@@ -309,9 +324,12 @@ export default function CostCalculator() {
               return (
                 <div key={item.id} className={`p-5 rounded-2xl border-2 transition-colors ${isAdded ? 'border-emerald-200 bg-emerald-50/30' : (isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-slate-100 bg-slate-50')}`}>
                   <div className="flex justify-between items-start mb-4">
-                    <h4 className={`font-black text-lg ${isDarkMode ? 'text-blue-400' : 'text-blue-800'}`}>{item.name}</h4>
+                    {/* 🚀 ترجمة اسم العنصر باستخدام القاموس الاعتراضي */}
+                    <h4 className={`font-black text-lg ${isDarkMode ? 'text-blue-400' : 'text-blue-800'}`}>{translateDB(item.name)}</h4>
+                    
+                    {/* 🚀 ترجمة وحدة القياس */}
                     <span className="font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-lg text-sm border border-emerald-500/20">
-                      {item.min_price} - {item.max_price} {currency}/{item.unit}
+                      {item.min_price} - {item.max_price} {t.currency}/{translateDB(item.unit)}
                     </span>
                   </div>
 
@@ -339,7 +357,7 @@ export default function CostCalculator() {
                     <div>
                       <label className="block text-sm font-bold mb-2 opacity-80">{t.total}</label>
                       <div className={`w-full p-3 rounded-xl border font-black ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-200/50 border-slate-200'}`}>
-                        {rowTotal > 0 ? rowTotal.toLocaleString() : '0'} {currency}
+                        {rowTotal > 0 ? rowTotal.toLocaleString() : '0'} {t.currency}
                       </div>
                     </div>
                     <button 
@@ -358,22 +376,21 @@ export default function CostCalculator() {
         )}
       </div>
 
-      {/* 📊 ملخص التكلفة (البطاقة البنفسجية السفلية) */}
       <div className="bg-gradient-to-br from-indigo-500 to-purple-700 rounded-3xl p-6 md:p-10 shadow-2xl shadow-purple-900/30 text-white">
         <h2 className="text-2xl font-black mb-6 flex items-center gap-2">📊 {t.summaryTitle}</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20">
             <div className="text-sm font-bold opacity-80 mb-2">{t.ht}</div>
-            <div className="text-3xl font-black">{subTotal.toLocaleString()} {currency}</div>
+            <div className="text-3xl font-black">{subTotal.toLocaleString()} {t.currency}</div>
           </div>
           <div className="bg-orange-500/20 backdrop-blur-sm rounded-2xl p-6 text-center border border-orange-400/30">
             <div className="text-sm font-bold opacity-80 mb-2">{t.tvaLabel} {globalTva}%)</div>
-            <div className="text-3xl font-black text-orange-300">{tvaAmount.toLocaleString()} {currency}</div>
+            <div className="text-3xl font-black text-orange-300">{tvaAmount.toLocaleString()} {t.currency}</div>
           </div>
           <div className="bg-emerald-500/20 backdrop-blur-sm rounded-2xl p-6 text-center border border-emerald-400/30">
             <div className="text-sm font-bold opacity-80 mb-2">{t.ttc}</div>
-            <div className="text-3xl font-black text-emerald-300">{grandTotal.toLocaleString()} {currency}</div>
+            <div className="text-3xl font-black text-emerald-300">{grandTotal.toLocaleString()} {t.currency}</div>
           </div>
         </div>
 
@@ -387,10 +404,11 @@ export default function CostCalculator() {
               {estimate.map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <div>
-                    <div className="font-black text-slate-700">{item.name}</div>
-                    <div className="text-sm font-bold text-slate-400 mt-1">{item.quantity} {item.unit} × {item.unitPrice.toLocaleString()} {currency}</div>
+                    {/* 🚀 ترجمة اسم العنصر ووحدة القياس داخل الفاتورة */}
+                    <div className="font-black text-slate-700">{translateDB(item.name)}</div>
+                    <div className="text-sm font-bold text-slate-400 mt-1">{item.quantity} {translateDB(item.unit)} × {item.unitPrice.toLocaleString()} {t.currency}</div>
                   </div>
-                  <div className="font-black text-emerald-600 text-lg">{item.subtotal.toLocaleString()} {currency}</div>
+                  <div className="font-black text-emerald-600 text-lg">{item.subtotal.toLocaleString()} {t.currency}</div>
                 </div>
               ))}
             </div>
