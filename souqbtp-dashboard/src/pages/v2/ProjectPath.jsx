@@ -125,7 +125,7 @@ export default function ProjectPath() {
       errorLoad: "Error loading data.",
       successAssign: "✅ Team assigned successfully!"
     }
-  }[language];
+  };
 
   // 🚀 القاموس الاعتراضي الشامل لترجمة كافة البيانات القادمة من قاعدة البيانات
   const dbTranslations = {
@@ -151,7 +151,7 @@ export default function ProjectPath() {
     "كهرباء": { fr: "Électricité", en: "Electricity" },
     "سباكة (بلومبي)": { fr: "Plomberie", en: "Plumbing" },
     "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
-    "اعمال حجرية": { fr: "Travaux de pierre", en: "Stone works" },
+    "أعمال حجرية": { fr: "Travaux de pierre", en: "Stone works" },
     "أساسات": { fr: "Fondations", en: "Foundations" },
     "طوب": { fr: "Briques", en: "Bricks" },
     "هيكل خرساني": { fr: "Structure en béton", en: "Concrete structure" },
@@ -187,7 +187,7 @@ export default function ProjectPath() {
     "الصباغة والواجهات الخارجية": { fr: "Peinture et Façades Extérieures", en: "Painting & Exterior Facades" },
     "النجارة الخشبية": { fr: "Menuiserie Bois", en: "Wood Carpentry" },
     "التشطيب النهائي (سباكة وكهرباء)": { fr: "Finitions Finales (Plomberie & Électricité)", en: "Final Touches (Plumbing & Electrical)" },
-    "Jour": { fr: "Menuiserie Aluminium / PVC", en: "Aluminum / PVC Carpentry" },
+    "Aluminium": { fr: "Menuiserie Aluminium / PVC", en: "Aluminum / PVC Carpentry" },
 
     // Stage 4
     "شهادة السكنى": { fr: "Permis d'Habiter", en: "Occupancy Permit" },
