@@ -246,11 +246,11 @@ export default function ContractorDashboard() {
       : 'bg-white/90 backdrop-blur-xl border-white text-slate-800 shadow-lg hover:shadow-[0_0_35px_rgba(59,130,246,0.4)] hover:border-blue-400'
   }`;
 
-  // 🚀 الأنيميشن الذكي: لا يعمل إلا بعد وصول البيانات الحقيقية
+  // 🚀 1. الأنيميشن الذكي: لا يعمل إلا بعد وصول البيانات الحقيقية
   useEffect(() => {
     if (!startAnimation) return;
 
-    const duration = 2000; 
+    const duration = 1500; 
     const intervalTime = 30; 
     const steps = duration / intervalTime;
     let currentStep = 0;
@@ -279,7 +279,26 @@ export default function ContractorDashboard() {
     return () => clearInterval(timer);
   }, [startAnimation, stats, stageProgress]);
 
-  // 🚀 جلب البيانات عند دخول الصفحة
+  // 🚀 2. تأثير الحضور اللحظي (مفصول تماماً لمنع أي أخطاء عند الرجوع للصفحة)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase.channel('global_radar_room');
+    
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      const onlineIds = [];
+      for (const key in state) {
+        if (state[key][0]?.type === 'provider') onlineIds.push(state[key][0].id.toString());
+      }
+      setOnlineProviders(onlineIds);
+    }).subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') await channel.track({ type: 'client', id: user.id });
+    });
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  // 🚀 3. جلب البيانات المحمي من الأخطاء
   useEffect(() => {
     let isMounted = true;
     const initializeDashboard = async () => {
@@ -322,7 +341,7 @@ export default function ContractorDashboard() {
           supabase.from('services').select('id, stage_id'),
           supabase.from('checklists').select('id, service_id'),
           supabase.from('user_progress').select('task_id').eq('user_id', currentUser.id),
-          supabase.from('profiles').select('*').eq('id', currentUser.id).single()
+          supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle() // 🚀 استخدام maybeSingle لتجنب الأعطال
         ]);
 
         if (profileRes.data && isMounted) setProfile(profileRes.data);
@@ -372,11 +391,11 @@ export default function ContractorDashboard() {
           const convosWithDetails = await Promise.all(convos.map(async (c) => {
             let name = 'غير معروف', icon = '👤', partnerId = null;
             if (c.architect_id) {
-              const { data: arch } = await supabase.from('architects').select('full_name, agency_name').eq('id', c.architect_id).single();
+              const { data: arch } = await supabase.from('architects').select('full_name, agency_name').eq('id', c.architect_id).maybeSingle();
               name = arch ? `${arch.full_name} (${arch.agency_name || 'مهندس'})` : 'مهندس';
               partnerId = c.architect_id; icon = '📐';
             } else if (c.provider_id) {
-              const { data: prov } = await supabase.from('providers').select('full_name').eq('id', c.provider_id).single();
+              const { data: prov } = await supabase.from('providers').select('full_name').eq('id', c.provider_id).maybeSingle();
               name = prov ? prov.full_name : t.master;
               partnerId = c.provider_id; icon = '👷';
             }
@@ -386,18 +405,6 @@ export default function ContractorDashboard() {
           }));
           setConversations(convosWithDetails);
         }
-
-        const globalChannel = supabase.channel('global_radar_room', { config: { presence: { key: 'client_' + currentUser.id } } });
-        globalChannel.on('presence', { event: 'sync' }, () => {
-          const state = globalChannel.presenceState();
-          const onlineIds = [];
-          for (const key in state) {
-            if (state[key][0]?.type === 'provider') onlineIds.push(state[key][0].id.toString());
-          }
-          if (isMounted) setOnlineProviders(onlineIds);
-        }).subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') await globalChannel.track({ type: 'client', id: currentUser.id });
-        });
 
         const { data: teamData } = await supabase.from('milestone_assignments').select('*').eq('user_id', currentUser.id).order('stage_id', { ascending: true });
         if (teamData && isMounted) setTeam(teamData);
@@ -412,7 +419,7 @@ export default function ContractorDashboard() {
         if (appsData && isMounted) setAppointments(appsData);
         
       } else {
-        // حالة الزائر التسويقية
+        // حالة الزائر
         syncedStages = [
           { id: 1, icon: '📝', color: '#3b82f6', percent: 100, completed: 9, total: 9 },
           { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
@@ -427,13 +434,16 @@ export default function ContractorDashboard() {
         setStageProgress(syncedStages);
         setStats(syncedStats);
         setBudget(currentBudget);
-        setLoading(false);
-        setTimeout(() => setStartAnimation(true), 100); 
       }
 
     } catch (error) {
-      console.error("Error fetching data:", error);
-      if (isMounted) setLoading(false);
+      console.error("Critical error in fetchDashboardData:", error);
+    } finally {
+      // 🚀 إطلاق الأنيميشن في النهاية بأمان
+      if (isMounted) {
+        setLoading(false);
+        setTimeout(() => setStartAnimation(true), 50); 
+      }
     }
   };
 
