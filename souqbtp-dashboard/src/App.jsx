@@ -521,8 +521,9 @@ function App() {
   // 🟢 استثناء صفحات الدخول والتسجيل لكي تعمل الأزرار
   const isAuthPage = pathname.includes('/login') || pathname.includes('/register');
 
-  const isEmpireLanding = !isAuthPage && (pathname.includes('/empire') || hostname === 'empire.souqbtp.ma');
-  const isRetailLanding = !isAuthPage && (pathname.includes('/pro') || hostname === 'pro.souqbtp.ma');
+  // 🚀 الإصلاح الأول: استخدام === بدلاً من includes حتى لا تتداخل الحروف
+  const isEmpireLanding = !isAuthPage && (pathname === '/empire' || pathname === '/empire/' || hostname === 'empire.souqbtp.ma');
+  const isRetailLanding = !isAuthPage && (pathname === '/pro' || pathname === '/pro/' || hostname === 'pro.souqbtp.ma');
 
   if (isEmpireLanding) {
     return (
@@ -544,7 +545,10 @@ function App() {
     );
   }
 
-  if (!session) {
+  // 🚀 الإصلاح الثاني: إخبار الحارس أن يتجاهل مسارات V2 ويتركها تمر حتى بدون تسجيل دخول
+  const isV2Path = pathname.startsWith('/v2');
+
+  if (!session && !isV2Path) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         <div className="text-5xl mb-4">⛔</div>
