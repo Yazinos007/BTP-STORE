@@ -12,6 +12,7 @@ export default function ContractorDashboard() {
   const isRtl = language === 'ar';
 
   const [loading, setLoading] = useState(true);
+  const [startAnimation, setStartAnimation] = useState(false);
   const [user, setUser] = useState(null);
   
   // 🚀 حالة الأرقام الحقيقية (الهدف)
@@ -245,11 +246,11 @@ export default function ContractorDashboard() {
       : 'bg-white/90 backdrop-blur-xl border-white text-slate-800 shadow-lg hover:shadow-[0_0_35px_rgba(59,130,246,0.4)] hover:border-blue-400'
   }`;
 
-  // 🚀 1. محرك الأنيميشن الموحد (يُشغل البطاقات العلوية والدوائر السفلية معاً)
+  // 🚀 الأنيميشن الذكي: لا يعمل إلا بعد وصول البيانات الحقيقية
   useEffect(() => {
-    if (stats.total === 0 && stageProgress.length === 0) return;
+    if (!startAnimation) return;
 
-    const duration = 2000; // ثانيتين ليكتمل العداد ويعطي شعوراً بالفخامة
+    const duration = 2000; 
     const intervalTime = 30; 
     const steps = duration / intervalTime;
     let currentStep = 0;
@@ -258,14 +259,12 @@ export default function ContractorDashboard() {
       currentStep++;
       const progressRatio = Math.min(currentStep / steps, 1);
 
-      // تحديث أرقام البطاقات العلوية
       setDisplayStats({
         progress: Math.round(stats.progress * progressRatio),
         completed: Math.round(stats.completed * progressRatio),
         remaining: Math.round(stats.remaining * progressRatio),
       });
 
-      // تحديث أرقام وأشرطة الدوائر السفلية
       if (stageProgress.length > 0) {
         setDisplayStages(stageProgress.map(stage => ({
           ...stage,
@@ -278,30 +277,34 @@ export default function ContractorDashboard() {
     }, intervalTime);
 
     return () => clearInterval(timer);
-  }, [stats, stageProgress]);
+  }, [startAnimation, stats, stageProgress]);
 
-  // 🚀 2. جلب البيانات عند فتح الصفحة فوراً دون الحاجة لـ F5
+  // 🚀 جلب البيانات عند دخول الصفحة
   useEffect(() => {
+    let isMounted = true;
     const initializeDashboard = async () => {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      await fetchDashboardData(session?.user || null);
-      setLoading(false);
+      await fetchDashboardData(session?.user || null, isMounted);
     };
 
     initializeDashboard();
 
-    // الاستماع لأي تغيير في تسجيل الدخول
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      fetchDashboardData(session?.user || null);
+      if (isMounted) fetchDashboardData(session?.user || null, isMounted);
     });
 
-    return () => { if(authListener) authListener.subscription.unsubscribe(); };
+    return () => { 
+      isMounted = false;
+      if(authListener) authListener.subscription.unsubscribe(); 
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]); 
 
-  const fetchDashboardData = async (currentUser) => {
+  const fetchDashboardData = async (currentUser, isMounted) => {
     try {
+      const defaultTotals = { 1: 9, 2: 11, 3: 4, 4: 4 };
+      
       let syncedStages = [
         { id: 1, icon: '📝', color: '#3b82f6', percent: 0, completed: 0, total: 9 },
         { id: 2, icon: '🏗️', color: '#f97316', percent: 0, completed: 0, total: 11 },
@@ -313,7 +316,7 @@ export default function ContractorDashboard() {
       let currentBudget = { total: 0, spent: 0, isCalculated: false };
 
       if (currentUser) {
-        setUser(currentUser);
+        if (isMounted) setUser(currentUser);
 
         const [servicesRes, checklistsRes, progressRes, profileRes] = await Promise.all([
           supabase.from('services').select('id, stage_id'),
@@ -322,7 +325,7 @@ export default function ContractorDashboard() {
           supabase.from('profiles').select('*').eq('id', currentUser.id).single()
         ]);
 
-        if (profileRes.data) setProfile(profileRes.data);
+        if (profileRes.data && isMounted) setProfile(profileRes.data);
 
         const services = servicesRes.data || [];
         const checklists = checklistsRes.data || [];
@@ -331,7 +334,7 @@ export default function ContractorDashboard() {
         syncedStages = [1, 2, 3, 4].map(stageId => {
           const stageServices = services.filter(s => s.stage_id === stageId).map(s => s.id);
           const stageTasks = checklists.filter(t => stageServices.includes(t.service_id));
-          const stageTotal = stageTasks.length > 0 ? stageTasks.length : syncedStages.find(s=>s.id === stageId).total;
+          const stageTotal = stageTasks.length > 0 ? stageTasks.length : defaultTotals[stageId];
           
           const stageTaskIds = stageTasks.map(t => t.id);
           const stageCompleted = userProgress.filter(id => stageTaskIds.includes(id)).length;
@@ -365,7 +368,7 @@ export default function ContractorDashboard() {
         currentBudget = { total: estBudget, spent: totalSpent, isCalculated: estBudget > 0 };
 
         const { data: convos } = await supabase.from('conversations').select('id, provider_id, architect_id').eq('client_id', currentUser.id);
-        if (convos) {
+        if (convos && isMounted) {
           const convosWithDetails = await Promise.all(convos.map(async (c) => {
             let name = 'غير معروف', icon = '👤', partnerId = null;
             if (c.architect_id) {
@@ -391,25 +394,25 @@ export default function ContractorDashboard() {
           for (const key in state) {
             if (state[key][0]?.type === 'provider') onlineIds.push(state[key][0].id.toString());
           }
-          setOnlineProviders(onlineIds);
+          if (isMounted) setOnlineProviders(onlineIds);
         }).subscribe(async (status) => {
           if (status === 'SUBSCRIBED') await globalChannel.track({ type: 'client', id: currentUser.id });
         });
 
         const { data: teamData } = await supabase.from('milestone_assignments').select('*').eq('user_id', currentUser.id).order('stage_id', { ascending: true });
-        if (teamData) setTeam(teamData);
+        if (teamData && isMounted) setTeam(teamData);
 
         const { data: reportsData } = await supabase.from('site_reports').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(10);
-        if (reportsData) setReports(reportsData);
+        if (reportsData && isMounted) setReports(reportsData);
 
         const { data: docsData } = await supabase.from('project_documents').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-        if (docsData) setDocuments(docsData);
+        if (docsData && isMounted) setDocuments(docsData);
 
         const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', currentUser.id);
-        if (appsData) setAppointments(appsData);
+        if (appsData && isMounted) setAppointments(appsData);
         
       } else {
-        // 🚀 حالة الزائر (بيانات وهمية تسويقية)
+        // حالة الزائر التسويقية
         syncedStages = [
           { id: 1, icon: '📝', color: '#3b82f6', percent: 100, completed: 9, total: 9 },
           { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
@@ -420,13 +423,17 @@ export default function ContractorDashboard() {
         currentBudget = { total: 320500, spent: 145000, isCalculated: true }; 
       }
 
-      // 🚀 إرسال الأرقام الحقيقية لمحرك الأنيميشن ليبدأ العمل
-      setStageProgress(syncedStages);
-      setStats(syncedStats);
-      setBudget(currentBudget);
+      if (isMounted) {
+        setStageProgress(syncedStages);
+        setStats(syncedStats);
+        setBudget(currentBudget);
+        setLoading(false);
+        setTimeout(() => setStartAnimation(true), 100); 
+      }
 
     } catch (error) {
       console.error("Error fetching data:", error);
+      if (isMounted) setLoading(false);
     }
   };
 
@@ -560,8 +567,8 @@ export default function ContractorDashboard() {
           </Link>
         </div>
 
-        {/* 🚀 1. نقل البطاقات الثلاث الإحصائية للأعلى (تستخدم displayStats للأنيميشن) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* 🚀 البطاقات الثلاث الإحصائية في القمة مع العداد المتصاعد */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
             <span className="text-6xl font-black drop-shadow-md">{displayStats.progress}%</span>
@@ -576,20 +583,18 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* 🚀 2. نقل منطقة الإحصائيات التفصيلية (الدوائر الأربع) لتكون مباشرة تحت البطاقات العلوية */}
-        <div className={cardClass}>
+        {/* 🚀 منطقة الإحصائيات التفصيلية (الدوائر الأربع النابضة) تحتها مباشرة */}
+        <div className={`${cardClass} mb-6`}>
           <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
           <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* 🚀 الدوائر تستخدم displayStages لكي تمتلئ ببطء مع تأثير النبض */}
             {displayStages.map(stage => (
               <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all flex flex-col items-center justify-center group ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
                 <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
                   {t.stageNames[stage.id]} {stage.icon}
                 </div>
                 
-                {/* الدائرة الدوارة ذات النبض الخفيف */}
                 <div 
                   className="relative w-32 h-32 rounded-full flex items-center justify-center mb-4 shadow-inner group-hover:shadow-[0_0_20px_rgba(0,0,0,0.1)] transition-shadow duration-500" 
                   style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}
@@ -607,7 +612,6 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* باقي العناصر تليها في الترتيب... */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <div className={cardClass}>
             <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
