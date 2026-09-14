@@ -1,10 +1,12 @@
 import { Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
 import V2Layout from '../../components/v2/V2Layout';
 import ContractorDashboard from './ContractorDashboard';
+import CostCalculator from './CostCalculator'; // 🚀 استدعاء الحاسبة
+import ProjectPath from './ProjectPath'; // 🚀 استدعاء مسار الورش
 
 // صفحة قيد الإنشاء ذكية تتجاوب مع لون الغلاف
 const UnderConstruction = ({ title, icon }) => {
-  const { isDarkMode } = useOutletContext(); // 🚀 قراءة الإضاءة من الغلاف
+  const { isDarkMode } = useOutletContext(); 
   return (
     <div className={`flex flex-col items-center justify-center h-[75vh] text-center backdrop-blur-md rounded-3xl border-2 m-4 shadow-xl transition-colors duration-700 ${isDarkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-white/90 border-white'}`}>
       <div className="text-7xl mb-6 drop-shadow-xl hover:scale-110 transition-transform cursor-pointer">{icon || '🚧'}</div>
@@ -26,9 +28,9 @@ export default function V2Router({ session, supplier }) {
         {/* الرئيسية */}
         <Route path="contractor-dashboard" element={<ContractorDashboard />} />
         
-        {/* القيادة والميدان */}
-        <Route path="project-path" element={<UnderConstruction title="مسار الورش التفصيلي" icon="🗺️" />} />
-        <Route path="cost-calculator" element={<UnderConstruction title="الحاسبة الذكية لتكاليف الورش" icon="🧮" />} />
+        {/* 🚀 القيادة والميدان (تم ربط الملفات هنا) */}
+        <Route path="project-path" element={<ProjectPath />} />
+        <Route path="cost-calculator" element={<CostCalculator />} />
         <Route path="site-reports" element={<UnderConstruction title="كاميرا الميدان والتقارير" icon="📸" />} />
         
         {/* التواصل والمشتريات */}
