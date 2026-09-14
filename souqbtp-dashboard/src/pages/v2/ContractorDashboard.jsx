@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 
 export default function ContractorDashboard() {
-  // 🚀 قراءة الإضاءة واللغة من الغلاف الرئيسي
   const { isDarkMode, language = 'ar' } = useOutletContext(); 
   const isRtl = language === 'ar';
 
@@ -32,7 +31,6 @@ export default function ContractorDashboard() {
   const [saveStatus, setSaveStatus] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
 
-  // 🌍 قاموس الترجمة الشامل
   const translations = {
     ar: {
       pageTitle: "إدارة الأوراش والميدان",
@@ -227,7 +225,6 @@ export default function ContractorDashboard() {
     en: ['Building permit', 'Architectural design', 'Invoice / Delivery', 'Work contract', 'Other']
   };
 
-  // 💎 كلاس موحد للبطاقات مع تأثير 3D وإضاءة مشعة 
   const cardClass = `relative z-10 rounded-3xl p-6 transition-all duration-500 transform hover:-translate-y-2 border-2 ${
     isDarkMode 
       ? 'bg-slate-800/90 backdrop-blur-xl border-slate-700/50 text-slate-200 shadow-xl hover:shadow-[0_0_35px_rgba(59,130,246,0.5)] hover:border-blue-500' 
@@ -236,7 +233,7 @@ export default function ContractorDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [language]); // أضفنا اللغة كمراقب لتحديث البيانات عند التغيير
+  }, [language]); 
 
   const fetchDashboardData = async () => {
     try {
@@ -303,7 +300,7 @@ export default function ContractorDashboard() {
       const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', user.id);
       if (appsData) setAppointments(appsData);
 
-     const stagesMock = [
+      const stagesMock = [
         { id: 1, icon: '📝', color: '#3b82f6', percent: 56, completed: 5, total: 9 },
         { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
         { id: 3, icon: '🎨', color: '#a855f7', percent: 50, completed: 2, total: 4 },
@@ -413,22 +410,18 @@ export default function ContractorDashboard() {
   const budgetPercent = Math.min((budget.spent / budget.total) * 100, 100);
 
   return (
-    // 🎨 حاوية رئيسية بخلفية مريحة جداً ونقوش هندسية (Grid Pattern)
     <div className={`min-h-screen p-4 md:p-8 transition-colors duration-700 relative overflow-hidden ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#eef8f2]'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* 🌟 التأثيرات الفنية للخلفية (توهج + شبكة) */}
       <div className={`absolute inset-0 z-0 opacity-20 pointer-events-none ${isDarkMode ? 'bg-[radial-gradient(#475569_1px,transparent_1px)]' : 'bg-[radial-gradient(#94a3b8_1px,transparent_1px)]'}`} style={{ backgroundSize: '30px 30px' }}></div>
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="relative z-10 space-y-8 animate-fade-in pb-24">
         
-        {/* عنوان الصفحة */}
         <div className="mb-8">
           <h1 className={`text-4xl font-black tracking-tight ${isDarkMode ? 'text-white drop-shadow-md' : 'text-[#0f3b25] drop-shadow-sm'}`}>{t.pageTitle}</h1>
         </div>
 
-        {/* الأزرار السريعة */}
         <div className="flex flex-wrap gap-4">
           <Link to="/v2/cost-calculator" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
             <Calculator className="text-blue-500" size={24} /> {t.calcBtn}
@@ -438,7 +431,6 @@ export default function ContractorDashboard() {
           </Link>
         </div>
 
-        {/* صندوق الرسائل */}
         <div className={`${cardClass} border-t-4 border-t-blue-500`}>
           <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
             <h2 className="text-xl font-black flex items-center gap-2"><MessageCircle className="text-blue-500" /> {t.inboxTitle}</h2>
@@ -477,7 +469,6 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* 🚀 كاميرا الورشة وتقارير الميدان */}
         <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
             <div>
@@ -521,7 +512,6 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* قسم الميزانية الإجمالية */}
         <div className={cardClass}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
             <h2 className="text-xl font-black flex items-center gap-2">{t.budgetTitle}</h2>
@@ -532,7 +522,7 @@ export default function ContractorDashboard() {
               <button className="bg-[#25D366] hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-green-500/20 transition-all hover:-translate-y-1">
                 📲 {t.waBtn}
               </button>
-              <Link to="/v2/cost-calculator" className={`px-5 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-1 ${isDarkMode ? 'border border-slate-600 hover:bg-slate-700 text-slate-200' : 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm'}`}>
+              <Link to="/v2/cost-calculator" className={`px-5 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-1 ${isDarkMode ? 'border border-slate-600 hover:bg-slate-700 text-slate-200' : 'bg-white border border-slate-200 text-slate-700 shadow-sm'}`}>
                 {t.editBudgetBtn}
               </Link>
             </div>
@@ -546,26 +536,23 @@ export default function ContractorDashboard() {
           )}
         </div>
 
-        {/* البطاقات الإحصائية المتوهجة 3D */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 cursor-default border border-white/10">
+          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
             <span className="text-6xl font-black drop-shadow-md">{stats.progress}%</span>
           </div>
-          <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 cursor-default border border-white/10">
+          <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.tasksDone}</span>
             <span className="text-6xl font-black drop-shadow-md">{stats.completed}</span>
           </div>
-          <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(6,182,212,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 cursor-default border border-white/10">
+          <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(6,182,212,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.tasksLeft}</span>
             <span className="text-6xl font-black drop-shadow-md">{stats.remaining}</span>
           </div>
         </div>
 
-        {/* بيانات المقاولة والتقدم حسب المرحلة */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           
-          {/* بيانات المقاولة */}
           <div className={cardClass}>
             <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
             <form onSubmit={handleProfileUpdate} className="space-y-5">
@@ -579,15 +566,14 @@ export default function ContractorDashboard() {
             </form>
           </div>
 
-          {/* 🚀 إحصائيات تفصيلية */}
           <div className={cardClass}>
             <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
             <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
             <div className="grid grid-cols-2 sm:grid-cols-2 gap-6">
               {stageProgress.map(stage => (
                 <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all hover:scale-105 flex flex-col items-center justify-center ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
-                  <div className="font-bold mb-4 text-lg flex items-center gap-2">
-                    {stage.name} {stage.icon}
+                  <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
+                    {t[`stage${stage.id}`]} {stage.icon}
                   </div>
                   <div 
                     className="relative w-28 h-28 rounded-full flex items-center justify-center mb-4 shadow-inner"
@@ -606,7 +592,6 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* فريق العمل */}
         <div className={cardClass}>
           <h2 className="text-xl font-black mb-6 pb-4 border-b border-slate-200/20">👷 {t.teamTitle}</h2>
           {team.length === 0 ? (
@@ -626,7 +611,6 @@ export default function ContractorDashboard() {
           )}
         </div>
 
-        {/* خزانة المستندات */}
         <div className={cardClass}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
             <h2 className="text-xl font-black flex items-center gap-2"><FolderOpen className="text-blue-500" /> {t.vaultTitle}</h2>
@@ -649,9 +633,9 @@ export default function ContractorDashboard() {
             {documents.length === 0 ? <p className="col-span-full text-center text-slate-400 py-4">{t.emptyVault}</p> :
               documents.map(doc => {
                 let Icon = FileText;
-                if(doc.category === categoryOptions[language]?.[1]) Icon = FileImage; // تصميم هندسي
-                if(doc.category === categoryOptions[language]?.[0]) Icon = FileSignature; // رخصة
-                if(doc.category === categoryOptions[language]?.[2]) Icon = Receipt; // فاتورة
+                if(doc.category === categoryOptions[language]?.[1]) Icon = FileImage; 
+                if(doc.category === categoryOptions[language]?.[0]) Icon = FileSignature; 
+                if(doc.category.includes('فاتورة') || doc.category.includes('Facture') || doc.category.includes('Invoice')) Icon = Receipt;
 
                 return (
                   <div key={doc.id} className={`p-5 rounded-2xl text-center border-2 relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${isDarkMode ? 'bg-slate-900/90 border-slate-700 hover:border-blue-500/50' : 'bg-white border-slate-100 hover:border-blue-400'}`}>
@@ -673,7 +657,6 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
-        {/* الميزانية والتقويم */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className={cardClass}>
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
@@ -711,7 +694,6 @@ export default function ContractorDashboard() {
 
       </div>
 
-      {/* 🚀 زر الاستغاثة العائم (ذكي يتمدد ويتجاوب مع اتجاه اللغة) */}
       <button 
         onClick={() => setIsSosOpen(true)} 
         className={`group fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} flex items-center bg-red-500/40 hover:bg-gradient-to-br hover:from-red-500 hover:to-red-700 text-white rounded-full transition-all duration-500 overflow-hidden z-50 backdrop-blur-sm hover:backdrop-blur-none border border-red-400/30 hover:border-red-400/80 w-14 h-14 hover:w-56 shadow-lg hover:shadow-[0_0_30px_rgba(239,68,68,0.8)]`}
@@ -722,7 +704,6 @@ export default function ContractorDashboard() {
         <span className={`whitespace-nowrap font-black text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isRtl ? 'mr-1' : 'ml-1'}`}>{t.sosBtn}</span>
       </button>
 
-      {/* نافذة الاستغاثة */}
       {isSosOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setIsSosOpen(false)}>
           <div className={`rounded-3xl p-8 w-full max-w-md shadow-2xl animate-fade-in border-2 ${isDarkMode ? 'bg-slate-800 border-slate-600' : 'bg-white border-white'}`} onClick={e => e.stopPropagation()}>
