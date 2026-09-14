@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { 
   ShoppingCart, Search, Filter, Package, 
   Zap, Droplet, PaintRoller, Hammer, 
-  ArrowRight, Star, Plus, CheckCircle2, TrendingUp 
+  ArrowRight, Star, Plus, CheckCircle2, TrendingUp, Briefcase // 🚀 تم إضافة Briefcase هنا لقتل الشبح!
 } from 'lucide-react';
 
 export default function ContractorMarketplace() {
@@ -96,10 +96,8 @@ export default function ContractorMarketplace() {
 
   const t = translations[language] || translations.ar;
 
-  const cardBg = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-800';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
-  const inputBg = isDarkMode ? 'bg-slate-950 border-slate-800 text-white placeholder-slate-600' : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400';
 
   // 🚀 تصنيفات السوق
   const categories = [
