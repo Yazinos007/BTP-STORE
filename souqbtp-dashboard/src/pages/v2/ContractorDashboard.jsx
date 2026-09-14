@@ -15,10 +15,39 @@ export default function ContractorDashboard() {
   const [user, setUser] = useState(null);
   
   const [profile, setProfile] = useState({ full_name: '', phone: '', city: '', project_name: '' });
-  const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0 });
+  const [displayStats, setDisplayStats] = useState({ progress: 0, completed: 0, remaining: 0 });
+
+useEffect(() => {
+  // هذا الـ Effect يشتغل كلما جاءت أرقام حقيقية جديدة من السيرفر
+  if (displayStats.progress === 0 && stats.completed === 0 && stats.remaining === 0) return;
+
+  const duration = 1500; // مدة الأنيميشن (ثانية ونصف)
+  const intervalTime = 30; // سرعة التحديث
+  const steps = duration / intervalTime;
+
+  let currentStep = 0;
+  const timer = setInterval(() => {
+    currentStep++;
+    setDisplayStats({
+      progress: Math.min(Math.round((displayStats.progress / steps) * currentStep), displayStats.progress),
+      completed: Math.min(Math.round((stats.completed / steps) * currentStep), stats.completed),
+      remaining: Math.min(Math.round((stats.remaining / steps) * currentStep), stats.remaining),
+    });
+    
+    if (currentStep >= steps) clearInterval(timer);
+  }, intervalTime);
+
+  return () => clearInterval(timer);
+}, [stats]);
+
   const [conversations, setConversations] = useState([]);
   const [onlineProviders, setOnlineProviders] = useState([]);
-  const [stageProgress, setStageProgress] = useState([]); 
+  const [stageProgress, setStageProgress] = useState([
+  { id: 1, percent: 0, completed: 0, total: 0, color: '#3b82f6', icon: '📝' },
+  { id: 2, percent: 0, completed: 0, total: 0, color: '#f97316', icon: '🏗️' },
+  { id: 3, percent: 0, completed: 0, total: 0, color: '#a855f7', icon: '🎨' },
+  { id: 4, percent: 0, completed: 0, total: 0, color: '#22c55e', icon: '📜' }
+]);
   const [team, setTeam] = useState([]);
   const [reports, setReports] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -235,21 +264,19 @@ export default function ContractorDashboard() {
       : 'bg-white/90 backdrop-blur-xl border-white text-slate-800 shadow-lg hover:shadow-[0_0_35px_rgba(59,130,246,0.4)] hover:border-blue-400'
   }`;
 
-  // 🚀 حل مشكلة التحديث: استماع دائم لحالة المستخدم (Session)
   useEffect(() => {
-    fetchDashboardData();
+  fetchDashboardData(); // جلب أولي
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        fetchDashboardData();
-      }
-    });
+  // استماع نبضات Supabase، بمجرد أن يتوفر اليوزر نحدث البيانات
+  const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    if (session?.user) {
+      fetchDashboardData();
+    }
+  });
 
-    return () => {
-      if(authListener) authListener.subscription.unsubscribe();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language]); 
+  return () => { if(authListener) authListener.subscription.unsubscribe(); };
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [language]);
 
   const fetchDashboardData = async () => {
     try {
@@ -627,7 +654,7 @@ export default function ContractorDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
-            <span className="text-6xl font-black drop-shadow-md">{stats.progress}%</span>
+            <span className="text-6xl font-black drop-shadow-md">{displayStats.progress}%</span>
           </div>
           <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.tasksDone}</span>
