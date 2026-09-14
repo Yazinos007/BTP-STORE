@@ -15,39 +15,24 @@ export default function ContractorDashboard() {
   const [user, setUser] = useState(null);
   
   const [profile, setProfile] = useState({ full_name: '', phone: '', city: '', project_name: '' });
+  
+  // 🚀 حالة الأرقام الحقيقية القادمة من قاعدة البيانات
+  const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0 });
+  
+  // 🚀 حالة الأرقام الوهمية التي سيتم عرضها وتتصاعد تدريجياً (فكرتك العبقرية)
   const [displayStats, setDisplayStats] = useState({ progress: 0, completed: 0, remaining: 0 });
-
-useEffect(() => {
-  // هذا الـ Effect يشتغل كلما جاءت أرقام حقيقية جديدة من السيرفر
-  if (displayStats.progress === 0 && stats.completed === 0 && stats.remaining === 0) return;
-
-  const duration = 1500; // مدة الأنيميشن (ثانية ونصف)
-  const intervalTime = 30; // سرعة التحديث
-  const steps = duration / intervalTime;
-
-  let currentStep = 0;
-  const timer = setInterval(() => {
-    currentStep++;
-    setDisplayStats({
-      progress: Math.min(Math.round((displayStats.progress / steps) * currentStep), displayStats.progress),
-      completed: Math.min(Math.round((stats.completed / steps) * currentStep), stats.completed),
-      remaining: Math.min(Math.round((stats.remaining / steps) * currentStep), stats.remaining),
-    });
-    
-    if (currentStep >= steps) clearInterval(timer);
-  }, intervalTime);
-
-  return () => clearInterval(timer);
-}, [stats]);
 
   const [conversations, setConversations] = useState([]);
   const [onlineProviders, setOnlineProviders] = useState([]);
+  
+  // 🚀 تهيئة الدوائر السفلية بالأصفار لتجنب الفراغ الأبيض
   const [stageProgress, setStageProgress] = useState([
-  { id: 1, percent: 0, completed: 0, total: 0, color: '#3b82f6', icon: '📝' },
-  { id: 2, percent: 0, completed: 0, total: 0, color: '#f97316', icon: '🏗️' },
-  { id: 3, percent: 0, completed: 0, total: 0, color: '#a855f7', icon: '🎨' },
-  { id: 4, percent: 0, completed: 0, total: 0, color: '#22c55e', icon: '📜' }
-]);
+    { id: 1, percent: 0, completed: 0, total: 0, color: '#3b82f6', icon: '📝' },
+    { id: 2, percent: 0, completed: 0, total: 0, color: '#f97316', icon: '🏗️' },
+    { id: 3, percent: 0, completed: 0, total: 0, color: '#a855f7', icon: '🎨' },
+    { id: 4, percent: 0, completed: 0, total: 0, color: '#22c55e', icon: '📜' }
+  ]);
+  
   const [team, setTeam] = useState([]);
   const [reports, setReports] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -264,19 +249,42 @@ useEffect(() => {
       : 'bg-white/90 backdrop-blur-xl border-white text-slate-800 shadow-lg hover:shadow-[0_0_35px_rgba(59,130,246,0.4)] hover:border-blue-400'
   }`;
 
+  // 🚀 الأنيميشن الذكي: يراقب الأرقام الحقيقية (stats) ويرفع الأرقام الظاهرة (displayStats) برفق
   useEffect(() => {
-  fetchDashboardData(); // جلب أولي
+    if (stats.progress === 0 && stats.completed === 0 && stats.remaining === 0) return;
 
-  // استماع نبضات Supabase، بمجرد أن يتوفر اليوزر نحدث البيانات
-  const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-    if (session?.user) {
-      fetchDashboardData();
-    }
-  });
+    const duration = 1500; 
+    const intervalTime = 30; 
+    const steps = duration / intervalTime;
 
-  return () => { if(authListener) authListener.subscription.unsubscribe(); };
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [language]);
+    let currentStep = 0;
+    const timer = setInterval(() => {
+      currentStep++;
+      setDisplayStats({
+        progress: Math.min(Math.round((stats.progress / steps) * currentStep), stats.progress),
+        completed: Math.min(Math.round((stats.completed / steps) * currentStep), stats.completed),
+        remaining: Math.min(Math.round((stats.remaining / steps) * currentStep), stats.remaining),
+      });
+      
+      if (currentStep >= steps) clearInterval(timer);
+    }, intervalTime);
+
+    return () => clearInterval(timer);
+  }, [stats]);
+
+  // 🚀 جلب البيانات التلقائي (بدون الحاجة إلى F5)
+  useEffect(() => {
+    fetchDashboardData();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        fetchDashboardData();
+      }
+    });
+
+    return () => { if(authListener) authListener.subscription.unsubscribe(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]); 
 
   const fetchDashboardData = async () => {
     try {
@@ -388,6 +396,7 @@ useEffect(() => {
         if (appsData) setAppointments(appsData);
         
       } else {
+        // حالة الزائر: إظهار إحصائيات مبهرة لتسويق المنصة
         syncedStages = [
           { id: 1, icon: '📝', color: '#3b82f6', percent: 100, completed: 9, total: 9 },
           { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
@@ -651,6 +660,7 @@ useEffect(() => {
           )}
         </div>
 
+        {/* 🚀 العداد المتصاعد في البطاقات العلوية */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
@@ -658,11 +668,11 @@ useEffect(() => {
           </div>
           <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.tasksDone}</span>
-            <span className="text-6xl font-black drop-shadow-md">{stats.completed}</span>
+            <span className="text-6xl font-black drop-shadow-md">{displayStats.completed}</span>
           </div>
           <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(6,182,212,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.tasksLeft}</span>
-            <span className="text-6xl font-black drop-shadow-md">{stats.remaining}</span>
+            <span className="text-6xl font-black drop-shadow-md">{displayStats.remaining}</span>
           </div>
         </div>
 
