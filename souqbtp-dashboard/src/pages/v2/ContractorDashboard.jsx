@@ -14,30 +14,26 @@ export default function ContractorDashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   
-  const [profile, setProfile] = useState({ full_name: '', phone: '', city: '', project_name: '' });
-  
-  // 🚀 حالة الأرقام الحقيقية القادمة من قاعدة البيانات
-  const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0 });
-  
-  // 🚀 حالة الأرقام الوهمية التي سيتم عرضها وتتصاعد تدريجياً (فكرتك العبقرية)
-  const [displayStats, setDisplayStats] = useState({ progress: 0, completed: 0, remaining: 0 });
+  // 🚀 حالة الأرقام الحقيقية (الهدف)
+  const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0, total: 0 });
+  const [stageProgress, setStageProgress] = useState([]); 
 
-  const [conversations, setConversations] = useState([]);
-  const [onlineProviders, setOnlineProviders] = useState([]);
-  
-  // 🚀 تهيئة الدوائر السفلية بالأصفار لتجنب الفراغ الأبيض
-  const [stageProgress, setStageProgress] = useState([
+  // 🚀 حالة الأرقام المتحركة (التي تبدأ من الصفر وتتصاعد للواجهة)
+  const [displayStats, setDisplayStats] = useState({ progress: 0, completed: 0, remaining: 0 });
+  const [displayStages, setDisplayStages] = useState([
     { id: 1, percent: 0, completed: 0, total: 0, color: '#3b82f6', icon: '📝' },
     { id: 2, percent: 0, completed: 0, total: 0, color: '#f97316', icon: '🏗️' },
     { id: 3, percent: 0, completed: 0, total: 0, color: '#a855f7', icon: '🎨' },
     { id: 4, percent: 0, completed: 0, total: 0, color: '#22c55e', icon: '📜' }
   ]);
-  
+
+  const [profile, setProfile] = useState({ full_name: '', phone: '', city: '', project_name: '' });
+  const [conversations, setConversations] = useState([]);
+  const [onlineProviders, setOnlineProviders] = useState([]);
   const [team, setTeam] = useState([]);
   const [reports, setReports] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [docCategory, setDocCategory] = useState('رخصة بناء');
-  
   const [budget, setBudget] = useState({ total: 0, spent: 0, isCalculated: false });
   const [appointments, setAppointments] = useState([]);
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -249,47 +245,63 @@ export default function ContractorDashboard() {
       : 'bg-white/90 backdrop-blur-xl border-white text-slate-800 shadow-lg hover:shadow-[0_0_35px_rgba(59,130,246,0.4)] hover:border-blue-400'
   }`;
 
-  // 🚀 الأنيميشن الذكي: يراقب الأرقام الحقيقية (stats) ويرفع الأرقام الظاهرة (displayStats) برفق
+  // 🚀 1. محرك الأنيميشن الموحد (يُشغل البطاقات العلوية والدوائر السفلية معاً)
   useEffect(() => {
-    if (stats.progress === 0 && stats.completed === 0 && stats.remaining === 0) return;
+    if (stats.total === 0 && stageProgress.length === 0) return;
 
-    const duration = 1500; 
+    const duration = 2000; // ثانيتين ليكتمل العداد ويعطي شعوراً بالفخامة
     const intervalTime = 30; 
     const steps = duration / intervalTime;
-
     let currentStep = 0;
+
     const timer = setInterval(() => {
       currentStep++;
+      const progressRatio = Math.min(currentStep / steps, 1);
+
+      // تحديث أرقام البطاقات العلوية
       setDisplayStats({
-        progress: Math.min(Math.round((stats.progress / steps) * currentStep), stats.progress),
-        completed: Math.min(Math.round((stats.completed / steps) * currentStep), stats.completed),
-        remaining: Math.min(Math.round((stats.remaining / steps) * currentStep), stats.remaining),
+        progress: Math.round(stats.progress * progressRatio),
+        completed: Math.round(stats.completed * progressRatio),
+        remaining: Math.round(stats.remaining * progressRatio),
       });
+
+      // تحديث أرقام وأشرطة الدوائر السفلية
+      if (stageProgress.length > 0) {
+        setDisplayStages(stageProgress.map(stage => ({
+          ...stage,
+          percent: Math.round(stage.percent * progressRatio),
+          completed: Math.round(stage.completed * progressRatio)
+        })));
+      }
       
       if (currentStep >= steps) clearInterval(timer);
     }, intervalTime);
 
     return () => clearInterval(timer);
-  }, [stats]);
+  }, [stats, stageProgress]);
 
-  // 🚀 جلب البيانات التلقائي (بدون الحاجة إلى F5)
+  // 🚀 2. جلب البيانات عند فتح الصفحة فوراً دون الحاجة لـ F5
   useEffect(() => {
-    fetchDashboardData();
+    const initializeDashboard = async () => {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetchDashboardData(session?.user || null);
+      setLoading(false);
+    };
 
+    initializeDashboard();
+
+    // الاستماع لأي تغيير في تسجيل الدخول
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        fetchDashboardData();
-      }
+      fetchDashboardData(session?.user || null);
     });
 
     return () => { if(authListener) authListener.subscription.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]); 
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (currentUser) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-
       let syncedStages = [
         { id: 1, icon: '📝', color: '#3b82f6', percent: 0, completed: 0, total: 9 },
         { id: 2, icon: '🏗️', color: '#f97316', percent: 0, completed: 0, total: 11 },
@@ -297,17 +309,17 @@ export default function ContractorDashboard() {
         { id: 4, icon: '📜', color: '#22c55e', percent: 0, completed: 0, total: 4 }
       ];
       
-      let syncedStats = { progress: 0, completed: 0, remaining: 0 };
+      let syncedStats = { progress: 0, completed: 0, remaining: 0, total: 28 };
       let currentBudget = { total: 0, spent: 0, isCalculated: false };
 
-      if (user) {
-        setUser(user);
+      if (currentUser) {
+        setUser(currentUser);
 
         const [servicesRes, checklistsRes, progressRes, profileRes] = await Promise.all([
           supabase.from('services').select('id, stage_id'),
           supabase.from('checklists').select('id, service_id'),
-          supabase.from('user_progress').select('task_id').eq('user_id', user.id),
-          supabase.from('profiles').select('*').eq('id', user.id).single()
+          supabase.from('user_progress').select('task_id').eq('user_id', currentUser.id),
+          supabase.from('profiles').select('*').eq('id', currentUser.id).single()
         ]);
 
         if (profileRes.data) setProfile(profileRes.data);
@@ -340,18 +352,19 @@ export default function ContractorDashboard() {
         syncedStats = {
           progress: totalOverallTasks > 0 ? Math.round((totalCompletedTasks / totalOverallTasks) * 100) : 0,
           completed: totalCompletedTasks,
-          remaining: Math.max(0, totalOverallTasks - totalCompletedTasks)
+          remaining: Math.max(0, totalOverallTasks - totalCompletedTasks),
+          total: totalOverallTasks
         };
 
-        const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-        const { data: expenses } = await supabase.from('project_expenses').select('amount').eq('user_id', user.id);
+        const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        const { data: expenses } = await supabase.from('project_expenses').select('amount').eq('user_id', currentUser.id);
         
         const estBudget = estimate ? parseFloat(estimate.total_cost || estimate.total_budget || 0) : 0;
         const totalSpent = expenses ? expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) : 0;
         
         currentBudget = { total: estBudget, spent: totalSpent, isCalculated: estBudget > 0 };
 
-        const { data: convos } = await supabase.from('conversations').select('id, provider_id, architect_id').eq('client_id', user.id);
+        const { data: convos } = await supabase.from('conversations').select('id, provider_id, architect_id').eq('client_id', currentUser.id);
         if (convos) {
           const convosWithDetails = await Promise.all(convos.map(async (c) => {
             let name = 'غير معروف', icon = '👤', partnerId = null;
@@ -371,7 +384,7 @@ export default function ContractorDashboard() {
           setConversations(convosWithDetails);
         }
 
-        const globalChannel = supabase.channel('global_radar_room', { config: { presence: { key: 'client_' + user.id } } });
+        const globalChannel = supabase.channel('global_radar_room', { config: { presence: { key: 'client_' + currentUser.id } } });
         globalChannel.on('presence', { event: 'sync' }, () => {
           const state = globalChannel.presenceState();
           const onlineIds = [];
@@ -380,46 +393,46 @@ export default function ContractorDashboard() {
           }
           setOnlineProviders(onlineIds);
         }).subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') await globalChannel.track({ type: 'client', id: user.id });
+          if (status === 'SUBSCRIBED') await globalChannel.track({ type: 'client', id: currentUser.id });
         });
 
-        const { data: teamData } = await supabase.from('milestone_assignments').select('*').eq('user_id', user.id).order('stage_id', { ascending: true });
+        const { data: teamData } = await supabase.from('milestone_assignments').select('*').eq('user_id', currentUser.id).order('stage_id', { ascending: true });
         if (teamData) setTeam(teamData);
 
-        const { data: reportsData } = await supabase.from('site_reports').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10);
+        const { data: reportsData } = await supabase.from('site_reports').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(10);
         if (reportsData) setReports(reportsData);
 
-        const { data: docsData } = await supabase.from('project_documents').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+        const { data: docsData } = await supabase.from('project_documents').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
         if (docsData) setDocuments(docsData);
 
-        const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', user.id);
+        const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', currentUser.id);
         if (appsData) setAppointments(appsData);
         
       } else {
-        // حالة الزائر: إظهار إحصائيات مبهرة لتسويق المنصة
+        // 🚀 حالة الزائر (بيانات وهمية تسويقية)
         syncedStages = [
           { id: 1, icon: '📝', color: '#3b82f6', percent: 100, completed: 9, total: 9 },
           { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
           { id: 3, icon: '🎨', color: '#a855f7', percent: 0, completed: 0, total: 4 },
           { id: 4, icon: '📜', color: '#22c55e', percent: 0, completed: 0, total: 4 }
         ];
-        syncedStats = { progress: 57, completed: 16, remaining: 12 };
+        syncedStats = { progress: 57, completed: 16, remaining: 12, total: 28 };
         currentBudget = { total: 320500, spent: 145000, isCalculated: true }; 
       }
 
+      // 🚀 إرسال الأرقام الحقيقية لمحرك الأنيميشن ليبدأ العمل
       setStageProgress(syncedStages);
       setStats(syncedStats);
       setBudget(currentBudget);
-      setLoading(false);
 
     } catch (error) {
       console.error("Error fetching data:", error);
-      setLoading(false);
     }
   };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
+    if(!user) return;
     setSaveStatus('loading');
     try {
       const { error } = await supabase.from('profiles').upsert({ id: user.id, ...profile, updated_at: new Date().toISOString() });
@@ -431,7 +444,7 @@ export default function ContractorDashboard() {
 
   const handleDocumentUpload = async (e) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !user) return;
     setUploadingDoc(true);
     let successCount = 0;
     
@@ -511,7 +524,6 @@ export default function ContractorDashboard() {
   );
 
   const budgetPercent = budget.total > 0 ? Math.min((budget.spent / budget.total) * 100, 100) : 0;
-  
   let radarColor = "from-emerald-400 to-emerald-600";
   let radarStatus = t.radarGood;
   let radarStatusColor = "text-emerald-500";
@@ -535,17 +547,117 @@ export default function ContractorDashboard() {
 
       <div className="relative z-10 space-y-8 animate-fade-in pb-24">
         
-        <div className="mb-8">
+        <div className="mb-4">
           <h1 className={`text-4xl font-black tracking-tight ${isDarkMode ? 'text-white drop-shadow-md' : 'text-[#0f3b25] drop-shadow-sm'}`}>{t.pageTitle}</h1>
         </div>
 
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-4 mb-6">
           <Link to="/v2/cost-calculator" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
             <Calculator className="text-blue-500" size={24} /> {t.calcBtn}
           </Link>
           <Link to="/v2/project-path" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
             <FolderOpen className="text-orange-500" size={24} /> {t.projectPathBtn}
           </Link>
+        </div>
+
+        {/* 🚀 1. نقل البطاقات الثلاث الإحصائية للأعلى (تستخدم displayStats للأنيميشن) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
+            <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
+            <span className="text-6xl font-black drop-shadow-md">{displayStats.progress}%</span>
+          </div>
+          <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
+            <span className="text-sm font-bold opacity-90 mb-2">{t.tasksDone}</span>
+            <span className="text-6xl font-black drop-shadow-md">{displayStats.completed}</span>
+          </div>
+          <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(6,182,212,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
+            <span className="text-sm font-bold opacity-90 mb-2">{t.tasksLeft}</span>
+            <span className="text-6xl font-black drop-shadow-md">{displayStats.remaining}</span>
+          </div>
+        </div>
+
+        {/* 🚀 2. نقل منطقة الإحصائيات التفصيلية (الدوائر الأربع) لتكون مباشرة تحت البطاقات العلوية */}
+        <div className={cardClass}>
+          <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
+          <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* 🚀 الدوائر تستخدم displayStages لكي تمتلئ ببطء مع تأثير النبض */}
+            {displayStages.map(stage => (
+              <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all flex flex-col items-center justify-center group ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
+                <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
+                  {t.stageNames[stage.id]} {stage.icon}
+                </div>
+                
+                {/* الدائرة الدوارة ذات النبض الخفيف */}
+                <div 
+                  className="relative w-32 h-32 rounded-full flex items-center justify-center mb-4 shadow-inner group-hover:shadow-[0_0_20px_rgba(0,0,0,0.1)] transition-shadow duration-500" 
+                  style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}
+                >
+                  <div className={`absolute rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`} style={{ width: '82%', height: '82%' }}>
+                    <span className="text-2xl font-black animate-pulse" style={{ color: stage.color }}>{stage.percent}%</span>
+                  </div>
+                </div>
+                
+                <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                  {stage.completed} / {stage.total} {t.taskUnit}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* باقي العناصر تليها في الترتيب... */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className={cardClass}>
+            <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
+            <form onSubmit={handleProfileUpdate} className="space-y-5">
+              <input type="text" placeholder={t.compName} value={profile.full_name || ''} onChange={e => setProfile({...profile, full_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              <input type="tel" placeholder={t.phone} value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              <div className="grid grid-cols-2 gap-4">
+                <input type="text" placeholder={t.city} value={profile.city || ''} onChange={e => setProfile({...profile, city: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+                <input type="text" placeholder={t.currentSite} value={profile.project_name || ''} onChange={e => setProfile({...profile, project_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              </div>
+              <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1">{t.saveBtn}</button>
+            </form>
+          </div>
+
+          <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
+              <div>
+                <h2 className="text-xl font-black flex items-center gap-2"><Camera className="text-blue-500" /> {t.camTitle}</h2>
+                <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.camSub}</p>
+              </div>
+              <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all hover:scale-105">
+                <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></span> {t.liveBtn}
+              </button>
+            </div>
+            
+            <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar snap-x">
+              {reports.length === 0 ? (
+                <div className={`w-full text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noReports}</div>
+              ) : (
+                reports.map(r => (
+                  <div key={r.id} className={`min-w-[260px] rounded-xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
+                    <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm`}>
+                      <Trash2 size={16}/>
+                    </button>
+                    <div className="relative h-40 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
+                      <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                      <span className={`absolute bottom-2 ${isRtl ? 'right-2' : 'left-2'} text-white text-[11px] font-bold`}>
+                        🕒 {new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                    <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
+                      <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>{r.description || t.interactiveShot}</p>
+                      <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1">👷 {r.provider_name || t.souqTeam}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
         <div className={`${cardClass} border-t-4 border-t-blue-500`}>
@@ -555,7 +667,6 @@ export default function ContractorDashboard() {
               <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> {t.onlineStatus} ({onlineProviders.length}) {t.available}
             </span>
           </div>
-          
           <div className="overflow-x-auto">
             {conversations.length === 0 ? (
               <div className={`text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noChats}</div>
@@ -582,49 +693,6 @@ export default function ContractorDashboard() {
                   })}
                 </tbody>
               </table>
-            )}
-          </div>
-        </div>
-
-        <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
-          <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
-            <div>
-              <h2 className="text-xl font-black flex items-center gap-2"><Camera className="text-blue-500" /> {t.camTitle}</h2>
-              <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.camSub}</p>
-            </div>
-            <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all hover:scale-105">
-              <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></span> {t.liveBtn}
-            </button>
-          </div>
-          
-          <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar snap-x">
-            {reports.length === 0 ? (
-              <div className={`w-full text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noReports}</div>
-            ) : (
-              reports.map(r => (
-                <div key={r.id} className={`min-w-[260px] rounded-xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
-                  <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm`}>
-                    <Trash2 size={16}/>
-                  </button>
-                  
-                  <div className="relative h-40 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
-                    <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-                    <span className={`absolute bottom-2 ${isRtl ? 'right-2' : 'left-2'} text-white text-[11px] font-bold`}>
-                      🕒 {new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
-                    </span>
-                  </div>
-                  
-                  <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
-                    <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>
-                      {r.description || t.interactiveShot}
-                    </p>
-                    <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1">
-                      👷 {r.provider_name || t.souqTeam}
-                    </p>
-                  </div>
-                </div>
-              ))
             )}
           </div>
         </div>
@@ -660,52 +728,57 @@ export default function ContractorDashboard() {
           )}
         </div>
 
-        {/* 🚀 العداد المتصاعد في البطاقات العلوية */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
-            <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
-            <span className="text-6xl font-black drop-shadow-md">{displayStats.progress}%</span>
-          </div>
-          <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
-            <span className="text-sm font-bold opacity-90 mb-2">{t.tasksDone}</span>
-            <span className="text-6xl font-black drop-shadow-md">{displayStats.completed}</span>
-          </div>
-          <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(6,182,212,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
-            <span className="text-sm font-bold opacity-90 mb-2">{t.tasksLeft}</span>
-            <span className="text-6xl font-black drop-shadow-md">{displayStats.remaining}</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className={cardClass}>
-            <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
-            <form onSubmit={handleProfileUpdate} className="space-y-5">
-              <input type="text" placeholder={t.compName} value={profile.full_name || ''} onChange={e => setProfile({...profile, full_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-              <input type="tel" placeholder={t.phone} value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-              <div className="grid grid-cols-2 gap-4">
-                <input type="text" placeholder={t.city} value={profile.city || ''} onChange={e => setProfile({...profile, city: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                <input type="text" placeholder={t.currentSite} value={profile.project_name || ''} onChange={e => setProfile({...profile, project_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-              </div>
-              <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1">{t.saveBtn}</button>
-            </form>
-          </div>
-
-          <div className={cardClass}>
-            <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
-            <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
-            <div className="grid grid-cols-2 sm:grid-cols-2 gap-6">
-              {stageProgress.map(stage => (
-                <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all hover:scale-105 flex flex-col items-center justify-center ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
-                  <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
-                    {t.stageNames[stage.id]} {stage.icon}
-                  </div>
-                  <div className="relative w-28 h-28 rounded-full flex items-center justify-center mb-4 shadow-inner" style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}>
-                    <div className={`absolute rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`} style={{ width: '82%', height: '82%' }}><span className="text-2xl font-black" style={{ color: stage.color }}>{stage.percent}%</span></div>
-                  </div>
-                  <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>{stage.completed} / {stage.total} {t.taskUnit}</div>
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
+              <h2 className="text-xl font-black flex items-center gap-2"><Wallet className="text-blue-500" /> {t.radarTitle}</h2>
+              {budget.isCalculated && (
+                <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${radarStatusColor} ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  {radarStatus}
+                </span>
+              )}
+            </div>
+            
+            {!budget.isCalculated ? (
+               <div className={`text-center py-8 rounded-xl border border-dashed flex flex-col items-center justify-center gap-3 ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-slate-50/50'}`}>
+                 <p className="font-bold">{t.noBudget}</p>
+                 <Link to="/v2/cost-calculator" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold transition-all shadow-md">
+                   {t.calcBtn}
+                 </Link>
+               </div>
+            ) : (
+              <div className={`p-6 rounded-2xl border-2 mb-6 ${isDarkMode ? 'bg-slate-900/80 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
+                <div className="flex justify-between font-bold mb-4 text-lg">
+                  <span>{t.spent} <span className="text-orange-500 drop-shadow-sm">{budget.spent.toLocaleString()}</span> {t.currency}</span>
+                  <span>{t.estimated} <span className="text-blue-500 drop-shadow-sm">{budget.total.toLocaleString()}</span> {t.currency}</span>
                 </div>
-              ))}
+                <div className={`w-full h-6 rounded-full overflow-hidden shadow-inner p-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                  <div 
+                    className={`h-full rounded-full bg-gradient-to-r ${radarColor} flex items-center justify-end pr-2 transition-all duration-1000 ease-out`} 
+                    style={{ width: `${Math.max(budgetPercent, 5)}%` }}
+                  >
+                    {budgetPercent > 10 && <span className="text-[10px] text-white font-black">{Math.round(budgetPercent)}%</span>}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={cardClass}>
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
+              <button onClick={() => changeMonth(-1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
+                <ChevronRight size={20} className={isRtl ? '' : 'rotate-180'}/>
+              </button>
+              <h3 className="text-xl font-black">{calendarDate.toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })}</h3>
+              <button onClick={() => changeMonth(1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
+                <ChevronLeft size={20} className={isRtl ? '' : 'rotate-180'}/>
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1 text-center mb-3">
+              {t.days.map(d => <div key={d} className={`text-sm font-black ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{d}</div>)}
+            </div>
+            <div className="grid grid-cols-7 gap-1.5">
+              {renderCalendarDays()}
             </div>
           </div>
         </div>
@@ -772,62 +845,6 @@ export default function ContractorDashboard() {
                 )
               })
             }
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          <div className={cardClass}>
-            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
-              <h2 className="text-xl font-black flex items-center gap-2"><Wallet className="text-blue-500" /> {t.radarTitle}</h2>
-              {budget.isCalculated && (
-                <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${radarStatusColor} ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-                  {radarStatus}
-                </span>
-              )}
-            </div>
-            
-            {!budget.isCalculated ? (
-               <div className={`text-center py-8 rounded-xl border border-dashed flex flex-col items-center justify-center gap-3 ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-slate-50/50'}`}>
-                 <p className="font-bold">{t.noBudget}</p>
-                 <Link to="/v2/cost-calculator" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold transition-all shadow-md">
-                   {t.calcBtn}
-                 </Link>
-               </div>
-            ) : (
-              <div className={`p-6 rounded-2xl border-2 mb-6 ${isDarkMode ? 'bg-slate-900/80 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
-                <div className="flex justify-between font-bold mb-4 text-lg">
-                  <span>{t.spent} <span className="text-orange-500 drop-shadow-sm">{budget.spent.toLocaleString()}</span> {t.currency}</span>
-                  <span>{t.estimated} <span className="text-blue-500 drop-shadow-sm">{budget.total.toLocaleString()}</span> {t.currency}</span>
-                </div>
-                <div className={`w-full h-6 rounded-full overflow-hidden shadow-inner p-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  <div 
-                    className={`h-full rounded-full bg-gradient-to-r ${radarColor} flex items-center justify-end pr-2 transition-all duration-1000 ease-out`} 
-                    style={{ width: `${Math.max(budgetPercent, 5)}%` }}
-                  >
-                    {budgetPercent > 10 && <span className="text-[10px] text-white font-black">{Math.round(budgetPercent)}%</span>}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className={cardClass}>
-            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
-              <button onClick={() => changeMonth(-1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
-                <ChevronRight size={20} className={isRtl ? '' : 'rotate-180'}/>
-              </button>
-              <h3 className="text-xl font-black">{calendarDate.toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })}</h3>
-              <button onClick={() => changeMonth(1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
-                <ChevronLeft size={20} className={isRtl ? '' : 'rotate-180'}/>
-              </button>
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-center mb-3">
-              {t.days.map(d => <div key={d} className={`text-sm font-black ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{d}</div>)}
-            </div>
-            <div className="grid grid-cols-7 gap-1.5">
-              {renderCalendarDays()}
-            </div>
           </div>
         </div>
 
