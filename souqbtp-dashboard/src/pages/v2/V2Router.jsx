@@ -4,6 +4,7 @@ import ContractorDashboard from './ContractorDashboard';
 import CostCalculator from './CostCalculator'; // 🚀 تم الاستدعاء
 import ProjectPath from './ProjectPath'; // 🚀 تم الاستدعاء
 import ContractorHR from './ContractorHR';
+import ContractorMarketplace from './ContractorMarketplace';
 
 // صفحة قيد الإنشاء ذكية تتجاوب مع لون الغلاف
 const UnderConstruction = ({ title, icon }) => {
@@ -37,7 +38,7 @@ export default function V2Router({ session, supplier }) {
         {/* التواصل والمشتريات */}
         <Route path="messages" element={<UnderConstruction title="صندوق الرسائل الشامل" icon="💬" />} />
         <Route path="hr" element={<ContractorHR icon="👥" />} />
-        <Route path="marketplace" element={<UnderConstruction title="سوق BTP للمواد الأولية" icon="🛒" />} />
+        <Route path="marketplace" element={<ContractorMarketplace />} />
         <Route path="tenders" element={<UnderConstruction title="رادار المناقصات (Appels d'offres)" icon="📡" />} />
         
         {/* المالية والمحاسبة */}
