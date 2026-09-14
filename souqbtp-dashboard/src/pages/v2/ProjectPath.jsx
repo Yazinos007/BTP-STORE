@@ -152,6 +152,7 @@ export default function ProjectPath() {
     "سباكة (بلومبي)": { fr: "Plomberie", en: "Plumbing" },
     "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
     "أعمال حجرية": { fr: "Travaux de pierre", en: "Stone works" },
+    "اعمال حجرية": { fr: "Travaux de pierre", en: "Stone works" }, // للتأكد
     "أساسات": { fr: "Fondations", en: "Foundations" },
     "طوب": { fr: "Briques", en: "Bricks" },
     "هيكل خرساني": { fr: "Structure en béton", en: "Concrete structure" },
@@ -169,8 +170,6 @@ export default function ProjectPath() {
     "أعمال السباكة (البلومبير)": { fr: "Travaux de Plomberie", en: "Plumbing Works" },
     "أعمال الكهرباء": { fr: "Travaux d'Électricité", en: "Electrical Works" },
     "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
-    "دراسات الخرسانة والحديد": { fr: "Études de Béton et Acier", en: "Concrete & Steel Studies" },
-    "استخراج رخصة البناء": { fr: "Obtention du Permis de Construire", en: "Building Permit" },
     
     // Stage 3
     "صيانة + تجديد": { fr: "Entretien et Rénovation", en: "Maintenance & Renovation" },
@@ -187,7 +186,7 @@ export default function ProjectPath() {
     "الصباغة والواجهات الخارجية": { fr: "Peinture et Façades Extérieures", en: "Painting & Exterior Facades" },
     "النجارة الخشبية": { fr: "Menuiserie Bois", en: "Wood Carpentry" },
     "التشطيب النهائي (سباكة وكهرباء)": { fr: "Finitions Finales (Plomberie & Électricité)", en: "Final Touches (Plumbing & Electrical)" },
-    "Aluminium": { fr: "Menuiserie Aluminium / PVC", en: "Aluminum / PVC Carpentry" },
+    "Jour": { fr: "Menuiserie Aluminium / PVC", en: "Aluminum / PVC Carpentry" },
 
     // Stage 4
     "شهادة السكنى": { fr: "Permis d'Habiter", en: "Occupancy Permit" },
@@ -215,15 +214,23 @@ export default function ProjectPath() {
   };
 
   const translateDB = (text) => {
-    if (!text) return text;
+    // 🚀 الحماية من القيم الفارغة لمنع انهيار React (الصفحة البيضاء)
+    if (!text || typeof text !== 'string') return text; 
+    
     if (language === 'ar') return text;
+    
     const clean = text.trim();
+    
+    // 1. التطابق التام
     if (dbTranslations[clean] && dbTranslations[clean][language]) {
       return dbTranslations[clean][language];
     }
+    
+    // 2. البحث الذكي المتسامح
     for (const [arKey, trans] of Object.entries(dbTranslations)) {
       if (clean.includes(arKey)) return trans[language];
     }
+    
     return text;
   };
 
@@ -231,30 +238,39 @@ export default function ProjectPath() {
   const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchInitialData = async () => {
       setLoading(true);
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (currentUser) setUser(currentUser);
-      await loadStageData(selectedStage, currentUser);
+      if (isMounted) {
+         if (currentUser) setUser(currentUser);
+         await loadStageData(selectedStage, currentUser, isMounted);
+      }
     };
     
     fetchInitialData();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        loadStageData(selectedStage, session.user);
-      } else {
-        setUser(null);
-        loadStageData(selectedStage, null);
+      if (isMounted) {
+          if (session?.user) {
+            setUser(session.user);
+            loadStageData(selectedStage, session.user, isMounted);
+          } else {
+            setUser(null);
+            loadStageData(selectedStage, null, isMounted);
+          }
       }
     });
 
-    return () => { if(authListener) authListener.subscription.unsubscribe(); };
+    return () => { 
+        isMounted = false;
+        if(authListener) authListener.subscription.unsubscribe(); 
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStage, language]);
 
-  const loadStageData = async (stageId, passedUser) => {
+  const loadStageData = async (stageId, passedUser, isMounted = true) => {
     setProviders([]);
     setSelectedService(null);
     try {
@@ -265,6 +281,8 @@ export default function ProjectPath() {
         passedUser ? supabase.from('milestone_assignments').select('*').eq('user_id', passedUser.id).eq('stage_id', stageId) : { data: [] },
         supabase.from('checklists').select('id', { count: 'exact', head: true })
       ]);
+
+      if (!isMounted) return;
 
       if (servicesRes.data) setServices(servicesRes.data);
       if (checklistsRes.data) setChecklists(checklistsRes.data);
@@ -281,7 +299,7 @@ export default function ProjectPath() {
     } catch (error) {
       console.error(error);
     }
-    setLoading(false);
+    if(isMounted) setLoading(false);
   };
 
   const toggleTask = async (taskId) => {
@@ -371,7 +389,7 @@ export default function ProjectPath() {
   return (
     <div className="animate-fade-in pb-24 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 الترويسة الرئيسية */}
+      {/* الترويسة */}
       <div className="bg-gradient-to-r from-blue-800 to-blue-600 rounded-3xl p-6 md:p-10 mb-8 text-center md:text-start flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl shadow-blue-900/20 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
         <div className="relative z-10">
@@ -380,7 +398,7 @@ export default function ProjectPath() {
         </div>
       </div>
 
-      {/* 📊 بطاقة متابعة التقدم */}
+      {/* التقدم الكلي */}
       <div className={`p-6 md:p-8 rounded-3xl border-2 mb-8 ${cardBg}`}>
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
           <h3 className="text-xl font-black flex items-center gap-2">📊 {t.progressTitle}</h3>
@@ -416,7 +434,7 @@ export default function ProjectPath() {
         )}
       </div>
 
-      {/* 🧭 أزرار اختيار المراحل */}
+      {/* المراحل */}
       <div className="flex flex-wrap gap-3 mb-8">
         {t.stages.map(stage => {
           const isActive = selectedStage === stage.id;
@@ -436,7 +454,7 @@ export default function ProjectPath() {
         })}
       </div>
 
-      {/* 📋 منطقة الخدمات (البطاقات) */}
+      {/* المهام */}
       <div className="mb-10">
         <h2 className={`text-2xl font-black mb-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-800'}`}>
           {t.stagePrefix} {t.stages.find(s => s.id === selectedStage)?.name}
@@ -456,7 +474,7 @@ export default function ProjectPath() {
               return (
                 <div key={service.id} className={`rounded-3xl border-2 p-6 transition-all hover:shadow-xl ${cardBg} hover:-translate-y-1`}>
                   
-                  {/* 🚀 الترجمة الديناميكية لاسم الخدمة */}
+                  {/* 🚀 الترجمة الشاملة لاسم الخدمة */}
                   <h3 className={`text-xl font-black mb-5 pb-3 border-b ${isDarkMode ? 'border-slate-700 text-blue-300' : 'border-slate-100 text-blue-900'}`}>
                     {translateDB(service.name)} 
                   </h3>
@@ -477,7 +495,7 @@ export default function ProjectPath() {
                           <div className={`mt-0.5 shrink-0 ${isDone ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`}>
                             {isDone ? <CheckCircle2 size={20} className="fill-emerald-100 dark:fill-emerald-900" /> : <Circle size={20} />}
                           </div>
-                          {/* 🚀 الترجمة الديناميكية لاسم المهمة */}
+                          {/* 🚀 الترجمة الشاملة لاسم المهمة */}
                           <span className="font-bold text-sm leading-snug">{translateDB(task.task_description)}</span>
                         </div>
                       )
@@ -499,7 +517,7 @@ export default function ProjectPath() {
         )}
       </div>
 
-      {/* 👷 نافذة مزودي الخدمة */}
+      {/* نافذة مزودي الخدمة */}
       {selectedService && (
         <div className={`p-6 md:p-8 rounded-3xl border-2 animate-slide-up ${cardBg}`}>
           <div className="flex justify-between items-center mb-6">
@@ -529,7 +547,7 @@ export default function ProjectPath() {
         </div>
       )}
 
-      {/* 👤 نافذة تعيين مسؤول للمرحلة */}
+      {/* نافذة التعيين */}
       {isAssignModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsAssignModalOpen(false)}>
           <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl animate-fade-in border-2 ${isDarkMode ? 'bg-slate-800 border-slate-600' : 'bg-white border-white'}`} onClick={e => e.stopPropagation()}>
