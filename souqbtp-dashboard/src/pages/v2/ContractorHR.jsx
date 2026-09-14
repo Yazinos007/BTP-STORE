@@ -21,7 +21,7 @@ export default function ContractorHR() {
   const [editingId, setEditingId] = useState(null);
   const [showPayslip, setShowPayslip] = useState(false);
 
-  // Simulated States for UI
+  // Simulated States for UI (Frontend Demo - can be linked to DB later)
   const [trainings, setTrainings] = useState(['Habilitation Électrique (B1V)', "Sécurité de Chantier"]);
   const [showAddTraining, setShowAddTraining] = useState(false);
   const [newTraining, setNewTraining] = useState('');
@@ -144,7 +144,7 @@ export default function ContractorHR() {
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-800';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
   const modalBg = isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200';
-  const inputBg = isDarkMode ? 'bg-slate-950 border-slate-800 text-white placeholder-slate-600' : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400';
+  const inputBg = isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
 
   useEffect(() => {
     let isMounted = true;
@@ -164,15 +164,20 @@ export default function ContractorHR() {
 
   const fetchEmployees = async (userId) => {
     try {
+      // Assuming 'employees' table uses 'contractor_id' or similar. Using user_id for generic case.
+      // Adjust this query based on your actual DB schema for contractors' employees.
+      // For demo, we might use mock data if the table isn't ready.
+      
       const { data, error } = await supabase
-        .from('employees')
+        .from('employees') // Adjust table name if needed (e.g., contractor_employees)
         .select('*')
-        .eq('supplier_id', userId) 
+        .eq('supplier_id', userId) // Using supplier_id as generic owner id for now
         .order('created_at', { ascending: false });
         
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
          setEmployees(data);
       } else {
+         // Fallback mock data for visual testing if table is empty/missing
          setEmployees([
            { id: '1', full_name: 'Ahmed Benali', role: 'Chef de Chantier', base_salary: 8500, status: 'Actif', cin: 'AE12345', phone: '0600000001' },
            { id: '2', full_name: 'Youssef Rami', role: 'Ingénieur', base_salary: 12000, status: 'Actif', cin: 'BJ98765', phone: '0600000002' },
@@ -197,15 +202,19 @@ export default function ContractorHR() {
       primes_avances: parseFloat(formData.primes || 0),
       retenues: parseFloat(formData.retenues || 0), 
       status: formData.status, 
-      supplier_id: user.id 
+      supplier_id: user.id // Owner ID
     };
 
     try {
         if (editingId) {
+            // Mocking save for demo
             setEmployees(employees.map(emp => emp.id === editingId ? { ...emp, ...empData, id: editingId } : emp));
+            // await supabase.from('employees').update(empData).eq('id', editingId);
         } else {
+            // Mocking insert for demo
             const newEmp = { ...empData, id: Date.now().toString(), created_at: new Date().toISOString() };
             setEmployees([newEmp, ...employees]);
+            // await supabase.from('employees').insert(empData);
         }
     } catch (err) {
         console.error(err);
@@ -241,6 +250,7 @@ export default function ContractorHR() {
   const handleDeleteClick = async (id) => {
     if (window.confirm(t.confirmDelete)) {
       setEmployees(employees.filter(emp => emp.id !== id));
+      // await supabase.from('employees').delete().eq('id', id);
     }
   };
 
@@ -281,6 +291,7 @@ export default function ContractorHR() {
 
   const currentMonth = new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { month: 'long', year: 'numeric' });
   
+  // 🚀 الأدوار المخصصة للمقاول
   const defaultRoles = ["Ingénieur", "Chef de Chantier", "Technicien Spécialisé", "Conducteur de Travaux", "Magasinier", "Gardien", "Comptable", "Responsable Achat"];
   const roleSuggestions = [...new Set([...defaultRoles, ...employees.map(emp => emp.role).filter(Boolean)])];
 
@@ -305,7 +316,7 @@ export default function ContractorHR() {
   return (
     <div className="space-y-6 animate-fade-in pb-24 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* Header */}
+      {/* 🚀 Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 mt-2">
         <div>
           <h2 className={`text-3xl font-black tracking-tight flex items-center gap-3 ${textTitle}`}>
@@ -326,14 +337,14 @@ export default function ContractorHR() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* 📊 KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatCard title={t.totalEmp} value={totalEmployees} icon={Users} bgGradient="bg-gradient-to-br from-blue-600 to-indigo-700" />
         <StatCard title={t.activeEmp} value={activeEmployees} icon={UserCheck} bgGradient="bg-gradient-to-br from-emerald-500 to-teal-600" />
         <StatCard title={t.payroll} value={totalPayroll.toLocaleString()} valueSuffix={t.currency} icon={DollarSign} bgGradient="bg-gradient-to-br from-pink-500 to-rose-600" />
       </div>
 
-      {/* Employees List */}
+      {/* 👥 Employees List */}
       <div className={`border-2 rounded-3xl shadow-lg overflow-hidden flex flex-col ${cardBg}`}>
         <div className={`p-5 md:p-6 border-b flex flex-col sm:flex-row justify-between items-center gap-4 ${isDarkMode ? 'border-slate-800 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
           <h3 className={`font-black text-lg ${textTitle}`}>{t.activeEmp}</h3>
@@ -402,18 +413,16 @@ export default function ContractorHR() {
 
       {/* 🗂️ Employee 360° Profile Modal */}
       {showProfileModal && (
-        <div className="fixed inset-0 z-[50] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-8 text-start" dir={isRtl ? 'rtl' : 'ltr'}>
-          {/* 🚀 تم تعديل max-h-[85vh] لتفادي قص الجزء العلوي */}
-          <div className={`border-2 rounded-3xl w-full max-w-6xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[85vh] ${modalBg}`}>
+        <div className="fixed inset-0 z-[50] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 text-start" dir={isRtl ? 'rtl' : 'ltr'}>
+          <div className={`border-2 rounded-3xl w-full max-w-6xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[95vh] ${modalBg}`}>
             
             {/* Modal Header */}
             <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-blue-500/20 text-blue-600"><User size={24}/></div>
                 <div>
-                  {/* 🚀 تم فرض الألوان المتباينة لضمان وضوح العنوان */}
-                  <h3 className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{editingId ? formData.full_name : t.newEmp}</h3>
-                  <p className={`text-sm font-bold mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{editingId ? formData.position : t.profileTitle}</p>
+                  <h3 className={`text-xl font-black ${textTitle}`}>{editingId ? formData.full_name : t.newEmp}</h3>
+                  <p className={`text-sm font-bold ${textMuted}`}>{editingId ? formData.position : t.profileTitle}</p>
                 </div>
               </div>
               <button onClick={closeProfile} className={`transition-colors cursor-pointer p-2 rounded-full ${isDarkMode ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-800'}`}><X size={24} /></button>
@@ -455,12 +464,11 @@ export default function ContractorHR() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       <div className="md:col-span-2">
                         <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.name}</label>
-                        {/* 🚀 إضافة النصوص التوضيحية (Placeholders) */}
-                        <input type="text" placeholder={t.name} required value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all border focus:border-blue-500 ${inputBg}`} />
+                        <input type="text" required value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all border focus:border-blue-500 ${inputBg}`} />
                       </div>
                       <div>
                         <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.position}</label>
-                        <input type="text" list="roles-list" placeholder={t.position} required value={formData.position} onChange={e => setFormData({...formData, position: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all border focus:border-blue-500 ${inputBg}`} autoComplete="off" />
+                        <input type="text" list="roles-list" required value={formData.position} onChange={e => setFormData({...formData, position: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all border focus:border-blue-500 ${inputBg}`} autoComplete="off" />
                         <datalist id="roles-list">{roleSuggestions.map((role, i) => <option key={i} value={role} />)}</datalist>
                       </div>
                       
@@ -479,7 +487,7 @@ export default function ContractorHR() {
                       </div>
                       <div>
                         <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.salary} ({t.currency})</label>
-                        <input type="number" placeholder="0" required min="0" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-black text-lg transition-all border ${isDarkMode ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-600'} focus:border-blue-500`} />
+                        <input type="number" required min="0" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className="w-full px-4 py-3 rounded-xl outline-none font-black text-lg transition-all bg-blue-500/10 border border-blue-500/30 text-blue-600 focus:border-blue-500" />
                       </div>
                     </div>
                   </div>
@@ -494,7 +502,7 @@ export default function ContractorHR() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       <div>
                         <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.cin}</label>
-                        <input type="text" placeholder={t.cin} value={formData.cin} onChange={e => setFormData({...formData, cin: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all border focus:border-pink-500 ${inputBg}`} />
+                        <input type="text" value={formData.cin} onChange={e => setFormData({...formData, cin: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all border focus:border-pink-500 ${inputBg}`} />
                       </div>
                       <div>
                         <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.cnss}</label>
@@ -512,7 +520,7 @@ export default function ContractorHR() {
                       
                       <div>
                         <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.phone}</label>
-                        <input type="text" placeholder="06..." value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all border focus:border-pink-500 ${inputBg}`} />
+                        <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all border focus:border-pink-500 ${inputBg}`} />
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-xs font-bold mb-2 text-red-500 flex items-center gap-1">
@@ -541,12 +549,12 @@ export default function ContractorHR() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-6 rounded-2xl border bg-emerald-500/5 border-emerald-500/20">
                       <label className="block text-sm font-black mb-3 text-emerald-600">{t.primes}</label>
-                      <input type="number" placeholder="0" min="0" value={formData.primes} onChange={e => setFormData({...formData, primes: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all border focus:border-emerald-500 ${isDarkMode ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`} />
+                      <input type="number" min="0" value={formData.primes} onChange={e => setFormData({...formData, primes: e.target.value})} className="w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 focus:border-emerald-500" />
                       <p className="text-xs mt-2 font-bold text-emerald-600/70">{t.bonusHint}</p>
                     </div>
                     <div className="p-6 rounded-2xl border bg-red-500/5 border-red-500/20">
                       <label className="block text-sm font-black mb-3 text-red-500">{t.retenues}</label>
-                      <input type="number" placeholder="0" min="0" value={formData.retenues} onChange={e => setFormData({...formData, retenues: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all border focus:border-red-500 ${isDarkMode ? 'bg-red-500/10 border-red-500/30 text-red-500' : 'bg-red-50 border-red-200 text-red-600'}`} />
+                      <input type="number" min="0" value={formData.retenues} onChange={e => setFormData({...formData, retenues: e.target.value})} className="w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg transition-all bg-red-500/10 border border-red-500/30 text-red-500 focus:border-red-500" />
                       <p className="text-xs mt-2 font-bold text-red-500/70">{t.deductHint}</p>
                     </div>
                   </div>
