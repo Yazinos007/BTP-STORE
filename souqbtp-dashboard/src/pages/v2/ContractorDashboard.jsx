@@ -15,6 +15,7 @@ export default function ContractorDashboard() {
   const [user, setUser] = useState(null);
   
   const [profile, setProfile] = useState({ full_name: '', phone: '', city: '', project_name: '' });
+  // 🚀 إعطاء قيم افتراضية 0 لمنع ظهور البطاقات فارغة قبل التحميل
   const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0 });
   const [conversations, setConversations] = useState([]);
   const [onlineProviders, setOnlineProviders] = useState([]);
@@ -23,7 +24,10 @@ export default function ContractorDashboard() {
   const [reports, setReports] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [docCategory, setDocCategory] = useState('رخصة بناء');
-  const [budget, setBudget] = useState({ total: 250000, spent: 0, expenses: [] });
+  
+  // 🚀 حالة الميزانية الجديدة
+  const [budget, setBudget] = useState({ total: 0, spent: 0, isCalculated: false });
+  
   const [appointments, setAppointments] = useState([]);
   const [calendarDate, setCalendarDate] = useState(new Date());
   
@@ -55,8 +59,8 @@ export default function ContractorDashboard() {
       pdfBtn: "تحميل PDF",
       waBtn: "مشاركة واتساب",
       editBudgetBtn: "تعديل الميزانية",
-      noBudget: "لم تقم بحساب الميزانية بعد.",
-      budgetCalculated: "تم حساب الميزانية (تفاصيل بالأسفل)",
+      noBudget: "لم تقم بحساب الميزانية بعد. ابدأ الآن لمعرفة تكلفة مشروعك.",
+      budgetCalculated: "التكلفة التقديرية للمشروع:",
       progTitle: "تقدم المشروع",
       tasksDone: "المهام المنجزة",
       tasksLeft: "المهام المتبقية",
@@ -81,6 +85,9 @@ export default function ContractorDashboard() {
       spent: "الفعلي:",
       estimated: "المقدر:",
       currency: "درهم",
+      radarGood: "الميزانية في حالة جيدة",
+      radarWarning: "انتبه، اقتربت من السقف!",
+      radarDanger: "تحذير: تجاوزت الميزانية!",
       sosBtn: "استغاثة تقنية",
       sosTitle: "طلب تدخل خبير تقني",
       issueTitle: "عنوان المشكلة",
@@ -114,8 +121,8 @@ export default function ContractorDashboard() {
       pdfBtn: "Télécharger PDF",
       waBtn: "Partager WhatsApp",
       editBudgetBtn: "Modifier le Budget",
-      noBudget: "Budget non calculé.",
-      budgetCalculated: "Budget calculé (détails en bas)",
+      noBudget: "Budget non calculé. Commencez l'estimation de votre projet.",
+      budgetCalculated: "Coût estimé du projet :",
       progTitle: "Progression du Projet",
       tasksDone: "Tâches Terminées",
       tasksLeft: "Tâches Restantes",
@@ -140,6 +147,9 @@ export default function ContractorDashboard() {
       spent: "Dépensé :",
       estimated: "Estimé :",
       currency: "MAD",
+      radarGood: "Budget sous contrôle",
+      radarWarning: "Attention, plafond proche !",
+      radarDanger: "Alerte : Dépassement de budget !",
       sosBtn: "Alerte Technique",
       sosTitle: "Demande d'Intervention",
       issueTitle: "Titre du problème",
@@ -173,8 +183,8 @@ export default function ContractorDashboard() {
       pdfBtn: "Download PDF",
       waBtn: "Share via WhatsApp",
       editBudgetBtn: "Edit Budget",
-      noBudget: "Budget not calculated yet.",
-      budgetCalculated: "Budget calculated (details below)",
+      noBudget: "Budget not calculated. Start your project estimation now.",
+      budgetCalculated: "Estimated Project Cost:",
       progTitle: "Project Progress",
       tasksDone: "Completed Tasks",
       tasksLeft: "Remaining Tasks",
@@ -199,6 +209,9 @@ export default function ContractorDashboard() {
       spent: "Spent:",
       estimated: "Estimated:",
       currency: "MAD",
+      radarGood: "Budget is healthy",
+      radarWarning: "Warning: Approaching limit!",
+      radarDanger: "Danger: Budget exceeded!",
       sosBtn: "Technical SOS",
       sosTitle: "Technical Support Request",
       issueTitle: "Issue Title",
@@ -235,7 +248,6 @@ export default function ContractorDashboard() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 🚀 بيانات المراحل الأساسية
       let syncedStages = [
         { id: 1, icon: '📝', color: '#3b82f6', percent: 0, completed: 0, total: 9 },
         { id: 2, icon: '🏗️', color: '#f97316', percent: 0, completed: 0, total: 11 },
@@ -244,11 +256,12 @@ export default function ContractorDashboard() {
       ];
       
       let syncedStats = { progress: 0, completed: 0, remaining: 0 };
+      let currentBudget = { total: 0, spent: 0, isCalculated: false };
 
       if (user) {
         setUser(user);
 
-        // 🚀 1. جلب المهام والخدمات وتقدم المستخدم في نفس اللحظة لضمان التطابق التام
+        // جلب البيانات المتزامنة
         const [servicesRes, checklistsRes, progressRes, profileRes] = await Promise.all([
           supabase.from('services').select('id, stage_id'),
           supabase.from('checklists').select('id, service_id'),
@@ -262,7 +275,6 @@ export default function ContractorDashboard() {
         const checklists = checklistsRes.data || [];
         const userProgress = progressRes.data?.map(p => p.task_id) || [];
 
-        // 🚀 2. بناء الدوائر السفلية وحساب نسبة كل مرحلة
         syncedStages = [1, 2, 3, 4].map(stageId => {
           const stageServices = services.filter(s => s.stage_id === stageId).map(s => s.id);
           const stageTasks = checklists.filter(t => stageServices.includes(t.service_id));
@@ -281,7 +293,6 @@ export default function ContractorDashboard() {
           };
         });
 
-        // 🚀 3. المزامنة العظمى: بناء البطاقات العلوية من مجموع الدوائر السفلية مباشرة لتستحيل مخالفتها
         const totalOverallTasks = syncedStages.reduce((acc, stage) => acc + stage.total, 0) || 28;
         const totalCompletedTasks = syncedStages.reduce((acc, stage) => acc + stage.completed, 0);
         
@@ -291,7 +302,16 @@ export default function ContractorDashboard() {
           remaining: Math.max(0, totalOverallTasks - totalCompletedTasks)
         };
 
-        // باقي البيانات...
+        // 🚀 محرك الميزانية: جلب إجمالي ما تم حسابه في "الحاسبة الذكية" وخصم المصاريف
+        const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        const { data: expenses } = await supabase.from('project_expenses').select('amount').eq('user_id', user.id);
+        
+        const estBudget = estimate ? parseFloat(estimate.total_cost || estimate.total_budget || 0) : 0;
+        const totalSpent = expenses ? expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) : 0;
+        
+        currentBudget = { total: estBudget, spent: totalSpent, isCalculated: estBudget > 0 };
+
+        // المحادثات والبيانات الأخرى
         const { data: convos } = await supabase.from('conversations').select('id, provider_id, architect_id').eq('client_id', user.id);
         if (convos) {
           const convosWithDetails = await Promise.all(convos.map(async (c) => {
@@ -327,12 +347,6 @@ export default function ContractorDashboard() {
         const { data: teamData } = await supabase.from('milestone_assignments').select('*').eq('user_id', user.id).order('stage_id', { ascending: true });
         if (teamData) setTeam(teamData);
 
-        const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-        const { data: expenses } = await supabase.from('project_expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-        const estBudget = estimate ? parseFloat(estimate.total_cost || estimate.total_budget || 250000) : 250000;
-        const totalSpent = expenses ? expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) : 0;
-        setBudget({ total: estBudget, spent: totalSpent, expenses: expenses || [] });
-
         const { data: reportsData } = await supabase.from('site_reports').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10);
         if (reportsData) setReports(reportsData);
 
@@ -343,18 +357,22 @@ export default function ContractorDashboard() {
         if (appsData) setAppointments(appsData);
         
       } else {
-        // حالة الزائر (بيانات وهمية متطابقة بنسبة 100%)
+        // حالة الزائر: إظهار إحصائيات مبهرة لتسويق المنصة
         syncedStages = [
-          { id: 1, icon: '📝', color: '#3b82f6', percent: 56, completed: 5, total: 9 },
+          { id: 1, icon: '📝', color: '#3b82f6', percent: 100, completed: 9, total: 9 },
           { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
-          { id: 3, icon: '🎨', color: '#a855f7', percent: 50, completed: 2, total: 4 },
-          { id: 4, icon: '📜', color: '#22c55e', percent: 25, completed: 1, total: 4 }
+          { id: 3, icon: '🎨', color: '#a855f7', percent: 0, completed: 0, total: 4 },
+          { id: 4, icon: '📜', color: '#22c55e', percent: 0, completed: 0, total: 4 }
         ];
-        syncedStats = { progress: 54, completed: 15, remaining: 13 }; // المجموع مطابق تماماً: 5+7+2+1 = 15
+        syncedStats = { progress: 57, completed: 16, remaining: 12 };
+        
+        // 🚀 أرقام وهمية للرادار التسويقي
+        currentBudget = { total: 320500, spent: 145000, isCalculated: true }; 
       }
 
       setStageProgress(syncedStages);
       setStats(syncedStats);
+      setBudget(currentBudget);
       setLoading(false);
 
     } catch (error) {
@@ -455,7 +473,22 @@ export default function ContractorDashboard() {
     </div>
   );
 
-  const budgetPercent = Math.min((budget.spent / budget.total) * 100, 100);
+  // 🚀 حساب نسبة شريط الميزانية ولونه النفسي
+  const budgetPercent = budget.total > 0 ? Math.min((budget.spent / budget.total) * 100, 100) : 0;
+  
+  let radarColor = "from-emerald-400 to-emerald-600";
+  let radarStatus = t.radarGood;
+  let radarStatusColor = "text-emerald-500";
+
+  if (budgetPercent >= 95) {
+    radarColor = "from-red-500 to-red-700 animate-pulse";
+    radarStatus = t.radarDanger;
+    radarStatusColor = "text-red-500 font-black animate-pulse";
+  } else if (budgetPercent >= 75) {
+    radarColor = "from-amber-400 to-orange-500";
+    radarStatus = t.radarWarning;
+    radarStatusColor = "text-orange-500";
+  }
 
   return (
     <div className={`min-h-screen p-4 md:p-8 transition-colors duration-700 relative overflow-hidden ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#eef8f2]'}`} dir={isRtl ? 'rtl' : 'ltr'}>
@@ -560,6 +593,7 @@ export default function ContractorDashboard() {
           </div>
         </div>
 
+        {/* 🚀 قسم الميزانية الإجمالية المربوط بالحاسبة */}
         <div className={cardClass}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
             <h2 className="text-xl font-black flex items-center gap-2">{t.budgetTitle}</h2>
@@ -575,16 +609,23 @@ export default function ContractorDashboard() {
               </Link>
             </div>
           </div>
-          {budget.total === 250000 && budget.spent === 0 ? (
-            <div className={`text-center py-8 rounded-xl mt-4 border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>
-              {t.noBudget}
+          
+          {/* إظهار رسالة التشجيع إذا لم يحسب الميزانية، أو عرض الميزانية بوضوح */}
+          {!budget.isCalculated ? (
+            <div className={`text-center py-8 rounded-xl mt-4 border border-dashed flex flex-col items-center justify-center gap-4 ${isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-slate-300 bg-blue-50/50'}`}>
+              <p className={`font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.noBudget}</p>
+              <Link to="/v2/cost-calculator" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-black shadow-lg shadow-blue-500/30 transition-transform hover:-translate-y-1">
+                {t.calcBtn}
+              </Link>
             </div>
           ) : (
-            <div className="text-center font-bold text-xl text-blue-500 mt-4">{t.budgetCalculated}</div>
+            <div className={`text-center py-6 rounded-xl mt-4 border-2 ${isDarkMode ? 'bg-slate-900/50 border-emerald-500/30' : 'bg-emerald-50/50 border-emerald-200'}`}>
+              <p className="font-bold text-slate-500 mb-1">{t.budgetCalculated}</p>
+              <div className="font-black text-3xl text-emerald-600 drop-shadow-sm">{budget.total.toLocaleString()} {t.currency}</div>
+            </div>
           )}
         </div>
 
-        {/* 🚀 البطاقات العلوية الإجمالية - أصبحت متزامنة 100% */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
             <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
@@ -627,9 +668,7 @@ export default function ContractorDashboard() {
                   <div className="relative w-28 h-28 rounded-full flex items-center justify-center mb-4 shadow-inner" style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}>
                     <div className={`absolute rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`} style={{ width: '82%', height: '82%' }}><span className="text-2xl font-black" style={{ color: stage.color }}>{stage.percent}%</span></div>
                   </div>
-                  <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                    {stage.completed} / {stage.total} {t.taskUnit}
-                  </div>
+                  <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>{stage.completed} / {stage.total} {t.taskUnit}</div>
                 </div>
               ))}
             </div>
@@ -702,19 +741,41 @@ export default function ContractorDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* 🚀 رادار الميزانية الذكي (متصل بالكامل مع الحاسبة) */}
           <div className={cardClass}>
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
               <h2 className="text-xl font-black flex items-center gap-2"><Wallet className="text-blue-500" /> {t.radarTitle}</h2>
+              {budget.isCalculated && (
+                <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${radarStatusColor} ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  {radarStatus}
+                </span>
+              )}
             </div>
-            <div className={`p-6 rounded-2xl border-2 mb-6 ${isDarkMode ? 'bg-slate-900/80 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
-              <div className="flex justify-between font-bold mb-4 text-lg">
-                <span>{t.spent} <span className="text-orange-500 drop-shadow-sm">{budget.spent.toLocaleString()}</span> {t.currency}</span>
-                <span>{t.estimated} <span className="text-emerald-500 drop-shadow-sm">{budget.total.toLocaleString()}</span> {t.currency}</span>
+            
+            {!budget.isCalculated ? (
+               <div className={`text-center py-8 rounded-xl border border-dashed flex flex-col items-center justify-center gap-3 ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-slate-50/50'}`}>
+                 <p className="font-bold">{t.noBudget}</p>
+                 <Link to="/v2/cost-calculator" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold transition-all shadow-md">
+                   {t.calcBtn}
+                 </Link>
+               </div>
+            ) : (
+              <div className={`p-6 rounded-2xl border-2 mb-6 ${isDarkMode ? 'bg-slate-900/80 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
+                <div className="flex justify-between font-bold mb-4 text-lg">
+                  <span>{t.spent} <span className="text-orange-500 drop-shadow-sm">{budget.spent.toLocaleString()}</span> {t.currency}</span>
+                  <span>{t.estimated} <span className="text-blue-500 drop-shadow-sm">{budget.total.toLocaleString()}</span> {t.currency}</span>
+                </div>
+                <div className={`w-full h-6 rounded-full overflow-hidden shadow-inner p-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                  <div 
+                    className={`h-full rounded-full bg-gradient-to-r ${radarColor} flex items-center justify-end pr-2 transition-all duration-1000 ease-out`} 
+                    style={{ width: `${Math.max(budgetPercent, 5)}%` }}
+                  >
+                    {budgetPercent > 10 && <span className="text-[10px] text-white font-black">{Math.round(budgetPercent)}%</span>}
+                  </div>
+                </div>
               </div>
-              <div className={`w-full h-5 rounded-full overflow-hidden shadow-inner ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                <div className="h-full bg-gradient-to-r from-emerald-400 to-orange-400" style={{ width: `${budgetPercent}%` }}></div>
-              </div>
-            </div>
+            )}
           </div>
 
           <div className={cardClass}>
