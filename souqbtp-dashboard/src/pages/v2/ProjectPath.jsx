@@ -28,7 +28,8 @@ export default function ProjectPath() {
   const [assignType, setAssignType] = useState('private');
   const [assignForm, setAssignForm] = useState({ name: '', phone: '', providerId: '' });
 
-  const t = {
+  // 🚀 1. حماية القاموس لمنع الصفحة البيضاء نهائياً
+  const translations = {
     ar: {
       title: "رحلة بناء مشروعك",
       subtitle: "اختر المرحلة، عين فريقك، وتابع الإنجاز لحظة بلحظة.",
@@ -127,32 +128,34 @@ export default function ProjectPath() {
     }
   };
 
-  // 🚀 القاموس الاعتراضي الشامل لترجمة كافة البيانات القادمة من قاعدة البيانات
+  // تأمين اختيار اللغة لتفادي انهيار التطبيق
+  const t = translations[language] || translations.ar;
+
+  // 🚀 2. القاموس الذكي الجديد (يبحث بالكلمات المفتاحية لاصطياد كل شيء)
   const dbTranslations = {
     // Stage 1
     "تصميم معماري": { fr: "Conception Architecturale", en: "Architectural Design" },
-    "التصميم المعماري (البلان)": { fr: "Conception Architecturale (Plan)", en: "Architectural Design (Plan)" },
+    "البلان": { fr: "Conception Architecturale (Plan)", en: "Architectural Design (Plan)" },
     "هندسة ودراسات": { fr: "Ingénierie et Études", en: "Engineering & Studies" },
     "خدمات استشارية": { fr: "Services de Conseil", en: "Consulting Services" },
     "التصاميم الهندسية": { fr: "Conceptions Techniques", en: "Technical Designs" },
-    "التحقق من التصاميم الهندسية": { fr: "Vérification des Conceptions", en: "Design Verification" },
-    "التوقيع على النسخة النهائية من التصميم": { fr: "Signature Version Finale", en: "Final Design Signature" },
+    "التحقق من التصاميم": { fr: "Vérification des Conceptions", en: "Design Verification" },
+    "التوقيع على النسخة": { fr: "Signature Version Finale", en: "Final Design Signature" },
     "دراسات تقنية": { fr: "Études Techniques", en: "Technical Studies" },
-    "حساب تكاليف هيكلية": { fr: "Calcul des Coûts Structurels", en: "Structural Cost Calculation" },
-    "تكاليف الوكالة الحضرية والوقاية المدنية": { fr: "Frais d'Agence Urbaine & Protection Civile", en: "Urban Agency & Civil Protection Fees" },
+    "تكاليف هيكلية": { fr: "Calcul des Coûts Structurels", en: "Structural Cost Calculation" },
+    "الوكالة الحضرية": { fr: "Frais d'Agence Urbaine & Protection Civile", en: "Urban Agency & Civil Protection Fees" },
     "وثائق الملكية": { fr: "Documents de Propriété", en: "Property Documents" },
     "تكلفة المشروع": { fr: "Coût du Projet", en: "Project Cost" },
     "عقود المهندسين": { fr: "Contrats d'Ingénieurs", en: "Engineers Contracts" },
-    "الرفع الطبوغرافي": { fr: "Relevé Topographique", en: "Topographic Survey" },
-    "دراسة التربة (Laboratoire)": { fr: "Étude de Sol (Laboratoire)", en: "Soil Study (Laboratory)" },
+    "طبوغرافي": { fr: "Relevé Topographique", en: "Topographic Survey" },
+    "تربة": { fr: "Étude de Sol (Laboratoire)", en: "Soil Study (Laboratory)" },
     
     // Stage 2
     "أعمال البناء": { fr: "Gros Œuvres / Maçonnerie", en: "Construction / Masonry" },
     "كهرباء": { fr: "Électricité", en: "Electricity" },
-    "سباكة (بلومبي)": { fr: "Plomberie", en: "Plumbing" },
+    "سباكة": { fr: "Plomberie", en: "Plumbing" },
     "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
-    "أعمال حجرية": { fr: "Travaux de pierre", en: "Stone works" },
-    "اعمال حجرية": { fr: "Travaux de pierre", en: "Stone works" }, // للتأكد
+    "حجرية": { fr: "Travaux de pierre", en: "Stone works" }, // يطابق "اعمال حجرية" و "أعمال حجرية"
     "أساسات": { fr: "Fondations", en: "Foundations" },
     "طوب": { fr: "Briques", en: "Bricks" },
     "هيكل خرساني": { fr: "Structure en béton", en: "Concrete structure" },
@@ -162,71 +165,53 @@ export default function ProjectPath() {
     "صرف صحي": { fr: "Assainissement", en: "Sanitation" },
     "تمديدات مياه": { fr: "Conduites d'eau", en: "Water pipes" },
     "تركيب حمامات": { fr: "Installation de salles de bain", en: "Bathroom installation" },
-    "عزل حراري، مائي، صوتي للأسقف والجدران": { fr: "Isolation (Thermique, Hydrique, Phonique)", en: "Insulation (Thermal, Water, Sound)" },
-    "حفر الأساسات (Terrassement)": { fr: "Terrassement", en: "Excavation (Terrassement)" },
-    "صب الخرسانة المسلحة (سلعة ويد)": { fr: "Béton armé (Fourniture et Pose)", en: "Reinforced Concrete (Material & Labor)" },
-    "صب الخرسانة المسلحة (يد عاملة)": { fr: "Béton armé (Main d'œuvre)", en: "Reinforced Concrete (Labor only)" },
-    "بناء الجدران والتقسيم (البريك)": { fr: "Maçonnerie et Cloisons (Briques)", en: "Wall Construction & Partitioning" },
-    "أعمال السباكة (البلومبير)": { fr: "Travaux de Plomberie", en: "Plumbing Works" },
-    "أعمال الكهرباء": { fr: "Travaux d'Électricité", en: "Electrical Works" },
+    "حفر الأساسات": { fr: "Terrassement", en: "Excavation (Terrassement)" },
+    "صب الخرسانة": { fr: "Béton armé", en: "Reinforced Concrete" },
+    "بناء الجدران": { fr: "Maçonnerie et Cloisons (Briques)", en: "Wall Construction & Partitioning" },
     "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
+    "دراسات الخرسانة": { fr: "Études de Béton et Acier", en: "Concrete & Steel Studies" },
+    "رخصة البناء": { fr: "Obtention du Permis de Construire", en: "Building Permit" },
     
     // Stage 3
-    "صيانة + تجديد": { fr: "Entretien et Rénovation", en: "Maintenance & Renovation" },
-    "جبص + سيراميك (زليج)": { fr: "Plâtre & Céramique", en: "Plaster & Ceramic" },
-    "دهان وتجصيص (صباغة)": { fr: "Peinture et Enduit", en: "Painting & Plastering" },
-    "...أبواب، نوافذ، مطابخ، خزائن ملابس، أريكة": { fr: "Portes, fenêtres, cuisines, placards...", en: "Doors, windows, kitchens, closets..." },
-    "...صيانة دورية، إصلاحات سريعة، تجديد وتحسين": { fr: "Entretien, réparations, amélioration...", en: "Maintenance, repairs, improvement..." },
-    "تركيب أرضيات، جدران، سيراميك، رخام، زليج، جبص الجدران والأسقف": { fr: "Revêtement sol/mur, marbre, plâtre...", en: "Flooring, marble, ceramic, plaster..." },
-    "دهان داخلي وخارجي (الصباغة)، تجصيص، طلاء مقاوم للرطوبة": { fr: "Peinture int/ext, enduit, anti-humidité", en: "Int/ext painting, anti-humidity coating" },
-    "أعمال العزل (Étanchéité)": { fr: "Travaux d'Étanchéité", en: "Waterproofing Works" },
-    "المرطوب (Enduit)": { fr: "Enduit (Mortier)", en: "Plastering (Enduit)" },
-    "أعمال الجبس والأسقف": { fr: "Travaux de Plâtre et Plafonds", en: "Plaster & Ceiling Works" },
-    "تركيب الزليج والسيراميك": { fr: "Pose de Céramique et Carrelage", en: "Ceramic & Tiling Installation" },
-    "الصباغة والواجهات الخارجية": { fr: "Peinture et Façades Extérieures", en: "Painting & Exterior Facades" },
-    "النجارة الخشبية": { fr: "Menuiserie Bois", en: "Wood Carpentry" },
-    "التشطيب النهائي (سباكة وكهرباء)": { fr: "Finitions Finales (Plomberie & Électricité)", en: "Final Touches (Plumbing & Electrical)" },
-    "Jour": { fr: "Menuiserie Aluminium / PVC", en: "Aluminum / PVC Carpentry" },
-
+    "صيانة": { fr: "Entretien et Rénovation", en: "Maintenance & Renovation" },
+    "جبص": { fr: "Plâtre & Céramique", en: "Plaster & Ceramic" },
+    "دهان": { fr: "Peinture et Enduit", en: "Painting & Plastering" },
+    "أبواب": { fr: "Portes, fenêtres, cuisines, placards...", en: "Doors, windows, kitchens, closets..." }, // يصطاد الكلمة رغم وجود النقاط
+    "أرضيات": { fr: "Revêtement sol/mur, marbre, plâtre...", en: "Flooring, marble, ceramic, plaster..." },
+    "المرطوب": { fr: "Enduit (Mortier)", en: "Plastering (Enduit)" },
+    "زليج": { fr: "Pose de Céramique et Carrelage", en: "Ceramic & Tiling Installation" },
+    "صباغة": { fr: "Peinture et Façades Extérieures", en: "Painting & Exterior Facades" },
+    "نجارة": { fr: "Menuiserie Bois", en: "Wood Carpentry" },
+    "التشطيب النهائي": { fr: "Finitions Finales (Plomberie & Électricité)", en: "Final Touches (Plumbing & Electrical)" },
+    "Jour": { fr: "Menuiserie Aluminium / PVC", en: "Aluminum / PVC Carpentry" }, // ترجمة Jour
+    
     // Stage 4
     "شهادة السكنى": { fr: "Permis d'Habiter", en: "Occupancy Permit" },
     "عداد الكهرباء": { fr: "Compteur Électrique", en: "Electricity Meter" },
     "ضريبة السكن": { fr: "Taxe d'Habitation", en: "Housing Tax" },
     "التسجيل العقاري": { fr: "Conservation Foncière", en: "Land Registration" },
-    "استخراج شهادة السكنى": { fr: "Obtention du permis d'habiter", en: "Obtaining occupancy permit" },
     "تسجيل الوثائق": { fr: "Enregistrement des documents", en: "Document registration" },
     "التسجيل الجبائي": { fr: "Enregistrement fiscal", en: "Tax registration" },
     "تحفيظ العقار": { fr: "Immatriculation foncière", en: "Property registration" },
-    "تحيين التصميم الطبوغرافي": { fr: "Mise à jour du Plan Topographique", en: "Topographic Plan Update" },
-    "الربط بشبكة الماء والكهرباء": { fr: "Raccordement Eau et Électricité", en: "Water & Electricity Connection" },
-    "مصاريف الموثق والتحفيظ": { fr: "Frais de Notaire et Conservation", en: "Notary & Land Registry Fees" },
-    "Licence": { fr: "Licence / Permis", en: "License / Permit" },
-    
-    // Units
-    "رخصة": { fr: "Licence", en: "License" },
-    "إجمالي": { fr: "Global", en: "Total" },
-    "طابق": { fr: "Étage", en: "Floor" },
-    "باب": { fr: "Porte", en: "Door" },
-    "عداد": { fr: "Compteur", en: "Meter" },
-    "متر": { fr: "Mètre", en: "Meter" },
-    "متر مربع": { fr: "Mètre Carré", en: "Square Meter" },
-    "يوم": { fr: "Jour", en: "Day" }
+    "تحيين التصميم": { fr: "Mise à jour du Plan Topographique", en: "Topographic Plan Update" },
+    "الربط بشبكة": { fr: "Raccordement Eau et Électricité", en: "Water & Electricity Connection" },
+    "مصاريف الموثق": { fr: "Frais de Notaire et Conservation", en: "Notary & Land Registry Fees" }
   };
 
   const translateDB = (text) => {
-    // 🚀 الحماية من القيم الفارغة لمنع انهيار React (الصفحة البيضاء)
+    // 🛡️ حماية فورية لمنع تحطم React في حال كانت القيمة فارغة
     if (!text || typeof text !== 'string') return text; 
     
     if (language === 'ar') return text;
     
     const clean = text.trim();
     
-    // 1. التطابق التام
+    // 1. محاولة التطابق التام
     if (dbTranslations[clean] && dbTranslations[clean][language]) {
       return dbTranslations[clean][language];
     }
     
-    // 2. البحث الذكي المتسامح
+    // 2. البحث الذكي المتسامح (يجد الكلمة حتى لو كان قبلها نقاط أو همزات متغيرة)
     for (const [arKey, trans] of Object.entries(dbTranslations)) {
       if (clean.includes(arKey)) return trans[language];
     }
@@ -474,7 +459,7 @@ export default function ProjectPath() {
               return (
                 <div key={service.id} className={`rounded-3xl border-2 p-6 transition-all hover:shadow-xl ${cardBg} hover:-translate-y-1`}>
                   
-                  {/* 🚀 الترجمة الشاملة لاسم الخدمة */}
+                  {/* 🚀 الترجمة الديناميكية لاسم الخدمة */}
                   <h3 className={`text-xl font-black mb-5 pb-3 border-b ${isDarkMode ? 'border-slate-700 text-blue-300' : 'border-slate-100 text-blue-900'}`}>
                     {translateDB(service.name)} 
                   </h3>
@@ -495,7 +480,7 @@ export default function ProjectPath() {
                           <div className={`mt-0.5 shrink-0 ${isDone ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`}>
                             {isDone ? <CheckCircle2 size={20} className="fill-emerald-100 dark:fill-emerald-900" /> : <Circle size={20} />}
                           </div>
-                          {/* 🚀 الترجمة الشاملة لاسم المهمة */}
+                          {/* 🚀 الترجمة الديناميكية لاسم المهمة */}
                           <span className="font-bold text-sm leading-snug">{translateDB(task.task_description)}</span>
                         </div>
                       )
