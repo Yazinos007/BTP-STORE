@@ -12,14 +12,13 @@ export default function CostCalculator() {
   
   const [selectedStage, setSelectedStage] = useState(1);
   const [costItems, setCostItems] = useState([]);
-  const [estimate, setEstimate] = useState([]); // سلة التقديرات
-  const [inputs, setInputs] = useState({}); // حالة الحقول { itemId: { qty, price } }
+  const [estimate, setEstimate] = useState([]); 
+  const [inputs, setInputs] = useState({}); 
   
   const [globalTva, setGlobalTva] = useState(20);
   const [currency, setCurrency] = useState('MAD');
   const [saveStatus, setSaveStatus] = useState(null);
 
-  // 🌍 قاموس الترجمة الشامل للنصوص الثابتة في الواجهة
   const t = {
     ar: {
       title: "حاسبة التكاليف",
@@ -122,14 +121,11 @@ export default function CostCalculator() {
     }
   }[language];
 
-  // 🚀 القاموس الاعتراضي الشامل لترجمة البيانات القادمة من قاعدة البيانات ديناميكياً
+  // 🚀 القاموس الاعتراضي الشامل لترجمة كافة البيانات القادمة من قاعدة البيانات
   const dbTranslations = {
-    "التصميم المعماري (البلان)": { fr: "Conception Architecturale (Plan)", en: "Architectural Design (Plan)" },
+    // Stage 1
     "تصميم معماري": { fr: "Conception Architecturale", en: "Architectural Design" },
-    "الرفع الطبوغرافي": { fr: "Relevé Topographique", en: "Topographic Survey" },
-    "دراسة التربة (Laboratoire)": { fr: "Étude de Sol (Laboratoire)", en: "Soil Study (Laboratory)" },
-    "دراسات الخرسانة والحديد": { fr: "Études de Béton et Acier", en: "Concrete & Steel Studies" },
-    "استخراج رخصة البناء": { fr: "Obtention du Permis de Construire", en: "Building Permit" },
+    "التصميم المعماري (البلان)": { fr: "Conception Architecturale (Plan)", en: "Architectural Design (Plan)" },
     "هندسة ودراسات": { fr: "Ingénierie et Études", en: "Engineering & Studies" },
     "خدمات استشارية": { fr: "Services de Conseil", en: "Consulting Services" },
     "التصاميم الهندسية": { fr: "Conceptions Techniques", en: "Technical Designs" },
@@ -141,8 +137,72 @@ export default function CostCalculator() {
     "وثائق الملكية": { fr: "Documents de Propriété", en: "Property Documents" },
     "تكلفة المشروع": { fr: "Coût du Projet", en: "Project Cost" },
     "عقود المهندسين": { fr: "Contrats d'Ingénieurs", en: "Engineers Contracts" },
+    "الرفع الطبوغرافي": { fr: "Relevé Topographique", en: "Topographic Survey" },
+    "دراسة التربة (Laboratoire)": { fr: "Étude de Sol (Laboratoire)", en: "Soil Study (Laboratory)" },
+    
+    // Stage 2
+    "أعمال البناء": { fr: "Gros Œuvres / Maçonnerie", en: "Construction / Masonry" },
+    "كهرباء": { fr: "Électricité", en: "Electricity" },
+    "سباكة (بلومبي)": { fr: "Plomberie", en: "Plumbing" },
+    "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
+    "اعمال حجرية": { fr: "Travaux de pierre", en: "Stone works" },
+    "أساسات": { fr: "Fondations", en: "Foundations" },
+    "طوب": { fr: "Briques", en: "Bricks" },
+    "هيكل خرساني": { fr: "Structure en béton", en: "Concrete structure" },
+    "تركيبات كهربائية": { fr: "Installations électriques", en: "Electrical installations" },
+    "لوحات توزيع": { fr: "Tableaux de distribution", en: "Distribution boards" },
+    "أسلاك وإنارة": { fr: "Câblage et éclairage", en: "Wiring and lighting" },
+    "صرف صحي": { fr: "Assainissement", en: "Sanitation" },
+    "تمديدات مياه": { fr: "Conduites d'eau", en: "Water pipes" },
+    "تركيب حمامات": { fr: "Installation de salles de bain", en: "Bathroom installation" },
+    "عزل حراري، مائي، صوتي للأسقف والجدران": { fr: "Isolation (Thermique, Hydrique, Phonique)", en: "Insulation (Thermal, Water, Sound)" },
+    "حفر الأساسات (Terrassement)": { fr: "Terrassement", en: "Excavation (Terrassement)" },
+    "صب الخرسانة المسلحة (سلعة ويد)": { fr: "Béton armé (Fourniture et Pose)", en: "Reinforced Concrete (Material & Labor)" },
+    "صب الخرسانة المسلحة (يد عاملة)": { fr: "Béton armé (Main d'œuvre)", en: "Reinforced Concrete (Labor only)" },
+    "بناء الجدران والتقسيم (البريك)": { fr: "Maçonnerie et Cloisons (Briques)", en: "Wall Construction & Partitioning" },
+    "أعمال السباكة (البلومبير)": { fr: "Travaux de Plomberie", en: "Plumbing Works" },
+    "أعمال الكهرباء": { fr: "Travaux d'Électricité", en: "Electrical Works" },
+    "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
+    "دراسات الخرسانة والحديد": { fr: "Études de Béton et Acier", en: "Concrete & Steel Studies" },
+    "استخراج رخصة البناء": { fr: "Obtention du Permis de Construire", en: "Building Permit" },
+    
+    // Stage 3
+    "صيانة + تجديد": { fr: "Entretien et Rénovation", en: "Maintenance & Renovation" },
+    "جبص + سيراميك (زليج)": { fr: "Plâtre & Céramique", en: "Plaster & Ceramic" },
+    "دهان وتجصيص (صباغة)": { fr: "Peinture et Enduit", en: "Painting & Plastering" },
+    "...أبواب، نوافذ، مطابخ، خزائن ملابس، أريكة": { fr: "Portes, fenêtres, cuisines, placards...", en: "Doors, windows, kitchens, closets..." },
+    "...صيانة دورية، إصلاحات سريعة، تجديد وتحسين": { fr: "Entretien, réparations, amélioration...", en: "Maintenance, repairs, improvement..." },
+    "تركيب أرضيات، جدران، سيراميك، رخام، زليج، جبص الجدران والأسقف": { fr: "Revêtement sol/mur, marbre, plâtre...", en: "Flooring, marble, ceramic, plaster..." },
+    "دهان داخلي وخارجي (الصباغة)، تجصيص، طلاء مقاوم للرطوبة": { fr: "Peinture int/ext, enduit, anti-humidité", en: "Int/ext painting, anti-humidity coating" },
+    "أعمال العزل (Étanchéité)": { fr: "Travaux d'Étanchéité", en: "Waterproofing Works" },
+    "المرطوب (Enduit)": { fr: "Enduit (Mortier)", en: "Plastering (Enduit)" },
+    "أعمال الجبس والأسقف": { fr: "Travaux de Plâtre et Plafonds", en: "Plaster & Ceiling Works" },
+    "تركيب الزليج والسيراميك": { fr: "Pose de Céramique et Carrelage", en: "Ceramic & Tiling Installation" },
+    "الصباغة والواجهات الخارجية": { fr: "Peinture et Façades Extérieures", en: "Painting & Exterior Facades" },
+    "النجارة الخشبية": { fr: "Menuiserie Bois", en: "Wood Carpentry" },
+    "التشطيب النهائي (سباكة وكهرباء)": { fr: "Finitions Finales (Plomberie & Électricité)", en: "Final Touches (Plumbing & Electrical)" },
+    "Jour": { fr: "Menuiserie Aluminium / PVC", en: "Aluminum / PVC Carpentry" },
+
+    // Stage 4
+    "شهادة السكنى": { fr: "Permis d'Habiter", en: "Occupancy Permit" },
+    "عداد الكهرباء": { fr: "Compteur Électrique", en: "Electricity Meter" },
+    "ضريبة السكن": { fr: "Taxe d'Habitation", en: "Housing Tax" },
+    "التسجيل العقاري": { fr: "Conservation Foncière", en: "Land Registration" },
+    "استخراج شهادة السكنى": { fr: "Obtention du permis d'habiter", en: "Obtaining occupancy permit" },
+    "تسجيل الوثائق": { fr: "Enregistrement des documents", en: "Document registration" },
+    "التسجيل الجبائي": { fr: "Enregistrement fiscal", en: "Tax registration" },
+    "تحفيظ العقار": { fr: "Immatriculation foncière", en: "Property registration" },
+    "تحيين التصميم الطبوغرافي": { fr: "Mise à jour du Plan Topographique", en: "Topographic Plan Update" },
+    "الربط بشبكة الماء والكهرباء": { fr: "Raccordement Eau et Électricité", en: "Water & Electricity Connection" },
+    "مصاريف الموثق والتحفيظ": { fr: "Frais de Notaire et Conservation", en: "Notary & Land Registry Fees" },
+    "Licence": { fr: "Licence / Permis", en: "License / Permit" },
+    
+    // Units
     "رخصة": { fr: "Licence", en: "License" },
-    "إجمالي": { fr: "Total", en: "Total" },
+    "إجمالي": { fr: "Global", en: "Total" },
+    "طابق": { fr: "Étage", en: "Floor" },
+    "باب": { fr: "Porte", en: "Door" },
+    "عداد": { fr: "Compteur", en: "Meter" },
     "متر": { fr: "Mètre", en: "Meter" },
     "متر مربع": { fr: "Mètre Carré", en: "Square Meter" },
     "يوم": { fr: "Jour", en: "Day" }
@@ -161,19 +221,28 @@ export default function CostCalculator() {
     return text;
   };
 
-  // 💎 كلاسات التصميم المتجاوبة مع الإضاءة
   const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-800 shadow-md';
   const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
 
   useEffect(() => {
-    initCalculator();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const fetchInitialData = async () => {
+      setLoading(true);
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) setUser(currentUser);
 
-  useEffect(() => {
-    loadCostItems(selectedStage);
-    
-    // 🚀 استماع لـ Session لحل مشكلة التأخر وتحديث البيانات فوراً
+      try {
+        const { data: settings } = await supabase.from('platform_settings').select('*').limit(1).maybeSingle();
+        if (settings) {
+          if(settings.currency) setCurrency(settings.currency);
+          if(settings.tva) setGlobalTva(settings.tva);
+        }
+      } catch (e) { console.log('Using default settings'); }
+
+      await loadCostItems(selectedStage, currentUser);
+    };
+
+    fetchInitialData();
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUser(session.user);
@@ -183,22 +252,10 @@ export default function CostCalculator() {
         loadCostItems(selectedStage, null);
       }
     });
+
     return () => { if(authListener) authListener.subscription.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStage, language]);
-
-  const initCalculator = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) setUser(user);
-
-    try {
-      const { data: settings } = await supabase.from('platform_settings').select('*').limit(1).maybeSingle();
-      if (settings) {
-        if(settings.currency) setCurrency(settings.currency);
-        if(settings.tva) setGlobalTva(settings.tva);
-      }
-    } catch (e) { console.log('Using default settings'); }
-  };
 
   const loadCostItems = async (stageId, passedUser = user) => {
     setLoading(true);
@@ -213,20 +270,6 @@ export default function CostCalculator() {
             const existing = estimate.find(e => e.itemId === item.id);
             newInputs[item.id] = { qty: existing ? existing.quantity : '', price: existing ? existing.unitPrice : '' };
           }
-        });
-        setInputs(newInputs);
-      } else {
-        const mockData = [
-          { id: stageId * 10 + 1, name: 'التصميم المعماري (البلان)', min_price: 8000, max_price: 25000, unit: 'رخصة' },
-          { id: stageId * 10 + 2, name: 'الرفع الطبوغرافي', min_price: 1500, max_price: 3500, unit: 'رخصة' },
-          { id: stageId * 10 + 3, name: 'دراسة التربة (Laboratoire)', min_price: 2000, max_price: 4000, unit: 'رخصة' },
-          { id: stageId * 10 + 4, name: 'دراسات الخرسانة والحديد', min_price: 3000, max_price: 8000, unit: 'رخصة' },
-          { id: stageId * 10 + 5, name: 'استخراج رخصة البناء', min_price: 2000, max_price: 10000, unit: 'إجمالي' }
-        ];
-        setCostItems(mockData);
-        const newInputs = { ...inputs };
-        mockData.forEach(item => {
-          if (!newInputs[item.id]) newInputs[item.id] = { qty: '', price: '' };
         });
         setInputs(newInputs);
       }
@@ -309,19 +352,37 @@ export default function CostCalculator() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {t.stages.map(stage => (
-          <div key={stage.id} onClick={() => setSelectedStage(stage.id)} className={`p-6 rounded-2xl border-4 cursor-pointer transition-all duration-300 text-center flex flex-col items-center justify-center gap-3 ${selectedStage === stage.id ? 'border-orange-400 bg-orange-50/50 shadow-lg transform scale-105 z-10' : `border-transparent hover:border-blue-200 hover:-translate-y-1 shadow-sm ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`}`}>
-            <span className="text-4xl drop-shadow-sm">{stage.icon}</span>
-            <div><h3 className={`font-black text-lg ${selectedStage === stage.id ? 'text-blue-800' : (isDarkMode ? 'text-white' : 'text-slate-700')}`}>{stage.name}</h3><p className={`text-xs font-bold ${selectedStage === stage.id ? 'text-orange-600' : 'text-slate-400'}`}>{stage.desc}</p></div>
-          </div>
-        ))}
+        {t.stages.map(stage => {
+          const isActive = selectedStage === stage.id;
+          return (
+            <div 
+              key={stage.id} 
+              onClick={() => setSelectedStage(stage.id)}
+              className={`p-6 rounded-2xl border-4 cursor-pointer transition-all duration-300 text-center flex flex-col items-center justify-center gap-3 ${
+                isActive 
+                  ? 'border-orange-400 bg-orange-50/50 shadow-lg transform scale-105 z-10' 
+                  : `border-transparent hover:border-blue-200 hover:-translate-y-1 shadow-sm ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`
+              }`}
+            >
+              <span className="text-4xl drop-shadow-sm">{stage.icon}</span>
+              <div>
+                <h3 className={`font-black text-lg ${isActive ? 'text-blue-800' : (isDarkMode ? 'text-white' : 'text-slate-700')}`}>{stage.name}</h3>
+                <p className={`text-xs font-bold ${isActive ? 'text-orange-600' : 'text-slate-400'}`}>{stage.desc}</p>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       <div className={`p-6 md:p-8 rounded-3xl border mb-8 shadow-sm ${cardBg}`}>
         <h2 className="text-2xl font-black text-blue-600 mb-2">{t.stagePrefix} {t.stages.find(s => s.id === selectedStage)?.name}</h2>
         <p className={`font-bold mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.stageSub}</p>
 
-        {loading ? <div className="text-center py-12 font-bold text-slate-400">{t.loadingItems}</div> : (
+        {loading ? (
+          <div className="text-center py-12 font-bold text-slate-400">{t.loadingItems}</div>
+        ) : costItems.length === 0 ? (
+          <div className="text-center py-12 font-bold text-slate-400">{t.noItems}</div>
+        ) : (
           <div className="space-y-4">
             {costItems.map(item => {
               const savedItem = estimate.find(e => e.itemId === item.id);
@@ -333,18 +394,50 @@ export default function CostCalculator() {
               return (
                 <div key={item.id} className={`p-5 rounded-2xl border-2 transition-colors ${isAdded ? 'border-emerald-200 bg-emerald-50/30' : (isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-slate-100 bg-slate-50')}`}>
                   <div className="flex justify-between items-start mb-4">
-                    {/* 🚀 ترجمة اسم العنصر */}
+                    {/* 🚀 ترجمة اسم العنصر باستخدام القاموس الاعتراضي */}
                     <h4 className={`font-black text-lg ${isDarkMode ? 'text-blue-400' : 'text-blue-800'}`}>{translateDB(item.name)}</h4>
-                    {/* 🚀 ترجمة الوحدة */}
+                    
+                    {/* 🚀 ترجمة وحدة القياس */}
                     <span className="font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-lg text-sm border border-emerald-500/20">
                       {item.min_price} - {item.max_price} {t.currency}/{translateDB(item.unit)}
                     </span>
                   </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div><label className="block text-sm font-bold mb-2 opacity-80">{t.qty}</label><input type="number" min="0" value={currentQty} onChange={(e) => handleInputChange(item.id, 'qty', e.target.value)} className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 font-bold ${inputBg}`} /></div>
-                    <div><label className="block text-sm font-bold mb-2 opacity-80">{t.unitPrice}</label><input type="number" value={currentPrice} onChange={(e) => handleInputChange(item.id, 'price', e.target.value)} placeholder={`${item.min_price} - ${item.max_price}`} className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 font-bold ${inputBg}`} /></div>
-                    <div><label className="block text-sm font-bold mb-2 opacity-80">{t.total}</label><div className={`w-full p-3 rounded-xl border font-black ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-200/50 border-slate-200'}`}>{rowTotal > 0 ? rowTotal.toLocaleString() : '0'} {t.currency}</div></div>
-                    <button onClick={() => handleAddItem(item)} className={`w-full p-3 rounded-xl font-black text-white transition-all hover:-translate-y-1 shadow-md ${isAdded ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30'}`}>{isAdded ? t.updateBtn : t.addBtn}</button>
+                    <div>
+                      <label className="block text-sm font-bold mb-2 opacity-80">{t.qty}</label>
+                      <input 
+                        type="number" 
+                        min="0" 
+                        value={currentQty} 
+                        onChange={(e) => handleInputChange(item.id, 'qty', e.target.value)}
+                        className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 font-bold ${inputBg}`} 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-2 opacity-80">{t.unitPrice}</label>
+                      <input 
+                        type="number" 
+                        value={currentPrice} 
+                        onChange={(e) => handleInputChange(item.id, 'price', e.target.value)}
+                        placeholder={`${item.min_price} - ${item.max_price}`}
+                        className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 font-bold ${inputBg}`} 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-2 opacity-80">{t.total}</label>
+                      <div className={`w-full p-3 rounded-xl border font-black ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-200/50 border-slate-200'}`}>
+                        {rowTotal > 0 ? rowTotal.toLocaleString() : '0'} {t.currency}
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleAddItem(item)}
+                      className={`w-full p-3 rounded-xl font-black text-white transition-all hover:-translate-y-1 shadow-md ${
+                        isAdded ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30'
+                      }`}
+                    >
+                      {isAdded ? t.updateBtn : t.addBtn}
+                    </button>
                   </div>
                 </div>
               )
@@ -355,6 +448,7 @@ export default function CostCalculator() {
 
       <div className="bg-gradient-to-br from-indigo-500 to-purple-700 rounded-3xl p-6 md:p-10 shadow-2xl shadow-purple-900/30 text-white">
         <h2 className="text-2xl font-black mb-6 flex items-center gap-2">📊 {t.summaryTitle}</h2>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20">
             <div className="text-sm font-bold opacity-80 mb-2">{t.ht}</div>
@@ -372,13 +466,15 @@ export default function CostCalculator() {
 
         <div className="bg-white text-slate-800 rounded-2xl p-6 shadow-inner">
           <h3 className="font-black text-blue-800 mb-4 text-lg">{t.estDetails}</h3>
-          {estimate.length === 0 ? <div className="text-center py-8 font-bold text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">{t.noEst}</div>
-          : (
+          
+          {estimate.length === 0 ? (
+            <div className="text-center py-8 font-bold text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">{t.noEst}</div>
+          ) : (
             <div className="space-y-3">
               {estimate.map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <div>
-                    {/* 🚀 ترجمة الحقول داخل الفاتورة */}
+                    {/* 🚀 ترجمة اسم العنصر ووحدة القياس داخل الفاتورة */}
                     <div className="font-black text-slate-700">{translateDB(item.name)}</div>
                     <div className="text-sm font-bold text-slate-400 mt-1">{item.quantity} {translateDB(item.unit)} × {item.unitPrice.toLocaleString()} {t.currency}</div>
                   </div>
@@ -389,7 +485,15 @@ export default function CostCalculator() {
           )}
         </div>
 
-        <button onClick={handleSaveEstimate} disabled={estimate.length === 0 || saveStatus?.type === 'loading'} className={`w-full mt-6 py-4 rounded-xl font-black text-lg transition-all shadow-xl ${estimate.length === 0 ? 'bg-white/20 text-white/50 cursor-not-allowed' : 'bg-blue-900 hover:bg-blue-950 text-white hover:-translate-y-1 shadow-black/20'}`}>
+        <button 
+          onClick={handleSaveEstimate}
+          disabled={estimate.length === 0 || saveStatus?.type === 'loading'}
+          className={`w-full mt-6 py-4 rounded-xl font-black text-lg transition-all shadow-xl ${
+            estimate.length === 0 
+              ? 'bg-white/20 text-white/50 cursor-not-allowed' 
+              : 'bg-blue-900 hover:bg-blue-950 text-white hover:-translate-y-1 shadow-black/20'
+          }`}
+        >
           {saveStatus?.type === 'loading' ? t.saving : t.saveBtn}
         </button>
       </div>

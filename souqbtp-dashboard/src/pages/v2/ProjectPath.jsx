@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Link, useOutletContext, useNavigate } from 'react-router-dom';
 import { 
-  CheckCircle2, Circle, Users, MessageCircle, Briefcase, 
-  Map, LayoutDashboard, ChevronRight, X, Search 
+  CheckCircle2, Circle, Users, Briefcase, 
+  Map, LayoutDashboard, X, Search 
 } from 'lucide-react';
 
 export default function ProjectPath() {
@@ -28,7 +28,6 @@ export default function ProjectPath() {
   const [assignType, setAssignType] = useState('private');
   const [assignForm, setAssignForm] = useState({ name: '', phone: '', providerId: '' });
 
-  // 🌍 قاموس الترجمة الشامل للنصوص الثابتة
   const t = {
     ar: {
       title: "رحلة بناء مشروعك",
@@ -42,7 +41,7 @@ export default function ProjectPath() {
         { id: 4, name: "التحفيظ", icon: "📜" }
       ],
       stagePrefix: "مرحلة",
-      loadingData: "⏳ جاري جلب الخدمات والمقاولين...",
+      loadingData: "⏳ جاري جلب البيانات...",
       noServices: "لا توجد خدمات مضافة لهذه المرحلة حالياً.",
       showProviders: "👷 عرض المزودين",
       providersFor: "مزودو خدمة:",
@@ -74,7 +73,7 @@ export default function ProjectPath() {
         { id: 4, name: "Enregistrement", icon: "📜" }
       ],
       stagePrefix: "Étape :",
-      loadingData: "⏳ Chargement des services...",
+      loadingData: "⏳ Chargement des données...",
       noServices: "Aucun service pour cette étape.",
       showProviders: "👷 Voir les prestataires",
       providersFor: "Prestataires pour :",
@@ -106,7 +105,7 @@ export default function ProjectPath() {
         { id: 4, name: "Registration", icon: "📜" }
       ],
       stagePrefix: "Stage:",
-      loadingData: "⏳ Loading services and contractors...",
+      loadingData: "⏳ Loading data...",
       noServices: "No services added for this stage yet.",
       showProviders: "👷 Show Providers",
       providersFor: "Providers for:",
@@ -128,14 +127,11 @@ export default function ProjectPath() {
     }
   }[language];
 
-  // 🚀 القاموس الاعتراضي الشامل لترجمة البيانات القادمة من قاعدة البيانات ديناميكياً
+  // 🚀 القاموس الاعتراضي الشامل لترجمة كافة البيانات القادمة من قاعدة البيانات
   const dbTranslations = {
+    // Stage 1
     "تصميم معماري": { fr: "Conception Architecturale", en: "Architectural Design" },
     "التصميم المعماري (البلان)": { fr: "Conception Architecturale (Plan)", en: "Architectural Design (Plan)" },
-    "الرفع الطبوغرافي": { fr: "Relevé Topographique", en: "Topographic Survey" },
-    "دراسة التربة (Laboratoire)": { fr: "Étude de Sol (Laboratoire)", en: "Soil Study (Laboratory)" },
-    "دراسات الخرسانة والحديد": { fr: "Études de Béton et Acier", en: "Concrete & Steel Studies" },
-    "استخراج رخصة البناء": { fr: "Obtention du Permis de Construire", en: "Building Permit" },
     "هندسة ودراسات": { fr: "Ingénierie et Études", en: "Engineering & Studies" },
     "خدمات استشارية": { fr: "Services de Conseil", en: "Consulting Services" },
     "التصاميم الهندسية": { fr: "Conceptions Techniques", en: "Technical Designs" },
@@ -143,12 +139,76 @@ export default function ProjectPath() {
     "التوقيع على النسخة النهائية من التصميم": { fr: "Signature Version Finale", en: "Final Design Signature" },
     "دراسات تقنية": { fr: "Études Techniques", en: "Technical Studies" },
     "حساب تكاليف هيكلية": { fr: "Calcul des Coûts Structurels", en: "Structural Cost Calculation" },
-    "تكاليف الوكالة الحضرية والوقاية المدنية": { fr: "Frais Agence Urbaine & Protection Civile", en: "Urban Agency & Civil Protection Fees" },
+    "تكاليف الوكالة الحضرية والوقاية المدنية": { fr: "Frais d'Agence Urbaine & Protection Civile", en: "Urban Agency & Civil Protection Fees" },
     "وثائق الملكية": { fr: "Documents de Propriété", en: "Property Documents" },
     "تكلفة المشروع": { fr: "Coût du Projet", en: "Project Cost" },
     "عقود المهندسين": { fr: "Contrats d'Ingénieurs", en: "Engineers Contracts" },
+    "الرفع الطبوغرافي": { fr: "Relevé Topographique", en: "Topographic Survey" },
+    "دراسة التربة (Laboratoire)": { fr: "Étude de Sol (Laboratoire)", en: "Soil Study (Laboratory)" },
+    
+    // Stage 2
+    "أعمال البناء": { fr: "Gros Œuvres / Maçonnerie", en: "Construction / Masonry" },
+    "كهرباء": { fr: "Électricité", en: "Electricity" },
+    "سباكة (بلومبي)": { fr: "Plomberie", en: "Plumbing" },
+    "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
+    "اعمال حجرية": { fr: "Travaux de pierre", en: "Stone works" },
+    "أساسات": { fr: "Fondations", en: "Foundations" },
+    "طوب": { fr: "Briques", en: "Bricks" },
+    "هيكل خرساني": { fr: "Structure en béton", en: "Concrete structure" },
+    "تركيبات كهربائية": { fr: "Installations électriques", en: "Electrical installations" },
+    "لوحات توزيع": { fr: "Tableaux de distribution", en: "Distribution boards" },
+    "أسلاك وإنارة": { fr: "Câblage et éclairage", en: "Wiring and lighting" },
+    "صرف صحي": { fr: "Assainissement", en: "Sanitation" },
+    "تمديدات مياه": { fr: "Conduites d'eau", en: "Water pipes" },
+    "تركيب حمامات": { fr: "Installation de salles de bain", en: "Bathroom installation" },
+    "عزل حراري، مائي، صوتي للأسقف والجدران": { fr: "Isolation (Thermique, Hydrique, Phonique)", en: "Insulation (Thermal, Water, Sound)" },
+    "حفر الأساسات (Terrassement)": { fr: "Terrassement", en: "Excavation (Terrassement)" },
+    "صب الخرسانة المسلحة (سلعة ويد)": { fr: "Béton armé (Fourniture et Pose)", en: "Reinforced Concrete (Material & Labor)" },
+    "صب الخرسانة المسلحة (يد عاملة)": { fr: "Béton armé (Main d'œuvre)", en: "Reinforced Concrete (Labor only)" },
+    "بناء الجدران والتقسيم (البريك)": { fr: "Maçonnerie et Cloisons (Briques)", en: "Wall Construction & Partitioning" },
+    "أعمال السباكة (البلومبير)": { fr: "Travaux de Plomberie", en: "Plumbing Works" },
+    "أعمال الكهرباء": { fr: "Travaux d'Électricité", en: "Electrical Works" },
+    "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
+    "دراسات الخرسانة والحديد": { fr: "Études de Béton et Acier", en: "Concrete & Steel Studies" },
+    "استخراج رخصة البناء": { fr: "Obtention du Permis de Construire", en: "Building Permit" },
+    
+    // Stage 3
+    "صيانة + تجديد": { fr: "Entretien et Rénovation", en: "Maintenance & Renovation" },
+    "جبص + سيراميك (زليج)": { fr: "Plâtre & Céramique", en: "Plaster & Ceramic" },
+    "دهان وتجصيص (صباغة)": { fr: "Peinture et Enduit", en: "Painting & Plastering" },
+    "...أبواب، نوافذ، مطابخ، خزائن ملابس، أريكة": { fr: "Portes, fenêtres, cuisines, placards...", en: "Doors, windows, kitchens, closets..." },
+    "...صيانة دورية، إصلاحات سريعة، تجديد وتحسين": { fr: "Entretien, réparations, amélioration...", en: "Maintenance, repairs, improvement..." },
+    "تركيب أرضيات، جدران، سيراميك، رخام، زليج، جبص الجدران والأسقف": { fr: "Revêtement sol/mur, marbre, plâtre...", en: "Flooring, marble, ceramic, plaster..." },
+    "دهان داخلي وخارجي (الصباغة)، تجصيص، طلاء مقاوم للرطوبة": { fr: "Peinture int/ext, enduit, anti-humidité", en: "Int/ext painting, anti-humidity coating" },
+    "أعمال العزل (Étanchéité)": { fr: "Travaux d'Étanchéité", en: "Waterproofing Works" },
+    "المرطوب (Enduit)": { fr: "Enduit (Mortier)", en: "Plastering (Enduit)" },
+    "أعمال الجبس والأسقف": { fr: "Travaux de Plâtre et Plafonds", en: "Plaster & Ceiling Works" },
+    "تركيب الزليج والسيراميك": { fr: "Pose de Céramique et Carrelage", en: "Ceramic & Tiling Installation" },
+    "الصباغة والواجهات الخارجية": { fr: "Peinture et Façades Extérieures", en: "Painting & Exterior Facades" },
+    "النجارة الخشبية": { fr: "Menuiserie Bois", en: "Wood Carpentry" },
+    "التشطيب النهائي (سباكة وكهرباء)": { fr: "Finitions Finales (Plomberie & Électricité)", en: "Final Touches (Plumbing & Electrical)" },
+    "Jour": { fr: "Menuiserie Aluminium / PVC", en: "Aluminum / PVC Carpentry" },
+
+    // Stage 4
+    "شهادة السكنى": { fr: "Permis d'Habiter", en: "Occupancy Permit" },
+    "عداد الكهرباء": { fr: "Compteur Électrique", en: "Electricity Meter" },
+    "ضريبة السكن": { fr: "Taxe d'Habitation", en: "Housing Tax" },
+    "التسجيل العقاري": { fr: "Conservation Foncière", en: "Land Registration" },
+    "استخراج شهادة السكنى": { fr: "Obtention du permis d'habiter", en: "Obtaining occupancy permit" },
+    "تسجيل الوثائق": { fr: "Enregistrement des documents", en: "Document registration" },
+    "التسجيل الجبائي": { fr: "Enregistrement fiscal", en: "Tax registration" },
+    "تحفيظ العقار": { fr: "Immatriculation foncière", en: "Property registration" },
+    "تحيين التصميم الطبوغرافي": { fr: "Mise à jour du Plan Topographique", en: "Topographic Plan Update" },
+    "الربط بشبكة الماء والكهرباء": { fr: "Raccordement Eau et Électricité", en: "Water & Electricity Connection" },
+    "مصاريف الموثق والتحفيظ": { fr: "Frais de Notaire et Conservation", en: "Notary & Land Registry Fees" },
+    "Licence": { fr: "Licence / Permis", en: "License / Permit" },
+    
+    // Units
     "رخصة": { fr: "Licence", en: "License" },
-    "إجمالي": { fr: "Total", en: "Total" },
+    "إجمالي": { fr: "Global", en: "Total" },
+    "طابق": { fr: "Étage", en: "Floor" },
+    "باب": { fr: "Porte", en: "Door" },
+    "عداد": { fr: "Compteur", en: "Meter" },
     "متر": { fr: "Mètre", en: "Meter" },
     "متر مربع": { fr: "Mètre Carré", en: "Square Meter" },
     "يوم": { fr: "Jour", en: "Day" }
@@ -167,36 +227,34 @@ export default function ProjectPath() {
     return text;
   };
 
-  // 💎 كلاسات التصميم المتجاوبة مع الإضاءة
   const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-800 shadow-md';
   const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
 
   useEffect(() => {
-    initData();
-  }, []);
-
-  useEffect(() => {
-    loadStageData(selectedStage);
+    const fetchInitialData = async () => {
+      setLoading(true);
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) setUser(currentUser);
+      await loadStageData(selectedStage, currentUser);
+    };
     
-    // 🚀 استماع لـ Session لحل مشكلة التأخر
+    fetchInitialData();
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUser(session.user);
         loadStageData(selectedStage, session.user);
+      } else {
+        setUser(null);
+        loadStageData(selectedStage, null);
       }
     });
+
     return () => { if(authListener) authListener.subscription.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStage, language]);
 
-  const initData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) setUser(user);
-    setLoading(false); 
-  };
-
-  const loadStageData = async (stageId, passedUser = user) => {
-    setLoading(true);
+  const loadStageData = async (stageId, passedUser) => {
     setProviders([]);
     setSelectedService(null);
     try {
@@ -214,7 +272,6 @@ export default function ProjectPath() {
         const completedIds = progressRes.data.map(p => p.task_id);
         setUserProgress(completedIds);
         
-        // 🚀 حساب التقدم الإجمالي
         const total = totalTasksRes.count || 28;
         const pct = total > 0 ? Math.round((completedIds.length / total) * 100) : 0;
         setOverallProgress(pct);
@@ -245,7 +302,6 @@ export default function ProjectPath() {
     }
 
     setUserProgress(newProgress);
-    
     const total = checklists.length > 0 ? checklists.length : 28;
     setOverallProgress(Math.round((newProgress.length / total) * 100));
   };
@@ -253,28 +309,16 @@ export default function ProjectPath() {
   const handleShowProviders = async (serviceId, serviceName) => {
     setSelectedService({ id: serviceId, name: serviceName });
     setProviders([]);
-    
-    const { data } = await supabase
-      .from('provider_services')
-      .select('providers(id, full_name, phone)')
-      .eq('service_id', serviceId);
-      
-    if (data) {
-      setProviders(data.filter(i => i.providers).map(i => i.providers));
-    }
+    const { data } = await supabase.from('provider_services').select('providers(id, full_name, phone)').eq('service_id', serviceId);
+    if (data) setProviders(data.filter(i => i.providers).map(i => i.providers));
   };
 
   const handleBookProvider = async (providerId, providerName) => {
-    if (!user) {
-      alert(t.loginRequired);
-      return;
-    }
+    if (!user) { alert(t.loginRequired); return; }
     if (!confirm(`${t.bookConfirm} "${providerName}" (${translateDB(selectedService?.name)})?`)) return;
 
     try {
-      const { data: existingChat } = await supabase.from('conversations')
-        .select('id').eq('client_id', user.id).eq('provider_id', providerId).maybeSingle();
-      
+      const { data: existingChat } = await supabase.from('conversations').select('id').eq('client_id', user.id).eq('provider_id', providerId).maybeSingle();
       let chatId = existingChat?.id;
 
       if (!chatId) {
@@ -290,14 +334,14 @@ export default function ProjectPath() {
         await supabase.from('messages').insert([{ 
           conversation_id: chatId, 
           sender_type: 'client', 
-          content: `السلام عليكم، أود حجز موعد بخصوص ${selectedService.name}` 
+          content: `السلام عليكم، أود حجز موعد بخصوص ${translateDB(selectedService.name)}` 
         }]);
       }
 
       const today = new Date().toISOString().split('T')[0];
       await supabase.from('appointments').insert([{
           user_id: user.id, provider_id: providerId, service_id: selectedService.id,
-          appointment_date: today, status: 'pending', notes: `طلب من صفحة المراحل: ${selectedService.name}`
+          appointment_date: today, status: 'pending', notes: `طلب من صفحة المراحل: ${translateDB(selectedService.name)}`
       }]);
 
       const token = chatId.toString().split('').map(c => c.charCodeAt(0).toString(16)).join('');
@@ -320,7 +364,7 @@ export default function ProjectPath() {
       setIsAssignModalOpen(false);
       setAssignForm({ name: '', phone: '', providerId: '' });
       alert(t.successAssign);
-      loadStageData(selectedStage);
+      loadStageData(selectedStage, user);
     } catch (err) { console.error(err); }
   };
 
@@ -348,7 +392,6 @@ export default function ProjectPath() {
           </button>
         </div>
         
-        {/* شريط التقدم */}
         <div className={`w-full h-8 rounded-full overflow-hidden shadow-inner p-1 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
           <div 
             className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-black text-xs transition-all duration-1000 ease-out"
@@ -358,7 +401,6 @@ export default function ProjectPath() {
           </div>
         </div>
 
-        {/* عرض الفريق المعين */}
         {team.length > 0 && (
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {team.map(member => (
@@ -414,7 +456,7 @@ export default function ProjectPath() {
               return (
                 <div key={service.id} className={`rounded-3xl border-2 p-6 transition-all hover:shadow-xl ${cardBg} hover:-translate-y-1`}>
                   
-                  {/* 🚀 ترجمة اسم الخدمة القادمة من قاعدة البيانات */}
+                  {/* 🚀 الترجمة الديناميكية لاسم الخدمة */}
                   <h3 className={`text-xl font-black mb-5 pb-3 border-b ${isDarkMode ? 'border-slate-700 text-blue-300' : 'border-slate-100 text-blue-900'}`}>
                     {translateDB(service.name)} 
                   </h3>
@@ -435,7 +477,7 @@ export default function ProjectPath() {
                           <div className={`mt-0.5 shrink-0 ${isDone ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`}>
                             {isDone ? <CheckCircle2 size={20} className="fill-emerald-100 dark:fill-emerald-900" /> : <Circle size={20} />}
                           </div>
-                          {/* 🚀 ترجمة اسم المهمة القادمة من قاعدة البيانات */}
+                          {/* 🚀 الترجمة الديناميكية لاسم المهمة */}
                           <span className="font-bold text-sm leading-snug">{translateDB(task.task_description)}</span>
                         </div>
                       )
@@ -542,7 +584,6 @@ export default function ProjectPath() {
         </div>
       )}
 
-      {/* Animation Styles */}
       <style>{`
         @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slide-up { animation: slide-up 0.4s ease-out forwards; }
