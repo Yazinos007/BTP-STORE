@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
 import V2Layout from '../../components/v2/V2Layout';
 import ContractorDashboard from './ContractorDashboard';
-import CostCalculator from './CostCalculator'; // 🚀 استدعاء الحاسبة
-import ProjectPath from './ProjectPath'; // 🚀 استدعاء مسار الورش
+import CostCalculator from './CostCalculator'; // 🚀 تم الاستدعاء
+import ProjectPath from './ProjectPath'; // 🚀 تم الاستدعاء
 
 // صفحة قيد الإنشاء ذكية تتجاوب مع لون الغلاف
 const UnderConstruction = ({ title, icon }) => {
@@ -20,7 +20,7 @@ export default function V2Router({ session, supplier }) {
   const accountType = session?.user?.user_metadata?.account_type || supplier?.supplier_type || 'contractor';
   const storeName = session?.user?.user_metadata?.company_name || session?.user?.user_metadata?.full_name || 'مستخدم V2';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
-
+  
   return (
     <Routes>
       <Route element={<V2Layout accountType={accountType} storeName={storeName} storeInitial={storeInitial} />}>
@@ -48,7 +48,7 @@ export default function V2Router({ session, supplier }) {
         {/* الإعدادات */}
         <Route path="profile" element={<UnderConstruction title="إعدادات الملف الشخصي" icon="⚙️" />} />
 
-        {/* توجيه المجهول */}
+        {/* 🚨 التوجيه التلقائي */}
         <Route path="*" element={<Navigate to="contractor-dashboard" replace />} />
       </Route>
     </Routes>

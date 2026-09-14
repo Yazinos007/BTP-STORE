@@ -4,7 +4,7 @@ import { Link, useOutletContext } from 'react-router-dom';
 import { 
   Calculator, Star, MessageCircle, Briefcase, Camera, Wallet, 
   FolderOpen, LifeBuoy, CheckCircle2, AlertCircle, Upload, 
-  Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft, Sun, Moon
+  Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft
 } from 'lucide-react';
 
 export default function ContractorDashboard() {
@@ -18,7 +18,7 @@ export default function ContractorDashboard() {
   const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0 });
   const [conversations, setConversations] = useState([]);
   const [onlineProviders, setOnlineProviders] = useState([]);
-  const [stageProgress, setStageProgress] = useState([]);
+  const [stageProgress, setStageProgress] = useState([]); // 🚀 أصبحت تخزن الأرقام فقط
   const [team, setTeam] = useState([]);
   const [reports, setReports] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -31,6 +31,7 @@ export default function ContractorDashboard() {
   const [saveStatus, setSaveStatus] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
 
+  // 🌍 قاموس الترجمة الشامل (بما فيه أسماء المراحل)
   const translations = {
     ar: {
       pageTitle: "إدارة الأوراش والميدان",
@@ -233,7 +234,7 @@ export default function ContractorDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [language]); 
+  }, []); 
 
   const fetchDashboardData = async () => {
     try {
@@ -300,11 +301,12 @@ export default function ContractorDashboard() {
       const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', user.id);
       if (appsData) setAppointments(appsData);
 
+      // 🚀 تم إزالة الأسماء من هنا لمنع ضياعها، وسيتم قراءتها مباشرة من القاموس أثناء العرض
       const stagesMock = [
-        { id: 1, icon: '📝', color: '#3b82f6', percent: 56, completed: 5, total: 9 },
-        { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
-        { id: 3, icon: '🎨', color: '#a855f7', percent: 50, completed: 2, total: 4 },
-        { id: 4, icon: '📜', color: '#22c55e', percent: 25, completed: 1, total: 4 }
+        { id: 1, percent: 56, completed: 5, total: 9 },
+        { id: 2, percent: 64, completed: 7, total: 11 },
+        { id: 3, percent: 50, completed: 2, total: 4 },
+        { id: 4, percent: 25, completed: 1, total: 4 }
       ];
       setStageProgress(stagesMock);
 
@@ -409,6 +411,14 @@ export default function ContractorDashboard() {
 
   const budgetPercent = Math.min((budget.spent / budget.total) * 100, 100);
 
+  // 🚀 البناء المباشر لمصفوفة المراحل أثناء العرض (Dynamic Rendering) لضمان الترجمة الفورية
+  const stagesDisplay = [
+    { id: 1, name: t.stage1, icon: '📝', color: '#3b82f6', percent: stageProgress.find(s => s.id === 1)?.percent || 56, completed: stageProgress.find(s => s.id === 1)?.completed || 5, total: stageProgress.find(s => s.id === 1)?.total || 9 },
+    { id: 2, name: t.stage2, icon: '🏗️', color: '#f97316', percent: stageProgress.find(s => s.id === 2)?.percent || 64, completed: stageProgress.find(s => s.id === 2)?.completed || 7, total: stageProgress.find(s => s.id === 2)?.total || 11 },
+    { id: 3, name: t.stage3, icon: '🎨', color: '#a855f7', percent: stageProgress.find(s => s.id === 3)?.percent || 50, completed: stageProgress.find(s => s.id === 3)?.completed || 2, total: stageProgress.find(s => s.id === 3)?.total || 4 },
+    { id: 4, name: t.stage4, icon: '📜', color: '#22c55e', percent: stageProgress.find(s => s.id === 4)?.percent || 25, completed: stageProgress.find(s => s.id === 4)?.completed || 1, total: stageProgress.find(s => s.id === 4)?.total || 4 }
+  ];
+
   return (
     <div className={`min-h-screen p-4 md:p-8 transition-colors duration-700 relative overflow-hidden ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#eef8f2]'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
@@ -426,8 +436,8 @@ export default function ContractorDashboard() {
           <Link to="/v2/cost-calculator" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
             <Calculator className="text-blue-500" size={24} /> {t.calcBtn}
           </Link>
-          <Link to="/v2/reviews" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
-            <Star className="text-yellow-500" size={24} /> {t.rateBtn}
+          <Link to="/v2/project-path" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
+            <FolderOpen className="text-orange-500" size={24} /> {t.progTitle}
           </Link>
         </div>
 
@@ -570,10 +580,11 @@ export default function ContractorDashboard() {
             <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
             <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
             <div className="grid grid-cols-2 sm:grid-cols-2 gap-6">
-              {stageProgress.map(stage => (
+              {/* 🚀 رسم وتحديث بيانات المراحل بشكل ديناميكي كامل */}
+              {stagesDisplay.map(stage => (
                 <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all hover:scale-105 flex flex-col items-center justify-center ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
-                  <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
-                    {t[`stage${stage.id}`]} {stage.icon}
+                  <div className="font-bold mb-4 text-lg flex items-center gap-2">
+                    {stage.name} {stage.icon}
                   </div>
                   <div 
                     className="relative w-28 h-28 rounded-full flex items-center justify-center mb-4 shadow-inner"
