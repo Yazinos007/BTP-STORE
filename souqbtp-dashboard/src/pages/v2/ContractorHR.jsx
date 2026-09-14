@@ -9,7 +9,10 @@ import {
 } from 'lucide-react';
 
 export default function ContractorHR() {
-  const { isDarkMode, language = 'ar' } = useOutletContext();
+  // 🚀 الحماية الفولاذية للسياق لمنع الصفحة البيضاء
+  const context = useOutletContext() || {};
+  const isDarkMode = context.isDarkMode || false;
+  const language = context.language || 'ar';
   const isRtl = language === 'ar';
 
   const [loading, setLoading] = useState(true);
@@ -50,7 +53,8 @@ export default function ContractorHR() {
   
   const [searchTerm, setSearchTerm] = useState('');
 
-  const t = {
+  // 🚀 قاموس الترجمة المحمي
+  const translations = {
     ar: {
       title: 'إدارة الموارد البشرية', subtitle: 'إدارة موظفي شركتك، فرق الورش، والرواتب.',
       addBtn: 'تعيين موظف جديد', totalEmp: 'إجمالي الموظفين', activeEmp: 'الموظفون النشطون',
@@ -138,7 +142,9 @@ export default function ContractorHR() {
       noDocs: 'No documents added yet.', addedOn: 'Added on', daysAbbr: 'D', okBtn: 'Add', fileFormats: 'PDF, PNG, JPG (Max 5MB)',
       bonusHint: 'Includes performance bonuses, seniority, etc.', deductHint: 'CNSS, AMO, Tax, Advances...'
     }
-  }[language] || translations['ar'];
+  };
+
+  const t = translations[language] || translations['ar'];
 
   const cardBg = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-800';
@@ -150,12 +156,17 @@ export default function ContractorHR() {
     let isMounted = true;
     const initHR = async () => {
       setLoading(true);
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (isMounted && currentUser) {
-        setUser(currentUser);
-        await fetchEmployees(currentUser.id);
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (isMounted && currentUser) {
+          setUser(currentUser);
+          await fetchEmployees(currentUser.id);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-      if (isMounted) setLoading(false);
     };
     initHR();
     
@@ -403,7 +414,6 @@ export default function ContractorHR() {
       {/* 🗂️ Employee 360° Profile Modal */}
       {showProfileModal && (
         <div className="fixed inset-0 z-[50] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-8 text-start" dir={isRtl ? 'rtl' : 'ltr'}>
-          {/* 🚀 تم تعديل max-h-[85vh] لتفادي قص الجزء العلوي */}
           <div className={`border-2 rounded-3xl w-full max-w-6xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[85vh] ${modalBg}`}>
             
             {/* Modal Header */}
@@ -411,7 +421,6 @@ export default function ContractorHR() {
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-blue-500/20 text-blue-600"><User size={24}/></div>
                 <div>
-                  {/* 🚀 تم فرض الألوان المتباينة لضمان وضوح العنوان */}
                   <h3 className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{editingId ? formData.full_name : t.newEmp}</h3>
                   <p className={`text-sm font-bold mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{editingId ? formData.position : t.profileTitle}</p>
                 </div>
@@ -455,7 +464,6 @@ export default function ContractorHR() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       <div className="md:col-span-2">
                         <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.name}</label>
-                        {/* 🚀 إضافة النصوص التوضيحية (Placeholders) */}
                         <input type="text" placeholder={t.name} required value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className={`w-full px-4 py-3 rounded-xl outline-none font-bold transition-all border focus:border-blue-500 ${inputBg}`} />
                       </div>
                       <div>
