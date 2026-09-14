@@ -303,12 +303,11 @@ export default function ContractorDashboard() {
       const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', user.id);
       if (appsData) setAppointments(appsData);
 
-      // محاكاة الأرقام لتطابق جمالية الصورة رقم 3 مع الترجمة
-      const stagesMock = [
-        { id: 1, name: language === 'ar' ? 'التخطيط' : language === 'fr' ? 'Planification' : 'Planning', icon: '📝', color: '#3b82f6', percent: 56, completed: 5, total: 9 },
-        { id: 2, name: language === 'ar' ? 'التنفيذ' : language === 'fr' ? 'Exécution' : 'Execution', icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
-        { id: 3, name: language === 'ar' ? 'التشطيب' : language === 'fr' ? 'Finition' : 'Finishing', icon: '🎨', color: '#a855f7', percent: 50, completed: 2, total: 4 },
-        { id: 4, name: language === 'ar' ? 'التحفيظ' : language === 'fr' ? 'Enregistrement' : 'Registration', icon: '📜', color: '#22c55e', percent: 25, completed: 1, total: 4 }
+     const stagesMock = [
+        { id: 1, icon: '📝', color: '#3b82f6', percent: 56, completed: 5, total: 9 },
+        { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
+        { id: 3, icon: '🎨', color: '#a855f7', percent: 50, completed: 2, total: 4 },
+        { id: 4, icon: '📜', color: '#22c55e', percent: 25, completed: 1, total: 4 }
       ];
       setStageProgress(stagesMock);
 
