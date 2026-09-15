@@ -10,7 +10,7 @@ import {
 
 // 🚀 دوال العملات العالمية
 const getCurrencySymbol = (curr) => {
-  const symbols = { MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', CNY: '¥', INR: '₹', CHF: 'CHF', RUB: '₽', USDT: '₮', BTC: '₿', ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' };
+  const symbols = { MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', CNY: '¥', INR: '₹', CHF: 'CHF', USDT: '₮', BTC: '₿', ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' };
   return symbols[curr] || curr;
 };
 
@@ -26,7 +26,6 @@ const getCurrencyIcon = (curr) => {
   if(curr === 'CNY') return <span className="font-black text-xs">🇨🇳</span>;
   if(curr === 'INR') return <span className="font-black text-xs">🇮🇳</span>;
   if(curr === 'CHF') return <span className="font-black text-xs">🇨🇭</span>;
-  if(curr === 'RUB') return <span className="font-black text-xs">🇷🇺</span>;
   return <span className="font-black text-xs">🇲🇦</span>;
 };
 
@@ -42,12 +41,12 @@ export default function ContractorMarketplace() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [products, setProducts] = useState([]);
   
-  // 🚀 حالة السلة أصبحت معقدة لتحمل الكميات
+  // 🚀 حالة السلة 
   const [cart, setCart] = useState([]); 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedItem, setAddedItem] = useState(null);
 
-  // 🚀 القاموس المحدث بجميع كلمات السلة الجديدة
+  // 🚀 القاموس
   const translations = {
     ar: {
       title: "سوق BTP للمواد الأولية", subtitle: "اكتشف واطلب أفضل مواد البناء من موردين معتمدين بأسعار تنافسية.",
@@ -143,7 +142,6 @@ export default function ContractorMarketplace() {
     return matchCat && matchSearch;
   });
 
-  // 🚀 إضافة للسلة مع دعم الكميات
   const handleAddToCart = (product) => {
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id);
@@ -165,7 +163,6 @@ export default function ContractorMarketplace() {
     setCart(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  // 🚀 تجميع السلة حسب المورد
   const groupedCart = cart.reduce((groups, item) => {
     const supplier = item.product.supplier || 'Vendeur Indépendant';
     if (!groups[supplier]) groups[supplier] = [];
@@ -340,7 +337,6 @@ export default function ContractorMarketplace() {
             onClick={e => e.stopPropagation()}
             dir={isRtl ? 'rtl' : 'ltr'}
           >
-            {/* Cart Header */}
             <div className={`p-6 border-b flex justify-between items-center sticky top-0 z-10 ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-md`}>
               <h2 className={`text-xl font-black flex items-center gap-2 ${textTitle}`}>
                 <ShoppingCart className="text-teal-500"/> {t.cartTitle}
@@ -348,11 +344,10 @@ export default function ContractorMarketplace() {
               <button onClick={() => setIsCartOpen(false)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}><X size={20}/></button>
             </div>
 
-            {/* Cart Body - Split by Supplier */}
             <div className="p-6 space-y-8 flex-1">
               {Object.entries(groupedCart).map(([supplierName, items]) => (
                 <div key={supplierName} className={`rounded-3xl border-2 overflow-hidden shadow-lg ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-                  {/* Supplier Header */}
+                  
                   <div className={`p-4 border-b flex items-center gap-3 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
                     <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-500 flex items-center justify-center"><Store size={20}/></div>
                     <div>
@@ -361,12 +356,10 @@ export default function ContractorMarketplace() {
                     </div>
                   </div>
 
-                  {/* Supplier Items */}
                   <div className="p-4 space-y-4">
                     {items.map(item => {
                       const isWholesale = item.qty >= item.product.min_wholesale_qty;
                       const activePrice = isWholesale ? item.product.price_wholesale : item.product.price_retail;
-                      const itemTotal = activePrice * item.qty;
                       const symbol = getCurrencySymbol(item.product.currency || 'MAD');
 
                       return (
@@ -380,7 +373,6 @@ export default function ContractorMarketplace() {
                               </div>
                               <p className={`text-xs mt-1 ${textMuted}`}>{item.product.unit}</p>
                               
-                              {/* 🚀 التسعير الديناميكي */}
                               <div className="mt-2 flex items-end justify-between">
                                 <div>
                                   {isWholesale ? (
@@ -393,11 +385,20 @@ export default function ContractorMarketplace() {
                                   )}
                                 </div>
                                 
-                                {/* أزرار الكمية */}
-                                <div className={`flex items-center gap-3 px-2 py-1 rounded-lg border ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'}`}>
-                                  <button onClick={() => updateQuantity(item.product.id, item.qty - 1)} className="text-slate-400 hover:text-blue-500"><Minus size={14}/></button>
-                                  <span className={`font-black text-sm w-6 text-center ${textTitle}`}>{item.qty}</span>
-                                  <button onClick={() => updateQuantity(item.product.id, item.qty + 1)} className="text-slate-400 hover:text-blue-500"><Plus size={14}/></button>
+                                {/* 🚀 الإدخال اليدوي السريع للكمية (Input) بدلاً من الضغط المستمر */}
+                                <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border shadow-inner ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-300 bg-white'}`}>
+                                  <button onClick={() => updateQuantity(item.product.id, item.qty - 1)} className="p-1 text-slate-400 hover:text-blue-500 transition-colors"><Minus size={14}/></button>
+                                  <input 
+                                    type="number" 
+                                    min="1" 
+                                    value={item.qty} 
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value);
+                                      if (!isNaN(val) && val > 0) updateQuantity(item.product.id, val);
+                                    }}
+                                    className={`font-black text-sm w-12 text-center outline-none bg-transparent ${textTitle} [&::-webkit-inner-spin-button]:appearance-none`} 
+                                  />
+                                  <button onClick={() => updateQuantity(item.product.id, item.qty + 1)} className="p-1 text-slate-400 hover:text-blue-500 transition-colors"><Plus size={14}/></button>
                                 </div>
                               </div>
 
@@ -413,20 +414,16 @@ export default function ContractorMarketplace() {
                     })}
                   </div>
 
-                  {/* 🚀 زر التفاوض للمورد */}
                   <div className={`p-4 border-t flex items-center justify-between ${isDarkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                     <div>
                       <p className={`text-xs font-bold ${textMuted}`}>{t.total}</p>
-                      {/* احتساب المجموع بناءً على العملة الخاصة بهذا المورد */}
                       <p className="font-black text-lg text-emerald-500" dir="ltr">
                         {items.reduce((sum, item) => sum + ((item.qty >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail) * item.qty), 0).toLocaleString()} {getCurrencySymbol(items[0].product.currency || 'MAD')}
                       </p>
                     </div>
                     <button 
                       onClick={() => {
-                        // حساب المجموع الخاص بهذا المورد فقط
                         const supplierTotal = items.reduce((sum, item) => sum + ((item.qty >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail) * item.qty), 0);
-                        // إرسال البيانات إلى صندوق الرسائل
                         navigate('/v2/messages', { 
                           state: { 
                             cartOrder: { items: items, total: supplierTotal },
@@ -454,4 +451,4 @@ export default function ContractorMarketplace() {
       `}</style>
     </div>
   );
-} 
+}
