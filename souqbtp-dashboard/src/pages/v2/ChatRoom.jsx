@@ -27,7 +27,8 @@ export default function ChatRoom() {
 
   const translations = {
     ar: {
-      title: "صندوق الرسائل", searchPlaceholder: "ابحث في المحادثات...",
+      // 🚀 البصمة هنا: تأكد من ظهور الدائرة الخضراء
+      title: "صندوق الرسائل 🟢", searchPlaceholder: "ابحث في المحادثات...",
       typeMessage: "اكتب رسالة...", online: "متصل الآن", offline: "آخر ظهور منذ ساعتين",
       orderCardTitle: "طلب عرض سعر (Bon de Commande)", total: "المجموع التقديري:",
       accept: "قبول العرض", reject: "رفض العرض", negotiate: "قيد التفاوض...",
@@ -36,7 +37,7 @@ export default function ChatRoom() {
       clearChat: "إفراغ المحادثة", deleteMsg: "حذف"
     },
     fr: {
-      title: "Boîte de Réception", searchPlaceholder: "Rechercher...",
+      title: "Boîte de Réception 🟢", searchPlaceholder: "Rechercher...",
       typeMessage: "Écrivez un message...", online: "En ligne", offline: "Vu il y a 2 heures",
       orderCardTitle: "Demande de Devis (Bon de Commande)", total: "Total Estimé :",
       accept: "Accepter", reject: "Refuser", negotiate: "En négociation...",
@@ -45,7 +46,7 @@ export default function ChatRoom() {
       clearChat: "Vider le chat", deleteMsg: "Supprimer"
     },
     en: {
-      title: "Inbox", searchPlaceholder: "Search conversations...",
+      title: "Inbox 🟢", searchPlaceholder: "Search conversations...",
       typeMessage: "Type a message...", online: "Online", offline: "Last seen 2 hours ago",
       orderCardTitle: "Request for Quote (Purchase Order)", total: "Estimated Total:",
       accept: "Accept", reject: "Reject", negotiate: "Negotiating...",
@@ -78,7 +79,6 @@ export default function ChatRoom() {
       } else {
         setActiveChat(existingChat.id);
       }
-
       const orderMessage = {
         id: Date.now(), senderId: 'me', isMe: true, type: 'order_card',
         time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderData: cartOrder
@@ -125,7 +125,6 @@ export default function ChatRoom() {
     setMessages([...messages, msg]);
   };
 
-  // 🚀 تم إصلاح هذه الدالة لتعمل بمجرد الضغط على زر الإرسال الخاص بالصوت
   const handleSendAudio = () => {
     setIsRecording(false);
     const msg = {
@@ -148,12 +147,10 @@ export default function ChatRoom() {
 
   const activeChatData = chats.find(c => c.id === activeChat) || chats[0];
 
-  // 🚀 السحر البصري المحدث (تم تفتيح الألوان الفاتحة بشكل قوي جداً لتطغى على أي لون خلفية)
   const mainWrapperBg = isDarkMode 
-    ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 bg-[length:200%_200%] animate-gradient-slow' 
-    : 'bg-gradient-to-br from-violet-200 via-fuchsia-100 to-teal-100 bg-[length:200%_200%] animate-gradient-slow';
+    ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 bg-[length:200%_200%]' 
+    : 'bg-gradient-to-br from-violet-200 via-fuchsia-100 to-teal-100 bg-[length:200%_200%]';
   
-  // قوة الزجاج (Backdrop Blur القوي)
   const panelBg = isDarkMode ? 'bg-slate-900/40 backdrop-blur-xl border-slate-700/50' : 'bg-white/40 backdrop-blur-xl border-white/60';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-800';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-600';
@@ -163,7 +160,7 @@ export default function ChatRoom() {
     <div className={`h-[82vh] rounded-3xl animate-fade-in overflow-hidden shadow-2xl ${mainWrapperBg}`} dir={isRtl ? 'rtl' : 'ltr'}>
       <div className={`flex h-full rounded-3xl border-2 ${panelBg}`}>
         
-        {/* 📋 Inbox Sidebar */}
+        {/* Inbox Sidebar */}
         <div className={`w-full md:w-80 flex-shrink-0 flex flex-col border-r ${isRtl ? 'border-l border-r-0' : 'border-r'} ${isDarkMode ? 'border-slate-700/50 bg-slate-900/30' : 'border-white/50 bg-white/30'}`}>
           <div className={`p-5 border-b ${isDarkMode ? 'border-slate-700/50' : 'border-white/50'}`}>
             <h2 className={`text-xl md:text-2xl font-black mb-4 flex items-center gap-2 ${textTitle}`}>
@@ -197,11 +194,10 @@ export default function ChatRoom() {
           </div>
         </div>
 
-        {/* 💬 Chat Window */}
+        {/* Chat Window */}
         <div className="hidden md:flex flex-1 flex-col relative bg-transparent">
           <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
           
-          {/* Header */}
           <div className={`p-4 border-b flex justify-between items-center bg-white/20 dark:bg-slate-900/40 backdrop-blur-md sticky top-0 z-20 ${isDarkMode ? 'border-slate-700/50' : 'border-white/40'}`}>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-white bg-gradient-to-br from-teal-400 to-teal-600 shadow-lg shadow-teal-500/20`}>
@@ -234,7 +230,6 @@ export default function ChatRoom() {
             </div>
           </div>
 
-          {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar relative z-10" onClick={() => setShowDropdown(false)}>
             {messages.map((msg) => (
               <div key={msg.id} className={`group relative flex ${msg.isMe ? 'justify-end' : 'justify-start'} animate-slide-up items-center gap-3`}>
@@ -322,15 +317,12 @@ export default function ChatRoom() {
             <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageUpload} className="hidden" />
             <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" ref={docInputRef} onChange={handleDocUpload} className="hidden" />
 
-            {/* 🚀 تسجيل الصوت المحدث والمشرق */}
             {isRecording ? (
               <div className={`flex items-center gap-4 p-3 rounded-3xl animate-pulse ${isDarkMode ? 'bg-red-900/30 border border-red-500/30' : 'bg-red-50 border border-red-200 shadow-sm'}`}>
                 <Mic className="text-red-500 animate-bounce" size={24} />
                 <span className={`font-black text-sm flex-1 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{t.recording}</span>
                 <span className={`font-mono font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>00:08</span>
                 <button type="button" onClick={() => setIsRecording(false)} className="p-2 text-red-500 hover:bg-red-500/20 rounded-full transition-colors"><X size={20}/></button>
-                
-                {/* 🚀 تم إضافة type="button" ليقوم بالإرسال ولا يحدث الصفحة */}
                 <button type="button" onClick={handleSendAudio} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg shadow-red-500/30 transition-transform hover:scale-110">
                   <Send size={18} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/>
                 </button>
@@ -389,17 +381,6 @@ export default function ChatRoom() {
           </div>
         </div>
       )}
-      
-      <style>{`
-        @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
-        @keyframes gradient-xy {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .animate-gradient-slow { animation: gradient-xy 10s ease infinite; }
-      `}</style>
     </div>
   );
 }
