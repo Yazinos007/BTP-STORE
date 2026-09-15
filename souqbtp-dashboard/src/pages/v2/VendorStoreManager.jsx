@@ -11,7 +11,7 @@ import {
 const getCurrencySymbol = (curr) => {
   const symbols = { 
     MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', 
-    CNY: '¥', INR: '₹', CHF: 'CHF', RUB: '₽', USDT: '₮', BTC: '₿', 
+    CNY: '¥', INR: '₹', CHF: 'CHF', USDT: '₮', BTC: '₿', 
     ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' 
   };
   return symbols[curr] || curr;
