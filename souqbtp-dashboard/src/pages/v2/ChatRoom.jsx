@@ -49,6 +49,15 @@ export default function ChatRoom() {
       recording: "Enregistrement...", cancel: "Annuler", send: "Envoyer",
       calling: "Appel en cours...", endCall: "Raccrocher",
       clearChat: "Vider le chat", deleteMsg: "Supprimer"
+    },
+    en: {
+      title: "Inbox", searchPlaceholder: "Search conversations...",
+      typeMessage: "Type a message...", online: "Online", offline: "Last seen 2 hours ago",
+      orderCardTitle: "Request for Quote (Purchase Order)", total: "Estimated Total:",
+      accept: "Accept", reject: "Reject", negotiate: "Negotiating...",
+      recording: "Recording...", cancel: "Cancel", send: "Send",
+      calling: "Calling...", endCall: "End Call",
+      clearChat: "Clear Chat", deleteMsg: "Delete"
     }
   }[language] || t.ar;
 
@@ -140,8 +149,10 @@ export default function ChatRoom() {
   const sendAudioMessage = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current); 
-        // 🚀 الحل السحري: تحويل الأوديو إلى Base64 ليحفظ في المتصفح إلى الأبد
+        // 🚀 الحل: إضافة "نوع الملف" (MimeType) لكي يتعرف عليه المشغل بعد التحويل
+        const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType }); 
+        
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
@@ -176,7 +187,6 @@ export default function ChatRoom() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    // 🚀 تطبيق نفس الحل للصور لكي لا تختفي عند التحديث
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = () => {
@@ -319,6 +329,7 @@ export default function ChatRoom() {
                     </div>
                   )}
 
+                  {/* 🎙️ مشغل الصوت القوي الأصلي */}
                   {msg.type === 'audio' && (
                     <div className={`p-2 rounded-3xl shadow-sm flex items-center gap-2 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
                       <audio controls src={msg.audioUrl} className="h-10 w-[240px] outline-none rounded-full" />
