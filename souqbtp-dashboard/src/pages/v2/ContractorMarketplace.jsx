@@ -8,9 +8,8 @@ import {
   Store, Coins, Globe, Bitcoin, Tag, Minus, MessageCircle, X, Trash2
 } from 'lucide-react';
 
-// 🚀 دوال العملات العالمية
 const getCurrencySymbol = (curr) => {
-  const symbols = { MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', CNY: '¥', INR: '₹', CHF: 'CHF', USDT: '₮', BTC: '₿', ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' };
+  const symbols = { MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', CNY: '¥', INR: '₹', CHF: 'CHF', RUB: '₽', USDT: '₮', BTC: '₿', ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' };
   return symbols[curr] || curr;
 };
 
@@ -26,6 +25,7 @@ const getCurrencyIcon = (curr) => {
   if(curr === 'CNY') return <span className="font-black text-xs">🇨🇳</span>;
   if(curr === 'INR') return <span className="font-black text-xs">🇮🇳</span>;
   if(curr === 'CHF') return <span className="font-black text-xs">🇨🇭</span>;
+  if(curr === 'RUB') return <span className="font-black text-xs">🇷🇺</span>;
   return <span className="font-black text-xs">🇲🇦</span>;
 };
 
@@ -41,12 +41,10 @@ export default function ContractorMarketplace() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [products, setProducts] = useState([]);
   
-  // 🚀 حالة السلة 
   const [cart, setCart] = useState([]); 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedItem, setAddedItem] = useState(null);
 
-  // 🚀 القاموس
   const translations = {
     ar: {
       title: "سوق BTP للمواد الأولية", subtitle: "اكتشف واطلب أفضل مواد البناء من موردين معتمدين بأسعار تنافسية.",
@@ -146,7 +144,7 @@ export default function ContractorMarketplace() {
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id);
       if (existing) {
-        return prev.map(item => item.product.id === product.id ? { ...item, qty: item.qty + 1 } : item);
+        return prev.map(item => item.product.id === product.id ? { ...item, qty: (parseInt(item.qty) || 0) + 1 } : item);
       }
       return [...prev, { product, qty: 1 }];
     });
@@ -154,8 +152,8 @@ export default function ContractorMarketplace() {
     setTimeout(() => setAddedItem(null), 2000);
   };
 
+  // 🚀 الدالة العبقرية لتحديث الكمية مع حماية النظام
   const updateQuantity = (productId, newQty) => {
-    if (newQty < 1) return;
     setCart(prev => prev.map(item => item.product.id === productId ? { ...item, qty: newQty } : item));
   };
 
@@ -173,7 +171,7 @@ export default function ContractorMarketplace() {
   return (
     <div className="animate-fade-in pb-32 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 Header */}
+      {/* Header */}
       <div className="bg-gradient-to-r from-emerald-800 to-teal-600 rounded-3xl p-6 md:p-10 mb-8 text-center md:text-start flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl shadow-teal-900/20 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
         <div className="relative z-10 w-full md:w-1/2">
@@ -204,7 +202,7 @@ export default function ContractorMarketplace() {
         </div>
       </div>
 
-      {/* 🚀 Categories Filter */}
+      {/* Categories Filter */}
       <div className="mb-8">
         <div className="flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
           {categories.map(cat => {
@@ -227,7 +225,7 @@ export default function ContractorMarketplace() {
         </div>
       </div>
 
-      {/* 🚀 Products Grid */}
+      {/* Products Grid */}
       {loading ? (
         <div className="flex justify-center items-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
@@ -241,29 +239,18 @@ export default function ContractorMarketplace() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map(product => (
             <div key={product.id} className={`group relative rounded-3xl border-2 transition-all duration-500 hover:-translate-y-2 flex flex-col overflow-hidden ${isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-teal-500 hover:shadow-[0_10px_30px_rgba(20,184,166,0.2)]' : 'bg-white border-slate-200 hover:border-teal-400 hover:shadow-[0_10px_30px_rgba(20,184,166,0.15)] shadow-sm'}`}>
-              
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img src={product.image_url || product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                
-                {product.isPopular && (
-                  <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg flex items-center gap-1`}>
-                    <TrendingUp size={12}/> {t.popular}
-                  </span>
-                )}
-                
+                {product.isPopular && <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg flex items-center gap-1`}><TrendingUp size={12}/> {t.popular}</span>}
                 <span className={`absolute top-3 ${isRtl ? 'left-3' : 'right-3'} bg-white/90 backdrop-blur-md text-slate-900 text-xs font-black px-2.5 py-1 rounded-full border border-white flex items-center gap-1 shadow-lg`}>
                   {getCurrencyIcon(product.currency || 'MAD')} {product.currency || 'MAD'}
                 </span>
-                
-                <span className={`absolute bottom-3 ${isRtl ? 'right-3' : 'left-3'} text-white font-bold text-sm drop-shadow-md bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm`}>
-                  {product.unit}
-                </span>
+                <span className={`absolute bottom-3 ${isRtl ? 'right-3' : 'left-3'} text-white font-bold text-sm drop-shadow-md bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm`}>{product.unit}</span>
               </div>
 
               <div className="p-5 flex-1 flex flex-col">
                 <h3 className={`font-black text-lg leading-tight mb-2 ${textTitle}`}>{product.name}</h3>
-                
                 <div className="flex items-center gap-1 mb-4">
                   <Star size={14} className="text-amber-400 fill-amber-400" />
                   <span className={`text-xs font-bold ${textMuted}`}>{product.rating || '4.5'}</span>
@@ -271,7 +258,6 @@ export default function ContractorMarketplace() {
                     {t.categories?.[product.category] || product.category}
                   </span>
                 </div>
-
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <div className={`p-2 rounded-xl border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                     <p className={`text-[10px] font-bold ${textMuted}`}>{t.retail}</p>
@@ -282,31 +268,21 @@ export default function ContractorMarketplace() {
                     <p className="font-black text-indigo-600" dir="ltr">{product.price_wholesale} {getCurrencySymbol(product.currency || 'MAD')}</p>
                   </div>
                 </div>
-
                 <div className={`mt-auto pt-4 border-t border-dashed ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                   <p className={`text-xs font-bold mb-3 flex items-center gap-1.5 ${textMuted}`}>
                     <Briefcase size={14} className="text-teal-500"/> {t.supplier} <span className={textTitle}>{product.supplier || 'Vendeur Indépendant'}</span>
                   </p>
-                  
-                  <button 
-                    onClick={() => handleAddToCart(product)}
-                    className={`w-full py-2.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${
-                      addedItem === product.id 
-                        ? 'bg-emerald-500 text-white' 
-                        : 'bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/30 hover:-translate-y-0.5'
-                    }`}
-                  >
+                  <button onClick={() => handleAddToCart(product)} className={`w-full py-2.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${addedItem === product.id ? 'bg-emerald-500 text-white' : 'bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/30 hover:-translate-y-0.5'}`}>
                     {addedItem === product.id ? <><CheckCircle2 size={16}/> {t.addedSuccess}</> : <><Plus size={16}/> {t.addToCart}</>}
                   </button>
                 </div>
               </div>
-
             </div>
           ))}
         </div>
       )}
 
-      {/* 🚀 Floating Cart Bar */}
+      {/* Floating Cart Bar */}
       {cart.length > 0 && !isCartOpen && (
         <div className={`fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-40 animate-slide-up`}>
           <div className="bg-slate-900 border border-slate-700 p-4 rounded-2xl shadow-2xl flex items-center gap-4 text-white cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => setIsCartOpen(true)}>
@@ -315,7 +291,8 @@ export default function ContractorMarketplace() {
                 <ShoppingCart size={24} className="text-white" />
               </div>
               <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full animate-bounce shadow-lg">
-                {cart.reduce((sum, item) => sum + item.qty, 0)}
+                {/* 🚀 حماية الجمع */}
+                {cart.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0)}
               </span>
             </div>
             <div>
@@ -329,36 +306,28 @@ export default function ContractorMarketplace() {
         </div>
       )}
 
-      {/* 🚀 The Smart Split Cart Modal */}
+      {/* The Smart Split Cart Modal */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-end bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}>
-          <div 
-            className={`h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col animate-slide-in ${isDarkMode ? 'bg-slate-900 border-l border-slate-800' : 'bg-slate-50 border-l border-slate-200'}`} 
-            onClick={e => e.stopPropagation()}
-            dir={isRtl ? 'rtl' : 'ltr'}
-          >
+          <div className={`h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col animate-slide-in ${isDarkMode ? 'bg-slate-900 border-l border-slate-800' : 'bg-slate-50 border-l border-slate-200'}`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
+            
             <div className={`p-6 border-b flex justify-between items-center sticky top-0 z-10 ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-md`}>
-              <h2 className={`text-xl font-black flex items-center gap-2 ${textTitle}`}>
-                <ShoppingCart className="text-teal-500"/> {t.cartTitle}
-              </h2>
+              <h2 className={`text-xl font-black flex items-center gap-2 ${textTitle}`}><ShoppingCart className="text-teal-500"/> {t.cartTitle}</h2>
               <button onClick={() => setIsCartOpen(false)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}><X size={20}/></button>
             </div>
 
             <div className="p-6 space-y-8 flex-1">
               {Object.entries(groupedCart).map(([supplierName, items]) => (
                 <div key={supplierName} className={`rounded-3xl border-2 overflow-hidden shadow-lg ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-                  
                   <div className={`p-4 border-b flex items-center gap-3 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
                     <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-500 flex items-center justify-center"><Store size={20}/></div>
-                    <div>
-                      <p className={`text-xs font-bold ${textMuted}`}>{t.supplier}</p>
-                      <h3 className={`font-black ${textTitle}`}>{supplierName}</h3>
-                    </div>
+                    <div><p className={`text-xs font-bold ${textMuted}`}>{t.supplier}</p><h3 className={`font-black ${textTitle}`}>{supplierName}</h3></div>
                   </div>
 
                   <div className="p-4 space-y-4">
                     {items.map(item => {
-                      const isWholesale = item.qty >= item.product.min_wholesale_qty;
+                      const safeQty = parseInt(item.qty) || 0; // 🚀 حماية الكمية
+                      const isWholesale = safeQty >= item.product.min_wholesale_qty;
                       const activePrice = isWholesale ? item.product.price_wholesale : item.product.price_retail;
                       const symbol = getCurrencySymbol(item.product.currency || 'MAD');
 
@@ -385,28 +354,28 @@ export default function ContractorMarketplace() {
                                   )}
                                 </div>
                                 
-                                {/* 🚀 الإدخال اليدوي السريع للكمية (Input) بدلاً من الضغط المستمر */}
+                                {/* 🚀 الإدخال اليدوي المحدث والمحمي */}
                                 <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border shadow-inner ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-300 bg-white'}`}>
-                                  <button onClick={() => updateQuantity(item.product.id, item.qty - 1)} className="p-1 text-slate-400 hover:text-blue-500 transition-colors"><Minus size={14}/></button>
+                                  <button onClick={() => updateQuantity(item.product.id, safeQty > 1 ? safeQty - 1 : 1)} className="p-1 text-slate-400 hover:text-blue-500 transition-colors"><Minus size={14}/></button>
                                   <input 
-                                    type="number" 
-                                    min="1" 
+                                    type="text" 
+                                    inputMode="numeric"
                                     value={item.qty} 
                                     onChange={(e) => {
-                                      const val = parseInt(e.target.value);
-                                      if (!isNaN(val) && val > 0) updateQuantity(item.product.id, val);
+                                      // يمسح أي أحرف ويسمح بالفراغ المؤقت
+                                      const val = e.target.value.replace(/[^0-9]/g, '');
+                                      updateQuantity(item.product.id, val === '' ? '' : parseInt(val));
                                     }}
-                                    className={`font-black text-sm w-12 text-center outline-none bg-transparent ${textTitle} [&::-webkit-inner-spin-button]:appearance-none`} 
+                                    onBlur={() => {
+                                      // إذا تركه فارغاً وذهب، يعيده إلى 1
+                                      if (item.qty === '' || parseInt(item.qty) < 1) updateQuantity(item.product.id, 1);
+                                    }}
+                                    className={`font-black text-sm w-12 text-center outline-none bg-transparent ${textTitle}`} 
                                   />
-                                  <button onClick={() => updateQuantity(item.product.id, item.qty + 1)} className="p-1 text-slate-400 hover:text-blue-500 transition-colors"><Plus size={14}/></button>
+                                  <button onClick={() => updateQuantity(item.product.id, safeQty + 1)} className="p-1 text-slate-400 hover:text-blue-500 transition-colors"><Plus size={14}/></button>
                                 </div>
                               </div>
-
-                              {isWholesale && (
-                                <p className="text-[10px] font-bold text-emerald-500 mt-2 bg-emerald-500/10 inline-block px-2 py-1 rounded">
-                                  {t.wholesaleActivated}
-                                </p>
-                              )}
+                              {isWholesale && <p className="text-[10px] font-bold text-emerald-500 mt-2 bg-emerald-500/10 inline-block px-2 py-1 rounded">{t.wholesaleActivated}</p>}
                             </div>
                           </div>
                         </div>
@@ -418,12 +387,21 @@ export default function ContractorMarketplace() {
                     <div>
                       <p className={`text-xs font-bold ${textMuted}`}>{t.total}</p>
                       <p className="font-black text-lg text-emerald-500" dir="ltr">
-                        {items.reduce((sum, item) => sum + ((item.qty >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail) * item.qty), 0).toLocaleString()} {getCurrencySymbol(items[0].product.currency || 'MAD')}
+                        {/* 🚀 حماية المجموع */}
+                        {items.reduce((sum, item) => {
+                          const q = parseInt(item.qty) || 0;
+                          const p = q >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail;
+                          return sum + (p * q);
+                        }, 0).toLocaleString()} {getCurrencySymbol(items[0].product.currency || 'MAD')}
                       </p>
                     </div>
                     <button 
                       onClick={() => {
-                        const supplierTotal = items.reduce((sum, item) => sum + ((item.qty >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail) * item.qty), 0);
+                        const supplierTotal = items.reduce((sum, item) => {
+                          const q = parseInt(item.qty) || 0;
+                          const p = q >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail;
+                          return sum + (p * q);
+                        }, 0);
                         navigate('/v2/messages', { 
                           state: { 
                             cartOrder: { items: items, total: supplierTotal },
