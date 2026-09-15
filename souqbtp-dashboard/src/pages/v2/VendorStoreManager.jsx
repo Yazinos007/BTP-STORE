@@ -81,20 +81,29 @@ export default function VendorStoreManager() {
 
   // 🚀 2. قائمة العملات المستقبلية (Fiat & Crypto)
   const currenciesList = [
-    { type: "العملات المحلية والرسمية", items: [
+    { type: "العملات الورقية (Fiat) المهيمنة", items: [
       { code: "MAD", label: "MAD - الدرهم المغربي 🇲🇦" },
       { code: "USD", label: "USD - الدولار الأمريكي 💵" },
       { code: "EUR", label: "EUR - اليورو الأوروبي 💶" },
+      { code: "CHF", label: "CHF - الفرنك السويسري 🇨🇭" },
     ]},
-    { type: "اقتصاديات صاعدة", items: [
-      { code: "RUB", label: "RUB - الروبل الروسي 🇷🇺" },
+    { type: "عملات الخليج واقتصاديات صاعدة", items: [
+      { code: "SAR", label: "SAR - الريال السعودي 🇸🇦" },
+      { code: "AED", label: "AED - الدرهم الإماراتي 🇦🇪" },
+      { code: "KWD", label: "KWD - الدينار الكويتي 🇰🇼" },
+      { code: "CNY", label: "CNY - اليوان الصيني 🇨🇳" },
+      { code: "INR", label: "INR - الروبية الهندية 🇮🇳" },
       { code: "BRICS", label: "BRICS - عملة البريكس 🤝" },
     ]},
-    { type: "العملات المشفرة (Web3)", items: [
-      { code: "USDT", label: "USDT - تيدر (دولار رقمي) ₮" },
+    { type: "العملات المشفرة والأصول المرقمنة (RWA/BTP)", items: [
+      { code: "USDT", label: "USDT / USDC - عملات مستقرة ₮" },
       { code: "BTC", label: "BTC - بيتكوين ₿" },
       { code: "ETH", label: "ETH - إيثريوم ⟠" },
       { code: "SOL", label: "SOL - سولانا ◎" },
+      { code: "ICX", label: "ICX (ICON) - بروتوكول BTP 🌐" },
+      { code: "OM", label: "OM (MANTRA) - أصول RWA 🏢" },
+      { code: "BST", label: "BST (Blocksquare) - توكين عقاري 🧱" },
+      { code: "ALGO", label: "ALGO (Algorand) - عقود ذكية ⚙️" },
     ]}
   ];
 
@@ -217,10 +226,27 @@ export default function VendorStoreManager() {
   };
 
   const getCurrencyIcon = (curr) => {
-    if(curr === 'BTC' || curr === 'ETH' || curr === 'SOL') return <Bitcoin size={16} className="text-amber-500"/>;
-    if(curr === 'USDT') return <Coins size={16} className="text-emerald-500"/>;
+    if(['BTC', 'ETH', 'SOL', 'ICX', 'OM', 'BST', 'ALGO'].includes(curr)) return <Bitcoin size={16} className="text-amber-500"/>;
+    if(['USDT', 'USDC'].includes(curr)) return <Coins size={16} className="text-emerald-500"/>;
     if(curr === 'BRICS') return <Globe size={16} className="text-blue-500"/>;
+    if(curr === 'USD') return <span className="font-black text-xs">🇺🇸</span>;
+    if(curr === 'EUR') return <span className="font-black text-xs">🇪🇺</span>;
+    if(curr === 'SAR') return <span className="font-black text-xs">🇸🇦</span>;
+    if(curr === 'AED') return <span className="font-black text-xs">🇦🇪</span>;
+    if(curr === 'KWD') return <span className="font-black text-xs">🇰🇼</span>;
+    if(curr === 'CNY') return <span className="font-black text-xs">🇨🇳</span>;
+    if(curr === 'INR') return <span className="font-black text-xs">🇮🇳</span>;
+    if(curr === 'CHF') return <span className="font-black text-xs">🇨🇭</span>;
     return <span className="font-black text-xs">🇲🇦</span>;
+  };
+
+  const getCurrencySymbol = (curr) => {
+    const symbols = { 
+      MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', 
+      CNY: '¥', INR: '₹', CHF: 'CHF', USDT: '₮', BTC: '₿', 
+      ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' 
+    };
+    return symbols[curr] || curr;
   };
 
   return (
