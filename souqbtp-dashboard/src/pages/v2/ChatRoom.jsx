@@ -19,8 +19,6 @@ export default function ChatRoom() {
   const [newMessage, setNewMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [activeCall, setActiveCall] = useState(null); 
-  
-  // 🚀 حالة جديدة لفتح قائمة الـ 3 نقاط
   const [showDropdown, setShowDropdown] = useState(false);
 
   const messagesEndRef = useRef(null);
@@ -33,7 +31,7 @@ export default function ChatRoom() {
       typeMessage: "اكتب رسالة...", online: "متصل الآن", offline: "آخر ظهور منذ ساعتين",
       orderCardTitle: "طلب عرض سعر (Bon de Commande)", total: "المجموع التقديري:",
       accept: "قبول العرض", reject: "رفض العرض", negotiate: "قيد التفاوض...",
-      recording: "جاري تسجيل الصوت...", cancel: "إلغاء", send: "إرسال",
+      recording: "جاري التسجيل...", cancel: "إلغاء", send: "إرسال",
       calling: "جاري الاتصال...", endCall: "إنهاء المكالمة",
       clearChat: "إفراغ المحادثة", deleteMsg: "حذف"
     },
@@ -127,16 +125,16 @@ export default function ChatRoom() {
     setMessages([...messages, msg]);
   };
 
+  // 🚀 تم إصلاح هذه الدالة لتعمل بمجرد الضغط على زر الإرسال الخاص بالصوت
   const handleSendAudio = () => {
     setIsRecording(false);
     const msg = {
-      id: Date.now(), senderId: 'me', isMe: true, type: 'audio', duration: '00:12',
+      id: Date.now(), senderId: 'me', isMe: true, type: 'audio', duration: '00:08',
       time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
     };
-    setMessages([...messages, msg]);
+    setMessages(prev => [...prev, msg]);
   };
 
-  // 🚀 دوال الحذف والإفراغ
   const handleDeleteMessage = (id) => {
     setMessages(messages.filter(msg => msg.id !== id));
   };
@@ -150,26 +148,26 @@ export default function ChatRoom() {
 
   const activeChatData = chats.find(c => c.id === activeChat) || chats[0];
 
-  // 🚀 السحر الحقيقي للزجاج (Glassmorphism) في كلا الوضعين!
+  // 🚀 السحر البصري المحدث (تم تفتيح الألوان الفاتحة بشكل قوي جداً لتطغى على أي لون خلفية)
   const mainWrapperBg = isDarkMode 
-    ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 bg-[length:300%_300%] animate-gradient-slow' // الوضع المظلم المتدرج
-    : 'bg-gradient-to-br from-indigo-100 via-purple-100 to-teal-100 bg-[length:300%_300%] animate-gradient-slow'; // الوضع الفاتح
+    ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 bg-[length:200%_200%] animate-gradient-slow' 
+    : 'bg-gradient-to-br from-violet-200 via-fuchsia-100 to-teal-100 bg-[length:200%_200%] animate-gradient-slow';
   
-  // الإطارات شفافة لتعكس جمال الخلفية
-  const panelBg = isDarkMode ? 'bg-slate-900/40 backdrop-blur-2xl border-slate-700/50' : 'bg-white/40 backdrop-blur-2xl border-white/60';
+  // قوة الزجاج (Backdrop Blur القوي)
+  const panelBg = isDarkMode ? 'bg-slate-900/40 backdrop-blur-xl border-slate-700/50' : 'bg-white/40 backdrop-blur-xl border-white/60';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-800';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-600';
   const glassInputBg = isDarkMode ? 'bg-slate-900/50 border-slate-700/50 text-white' : 'bg-white/60 border-white/50 text-slate-800';
 
   return (
-    <div className={`h-[82vh] rounded-3xl animate-fade-in ${mainWrapperBg}`} dir={isRtl ? 'rtl' : 'ltr'}>
-      <div className={`flex h-full rounded-3xl border-2 overflow-hidden shadow-2xl ${panelBg}`}>
+    <div className={`h-[82vh] rounded-3xl animate-fade-in overflow-hidden shadow-2xl ${mainWrapperBg}`} dir={isRtl ? 'rtl' : 'ltr'}>
+      <div className={`flex h-full rounded-3xl border-2 ${panelBg}`}>
         
-        {/* Inbox Sidebar */}
-        <div className={`w-full md:w-80 flex-shrink-0 flex flex-col border-r ${isRtl ? 'border-l border-r-0' : 'border-r'} ${isDarkMode ? 'border-slate-700/50 bg-slate-900/30 backdrop-blur-md' : 'border-white/50 bg-white/30 backdrop-blur-md'}`}>
+        {/* 📋 Inbox Sidebar */}
+        <div className={`w-full md:w-80 flex-shrink-0 flex flex-col border-r ${isRtl ? 'border-l border-r-0' : 'border-r'} ${isDarkMode ? 'border-slate-700/50 bg-slate-900/30' : 'border-white/50 bg-white/30'}`}>
           <div className={`p-5 border-b ${isDarkMode ? 'border-slate-700/50' : 'border-white/50'}`}>
             <h2 className={`text-xl md:text-2xl font-black mb-4 flex items-center gap-2 ${textTitle}`}>
-              <Briefcase className="text-teal-500" /> {t.title}
+              <Briefcase className="text-teal-600 dark:text-teal-500" /> {t.title}
             </h2>
             <div className="relative">
               <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'right-3' : 'left-3'} text-slate-400`} />
@@ -179,9 +177,9 @@ export default function ChatRoom() {
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {chats.map(chat => (
-              <div key={chat.id} onClick={() => setActiveChat(chat.id)} className={`p-4 border-b cursor-pointer transition-colors flex items-center gap-3 ${isDarkMode ? 'border-slate-700/30 hover:bg-slate-800/50' : 'border-white/30 hover:bg-white/50'} ${activeChat === chat.id ? (isDarkMode ? 'bg-slate-800/70 border-l-4 border-l-teal-500' : 'bg-white/60 border-l-4 border-l-teal-500 shadow-sm') : 'border-l-4 border-l-transparent'}`}>
+              <div key={chat.id} onClick={() => setActiveChat(chat.id)} className={`p-4 border-b cursor-pointer transition-colors flex items-center gap-3 ${isDarkMode ? 'border-slate-700/30 hover:bg-slate-800/50' : 'border-white/30 hover:bg-white/60'} ${activeChat === chat.id ? (isDarkMode ? 'bg-slate-800/70 border-l-4 border-l-teal-500' : 'bg-white/80 border-l-4 border-l-teal-500 shadow-sm') : 'border-l-4 border-l-transparent'}`}>
                 <div className="relative">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${activeChat === chat.id ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30' : isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-white/80 text-slate-600 shadow-sm'}`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${activeChat === chat.id ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30' : isDarkMode ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-slate-600 shadow-sm border border-white'}`}>
                     {chat.avatar}
                   </div>
                   {chat.status === 'online' && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></span>}
@@ -199,19 +197,19 @@ export default function ChatRoom() {
           </div>
         </div>
 
-        {/* Chat Window */}
+        {/* 💬 Chat Window */}
         <div className="hidden md:flex flex-1 flex-col relative bg-transparent">
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+          <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
           
           {/* Header */}
-          <div className={`p-4 border-b flex justify-between items-center bg-white/10 dark:bg-slate-900/30 backdrop-blur-xl sticky top-0 z-20 ${isDarkMode ? 'border-slate-700/50' : 'border-white/40'}`}>
+          <div className={`p-4 border-b flex justify-between items-center bg-white/20 dark:bg-slate-900/40 backdrop-blur-md sticky top-0 z-20 ${isDarkMode ? 'border-slate-700/50' : 'border-white/40'}`}>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-white bg-gradient-to-br from-teal-400 to-teal-600 shadow-lg shadow-teal-500/20`}>
                 {activeChatData?.avatar}
               </div>
               <div>
                 <h3 className={`font-black ${textTitle}`}>{activeChatData?.name}</h3>
-                <p className={`text-xs font-bold flex items-center gap-1 ${activeChatData?.status === 'online' ? 'text-emerald-500' : textMuted}`}>
+                <p className={`text-xs font-bold flex items-center gap-1 ${activeChatData?.status === 'online' ? 'text-emerald-600 dark:text-emerald-400' : textMuted}`}>
                   {activeChatData?.status === 'online' ? t.online : t.offline}
                 </p>
               </div>
@@ -221,13 +219,12 @@ export default function ChatRoom() {
               <button onClick={() => setActiveCall('voice')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700' : 'bg-white/60 text-slate-700 hover:bg-white shadow-sm border border-white/50'}`}><Phone size={18}/></button>
               <button onClick={() => setActiveCall('video')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700' : 'bg-white/60 text-slate-700 hover:bg-white shadow-sm border border-white/50'}`}><Video size={18}/></button>
               
-              {/* 🚀 برمجة زر الـ 3 نقاط المنسدل */}
               <div className="relative">
                 <button onClick={() => setShowDropdown(!showDropdown)} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700' : 'bg-white/60 text-slate-700 hover:bg-white shadow-sm border border-white/50'}`}>
                   <MoreVertical size={18}/>
                 </button>
                 {showDropdown && (
-                  <div className={`absolute top-full ${isRtl ? 'left-0' : 'right-0'} mt-2 w-48 rounded-2xl shadow-xl border overflow-hidden z-50 animate-fade-in ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+                  <div className={`absolute top-full ${isRtl ? 'left-0' : 'right-0'} mt-2 w-48 rounded-2xl shadow-xl border overflow-hidden z-50 animate-fade-in ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/80 backdrop-blur-md'}`}>
                     <button onClick={handleClearChat} className="w-full px-4 py-3 flex items-center gap-3 text-red-500 hover:bg-red-500/10 font-bold text-sm transition-colors">
                       <Trash2 size={16}/> {t.clearChat}
                     </button>
@@ -242,7 +239,6 @@ export default function ChatRoom() {
             {messages.map((msg) => (
               <div key={msg.id} className={`group relative flex ${msg.isMe ? 'justify-end' : 'justify-start'} animate-slide-up items-center gap-3`}>
                 
-                {/* 🚀 زر الحذف للرسالة المحددة (يظهر عند التمرير) */}
                 {msg.isMe && (
                   <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all">
                     <Trash2 size={16}/>
@@ -252,19 +248,19 @@ export default function ChatRoom() {
                 <div className={`max-w-[85%] md:max-w-[65%] flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
                   
                   {(!msg.type || msg.type === 'text') && (
-                    <div className={`p-4 rounded-3xl shadow-sm ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm shadow-teal-500/20' : isDarkMode ? 'bg-slate-800/80 backdrop-blur-md text-white border border-slate-700/50 rounded-tl-sm' : 'bg-white/70 backdrop-blur-md text-slate-800 border border-white/60 rounded-tl-sm'}`}>
+                    <div className={`p-4 rounded-3xl shadow-sm ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm shadow-teal-500/20' : isDarkMode ? 'bg-slate-800/80 backdrop-blur-md text-white border border-slate-700/50 rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-800 border border-white/60 rounded-tl-sm'}`}>
                       <p className="text-sm font-bold leading-relaxed">{msg.text}</p>
                     </div>
                   )}
 
                   {msg.type === 'image' && (
-                    <div className={`p-1.5 rounded-2xl shadow-md ${msg.isMe ? 'bg-teal-500 rounded-tr-sm' : 'bg-white/70 backdrop-blur-md rounded-tl-sm'}`}>
+                    <div className={`p-1.5 rounded-2xl shadow-md ${msg.isMe ? 'bg-teal-500 rounded-tr-sm' : 'bg-white/80 backdrop-blur-md rounded-tl-sm'}`}>
                       <img src={msg.fileUrl} alt="attachment" className="max-w-[250px] rounded-xl object-cover" />
                     </div>
                   )}
 
                   {msg.type === 'document' && (
-                    <div className={`p-4 rounded-3xl shadow-sm flex items-center gap-3 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/70 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
+                    <div className={`p-4 rounded-3xl shadow-sm flex items-center gap-3 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
                       <div className="p-3 bg-white/20 dark:bg-slate-700 rounded-xl"><FileText size={24}/></div>
                       <div>
                         <p className="text-sm font-black">{msg.fileName}</p>
@@ -274,7 +270,7 @@ export default function ChatRoom() {
                   )}
 
                   {msg.type === 'audio' && (
-                    <div className={`p-3 rounded-full shadow-sm flex items-center gap-3 w-64 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/70 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
+                    <div className={`p-3 rounded-full shadow-sm flex items-center gap-3 w-64 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
                       <button className="w-10 h-10 rounded-full bg-white/20 dark:bg-slate-700 flex items-center justify-center hover:bg-white/30 transition-colors"><Play size={16} className="ml-1" fill="currentColor"/></button>
                       <div className="flex-1 h-2 bg-white/30 dark:bg-slate-700 rounded-full overflow-hidden">
                         <div className="w-1/3 h-full bg-white dark:bg-teal-400 rounded-full"></div>
@@ -284,10 +280,10 @@ export default function ChatRoom() {
                   )}
 
                   {msg.type === 'order_card' && (
-                    <div className={`p-1 rounded-3xl shadow-lg border-2 ${msg.isMe ? 'bg-teal-500/10 border-teal-500/30' : isDarkMode ? 'bg-slate-800/80 border-slate-700/50' : 'bg-white/60 border-white/50 backdrop-blur-md'}`}>
-                      <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-900/80' : 'bg-white/80'}`}>
+                    <div className={`p-1 rounded-3xl shadow-lg border-2 ${msg.isMe ? 'bg-teal-500/10 border-teal-500/30' : isDarkMode ? 'bg-slate-800/80 border-slate-700/50' : 'bg-white/70 border-white/50 backdrop-blur-md'}`}>
+                      <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-900/80' : 'bg-white/90'}`}>
                         <div className={`flex items-center gap-2 mb-3 pb-3 border-b border-dashed ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-                          <ShoppingCart className="text-teal-500" size={20}/>
+                          <ShoppingCart className="text-teal-600 dark:text-teal-500" size={20}/>
                           <h4 className={`font-black text-sm ${textTitle}`}>{t.orderCardTitle}</h4>
                         </div>
                         <ul className="space-y-2 mb-4">
@@ -299,8 +295,8 @@ export default function ChatRoom() {
                           ))}
                         </ul>
                         <div className="flex justify-between items-center p-3 rounded-xl bg-teal-500/10 border border-teal-500/20">
-                          <span className="text-xs font-black text-teal-600">{t.total}</span>
-                          <span className="font-black text-teal-600 text-lg" dir="ltr">{msg.orderData.total.toLocaleString()} {msg.orderData.items[0]?.product?.currency || 'MAD'}</span>
+                          <span className="text-xs font-black text-teal-700 dark:text-teal-500">{t.total}</span>
+                          <span className="font-black text-teal-700 dark:text-teal-500 text-lg" dir="ltr">{msg.orderData.total.toLocaleString()} {msg.orderData.items[0]?.product?.currency || 'MAD'}</span>
                         </div>
                       </div>
                     </div>
@@ -312,7 +308,6 @@ export default function ChatRoom() {
                   </div>
                 </div>
 
-                {/* زر الحذف للطرف الآخر */}
                 {!msg.isMe && (
                   <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all">
                     <Trash2 size={16}/>
@@ -323,17 +318,22 @@ export default function ChatRoom() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className={`p-4 bg-white/20 dark:bg-slate-900/30 backdrop-blur-xl border-t relative z-10 ${isDarkMode ? 'border-slate-700/50' : 'border-white/40'}`}>
+          <div className={`p-4 bg-white/30 dark:bg-slate-900/40 backdrop-blur-xl border-t relative z-10 ${isDarkMode ? 'border-slate-700/50' : 'border-white/50'}`}>
             <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageUpload} className="hidden" />
             <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" ref={docInputRef} onChange={handleDocUpload} className="hidden" />
 
+            {/* 🚀 تسجيل الصوت المحدث والمشرق */}
             {isRecording ? (
-              <div className="flex items-center gap-4 bg-red-500/10 border border-red-500/20 p-3 rounded-2xl animate-pulse backdrop-blur-md">
+              <div className={`flex items-center gap-4 p-3 rounded-3xl animate-pulse ${isDarkMode ? 'bg-red-900/30 border border-red-500/30' : 'bg-red-50 border border-red-200 shadow-sm'}`}>
                 <Mic className="text-red-500 animate-bounce" size={24} />
-                <span className="font-black text-red-500 text-sm flex-1">{t.recording}</span>
-                <span className="font-mono font-bold text-red-500">00:08</span>
-                <button onClick={() => setIsRecording(false)} className="p-2 text-red-500 hover:bg-red-500/20 rounded-full transition-colors"><X size={20}/></button>
-                <button onClick={handleSendAudio} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg shadow-red-500/30 transition-transform hover:scale-110"><Send size={18} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/></button>
+                <span className={`font-black text-sm flex-1 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{t.recording}</span>
+                <span className={`font-mono font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>00:08</span>
+                <button type="button" onClick={() => setIsRecording(false)} className="p-2 text-red-500 hover:bg-red-500/20 rounded-full transition-colors"><X size={20}/></button>
+                
+                {/* 🚀 تم إضافة type="button" ليقوم بالإرسال ولا يحدث الصفحة */}
+                <button type="button" onClick={handleSendAudio} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg shadow-red-500/30 transition-transform hover:scale-110">
+                  <Send size={18} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/>
+                </button>
               </div>
             ) : (
               <form onSubmit={handleSendMessage} className="flex items-end gap-2">
@@ -398,7 +398,7 @@ export default function ChatRoom() {
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-        .animate-gradient-slow { animation: gradient-xy 15s ease infinite; }
+        .animate-gradient-slow { animation: gradient-xy 10s ease infinite; }
       `}</style>
     </div>
   );
