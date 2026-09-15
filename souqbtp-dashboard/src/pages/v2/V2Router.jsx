@@ -6,7 +6,7 @@ import ProjectPath from './ProjectPath';
 import ContractorHR from './ContractorHR'; 
 import ContractorMarketplace from './ContractorMarketplace'; // 🛒 واجهة التسوق (للمشتري)
 import VendorStoreManager from './VendorStoreManager';       // 📦 لوحة إضافة المنتجات (للبائع)
-import Contractormessage from './Contractormessage';
+import ChatRoom from './ChatRoom';
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
@@ -38,7 +38,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="site-reports" element={<UnderConstruction title="كاميرا الميدان والتقارير" icon="📸" />} />
         
         {/* التواصل والمشتريات */}
-        <Route path="messages" element={<Contractormessage icon="💬" />} />
+        <Route path="messages" element={<ChatRoom />} />
         <Route path="hr" element={<ContractorHR />} /> 
         
         {/* 🚀 السوق المتعدد الأطراف */}
