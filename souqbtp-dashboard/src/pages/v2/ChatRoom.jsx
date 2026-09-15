@@ -3,10 +3,10 @@ import { useOutletContext, useLocation } from 'react-router-dom';
 import { 
   Search, Send, Paperclip, Mic, Phone, Video, 
   MoreVertical, CheckCheck, X, ShoppingCart, 
-  Image as ImageIcon, Briefcase, FileText, Play
+  Image as ImageIcon, Briefcase, FileText, Play, Trash2
 } from 'lucide-react';
 
-export default function ContractorMessages() {
+export default function ChatRoom() {
   const context = useOutletContext() || {};
   const isDarkMode = context.isDarkMode || false;
   const language = context.language || 'ar';
@@ -18,11 +18,11 @@ export default function ContractorMessages() {
   const [activeChat, setActiveChat] = useState(1);
   const [newMessage, setNewMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [activeCall, setActiveCall] = useState(null); 
   
-  // 🚀 حالة المكالمات (صوت أو فيديو)
-  const [activeCall, setActiveCall] = useState(null); // 'voice', 'video', or null
+  // 🚀 حالة جديدة لفتح قائمة الـ 3 نقاط
+  const [showDropdown, setShowDropdown] = useState(false);
 
-  // 🚀 مراجع (Refs) لرفع الملفات
   const messagesEndRef = useRef(null);
   const imageInputRef = useRef(null);
   const docInputRef = useRef(null);
@@ -34,7 +34,8 @@ export default function ContractorMessages() {
       orderCardTitle: "طلب عرض سعر (Bon de Commande)", total: "المجموع التقديري:",
       accept: "قبول العرض", reject: "رفض العرض", negotiate: "قيد التفاوض...",
       recording: "جاري تسجيل الصوت...", cancel: "إلغاء", send: "إرسال",
-      calling: "جاري الاتصال...", endCall: "إنهاء المكالمة"
+      calling: "جاري الاتصال...", endCall: "إنهاء المكالمة",
+      clearChat: "إفراغ المحادثة", deleteMsg: "حذف"
     },
     fr: {
       title: "Boîte de Réception", searchPlaceholder: "Rechercher...",
@@ -42,7 +43,8 @@ export default function ContractorMessages() {
       orderCardTitle: "Demande de Devis (Bon de Commande)", total: "Total Estimé :",
       accept: "Accepter", reject: "Refuser", negotiate: "En négociation...",
       recording: "Enregistrement...", cancel: "Annuler", send: "Envoyer",
-      calling: "Appel en cours...", endCall: "Raccrocher"
+      calling: "Appel en cours...", endCall: "Raccrocher",
+      clearChat: "Vider le chat", deleteMsg: "Supprimer"
     },
     en: {
       title: "Inbox", searchPlaceholder: "Search conversations...",
@@ -50,7 +52,8 @@ export default function ContractorMessages() {
       orderCardTitle: "Request for Quote (Purchase Order)", total: "Estimated Total:",
       accept: "Accept", reject: "Reject", negotiate: "Negotiating...",
       recording: "Recording...", cancel: "Cancel", send: "Send",
-      calling: "Calling...", endCall: "End Call"
+      calling: "Calling...", endCall: "End Call",
+      clearChat: "Clear Chat", deleteMsg: "Delete"
     }
   };
 
@@ -91,7 +94,6 @@ export default function ContractorMessages() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 🚀 إرسال نص عادي
   const handleSendMessage = (e) => {
     e?.preventDefault();
     if (!newMessage.trim()) return;
@@ -103,19 +105,17 @@ export default function ContractorMessages() {
     setNewMessage('');
   };
 
-  // 🚀 إرسال صورة
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const msg = {
       id: Date.now(), senderId: 'me', isMe: true, type: 'image',
-      fileUrl: URL.createObjectURL(file), // محاكاة الرابط قبل الرفع لـ Supabase
+      fileUrl: URL.createObjectURL(file), 
       time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
     };
     setMessages([...messages, msg]);
   };
 
-  // 🚀 إرسال ملف/مستند
   const handleDocUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -127,49 +127,61 @@ export default function ContractorMessages() {
     setMessages([...messages, msg]);
   };
 
-  // 🚀 إرسال رسالة صوتية
   const handleSendAudio = () => {
     setIsRecording(false);
     const msg = {
-      id: Date.now(), senderId: 'me', isMe: true, type: 'audio', duration: '00:08',
+      id: Date.now(), senderId: 'me', isMe: true, type: 'audio', duration: '00:12',
       time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
     };
     setMessages([...messages, msg]);
   };
 
+  // 🚀 دوال الحذف والإفراغ
+  const handleDeleteMessage = (id) => {
+    setMessages(messages.filter(msg => msg.id !== id));
+  };
+
+  const handleClearChat = () => {
+    if (window.confirm("هل أنت متأكد من إفراغ المحادثة؟")) {
+      setMessages([]);
+      setShowDropdown(false);
+    }
+  };
+
   const activeChatData = chats.find(c => c.id === activeChat) || chats[0];
 
-  // 🚀 الألوان السحرية والخلفية المذهلة (True Glassmorphism)
+  // 🚀 السحر الحقيقي للزجاج (Glassmorphism) في كلا الوضعين!
   const mainWrapperBg = isDarkMode 
-    ? 'bg-slate-950' 
-    : 'bg-gradient-to-br from-indigo-100 via-purple-100 to-teal-100 bg-[length:300%_300%] animate-gradient-slow';
+    ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 bg-[length:300%_300%] animate-gradient-slow' // الوضع المظلم المتدرج
+    : 'bg-gradient-to-br from-indigo-100 via-purple-100 to-teal-100 bg-[length:300%_300%] animate-gradient-slow'; // الوضع الفاتح
   
-  // الإطارات أصبحت شديدة الشفافية لتظهر الخلفية من ورائها!
-  const panelBg = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white/40 backdrop-blur-2xl border-white/60';
+  // الإطارات شفافة لتعكس جمال الخلفية
+  const panelBg = isDarkMode ? 'bg-slate-900/40 backdrop-blur-2xl border-slate-700/50' : 'bg-white/40 backdrop-blur-2xl border-white/60';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-800';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-600';
+  const glassInputBg = isDarkMode ? 'bg-slate-900/50 border-slate-700/50 text-white' : 'bg-white/60 border-white/50 text-slate-800';
 
   return (
     <div className={`h-[82vh] rounded-3xl animate-fade-in ${mainWrapperBg}`} dir={isRtl ? 'rtl' : 'ltr'}>
       <div className={`flex h-full rounded-3xl border-2 overflow-hidden shadow-2xl ${panelBg}`}>
         
-        {/* 📋 Inbox Sidebar */}
-        <div className={`w-full md:w-80 flex-shrink-0 flex flex-col border-r ${isRtl ? 'border-l border-r-0' : 'border-r'} ${isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-white/40 bg-white/30 backdrop-blur-md'}`}>
-          <div className={`p-5 border-b ${isDarkMode ? 'border-slate-800' : 'border-white/50'}`}>
-            <h2 className={`text-2xl font-black mb-4 flex items-center gap-2 ${textTitle}`}>
+        {/* Inbox Sidebar */}
+        <div className={`w-full md:w-80 flex-shrink-0 flex flex-col border-r ${isRtl ? 'border-l border-r-0' : 'border-r'} ${isDarkMode ? 'border-slate-700/50 bg-slate-900/30 backdrop-blur-md' : 'border-white/50 bg-white/30 backdrop-blur-md'}`}>
+          <div className={`p-5 border-b ${isDarkMode ? 'border-slate-700/50' : 'border-white/50'}`}>
+            <h2 className={`text-xl md:text-2xl font-black mb-4 flex items-center gap-2 ${textTitle}`}>
               <Briefcase className="text-teal-500" /> {t.title}
             </h2>
             <div className="relative">
               <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'right-3' : 'left-3'} text-slate-400`} />
-              <input type="text" placeholder={t.searchPlaceholder} className={`w-full py-2.5 rounded-xl text-sm font-bold outline-none transition-all ${isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'} ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' : 'bg-white/50 backdrop-blur-sm border-white/50 text-slate-800 focus:border-teal-500 border shadow-inner placeholder-slate-500'}`} />
+              <input type="text" placeholder={t.searchPlaceholder} className={`w-full py-2.5 rounded-xl text-sm font-bold outline-none transition-all ${isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'} ${glassInputBg} focus:border-teal-500 border shadow-inner placeholder-slate-500`} />
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {chats.map(chat => (
-              <div key={chat.id} onClick={() => setActiveChat(chat.id)} className={`p-4 border-b cursor-pointer transition-colors flex items-center gap-3 ${isDarkMode ? 'border-slate-800 hover:bg-slate-800' : 'border-white/30 hover:bg-white/50'} ${activeChat === chat.id ? (isDarkMode ? 'bg-slate-800 border-l-4 border-l-teal-500' : 'bg-white/60 border-l-4 border-l-teal-500 shadow-sm') : 'border-l-4 border-l-transparent'}`}>
+              <div key={chat.id} onClick={() => setActiveChat(chat.id)} className={`p-4 border-b cursor-pointer transition-colors flex items-center gap-3 ${isDarkMode ? 'border-slate-700/30 hover:bg-slate-800/50' : 'border-white/30 hover:bg-white/50'} ${activeChat === chat.id ? (isDarkMode ? 'bg-slate-800/70 border-l-4 border-l-teal-500' : 'bg-white/60 border-l-4 border-l-teal-500 shadow-sm') : 'border-l-4 border-l-transparent'}`}>
                 <div className="relative">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${activeChat === chat.id ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30' : isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-white/80 text-slate-600 shadow-sm'}`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${activeChat === chat.id ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30' : isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-white/80 text-slate-600 shadow-sm'}`}>
                     {chat.avatar}
                   </div>
                   {chat.status === 'online' && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></span>}
@@ -187,13 +199,12 @@ export default function ContractorMessages() {
           </div>
         </div>
 
-        {/* 💬 Chat Window */}
+        {/* Chat Window */}
         <div className="hidden md:flex flex-1 flex-col relative bg-transparent">
-          {/* لمسة الزخرفة الخفيفة */}
-          <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
           
-          {/* Chat Header */}
-          <div className={`p-4 border-b flex justify-between items-center bg-white/20 dark:bg-slate-900/60 backdrop-blur-xl sticky top-0 z-10 ${isDarkMode ? 'border-slate-800' : 'border-white/40'}`}>
+          {/* Header */}
+          <div className={`p-4 border-b flex justify-between items-center bg-white/10 dark:bg-slate-900/30 backdrop-blur-xl sticky top-0 z-20 ${isDarkMode ? 'border-slate-700/50' : 'border-white/40'}`}>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-white bg-gradient-to-br from-teal-400 to-teal-600 shadow-lg shadow-teal-500/20`}>
                 {activeChatData?.avatar}
@@ -206,38 +217,55 @@ export default function ContractorMessages() {
               </div>
             </div>
             
-            {/* 🚀 أزرار المكالمات مفعلة الآن */}
-            <div className="flex gap-2">
-              <button onClick={() => setActiveCall('voice')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white/60 text-slate-700 hover:bg-white shadow-sm border border-white/50'}`}><Phone size={18}/></button>
-              <button onClick={() => setActiveCall('video')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white/60 text-slate-700 hover:bg-white shadow-sm border border-white/50'}`}><Video size={18}/></button>
-              <button className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white/60 text-slate-700 hover:bg-white shadow-sm border border-white/50'}`}><MoreVertical size={18}/></button>
+            <div className="flex gap-2 items-center">
+              <button onClick={() => setActiveCall('voice')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700' : 'bg-white/60 text-slate-700 hover:bg-white shadow-sm border border-white/50'}`}><Phone size={18}/></button>
+              <button onClick={() => setActiveCall('video')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700' : 'bg-white/60 text-slate-700 hover:bg-white shadow-sm border border-white/50'}`}><Video size={18}/></button>
+              
+              {/* 🚀 برمجة زر الـ 3 نقاط المنسدل */}
+              <div className="relative">
+                <button onClick={() => setShowDropdown(!showDropdown)} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700' : 'bg-white/60 text-slate-700 hover:bg-white shadow-sm border border-white/50'}`}>
+                  <MoreVertical size={18}/>
+                </button>
+                {showDropdown && (
+                  <div className={`absolute top-full ${isRtl ? 'left-0' : 'right-0'} mt-2 w-48 rounded-2xl shadow-xl border overflow-hidden z-50 animate-fade-in ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+                    <button onClick={handleClearChat} className="w-full px-4 py-3 flex items-center gap-3 text-red-500 hover:bg-red-500/10 font-bold text-sm transition-colors">
+                      <Trash2 size={16}/> {t.clearChat}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar relative z-10">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar relative z-10" onClick={() => setShowDropdown(false)}>
             {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'} animate-slide-up`}>
+              <div key={msg.id} className={`group relative flex ${msg.isMe ? 'justify-end' : 'justify-start'} animate-slide-up items-center gap-3`}>
+                
+                {/* 🚀 زر الحذف للرسالة المحددة (يظهر عند التمرير) */}
+                {msg.isMe && (
+                  <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all">
+                    <Trash2 size={16}/>
+                  </button>
+                )}
+
                 <div className={`max-w-[85%] md:max-w-[65%] flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
                   
-                  {/* رسالة نصية */}
                   {(!msg.type || msg.type === 'text') && (
-                    <div className={`p-4 rounded-3xl shadow-sm ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800 text-white border border-slate-700 rounded-tl-sm' : 'bg-white/70 backdrop-blur-md text-slate-800 border border-white/60 rounded-tl-sm'}`}>
+                    <div className={`p-4 rounded-3xl shadow-sm ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm shadow-teal-500/20' : isDarkMode ? 'bg-slate-800/80 backdrop-blur-md text-white border border-slate-700/50 rounded-tl-sm' : 'bg-white/70 backdrop-blur-md text-slate-800 border border-white/60 rounded-tl-sm'}`}>
                       <p className="text-sm font-bold leading-relaxed">{msg.text}</p>
                     </div>
                   )}
 
-                  {/* 🚀 رسالة صورة */}
                   {msg.type === 'image' && (
                     <div className={`p-1.5 rounded-2xl shadow-md ${msg.isMe ? 'bg-teal-500 rounded-tr-sm' : 'bg-white/70 backdrop-blur-md rounded-tl-sm'}`}>
                       <img src={msg.fileUrl} alt="attachment" className="max-w-[250px] rounded-xl object-cover" />
                     </div>
                   )}
 
-                  {/* 🚀 رسالة مستند */}
                   {msg.type === 'document' && (
-                    <div className={`p-4 rounded-3xl shadow-sm flex items-center gap-3 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : 'bg-white/70 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
-                      <div className="p-3 bg-white/20 rounded-xl"><FileText size={24}/></div>
+                    <div className={`p-4 rounded-3xl shadow-sm flex items-center gap-3 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/70 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
+                      <div className="p-3 bg-white/20 dark:bg-slate-700 rounded-xl"><FileText size={24}/></div>
                       <div>
                         <p className="text-sm font-black">{msg.fileName}</p>
                         <p className="text-xs opacity-80">{msg.fileSize}</p>
@@ -245,22 +273,20 @@ export default function ContractorMessages() {
                     </div>
                   )}
 
-                  {/* 🚀 رسالة صوتية */}
                   {msg.type === 'audio' && (
-                    <div className={`p-3 rounded-full shadow-sm flex items-center gap-3 w-64 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : 'bg-white/70 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
-                      <button className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"><Play size={16} className="ml-1" fill="currentColor"/></button>
-                      <div className="flex-1 h-2 bg-white/30 rounded-full overflow-hidden">
-                        <div className="w-1/3 h-full bg-white rounded-full"></div>
+                    <div className={`p-3 rounded-full shadow-sm flex items-center gap-3 w-64 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/70 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
+                      <button className="w-10 h-10 rounded-full bg-white/20 dark:bg-slate-700 flex items-center justify-center hover:bg-white/30 transition-colors"><Play size={16} className="ml-1" fill="currentColor"/></button>
+                      <div className="flex-1 h-2 bg-white/30 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className="w-1/3 h-full bg-white dark:bg-teal-400 rounded-full"></div>
                       </div>
                       <span className="text-xs font-black mr-2">{msg.duration}</span>
                     </div>
                   )}
 
-                  {/* بطاقة الطلبية */}
                   {msg.type === 'order_card' && (
-                    <div className={`p-1 rounded-3xl shadow-lg border-2 ${msg.isMe ? 'bg-teal-500/10 border-teal-500/30' : isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white/60 border-white/50 backdrop-blur-md'}`}>
-                      <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-900' : 'bg-white/80'}`}>
-                        <div className={`flex items-center gap-2 mb-3 pb-3 border-b border-dashed ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                    <div className={`p-1 rounded-3xl shadow-lg border-2 ${msg.isMe ? 'bg-teal-500/10 border-teal-500/30' : isDarkMode ? 'bg-slate-800/80 border-slate-700/50' : 'bg-white/60 border-white/50 backdrop-blur-md'}`}>
+                      <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-900/80' : 'bg-white/80'}`}>
+                        <div className={`flex items-center gap-2 mb-3 pb-3 border-b border-dashed ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                           <ShoppingCart className="text-teal-500" size={20}/>
                           <h4 className={`font-black text-sm ${textTitle}`}>{t.orderCardTitle}</h4>
                         </div>
@@ -285,20 +311,24 @@ export default function ContractorMessages() {
                     {msg.isMe && <CheckCheck size={14} className="text-teal-500" />}
                   </div>
                 </div>
+
+                {/* زر الحذف للطرف الآخر */}
+                {!msg.isMe && (
+                  <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all">
+                    <Trash2 size={16}/>
+                  </button>
+                )}
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* 🚀 Input Area (تم ربط الأزرار بالمدخلات المخفية) */}
-          <div className={`p-4 bg-white/40 dark:bg-slate-900/80 backdrop-blur-xl border-t relative z-10 ${isDarkMode ? 'border-slate-800' : 'border-white/50'}`}>
-            
-            {/* مدخلات مخفية لرفع الملفات */}
+          <div className={`p-4 bg-white/20 dark:bg-slate-900/30 backdrop-blur-xl border-t relative z-10 ${isDarkMode ? 'border-slate-700/50' : 'border-white/40'}`}>
             <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageUpload} className="hidden" />
             <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" ref={docInputRef} onChange={handleDocUpload} className="hidden" />
 
             {isRecording ? (
-              <div className="flex items-center gap-4 bg-red-500/10 border border-red-500/20 p-3 rounded-2xl animate-pulse">
+              <div className="flex items-center gap-4 bg-red-500/10 border border-red-500/20 p-3 rounded-2xl animate-pulse backdrop-blur-md">
                 <Mic className="text-red-500 animate-bounce" size={24} />
                 <span className="font-black text-red-500 text-sm flex-1">{t.recording}</span>
                 <span className="font-mono font-bold text-red-500">00:08</span>
@@ -308,11 +338,11 @@ export default function ContractorMessages() {
             ) : (
               <form onSubmit={handleSendMessage} className="flex items-end gap-2">
                 <div className="flex gap-1">
-                  <button type="button" onClick={() => docInputRef.current.click()} className={`p-3 rounded-2xl transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-800 hover:text-teal-400' : 'text-slate-600 hover:bg-white/80 hover:text-teal-600 shadow-sm border border-transparent hover:border-white'}`}><Paperclip size={20}/></button>
-                  <button type="button" onClick={() => imageInputRef.current.click()} className={`p-3 rounded-2xl transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-800 hover:text-teal-400' : 'text-slate-600 hover:bg-white/80 hover:text-teal-600 shadow-sm border border-transparent hover:border-white'}`}><ImageIcon size={20}/></button>
+                  <button type="button" onClick={() => docInputRef.current.click()} className={`p-3 rounded-2xl transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-800/80 hover:text-teal-400' : 'text-slate-600 hover:bg-white/80 hover:text-teal-600 shadow-sm border border-transparent hover:border-white'}`}><Paperclip size={20}/></button>
+                  <button type="button" onClick={() => imageInputRef.current.click()} className={`p-3 rounded-2xl transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-800/80 hover:text-teal-400' : 'text-slate-600 hover:bg-white/80 hover:text-teal-600 shadow-sm border border-transparent hover:border-white'}`}><ImageIcon size={20}/></button>
                 </div>
                 
-                <div className={`flex-1 relative border rounded-3xl overflow-hidden transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white/60 border-white/60 shadow-inner backdrop-blur-md'}`}>
+                <div className={`flex-1 relative border rounded-3xl overflow-hidden transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 ${glassInputBg} shadow-inner`}>
                   <textarea 
                     value={newMessage} 
                     onChange={e => setNewMessage(e.target.value)}
@@ -338,7 +368,6 @@ export default function ContractorMessages() {
         </div>
       </div>
 
-      {/* 🚀 نافذة المكالمة السينمائية (Call UI Overlay) */}
       {activeCall && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-xl animate-fade-in">
           <div className="text-center">
