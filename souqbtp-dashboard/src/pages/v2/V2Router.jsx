@@ -1,12 +1,13 @@
 import { Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
 import V2Layout from '../../components/v2/V2Layout';
 import ContractorDashboard from './ContractorDashboard';
-import CostCalculator from './CostCalculator'; // 🚀 تم الاستدعاء
-import ProjectPath from './ProjectPath'; // 🚀 تم الاستدعاء
-import ContractorHR from './ContractorHR';
-import ContractorMarketplace from './ContractorMarketplace';
+import CostCalculator from './CostCalculator'; 
+import ProjectPath from './ProjectPath'; 
+import ContractorHR from './ContractorHR'; 
+import ContractorMarketplace from './ContractorMarketplace'; // 🛒 واجهة التسوق (للمشتري)
+import VendorStoreManager from './VendorStoreManager';       // 📦 لوحة إضافة المنتجات (للبائع)
 
-// صفحة قيد الإنشاء ذكية تتجاوب مع لون الغلاف
+// صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
   const { isDarkMode } = useOutletContext(); 
   return (
@@ -30,15 +31,19 @@ export default function V2Router({ session, supplier }) {
         {/* الرئيسية */}
         <Route path="contractor-dashboard" element={<ContractorDashboard />} />
         
-        {/* 🚀 القيادة والميدان (تم ربط الملفات هنا) */}
+        {/* القيادة والميدان */}
         <Route path="project-path" element={<ProjectPath />} />
         <Route path="cost-calculator" element={<CostCalculator />} />
         <Route path="site-reports" element={<UnderConstruction title="كاميرا الميدان والتقارير" icon="📸" />} />
         
         {/* التواصل والمشتريات */}
         <Route path="messages" element={<UnderConstruction title="صندوق الرسائل الشامل" icon="💬" />} />
-        <Route path="hr" element={<ContractorHR icon="👥" />} />
-        <Route path="marketplace" element={<ContractorMarketplace />} />
+        <Route path="hr" element={<ContractorHR />} /> 
+        
+        {/* 🚀 السوق المتعدد الأطراف */}
+        <Route path="marketplace" element={<ContractorMarketplace />} />  {/* 🛒 واجهة التسوق للمقاول */}
+        <Route path="store-manager" element={<VendorStoreManager />} /> {/* 📦 إدارة المتجر للتاجر */}
+        
         <Route path="tenders" element={<UnderConstruction title="رادار المناقصات (Appels d'offres)" icon="📡" />} />
         
         {/* المالية والمحاسبة */}
