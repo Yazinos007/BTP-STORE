@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { 
   ShoppingCart, Search, Filter, Package, 
   Zap, Droplet, PaintRoller, Hammer, 
@@ -155,6 +155,13 @@ export default function ContractorMarketplace() {
           <p className="text-teal-50 font-bold text-lg leading-relaxed">
             {t.subtitle}
           </p>
+        </div>
+
+        {/* زر الانتقال إلى لوحة البائع */}
+        <div className="relative z-10 flex justify-center md:justify-start mt-4">
+          <Link to="/v2/store-manager" className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-black shadow-lg backdrop-blur-md transition-all border border-white/30">
+             فتح متجري (لوحة البائع) 📦
+          </Link>
         </div>
         
         {/* Search Bar in Header */}

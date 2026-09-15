@@ -173,6 +173,12 @@ export default function VendorStoreManager() {
           </h1>
           <p className="text-indigo-100 font-bold text-lg">{t.subtitle}</p>
         </div>
+        {/* زر العودة إلى السوق العام */}
+        <div className="relative z-10 flex justify-center md:justify-start mt-4">
+          <Link to="/v2/marketplace" className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-black shadow-lg backdrop-blur-md transition-all border border-white/30">
+            العودة للسوق العام 🛒
+          </Link>
+        </div>
         <button 
           onClick={() => setShowModal(true)}
           className="relative z-10 bg-blue-500 hover:bg-blue-400 text-white px-6 py-3.5 rounded-xl flex items-center gap-2 font-black shadow-lg shadow-blue-500/30 hover:-translate-y-1 transition-all"
