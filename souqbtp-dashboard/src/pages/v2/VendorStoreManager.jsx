@@ -2,10 +2,36 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useOutletContext, Link } from 'react-router-dom';
 import { 
-  PackagePlus, Trash2, Edit, Tag, ShoppingBag, 
+  PackagePlus, Trash2, Edit, ShoppingBag, 
   Plus, X, Loader2, Store, Image as ImageIcon, CheckCircle2, 
   Coins, Globe, Bitcoin
 } from 'lucide-react';
+
+// 🚀 دالة ذكية لاستخراج رمز العملة
+const getCurrencySymbol = (curr) => {
+  const symbols = { 
+    MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', 
+    CNY: '¥', INR: '₹', CHF: 'CHF', RUB: '₽', USDT: '₮', BTC: '₿', 
+    ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' 
+  };
+  return symbols[curr] || curr;
+};
+
+// 🚀 دالة ذكية لاستخراج أيقونة وعلم العملة
+const getCurrencyIcon = (curr) => {
+  if(['BTC', 'ETH', 'SOL', 'ICX', 'OM', 'BST', 'ALGO'].includes(curr)) return <Bitcoin size={16} className="text-amber-500"/>;
+  if(['USDT', 'USDC'].includes(curr)) return <Coins size={16} className="text-emerald-500"/>;
+  if(curr === 'BRICS') return <Globe size={16} className="text-blue-500"/>;
+  if(curr === 'USD') return <span className="font-black text-xs">🇺🇸</span>;
+  if(curr === 'EUR') return <span className="font-black text-xs">🇪🇺</span>;
+  if(curr === 'SAR') return <span className="font-black text-xs">🇸🇦</span>;
+  if(curr === 'AED') return <span className="font-black text-xs">🇦🇪</span>;
+  if(curr === 'KWD') return <span className="font-black text-xs">🇰🇼</span>;
+  if(curr === 'CNY') return <span className="font-black text-xs">🇨🇳</span>;
+  if(curr === 'INR') return <span className="font-black text-xs">🇮🇳</span>;
+  if(curr === 'CHF') return <span className="font-black text-xs">🇨🇭</span>;
+  return <span className="font-black text-xs">🇲🇦</span>;
+};
 
 export default function VendorStoreManager() {
   const context = useOutletContext() || {};
@@ -23,7 +49,6 @@ export default function VendorStoreManager() {
   
   const [editingProductId, setEditingProductId] = useState(null);
 
-  // 🚀 أضفنا "currency" الافتراضية MAD
   const [formData, setFormData] = useState({
     name: '', category: 'Cement', price_retail: '', price_wholesale: '', 
     min_wholesale_qty: '10', unit: 'Unité', description: '', image_url: '', currency: 'MAD'
@@ -70,7 +95,6 @@ export default function VendorStoreManager() {
 
   const t = translations[language] || translations.ar;
 
-  // 🚀 1. قائمة الوحدات الاحترافية المجمعة (Grouped BTP Units)
   const btpUnits = [
     { group: "التعبئة والوحدات", items: ["Unité (قطعة)", "Boîte (علبة)", "Paquet (رزمة)", "Palette (باليت)"] },
     { group: "الوزن", items: ["Kg (كيلوغرام)", "Tonne (طن)", "Sac 25kg (كيس 25كغ)", "Sac 50kg (كيس 50كغ)"] },
@@ -79,7 +103,6 @@ export default function VendorStoreManager() {
     { group: "النقل والخدمات", items: ["Camion (شاحنة)", "Voyage (رحلة)", "Forfait (تسعيرة شاملة)"] }
   ];
 
-  // 🚀 2. قائمة العملات المستقبلية (Fiat & Crypto)
   const currenciesList = [
     { type: "العملات الورقية (Fiat) المهيمنة", items: [
       { code: "MAD", label: "MAD - الدرهم المغربي 🇲🇦" },
@@ -225,30 +248,6 @@ export default function VendorStoreManager() {
     }
   };
 
-  const getCurrencyIcon = (curr) => {
-    if(['BTC', 'ETH', 'SOL', 'ICX', 'OM', 'BST', 'ALGO'].includes(curr)) return <Bitcoin size={16} className="text-amber-500"/>;
-    if(['USDT', 'USDC'].includes(curr)) return <Coins size={16} className="text-emerald-500"/>;
-    if(curr === 'BRICS') return <Globe size={16} className="text-blue-500"/>;
-    if(curr === 'USD') return <span className="font-black text-xs">🇺🇸</span>;
-    if(curr === 'EUR') return <span className="font-black text-xs">🇪🇺</span>;
-    if(curr === 'SAR') return <span className="font-black text-xs">🇸🇦</span>;
-    if(curr === 'AED') return <span className="font-black text-xs">🇦🇪</span>;
-    if(curr === 'KWD') return <span className="font-black text-xs">🇰🇼</span>;
-    if(curr === 'CNY') return <span className="font-black text-xs">🇨🇳</span>;
-    if(curr === 'INR') return <span className="font-black text-xs">🇮🇳</span>;
-    if(curr === 'CHF') return <span className="font-black text-xs">🇨🇭</span>;
-    return <span className="font-black text-xs">🇲🇦</span>;
-  };
-
-  const getCurrencySymbol = (curr) => {
-    const symbols = { 
-      MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', 
-      CNY: '¥', INR: '₹', CHF: 'CHF', USDT: '₮', BTC: '₿', 
-      ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' 
-    };
-    return symbols[curr] || curr;
-  };
-
   return (
     <div className="animate-fade-in pb-24 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
       
@@ -301,7 +300,6 @@ export default function VendorStoreManager() {
                 <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-slate-900/80 backdrop-blur-md text-white text-xs font-black px-3 py-1 rounded-full border border-slate-700`}>
                   {t.categories[product.category] || product.category}
                 </span>
-                {/* 🚀 عرض العملة المميز في زاوية الصورة */}
                 <span className={`absolute top-3 ${isRtl ? 'left-3' : 'right-3'} bg-white/90 backdrop-blur-md text-slate-900 text-xs font-black px-2.5 py-1 rounded-full border border-white flex items-center gap-1 shadow-lg`}>
                   {getCurrencyIcon(product.currency)} {product.currency}
                 </span>
@@ -314,11 +312,15 @@ export default function VendorStoreManager() {
                 <div className="space-y-3 mb-5">
                   <div className={`flex justify-between items-center p-3 rounded-xl border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                     <span className={`text-xs font-bold ${textMuted}`}>{t.retailPrice}</span>
-                    <span className="font-black text-blue-500">{product.price_retail} {product.currency}</span>
+                    {/* 🚀 رمز العملة يتغير ديناميكياً هنا */}
+                    <span className="font-black text-blue-500" dir="ltr">{product.price_retail} {getCurrencySymbol(product.currency)}</span>
                   </div>
                   <div className={`flex justify-between items-center p-3 rounded-xl border ${isDarkMode ? 'bg-indigo-900/20 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200'}`}>
-                    <span className="text-xs font-bold text-indigo-500">{t.wholesalePrice} <br/><span className="text-[10px] opacity-70">(Min: {product.min_wholesale_qty})</span></span>
-                    <span className="font-black text-indigo-600">{product.price_wholesale} {product.currency}</span>
+                    <span className={`text-xs font-bold text-indigo-500 ${isRtl ? 'text-right' : 'text-left'}`}>
+                      {t.wholesalePrice} <br/><span className="text-[10px] opacity-70">(Min: {product.min_wholesale_qty})</span>
+                    </span>
+                    {/* 🚀 وهنا أيضاً يتغير ديناميكياً */}
+                    <span className="font-black text-indigo-600" dir="ltr">{product.price_wholesale} {getCurrencySymbol(product.currency)}</span>
                   </div>
                 </div>
 
@@ -339,7 +341,7 @@ export default function VendorStoreManager() {
         </div>
       )}
 
-      {/* 🚀 Add/Edit Product Modal */}
+      {/* Add/Edit Product Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowModal(false)}>
           <div className={`w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[95vh] ${modalBg}`} onClick={e => e.stopPropagation()}>
@@ -387,7 +389,6 @@ export default function VendorStoreManager() {
                       </select>
                     </div>
 
-                    {/* 🚀 القائمة المنسدلة للوحدات الاحترافية */}
                     <div>
                       <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.unit}</label>
                       <select value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold border focus:border-blue-500 appearance-none ${inputBg}`}>
@@ -405,8 +406,8 @@ export default function VendorStoreManager() {
                   {/* Pricing Section */}
                   <div className="space-y-5 p-5 rounded-2xl border bg-indigo-500/5 border-indigo-500/20">
                     
-                    {/* 🚀 القائمة المنسدلة للعملات المستقبلية */}
-                    <div className="pb-4 mb-4 border-b border-indigo-500/20">
+                    {/* Currency Selector */}
+                    <div className="pb-4 mb-2 border-b border-indigo-500/20">
                       <label className="block text-xs font-black mb-2 text-indigo-500 flex items-center gap-2"><Globe size={14}/> {t.currencySelector}</label>
                       <select value={formData.currency} onChange={e => setFormData({...formData, currency: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg border focus:border-indigo-500 appearance-none ${isDarkMode ? 'bg-slate-900 border-indigo-500/30 text-white' : 'bg-white border-indigo-200 text-indigo-900'}`}>
                         {currenciesList.map((group, idx) => (
@@ -419,19 +420,20 @@ export default function VendorStoreManager() {
                       </select>
                     </div>
 
+                    {/* 🚀 الحقول الرقمية بالاتجاه العالمي (LTR) وبأيقونة ديناميكية */}
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold mb-2 text-indigo-500">{t.retailPrice}</label>
+                      <div dir="ltr">
+                        <label className={`block text-xs font-bold mb-2 text-indigo-500 ${isRtl ? 'text-right' : 'text-left'}`}>{t.retailPrice}</label>
                         <div className="relative">
-                          <input type="number" required min="0" step="0.01" value={formData.price_retail} onChange={e => setFormData({...formData, price_retail: e.target.value})} className={`w-full pl-10 pr-2 py-3 rounded-xl outline-none font-black text-lg border focus:border-indigo-500 ${isDarkMode ? 'bg-slate-900 border-indigo-500/30 text-white' : 'bg-white border-indigo-200 text-slate-800'}`} />
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 font-black">{formData.currency === 'MAD' ? 'MAD' : formData.currency === 'USDT' ? '₮' : formData.currency === 'BTC' ? '₿' : '$'}</span>
+                          <input type="number" required min="0" step="0.01" value={formData.price_retail} onChange={e => setFormData({...formData, price_retail: e.target.value})} className={`w-full pl-14 pr-4 py-3 rounded-xl outline-none font-black text-lg border focus:border-indigo-500 text-left ${isDarkMode ? 'bg-slate-900 border-indigo-500/30 text-white' : 'bg-white border-indigo-200 text-slate-800'}`} />
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 font-black text-sm">{getCurrencySymbol(formData.currency)}</span>
                         </div>
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold mb-2 text-emerald-500">{t.wholesalePrice}</label>
+                      <div dir="ltr">
+                        <label className={`block text-xs font-bold mb-2 text-emerald-500 ${isRtl ? 'text-right' : 'text-left'}`}>{t.wholesalePrice}</label>
                         <div className="relative">
-                          <input type="number" required min="0" step="0.01" value={formData.price_wholesale} onChange={e => setFormData({...formData, price_wholesale: e.target.value})} className={`w-full pl-10 pr-2 py-3 rounded-xl outline-none font-black text-lg border focus:border-emerald-500 ${isDarkMode ? 'bg-slate-900 border-emerald-500/30 text-white' : 'bg-white border-emerald-200 text-slate-800'}`} />
-                          <Tag size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400" />
+                          <input type="number" required min="0" step="0.01" value={formData.price_wholesale} onChange={e => setFormData({...formData, price_wholesale: e.target.value})} className={`w-full pl-14 pr-4 py-3 rounded-xl outline-none font-black text-lg border focus:border-emerald-500 text-left ${isDarkMode ? 'bg-slate-900 border-emerald-500/30 text-white' : 'bg-white border-emerald-200 text-slate-800'}`} />
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 font-black text-sm">{getCurrencySymbol(formData.currency)}</span>
                         </div>
                       </div>
                     </div>
