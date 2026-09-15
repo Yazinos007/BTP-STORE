@@ -10,7 +10,7 @@ import {
 
 // 🚀 دوال العملات العالمية
 const getCurrencySymbol = (curr) => {
-  const symbols = { MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', CNY: '¥', INR: '₹', CHF: 'CHF', RUB: '₽', USDT: '₮', BTC: '₿', ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' };
+  const symbols = { MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', CNY: '¥', INR: '₹', CHF: 'CHF', USDT: '₮', BTC: '₿', ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' };
   return symbols[curr] || curr;
 };
 
@@ -26,7 +26,6 @@ const getCurrencyIcon = (curr) => {
   if(curr === 'CNY') return <span className="font-black text-xs">🇨🇳</span>;
   if(curr === 'INR') return <span className="font-black text-xs">🇮🇳</span>;
   if(curr === 'CHF') return <span className="font-black text-xs">🇨🇭</span>;
-  if(curr === 'RUB') return <span className="font-black text-xs">🇷🇺</span>;
   return <span className="font-black text-xs">🇲🇦</span>;
 };
 
