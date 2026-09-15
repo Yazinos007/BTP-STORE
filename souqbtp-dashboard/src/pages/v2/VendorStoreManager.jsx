@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Link, useOutletContext } from 'react-router-dom';
+import { useOutletContext, Link } from 'react-router-dom';
 import { 
   PackagePlus, Trash2, Edit, Tag, ShoppingBag, 
   Plus, X, Loader2, DollarSign, Store, Image as ImageIcon, CheckCircle2 
 } from 'lucide-react';
 
 export default function VendorStoreManager() {
-  // 🚀 حماية السياق من الانهيار
   const context = useOutletContext() || {};
   const isDarkMode = context.isDarkMode || false;
   const language = context.language || 'ar';
@@ -20,48 +19,50 @@ export default function VendorStoreManager() {
   const [showModal, setShowModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
+  
+  // 🚀 حالة جديدة لمعرفة هل نحن نعدل أم نضيف
+  const [editingProductId, setEditingProductId] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '', category: 'Cement', price_retail: '', price_wholesale: '', 
     min_wholesale_qty: '10', unit: 'Unité', description: '', image_url: ''
   });
 
-  // 🚀 القاموس الذكي والمحمي
   const translations = {
     ar: {
       title: "إدارة متجري (BTP)", subtitle: "أضف سلعك، حدد أسعار الجملة والتقسيط، وابدأ البيع.",
-      addProduct: "إضافة منتج جديد", myProducts: "منتجاتي الحالية",
+      addProduct: "إضافة منتج جديد", editProduct: "تعديل المنتج", myProducts: "منتجاتي الحالية",
       name: "اسم المنتج", category: "التصنيف", 
       retailPrice: "ثمن التقسيط (للوحدة)", wholesalePrice: "ثمن الجملة (للوحدة)",
       minWholesale: "الكمية الأدنى للجملة", unit: "وحدة القياس (كيس، طن، متر...)",
       desc: "وصف المنتج", image: "صورة المنتج",
-      save: "نشر المنتج", cancel: "إلغاء", actions: "إجراءات", empty: "لم تقم بإضافة أي منتج بعد.",
+      save: "نشر المنتج", update: "تحديث المنتج", cancel: "إلغاء", actions: "إجراءات", empty: "لم تقم بإضافة أي منتج بعد.",
       uploading: "جاري الرفع...", dragDrop: "اضغط لرفع صورة المنتج",
-      success: "تم حفظ المنتج بنجاح!", currency: "درهم",
+      success: "تمت العملية بنجاح!", currency: "درهم", backToMarket: "العودة للسوق العام 🛒",
       categories: { Cement: "مواد البناء والأسمنت", Steel: "الحديد والتسليح", Wood: "الخشب والنجارة", Plumbing: "السباكة والأنابيب", Electrical: "الكهرباء والإنارة", Paint: "الصباغة والعزل" }
     },
     fr: {
       title: "Mon Magasin BTP", subtitle: "Ajoutez vos produits, définissez vos prix (détail/gros) et vendez.",
-      addProduct: "Nouveau Produit", myProducts: "Mes Produits",
+      addProduct: "Nouveau Produit", editProduct: "Modifier Produit", myProducts: "Mes Produits",
       name: "Nom du produit", category: "Catégorie", 
       retailPrice: "Prix Détail (Unité)", wholesalePrice: "Prix Gros (Unité)",
       minWholesale: "Quantité Min. (Gros)", unit: "Unité (Sac, Tonne, Mètre...)",
       desc: "Description", image: "Image du Produit",
-      save: "Publier", cancel: "Annuler", actions: "Actions", empty: "Aucun produit ajouté pour le moment.",
+      save: "Publier", update: "Mettre à jour", cancel: "Annuler", actions: "Actions", empty: "Aucun produit ajouté pour le moment.",
       uploading: "Téléchargement...", dragDrop: "Cliquez pour uploader une image",
-      success: "Produit enregistré avec succès !", currency: "MAD",
+      success: "Opération réussie !", currency: "MAD", backToMarket: "Retour au Marché 🛒",
       categories: { Cement: "Gros œuvre & Ciment", Steel: "Acier & Armature", Wood: "Bois & Menuiserie", Plumbing: "Plomberie & Tuyauterie", Electrical: "Électricité & Éclairage", Paint: "Peinture & Isolation" }
     },
     en: {
       title: "My BTP Store", subtitle: "Add products, set retail/wholesale prices, and start selling.",
-      addProduct: "Add New Product", myProducts: "My Products",
+      addProduct: "Add New Product", editProduct: "Edit Product", myProducts: "My Products",
       name: "Product Name", category: "Category", 
       retailPrice: "Retail Price (Unit)", wholesalePrice: "Wholesale Price (Unit)",
       minWholesale: "Min Qty for Wholesale", unit: "Unit (Bag, Ton, Meter...)",
       desc: "Description", image: "Product Image",
-      save: "Publish Product", cancel: "Cancel", actions: "Actions", empty: "No products added yet.",
+      save: "Publish Product", update: "Update Product", cancel: "Cancel", actions: "Actions", empty: "No products added yet.",
       uploading: "Uploading...", dragDrop: "Click to upload product image",
-      success: "Product saved successfully!", currency: "MAD",
+      success: "Operation successful!", currency: "MAD", backToMarket: "Back to Market 🛒",
       categories: { Cement: "Masonry & Cement", Steel: "Steel & Rebar", Wood: "Wood & Carpentry", Plumbing: "Plumbing & Piping", Electrical: "Electrical & Lighting", Paint: "Paint & Insulation" }
     }
   };
@@ -105,7 +106,6 @@ export default function VendorStoreManager() {
       if (!error && data && data.length > 0) {
         setProducts(data);
       } else {
-        // 🚀 بيانات ديمو لتجربة الفخامة فوراً
         setProducts([
           { id: 1, name: "Ciment Portland CPJ 45", category: "Cement", price_retail: 75, price_wholesale: 70, min_wholesale_qty: 100, unit: "Sac 50kg", description: "Ciment haute qualité.", image_url: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=500&auto=format&fit=crop" }
         ]);
@@ -119,19 +119,42 @@ export default function VendorStoreManager() {
     const file = e.target.files[0];
     if (!file) return;
     setIsUploading(true);
-    // محاكاة رفع الصورة
     setTimeout(() => {
       setFormData({ ...formData, image_url: URL.createObjectURL(file) });
       setIsUploading(false);
     }, 1500);
   };
 
+  // 🚀 دالة فتح النافذة لإضافة منتج جديد
+  const handleAddNew = () => {
+    setFormData({ name: '', category: 'Cement', price_retail: '', price_wholesale: '', min_wholesale_qty: '10', unit: 'Unité', description: '', image_url: '' });
+    setEditingProductId(null);
+    setShowModal(true);
+  };
+
+  // 🚀 دالة فتح النافذة لتعديل منتج موجود
+  const handleEdit = (product) => {
+    setFormData({
+      name: product.name,
+      category: product.category,
+      price_retail: product.price_retail.toString(),
+      price_wholesale: product.price_wholesale.toString(),
+      min_wholesale_qty: product.min_wholesale_qty.toString(),
+      unit: product.unit,
+      description: product.description || '',
+      image_url: product.image_url || ''
+    });
+    setEditingProductId(product.id);
+    setShowModal(true);
+  };
+
+  // 🚀 دالة الحفظ المحدثة (تعرف هل تضيف أم تعدل)
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     if (!user) return;
 
     setSaveStatus('loading');
-    const newProduct = {
+    const productPayload = {
       ...formData,
       supplier_id: user.id,
       price_retail: parseFloat(formData.price_retail),
@@ -140,14 +163,20 @@ export default function VendorStoreManager() {
     };
 
     try {
-      // محاكاة الحفظ في الداتا بيز للنسخة الحالية
       setTimeout(() => {
-        setProducts([{ ...newProduct, id: Date.now() }, ...products]);
+        if (editingProductId) {
+          // تحديث منتج موجود
+          setProducts(products.map(p => p.id === editingProductId ? { ...productPayload, id: editingProductId } : p));
+        } else {
+          // إضافة منتج جديد
+          setProducts([{ ...productPayload, id: Date.now() }, ...products]);
+        }
+        
         setSaveStatus('success');
         setTimeout(() => {
           setSaveStatus(null);
           setShowModal(false);
-          setFormData({ name: '', category: 'Cement', price_retail: '', price_wholesale: '', min_wholesale_qty: '10', unit: 'Unité', description: '', image_url: '' });
+          setEditingProductId(null);
         }, 1500);
       }, 800);
     } catch (error) {
@@ -167,20 +196,21 @@ export default function VendorStoreManager() {
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-900 to-indigo-800 rounded-3xl p-6 md:p-10 mb-8 text-center md:text-start flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl shadow-indigo-900/20 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-        <div className="relative z-10">
+        <div className="relative z-10 w-full md:w-1/2">
           <h1 className="text-3xl md:text-4xl font-black text-white mb-3 flex items-center justify-center md:justify-start gap-3">
             <Store className="text-blue-400" size={32} /> {t.title}
           </h1>
           <p className="text-indigo-100 font-bold text-lg">{t.subtitle}</p>
-        </div>
-        {/* زر العودة إلى السوق العام */}
-        <div className="relative z-10 flex justify-center md:justify-start mt-4">
-          <Link to="/v2/marketplace" className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-black shadow-lg backdrop-blur-md transition-all border border-white/30">
-            العودة للسوق العام 🛒
-          </Link>
+          
+          {/* 🚀 زر العودة للسوق العام */}
+          <div className="flex justify-center md:justify-start mt-6">
+            <Link to="/v2/marketplace" className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold backdrop-blur-md transition-all border border-white/20">
+              {t.backToMarket}
+            </Link>
+          </div>
         </div>
         <button 
-          onClick={() => setShowModal(true)}
+          onClick={handleAddNew}
           className="relative z-10 bg-blue-500 hover:bg-blue-400 text-white px-6 py-3.5 rounded-xl flex items-center gap-2 font-black shadow-lg shadow-blue-500/30 hover:-translate-y-1 transition-all"
         >
           <PackagePlus size={20} /> {t.addProduct}
@@ -230,7 +260,11 @@ export default function VendorStoreManager() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-700'}`}>
+                  {/* 🚀 زر التعديل مربوط بالدالة الآن */}
+                  <button 
+                    onClick={() => handleEdit(product)} 
+                    className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-700'}`}
+                  >
                     <Edit size={16} className="mx-auto" />
                   </button>
                   <button onClick={() => handleDelete(product.id)} className="flex-1 py-2 rounded-xl text-sm font-bold border border-red-500/20 text-red-500 bg-red-500/5 hover:bg-red-500 hover:text-white transition-colors">
@@ -243,14 +277,15 @@ export default function VendorStoreManager() {
         </div>
       )}
 
-      {/* 🚀 Add Product Modal */}
+      {/* 🚀 Add/Edit Product Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowModal(false)}>
           <div className={`w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh] ${modalBg}`} onClick={e => e.stopPropagation()}>
             
             <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
               <h3 className={`text-xl font-black flex items-center gap-2 ${textTitle}`}>
-                <PackagePlus className="text-blue-500" /> {t.addProduct}
+                {editingProductId ? <Edit className="text-blue-500" /> : <PackagePlus className="text-blue-500" />} 
+                {editingProductId ? t.editProduct : t.addProduct}
               </h3>
               <button onClick={() => setShowModal(false)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}><X size={20}/></button>
             </div>
@@ -293,7 +328,7 @@ export default function VendorStoreManager() {
                     <input type="text" required placeholder="Ex: Tonne, Kg, Unité..." value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold border focus:border-blue-500 ${inputBg}`} />
                   </div>
 
-                  {/* 🚀 تسعير الجملة والتقسيط */}
+                  {/* Pricing Section */}
                   <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-5 p-5 rounded-2xl border bg-indigo-500/5 border-indigo-500/20">
                     <div>
                       <label className="block text-xs font-bold mb-2 text-indigo-500">{t.retailPrice}</label>
@@ -329,7 +364,7 @@ export default function VendorStoreManager() {
               </button>
               <button type="submit" form="product-form" disabled={saveStatus === 'loading'} className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2">
                 {saveStatus === 'loading' ? <Loader2 size={18} className="animate-spin"/> : saveStatus === 'success' ? <CheckCircle2 size={18}/> : <Plus size={18}/>}
-                {saveStatus === 'success' ? t.success : t.save}
+                {saveStatus === 'success' ? t.success : (editingProductId ? t.update : t.save)}
               </button>
             </div>
 
