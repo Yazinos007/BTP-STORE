@@ -1,10 +1,34 @@
 import { useState, useEffect } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { useOutletContext, Link } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 import { 
   ShoppingCart, Search, Filter, Package, 
   Zap, Droplet, PaintRoller, Hammer, 
-  ArrowRight, Star, Plus, CheckCircle2, TrendingUp, Briefcase // 🚀 تم إضافة Briefcase هنا لقتل الشبح!
+  ArrowRight, Star, Plus, CheckCircle2, TrendingUp, Briefcase,
+  Store, Coins, Globe, Bitcoin, Tag
 } from 'lucide-react';
+
+// 🚀 دوال العملات العالمية
+const getCurrencySymbol = (curr) => {
+  const symbols = { MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', CNY: '¥', INR: '₹', CHF: 'CHF', RUB: '₽', USDT: '₮', BTC: '₿', ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' };
+  return symbols[curr] || curr;
+};
+
+const getCurrencyIcon = (curr) => {
+  if(['BTC', 'ETH', 'SOL', 'ICX', 'OM', 'BST', 'ALGO'].includes(curr)) return <Bitcoin size={16} className="text-amber-500"/>;
+  if(['USDT', 'USDC'].includes(curr)) return <Coins size={16} className="text-emerald-500"/>;
+  if(curr === 'BRICS') return <Globe size={16} className="text-blue-500"/>;
+  if(curr === 'USD') return <span className="font-black text-xs">🇺🇸</span>;
+  if(curr === 'EUR') return <span className="font-black text-xs">🇪🇺</span>;
+  if(curr === 'SAR') return <span className="font-black text-xs">🇸🇦</span>;
+  if(curr === 'AED') return <span className="font-black text-xs">🇦🇪</span>;
+  if(curr === 'KWD') return <span className="font-black text-xs">🇰🇼</span>;
+  if(curr === 'CNY') return <span className="font-black text-xs">🇨🇳</span>;
+  if(curr === 'INR') return <span className="font-black text-xs">🇮🇳</span>;
+  if(curr === 'CHF') return <span className="font-black text-xs">🇨🇭</span>;
+  if(curr === 'RUB') return <span className="font-black text-xs">🇷🇺</span>;
+  return <span className="font-black text-xs">🇲🇦</span>;
+};
 
 export default function ContractorMarketplace() {
   const context = useOutletContext() || {};
@@ -15,82 +39,40 @@ export default function ContractorMarketplace() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [addedItem, setAddedItem] = useState(null);
 
-  // 🚀 القاموس الشامل للغات
   const translations = {
     ar: {
-      title: "سوق BTP للمواد الأولية",
-      subtitle: "اكتشف واطلب أفضل مواد البناء من موردين معتمدين بأسعار تنافسية.",
-      searchPlaceholder: "ابحث عن الأسمنت، الحديد، الخشب...",
-      categoriesTitle: "التصنيفات",
-      all: "الكل",
-      cement: "مواد البناء والأسمنت",
-      steel: "الحديد والتسليح",
-      wood: "الخشب والنجارة",
-      plumbing: "السباكة والأنابيب",
-      electrical: "الكهرباء والإنارة",
-      paint: "الصباغة والعزل",
-      addToCart: "أضف للسلة",
-      contactSupplier: "تواصل للحجز",
-      price: "درهم",
-      unit: "للوحدة",
-      supplier: "المورد:",
-      cartEmpty: "سلتك فارغة",
-      itemsInCart: "عناصر في السلة",
-      checkout: "إتمام الطلب",
-      emptySearch: "لم نجد أي مواد تطابق بحثك.",
-      popular: "الأكثر طلباً",
-      addedSuccess: "تمت الإضافة بنجاح!"
+      title: "سوق BTP للمواد الأولية", subtitle: "اكتشف واطلب أفضل مواد البناء من موردين معتمدين بأسعار تنافسية.",
+      searchPlaceholder: "ابحث عن الأسمنت، الحديد، الخشب...", categoriesTitle: "التصنيفات",
+      all: "الكل", cement: "مواد البناء والأسمنت", steel: "الحديد والتسليح", wood: "الخشب والنجارة",
+      plumbing: "السباكة والأنابيب", electrical: "الكهرباء والإنارة", paint: "الصباغة والعزل",
+      addToCart: "أضف للسلة", retail: "تقسيط:", wholesale: "جملة:",
+      supplier: "المورد:", cartEmpty: "سلتك فارغة", itemsInCart: "عناصر في السلة",
+      checkout: "إتمام الطلب", emptySearch: "لم نجد أي مواد تطابق بحثك.",
+      popular: "الأكثر طلباً", addedSuccess: "تمت الإضافة بنجاح!", openStore: "فتح متجري (لوحة البائع) 📦"
     },
     fr: {
-      title: "Marché BTP des Matières Premières",
-      subtitle: "Découvrez et commandez les meilleurs matériaux de construction.",
-      searchPlaceholder: "Rechercher ciment, acier, bois...",
-      categoriesTitle: "Catégories",
-      all: "Tout",
-      cement: "Gros œuvre & Ciment",
-      steel: "Acier & Armature",
-      wood: "Bois & Menuiserie",
-      plumbing: "Plomberie & Tuyauterie",
-      electrical: "Électricité & Éclairage",
-      paint: "Peinture & Isolation",
-      addToCart: "Ajouter",
-      contactSupplier: "Contacter",
-      price: "MAD",
-      unit: "/unité",
-      supplier: "Fournisseur :",
-      cartEmpty: "Panier vide",
-      itemsInCart: "articles",
-      checkout: "Commander",
-      emptySearch: "Aucun produit trouvé.",
-      popular: "Populaire",
-      addedSuccess: "Ajouté avec succès !"
+      title: "Marché BTP des Matières Premières", subtitle: "Découvrez et commandez les meilleurs matériaux de construction.",
+      searchPlaceholder: "Rechercher ciment, acier, bois...", categoriesTitle: "Catégories",
+      all: "Tout", cement: "Gros œuvre & Ciment", steel: "Acier & Armature", wood: "Bois & Menuiserie",
+      plumbing: "Plomberie & Tuyauterie", electrical: "Électricité & Éclairage", paint: "Peinture & Isolation",
+      addToCart: "Ajouter", retail: "Détail :", wholesale: "Gros :",
+      supplier: "Fournisseur :", cartEmpty: "Panier vide", itemsInCart: "articles",
+      checkout: "Commander", emptySearch: "Aucun produit trouvé.",
+      popular: "Populaire", addedSuccess: "Ajouté avec succès !", openStore: "Mon Magasin (Vendeur) 📦"
     },
     en: {
-      title: "BTP Raw Materials Market",
-      subtitle: "Discover and order the best construction materials from certified suppliers.",
-      searchPlaceholder: "Search cement, steel, wood...",
-      categoriesTitle: "Categories",
-      all: "All",
-      cement: "Masonry & Cement",
-      steel: "Steel & Rebar",
-      wood: "Wood & Carpentry",
-      plumbing: "Plumbing & Piping",
-      electrical: "Electrical & Lighting",
-      paint: "Paint & Insulation",
-      addToCart: "Add to Cart",
-      contactSupplier: "Contact",
-      price: "MAD",
-      unit: "/unit",
-      supplier: "Supplier:",
-      cartEmpty: "Cart is empty",
-      itemsInCart: "items in cart",
-      checkout: "Checkout",
-      emptySearch: "No products found matching your search.",
-      popular: "Popular",
-      addedSuccess: "Added successfully!"
+      title: "BTP Raw Materials Market", subtitle: "Discover and order the best construction materials from certified suppliers.",
+      searchPlaceholder: "Search cement, steel, wood...", categoriesTitle: "Categories",
+      all: "All", cement: "Masonry & Cement", steel: "Steel & Rebar", wood: "Wood & Carpentry",
+      plumbing: "Plumbing & Piping", electrical: "Electrical & Lighting", paint: "Paint & Insulation",
+      addToCart: "Add to Cart", retail: "Retail:", wholesale: "Wholesale:",
+      supplier: "Supplier:", cartEmpty: "Cart is empty", itemsInCart: "items in cart",
+      checkout: "Checkout", emptySearch: "No products found matching your search.",
+      popular: "Popular", addedSuccess: "Added successfully!", openStore: "My Store (Vendor) 📦"
     }
   };
 
@@ -99,7 +81,6 @@ export default function ContractorMarketplace() {
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-800';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
 
-  // 🚀 تصنيفات السوق
   const categories = [
     { id: 'All', label: t.all, icon: Filter },
     { id: 'Cement', label: t.cement, icon: Package },
@@ -110,29 +91,41 @@ export default function ContractorMarketplace() {
     { id: 'Paint', label: t.paint, icon: PaintRoller },
   ];
 
-  // 🚀 بيانات وهمية مبهرة للمواد الأولية
-  const mockProducts = [
-    { id: 1, name: "Ciment Portland CPJ 45", category: "Cement", price: 75, unit: "Sac 50kg", supplier: "LafargeHolcim", rating: 4.8, isPopular: true, image: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=500&auto=format&fit=crop" },
-    { id: 2, name: "Fer à béton (Ø 12mm)", category: "Steel", price: 9.5, unit: "Kg", supplier: "Sonasid", rating: 4.9, isPopular: true, image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=500&auto=format&fit=crop" },
-    { id: 3, name: "Briques Rouges (12 Trous)", category: "Cement", price: 2.2, unit: "Unité", supplier: "Briqueterie Nationale", rating: 4.5, isPopular: false, image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=500&auto=format&fit=crop" },
-    { id: 4, name: "Bois Rouge (Madrier)", category: "Wood", price: 350, unit: "Mètre Cube", supplier: "Bois Maroc", rating: 4.6, isPopular: false, image: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=500&auto=format&fit=crop" },
-    { id: 5, name: "Tube PVC Évacuation (Ø 110)", category: "Plumbing", price: 85, unit: "Barre 6m", supplier: "Plastima", rating: 4.7, isPopular: true, image: "https://images.unsplash.com/photo-1616422321453-62b21008d506?q=80&w=500&auto=format&fit=crop" },
-    { id: 6, name: "Câble Électrique (3x2.5mm)", category: "Electrical", price: 320, unit: "Rouleau 100m", supplier: "Nexans", rating: 4.9, isPopular: true, image: "https://images.unsplash.com/photo-1555664424-778a1e5e1b48?q=80&w=500&auto=format&fit=crop" },
-    { id: 7, name: "Peinture Vinyle Blanche", category: "Paint", price: 250, unit: "Pot 30kg", supplier: "Colorado", rating: 4.4, isPopular: false, image: "https://images.unsplash.com/photo-1562259929-b4e1fd3a4b92?q=80&w=500&auto=format&fit=crop" },
-    { id: 8, name: "Sable de Construction", category: "Cement", price: 150, unit: "Mètre Cube", supplier: "Carrière Pro", rating: 4.5, isPopular: false, image: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?q=80&w=500&auto=format&fit=crop" },
-  ];
-
   useEffect(() => {
-    // محاكاة جلب البيانات
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    let isMounted = true;
+    const loadMarketplace = async () => {
+      setLoading(true);
+      try {
+        // 🚀 جلب المنتجات الحقيقية من قاعدة البيانات
+        const { data, error } = await supabase
+          .from('marketplace_products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          if (isMounted) setProducts(data);
+        } else {
+          // بيانات ديمو مؤقتة في حال كانت القاعدة فارغة (لعرض قوة التصميم)
+          if (isMounted) setProducts([
+            { id: 1, name: "Ciment Portland CPJ 45", category: "Cement", price_retail: 75, price_wholesale: 70, min_wholesale_qty: 100, unit: "Sac 50kg", currency: "MAD", supplier: "LafargeHolcim", rating: 4.8, isPopular: true, image_url: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=500&auto=format&fit=crop" },
+            { id: 2, name: "Fer à béton (Ø 12mm)", category: "Steel", price_retail: 9.5, price_wholesale: 8.8, min_wholesale_qty: 500, unit: "Kg", currency: "MAD", supplier: "Sonasid", rating: 4.9, isPopular: true, image_url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=500&auto=format&fit=crop" },
+            { id: 3, name: "Bitumen Premium (Export)", category: "Paint", price_retail: 350, price_wholesale: 300, min_wholesale_qty: 50, unit: "Tonne (طن)", currency: "USDT", supplier: "Global BTP", rating: 4.7, isPopular: true, image_url: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?q=80&w=500&auto=format&fit=crop" },
+            { id: 4, name: "Câble Électrique (3x2.5mm)", category: "Electrical", price_retail: 320, price_wholesale: 290, min_wholesale_qty: 20, unit: "Rouleau 100m", currency: "MAD", supplier: "Nexans", rating: 4.9, isPopular: false, image_url: "https://images.unsplash.com/photo-1555664424-778a1e5e1b48?q=80&w=500&auto=format&fit=crop" }
+          ]);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    loadMarketplace();
+    return () => { isMounted = false; };
   }, []);
 
-  const filteredProducts = mockProducts.filter(p => {
+  const filteredProducts = products.filter(p => {
     const matchCat = activeCategory === 'All' || p.category === activeCategory;
-    const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.supplier.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.supplier && p.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchCat && matchSearch;
   });
 
@@ -152,16 +145,16 @@ export default function ContractorMarketplace() {
           <h1 className="text-3xl md:text-4xl font-black text-white mb-3 flex items-center justify-center md:justify-start gap-3">
             🛒 {t.title}
           </h1>
-          <p className="text-teal-50 font-bold text-lg leading-relaxed">
+          <p className="text-teal-50 font-bold text-lg leading-relaxed mb-6">
             {t.subtitle}
           </p>
-        </div>
-
-        {/* زر الانتقال إلى لوحة البائع */}
-        <div className="relative z-10 flex justify-center md:justify-start mt-4">
-          <Link to="/v2/store-manager" className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-black shadow-lg backdrop-blur-md transition-all border border-white/30">
-             فتح متجري (لوحة البائع) 📦
-          </Link>
+          
+          {/* 🚀 زر الانتقال إلى لوحة البائع (حسب طلبك لربط العالمين) */}
+          <div className="flex justify-center md:justify-start">
+            <Link to="/v2/store-manager" className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-black shadow-lg backdrop-blur-md transition-all border border-white/30 hover:-translate-y-1">
+               <Store size={18}/> {t.openStore}
+            </Link>
+          </div>
         </div>
         
         {/* Search Bar in Header */}
@@ -219,8 +212,8 @@ export default function ContractorMarketplace() {
               
               {/* Image Section */}
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <img src={product.image_url || product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                 
                 {product.isPopular && (
                   <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg flex items-center gap-1`}>
@@ -228,8 +221,14 @@ export default function ContractorMarketplace() {
                   </span>
                 )}
                 
-                <span className={`absolute bottom-3 ${isRtl ? 'right-3' : 'left-3'} text-white font-black text-lg drop-shadow-md`}>
-                  {product.price} {t.price} <span className="text-xs font-medium text-white/80">{t.unit}</span>
+                {/* 🚀 العملة المبهرة */}
+                <span className={`absolute top-3 ${isRtl ? 'left-3' : 'right-3'} bg-white/90 backdrop-blur-md text-slate-900 text-xs font-black px-2.5 py-1 rounded-full border border-white flex items-center gap-1 shadow-lg`}>
+                  {getCurrencyIcon(product.currency || 'MAD')} {product.currency || 'MAD'}
+                </span>
+                
+                {/* الوحدة */}
+                <span className={`absolute bottom-3 ${isRtl ? 'right-3' : 'left-3'} text-white font-bold text-sm drop-shadow-md bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm`}>
+                  {product.unit}
                 </span>
               </div>
 
@@ -241,12 +240,27 @@ export default function ContractorMarketplace() {
                 
                 <div className="flex items-center gap-1 mb-4">
                   <Star size={14} className="text-amber-400 fill-amber-400" />
-                  <span className={`text-xs font-bold ${textMuted}`}>{product.rating}</span>
+                  <span className={`text-xs font-bold ${textMuted}`}>{product.rating || '4.5'}</span>
+                  <span className={`text-[10px] mx-2 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 ${textMuted}`}>
+                    {t.categories[product.category] || product.category}
+                  </span>
+                </div>
+
+                {/* 🚀 الأسعار الديناميكية (جملة وتقسيط) */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className={`p-2 rounded-xl border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                    <p className={`text-[10px] font-bold ${textMuted}`}>{t.retail}</p>
+                    <p className="font-black text-blue-500" dir="ltr">{product.price_retail} {getCurrencySymbol(product.currency || 'MAD')}</p>
+                  </div>
+                  <div className={`p-2 rounded-xl border ${isDarkMode ? 'bg-indigo-900/20 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200'}`}>
+                    <p className="text-[10px] font-bold text-indigo-500">{t.wholesale} <span className="opacity-70">(+{product.min_wholesale_qty})</span></p>
+                    <p className="font-black text-indigo-600" dir="ltr">{product.price_wholesale} {getCurrencySymbol(product.currency || 'MAD')}</p>
+                  </div>
                 </div>
 
                 <div className={`mt-auto pt-4 border-t border-dashed ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                   <p className={`text-xs font-bold mb-3 flex items-center gap-1.5 ${textMuted}`}>
-                    <Briefcase size={14} className="text-teal-500"/> {t.supplier} <span className={textTitle}>{product.supplier}</span>
+                    <Briefcase size={14} className="text-teal-500"/> {t.supplier} <span className={textTitle}>{product.supplier || 'Vendeur Indépendant'}</span>
                   </p>
                   
                   <div className="flex gap-2">
@@ -283,7 +297,8 @@ export default function ContractorMarketplace() {
             </div>
             <div>
               <p className="font-bold text-sm text-slate-300">{cart.length} {t.itemsInCart}</p>
-              <p className="font-black text-lg">{cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()} {t.price}</p>
+              {/* هنا سيتم التعامل مع مجموع السلة المعقد في الخطوة 3 (تحويل العملات واحتساب الجملة) */}
+              <p className="font-black text-lg text-emerald-400">سلة متعددة الموردين والعملات</p>
             </div>
             <button className={`ml-4 px-5 py-2.5 bg-white text-slate-900 hover:bg-teal-50 rounded-xl font-black text-sm transition-colors flex items-center gap-2`}>
               {t.checkout} <ArrowRight size={16} className={isRtl ? 'rotate-180' : ''} />
