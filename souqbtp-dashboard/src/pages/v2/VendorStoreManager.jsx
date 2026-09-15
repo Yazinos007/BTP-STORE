@@ -3,7 +3,8 @@ import { supabase } from '../../lib/supabase';
 import { useOutletContext, Link } from 'react-router-dom';
 import { 
   PackagePlus, Trash2, Edit, Tag, ShoppingBag, 
-  Plus, X, Loader2, DollarSign, Store, Image as ImageIcon, CheckCircle2 
+  Plus, X, Loader2, Store, Image as ImageIcon, CheckCircle2, 
+  Coins, Globe, Bitcoin
 } from 'lucide-react';
 
 export default function VendorStoreManager() {
@@ -20,12 +21,12 @@ export default function VendorStoreManager() {
   const [isUploading, setIsUploading] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   
-  // 🚀 حالة جديدة لمعرفة هل نحن نعدل أم نضيف
   const [editingProductId, setEditingProductId] = useState(null);
 
+  // 🚀 أضفنا "currency" الافتراضية MAD
   const [formData, setFormData] = useState({
     name: '', category: 'Cement', price_retail: '', price_wholesale: '', 
-    min_wholesale_qty: '10', unit: 'Unité', description: '', image_url: ''
+    min_wholesale_qty: '10', unit: 'Unité', description: '', image_url: '', currency: 'MAD'
   });
 
   const translations = {
@@ -34,11 +35,11 @@ export default function VendorStoreManager() {
       addProduct: "إضافة منتج جديد", editProduct: "تعديل المنتج", myProducts: "منتجاتي الحالية",
       name: "اسم المنتج", category: "التصنيف", 
       retailPrice: "ثمن التقسيط (للوحدة)", wholesalePrice: "ثمن الجملة (للوحدة)",
-      minWholesale: "الكمية الأدنى للجملة", unit: "وحدة القياس (كيس، طن، متر...)",
+      minWholesale: "الكمية الأدنى للجملة", unit: "وحدة القياس", currencySelector: "العملة (التسعير المالي)",
       desc: "وصف المنتج", image: "صورة المنتج",
       save: "نشر المنتج", update: "تحديث المنتج", cancel: "إلغاء", actions: "إجراءات", empty: "لم تقم بإضافة أي منتج بعد.",
       uploading: "جاري الرفع...", dragDrop: "اضغط لرفع صورة المنتج",
-      success: "تمت العملية بنجاح!", currency: "درهم", backToMarket: "العودة للسوق العام 🛒",
+      success: "تمت العملية بنجاح!", backToMarket: "العودة للسوق العام 🛒",
       categories: { Cement: "مواد البناء والأسمنت", Steel: "الحديد والتسليح", Wood: "الخشب والنجارة", Plumbing: "السباكة والأنابيب", Electrical: "الكهرباء والإنارة", Paint: "الصباغة والعزل" }
     },
     fr: {
@@ -46,11 +47,11 @@ export default function VendorStoreManager() {
       addProduct: "Nouveau Produit", editProduct: "Modifier Produit", myProducts: "Mes Produits",
       name: "Nom du produit", category: "Catégorie", 
       retailPrice: "Prix Détail (Unité)", wholesalePrice: "Prix Gros (Unité)",
-      minWholesale: "Quantité Min. (Gros)", unit: "Unité (Sac, Tonne, Mètre...)",
+      minWholesale: "Quantité Min. (Gros)", unit: "Unité de mesure", currencySelector: "Devise (Tarification)",
       desc: "Description", image: "Image du Produit",
       save: "Publier", update: "Mettre à jour", cancel: "Annuler", actions: "Actions", empty: "Aucun produit ajouté pour le moment.",
       uploading: "Téléchargement...", dragDrop: "Cliquez pour uploader une image",
-      success: "Opération réussie !", currency: "MAD", backToMarket: "Retour au Marché 🛒",
+      success: "Opération réussie !", backToMarket: "Retour au Marché 🛒",
       categories: { Cement: "Gros œuvre & Ciment", Steel: "Acier & Armature", Wood: "Bois & Menuiserie", Plumbing: "Plomberie & Tuyauterie", Electrical: "Électricité & Éclairage", Paint: "Peinture & Isolation" }
     },
     en: {
@@ -58,16 +59,44 @@ export default function VendorStoreManager() {
       addProduct: "Add New Product", editProduct: "Edit Product", myProducts: "My Products",
       name: "Product Name", category: "Category", 
       retailPrice: "Retail Price (Unit)", wholesalePrice: "Wholesale Price (Unit)",
-      minWholesale: "Min Qty for Wholesale", unit: "Unit (Bag, Ton, Meter...)",
+      minWholesale: "Min Qty for Wholesale", unit: "Unit of measurement", currencySelector: "Currency (Pricing)",
       desc: "Description", image: "Product Image",
       save: "Publish Product", update: "Update Product", cancel: "Cancel", actions: "Actions", empty: "No products added yet.",
       uploading: "Uploading...", dragDrop: "Click to upload product image",
-      success: "Operation successful!", currency: "MAD", backToMarket: "Back to Market 🛒",
+      success: "Operation successful!", backToMarket: "Back to Market 🛒",
       categories: { Cement: "Masonry & Cement", Steel: "Steel & Rebar", Wood: "Wood & Carpentry", Plumbing: "Plumbing & Piping", Electrical: "Electrical & Lighting", Paint: "Paint & Insulation" }
     }
   };
 
   const t = translations[language] || translations.ar;
+
+  // 🚀 1. قائمة الوحدات الاحترافية المجمعة (Grouped BTP Units)
+  const btpUnits = [
+    { group: "التعبئة والوحدات", items: ["Unité (قطعة)", "Boîte (علبة)", "Paquet (رزمة)", "Palette (باليت)"] },
+    { group: "الوزن", items: ["Kg (كيلوغرام)", "Tonne (طن)", "Sac 25kg (كيس 25كغ)", "Sac 50kg (كيس 50كغ)"] },
+    { group: "الطول", items: ["Mètre Linéaire (متر طولي)", "Barre 6m (قضيب 6م)", "Barre 12m (قضيب 12م)", "Rouleau 50m (لفة 50م)", "Rouleau 100m (لفة 100م)"] },
+    { group: "المساحة والحجم", items: ["Mètre Carré m² (متر مربع)", "Mètre Cube m³ (متر مكعب)", "Litre (لتر)", "Pot 5L (وعاء 5ل)", "Pot 20L (وعاء 20ل)"] },
+    { group: "النقل والخدمات", items: ["Camion (شاحنة)", "Voyage (رحلة)", "Forfait (تسعيرة شاملة)"] }
+  ];
+
+  // 🚀 2. قائمة العملات المستقبلية (Fiat & Crypto)
+  const currenciesList = [
+    { type: "العملات المحلية والرسمية", items: [
+      { code: "MAD", label: "MAD - الدرهم المغربي 🇲🇦" },
+      { code: "USD", label: "USD - الدولار الأمريكي 💵" },
+      { code: "EUR", label: "EUR - اليورو الأوروبي 💶" },
+    ]},
+    { type: "اقتصاديات صاعدة", items: [
+      { code: "RUB", label: "RUB - الروبل الروسي 🇷🇺" },
+      { code: "BRICS", label: "BRICS - عملة البريكس 🤝" },
+    ]},
+    { type: "العملات المشفرة (Web3)", items: [
+      { code: "USDT", label: "USDT - تيدر (دولار رقمي) ₮" },
+      { code: "BTC", label: "BTC - بيتكوين ₿" },
+      { code: "ETH", label: "ETH - إيثريوم ⟠" },
+      { code: "SOL", label: "SOL - سولانا ◎" },
+    ]}
+  ];
 
   const cardBg = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-800';
@@ -107,7 +136,8 @@ export default function VendorStoreManager() {
         setProducts(data);
       } else {
         setProducts([
-          { id: 1, name: "Ciment Portland CPJ 45", category: "Cement", price_retail: 75, price_wholesale: 70, min_wholesale_qty: 100, unit: "Sac 50kg", description: "Ciment haute qualité.", image_url: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=500&auto=format&fit=crop" }
+          { id: 1, name: "Ciment Portland CPJ 45", category: "Cement", price_retail: 75, price_wholesale: 70, min_wholesale_qty: 100, unit: "Sac 50kg (كيس 50كغ)", currency: "MAD", description: "Ciment haute qualité pour les fondations.", image_url: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=500&auto=format&fit=crop" },
+          { id: 2, name: "Bitumen Premium (Export)", category: "Paint", price_retail: 350, price_wholesale: 300, min_wholesale_qty: 50, unit: "Tonne (طن)", currency: "USDT", description: "High-grade Bitumen for export.", image_url: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?q=80&w=500&auto=format&fit=crop" }
         ]);
       }
     } catch (err) {
@@ -125,14 +155,12 @@ export default function VendorStoreManager() {
     }, 1500);
   };
 
-  // 🚀 دالة فتح النافذة لإضافة منتج جديد
   const handleAddNew = () => {
-    setFormData({ name: '', category: 'Cement', price_retail: '', price_wholesale: '', min_wholesale_qty: '10', unit: 'Unité', description: '', image_url: '' });
+    setFormData({ name: '', category: 'Cement', price_retail: '', price_wholesale: '', min_wholesale_qty: '10', unit: 'Unité (قطعة)', description: '', image_url: '', currency: 'MAD' });
     setEditingProductId(null);
     setShowModal(true);
   };
 
-  // 🚀 دالة فتح النافذة لتعديل منتج موجود
   const handleEdit = (product) => {
     setFormData({
       name: product.name,
@@ -142,13 +170,13 @@ export default function VendorStoreManager() {
       min_wholesale_qty: product.min_wholesale_qty.toString(),
       unit: product.unit,
       description: product.description || '',
-      image_url: product.image_url || ''
+      image_url: product.image_url || '',
+      currency: product.currency || 'MAD'
     });
     setEditingProductId(product.id);
     setShowModal(true);
   };
 
-  // 🚀 دالة الحفظ المحدثة (تعرف هل تضيف أم تعدل)
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     if (!user) return;
@@ -165,10 +193,8 @@ export default function VendorStoreManager() {
     try {
       setTimeout(() => {
         if (editingProductId) {
-          // تحديث منتج موجود
           setProducts(products.map(p => p.id === editingProductId ? { ...productPayload, id: editingProductId } : p));
         } else {
-          // إضافة منتج جديد
           setProducts([{ ...productPayload, id: Date.now() }, ...products]);
         }
         
@@ -190,6 +216,13 @@ export default function VendorStoreManager() {
     }
   };
 
+  const getCurrencyIcon = (curr) => {
+    if(curr === 'BTC' || curr === 'ETH' || curr === 'SOL') return <Bitcoin size={16} className="text-amber-500"/>;
+    if(curr === 'USDT') return <Coins size={16} className="text-emerald-500"/>;
+    if(curr === 'BRICS') return <Globe size={16} className="text-blue-500"/>;
+    return <span className="font-black text-xs">🇲🇦</span>;
+  };
+
   return (
     <div className="animate-fade-in pb-24 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
       
@@ -202,7 +235,6 @@ export default function VendorStoreManager() {
           </h1>
           <p className="text-indigo-100 font-bold text-lg">{t.subtitle}</p>
           
-          {/* 🚀 زر العودة للسوق العام */}
           <div className="flex justify-center md:justify-start mt-6">
             <Link to="/v2/marketplace" className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold backdrop-blur-md transition-all border border-white/20">
               {t.backToMarket}
@@ -243,24 +275,28 @@ export default function VendorStoreManager() {
                 <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-slate-900/80 backdrop-blur-md text-white text-xs font-black px-3 py-1 rounded-full border border-slate-700`}>
                   {t.categories[product.category] || product.category}
                 </span>
+                {/* 🚀 عرض العملة المميز في زاوية الصورة */}
+                <span className={`absolute top-3 ${isRtl ? 'left-3' : 'right-3'} bg-white/90 backdrop-blur-md text-slate-900 text-xs font-black px-2.5 py-1 rounded-full border border-white flex items-center gap-1 shadow-lg`}>
+                  {getCurrencyIcon(product.currency)} {product.currency}
+                </span>
               </div>
               
               <div className="p-5">
-                <h3 className={`font-black text-lg mb-4 truncate ${textTitle}`}>{product.name}</h3>
+                <h3 className={`font-black text-lg mb-1 truncate ${textTitle}`}>{product.name}</h3>
+                <p className={`text-xs font-bold mb-4 ${textMuted}`}>{product.unit}</p>
                 
                 <div className="space-y-3 mb-5">
                   <div className={`flex justify-between items-center p-3 rounded-xl border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                     <span className={`text-xs font-bold ${textMuted}`}>{t.retailPrice}</span>
-                    <span className="font-black text-blue-500">{product.price_retail} {t.currency}</span>
+                    <span className="font-black text-blue-500">{product.price_retail} {product.currency}</span>
                   </div>
                   <div className={`flex justify-between items-center p-3 rounded-xl border ${isDarkMode ? 'bg-indigo-900/20 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200'}`}>
                     <span className="text-xs font-bold text-indigo-500">{t.wholesalePrice} <br/><span className="text-[10px] opacity-70">(Min: {product.min_wholesale_qty})</span></span>
-                    <span className="font-black text-indigo-600">{product.price_wholesale} {t.currency}</span>
+                    <span className="font-black text-indigo-600">{product.price_wholesale} {product.currency}</span>
                   </div>
                 </div>
 
                 <div className="flex gap-2">
-                  {/* 🚀 زر التعديل مربوط بالدالة الآن */}
                   <button 
                     onClick={() => handleEdit(product)} 
                     className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-700'}`}
@@ -280,7 +316,7 @@ export default function VendorStoreManager() {
       {/* 🚀 Add/Edit Product Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowModal(false)}>
-          <div className={`w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh] ${modalBg}`} onClick={e => e.stopPropagation()}>
+          <div className={`w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[95vh] ${modalBg}`} onClick={e => e.stopPropagation()}>
             
             <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
               <h3 className={`text-xl font-black flex items-center gap-2 ${textTitle}`}>
@@ -291,7 +327,7 @@ export default function VendorStoreManager() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
-              <form id="product-form" onSubmit={handleSaveProduct} className="space-y-6">
+              <form id="product-form" onSubmit={handleSaveProduct} className="space-y-8">
                 
                 {/* Image Upload */}
                 <div>
@@ -300,7 +336,7 @@ export default function VendorStoreManager() {
                     {isUploading ? (
                       <div className="flex flex-col items-center"><Loader2 className="animate-spin text-blue-500 mb-2" size={32}/> <span className={`font-bold ${textMuted}`}>{t.uploading}</span></div>
                     ) : formData.image_url ? (
-                      <img src={formData.image_url} alt="Preview" className="h-32 object-contain mx-auto rounded-lg shadow-md" />
+                      <img src={formData.image_url} alt="Preview" className="h-40 object-contain mx-auto rounded-lg shadow-md" />
                     ) : (
                       <div className="flex flex-col items-center">
                         <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-3 ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}><ImageIcon size={28}/></div>
@@ -310,38 +346,67 @@ export default function VendorStoreManager() {
                   </label>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="md:col-span-2">
-                    <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.name}</label>
-                    <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold border focus:border-blue-500 transition-colors ${inputBg}`} />
-                  </div>
-                  
-                  <div>
-                    <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.category}</label>
-                    <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold border focus:border-blue-500 appearance-none ${inputBg}`}>
-                      {Object.entries(t.categories).map(([key, val]) => <option key={key} value={key}>{val}</option>)}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.unit}</label>
-                    <input type="text" required placeholder="Ex: Tonne, Kg, Unité..." value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold border focus:border-blue-500 ${inputBg}`} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Basic Info */}
+                  <div className="space-y-5">
+                    <div>
+                      <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.name}</label>
+                      <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold border focus:border-blue-500 transition-colors ${inputBg}`} />
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.category}</label>
+                      <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold border focus:border-blue-500 appearance-none ${inputBg}`}>
+                        {Object.entries(t.categories).map(([key, val]) => <option key={key} value={key}>{val}</option>)}
+                      </select>
+                    </div>
+
+                    {/* 🚀 القائمة المنسدلة للوحدات الاحترافية */}
+                    <div>
+                      <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.unit}</label>
+                      <select value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-bold border focus:border-blue-500 appearance-none ${inputBg}`}>
+                        {btpUnits.map((group, idx) => (
+                          <optgroup key={idx} label={group.group} className="bg-slate-200 dark:bg-slate-800 text-slate-500 font-black">
+                            {group.items.map((item, i) => (
+                              <option key={i} value={item} className="bg-white dark:bg-slate-950 font-bold text-slate-800 dark:text-white">{item}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   {/* Pricing Section */}
-                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-5 p-5 rounded-2xl border bg-indigo-500/5 border-indigo-500/20">
-                    <div>
-                      <label className="block text-xs font-bold mb-2 text-indigo-500">{t.retailPrice}</label>
-                      <div className="relative">
-                        <input type="number" required min="0" step="0.01" value={formData.price_retail} onChange={e => setFormData({...formData, price_retail: e.target.value})} className={`w-full pl-10 pr-4 py-3 rounded-xl outline-none font-black text-lg border focus:border-indigo-500 ${isDarkMode ? 'bg-slate-900 border-indigo-500/30 text-white' : 'bg-white border-indigo-200 text-slate-800'}`} />
-                        <DollarSign size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" />
-                      </div>
+                  <div className="space-y-5 p-5 rounded-2xl border bg-indigo-500/5 border-indigo-500/20">
+                    
+                    {/* 🚀 القائمة المنسدلة للعملات المستقبلية */}
+                    <div className="pb-4 mb-4 border-b border-indigo-500/20">
+                      <label className="block text-xs font-black mb-2 text-indigo-500 flex items-center gap-2"><Globe size={14}/> {t.currencySelector}</label>
+                      <select value={formData.currency} onChange={e => setFormData({...formData, currency: e.target.value})} className={`w-full px-4 py-3.5 rounded-xl outline-none font-black text-lg border focus:border-indigo-500 appearance-none ${isDarkMode ? 'bg-slate-900 border-indigo-500/30 text-white' : 'bg-white border-indigo-200 text-indigo-900'}`}>
+                        {currenciesList.map((group, idx) => (
+                          <optgroup key={idx} label={group.type} className="bg-slate-200 dark:bg-slate-800 text-slate-500 font-black text-sm">
+                            {group.items.map((item, i) => (
+                              <option key={i} value={item.code} className="bg-white dark:bg-slate-950 font-bold text-slate-800 dark:text-white text-base">{item.label}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold mb-2 text-emerald-500">{t.wholesalePrice}</label>
-                      <div className="relative">
-                        <input type="number" required min="0" step="0.01" value={formData.price_wholesale} onChange={e => setFormData({...formData, price_wholesale: e.target.value})} className={`w-full pl-10 pr-4 py-3 rounded-xl outline-none font-black text-lg border focus:border-emerald-500 ${isDarkMode ? 'bg-slate-900 border-emerald-500/30 text-white' : 'bg-white border-emerald-200 text-slate-800'}`} />
-                        <Tag size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400" />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold mb-2 text-indigo-500">{t.retailPrice}</label>
+                        <div className="relative">
+                          <input type="number" required min="0" step="0.01" value={formData.price_retail} onChange={e => setFormData({...formData, price_retail: e.target.value})} className={`w-full pl-10 pr-2 py-3 rounded-xl outline-none font-black text-lg border focus:border-indigo-500 ${isDarkMode ? 'bg-slate-900 border-indigo-500/30 text-white' : 'bg-white border-indigo-200 text-slate-800'}`} />
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 font-black">{formData.currency === 'MAD' ? 'MAD' : formData.currency === 'USDT' ? '₮' : formData.currency === 'BTC' ? '₿' : '$'}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold mb-2 text-emerald-500">{t.wholesalePrice}</label>
+                        <div className="relative">
+                          <input type="number" required min="0" step="0.01" value={formData.price_wholesale} onChange={e => setFormData({...formData, price_wholesale: e.target.value})} className={`w-full pl-10 pr-2 py-3 rounded-xl outline-none font-black text-lg border focus:border-emerald-500 ${isDarkMode ? 'bg-slate-900 border-emerald-500/30 text-white' : 'bg-white border-emerald-200 text-slate-800'}`} />
+                          <Tag size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400" />
+                        </div>
                       </div>
                     </div>
                     <div>
