@@ -3,7 +3,7 @@ import { useOutletContext, useLocation } from 'react-router-dom';
 import { 
   Search, Send, Paperclip, Mic, Phone, Video, 
   MoreVertical, CheckCheck, X, ShoppingCart, 
-  Image as ImageIcon, Briefcase, FileText, Play, Trash2, StopCircle
+  Image as ImageIcon, Briefcase, FileText, Play, Trash2
 } from 'lucide-react';
 
 export default function ChatRoom() {
@@ -18,23 +18,21 @@ export default function ChatRoom() {
   const [activeChat, setActiveChat] = useState(1);
   const [newMessage, setNewMessage] = useState('');
   
-  // 🚀 حالة المكالمات والقوائم
   const [activeCall, setActiveCall] = useState(null); 
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // 🎙️ حالات ومراجع التسجيل الصوتي الحقيقي
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
   
-  // مراجع رفع الملفات
   const messagesEndRef = useRef(null);
   const imageInputRef = useRef(null);
   const docInputRef = useRef(null);
 
-  const t = {
+  // 🚀 تم إصلاح الخطأ القاتل هنا (الشبح الأبيض)
+  const translations = {
     ar: {
       title: "صندوق الرسائل 🟢", searchPlaceholder: "ابحث في المحادثات...",
       typeMessage: "اكتب رسالة...", online: "متصل الآن", offline: "آخر ظهور منذ ساعتين",
@@ -43,8 +41,28 @@ export default function ChatRoom() {
       recording: "جاري التسجيل...", cancel: "إلغاء", send: "إرسال",
       calling: "جاري الاتصال...", endCall: "إنهاء المكالمة",
       clearChat: "إفراغ المحادثة", deleteMsg: "حذف"
+    },
+    fr: {
+      title: "Boîte de Réception 🟢", searchPlaceholder: "Rechercher...",
+      typeMessage: "Écrivez un message...", online: "En ligne", offline: "Vu il y a 2 heures",
+      orderCardTitle: "Demande de Devis (Bon de Commande)", total: "Total Estimé :",
+      accept: "Accepter", reject: "Refuser", negotiate: "En négociation...",
+      recording: "Enregistrement...", cancel: "Annuler", send: "Envoyer",
+      calling: "Appel en cours...", endCall: "Raccrocher",
+      clearChat: "Vider le chat", deleteMsg: "Supprimer"
+    },
+    en: {
+      title: "Inbox 🟢", searchPlaceholder: "Search conversations...",
+      typeMessage: "Type a message...", online: "Online", offline: "Last seen 2 hours ago",
+      orderCardTitle: "Request for Quote (Purchase Order)", total: "Estimated Total:",
+      accept: "Accept", reject: "Reject", negotiate: "Negotiating...",
+      recording: "Recording...", cancel: "Cancel", send: "Send",
+      calling: "Calling...", endCall: "End Call",
+      clearChat: "Clear Chat", deleteMsg: "Delete"
     }
-  }[language] || t.ar;
+  };
+
+  const t = translations[language] || translations.ar;
 
   const [chats, setChats] = useState([
     { id: 1, name: "LafargeHolcim (المورد)", avatar: "LH", type: "supplier", unread: 0, status: "online", lastMessage: "متى تريد التوصيل؟" },
@@ -80,11 +98,6 @@ export default function ChatRoom() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // -------------------------------------------------------------
-  // 🎙️ البرمجة الحقيقية للميكروفون والصوت (Web Audio API)
-  // -------------------------------------------------------------
-  
-  // دالة تحويل الثواني إلى صيغة 00:00
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
@@ -105,7 +118,6 @@ export default function ChatRoom() {
       setIsRecording(true);
       setRecordingTime(0);
 
-      // تشغيل العداد الحقيقي
       timerIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
@@ -119,7 +131,7 @@ export default function ChatRoom() {
   const cancelRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop()); // إطفاء الميكروفون
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop()); 
     }
     clearInterval(timerIntervalRef.current);
     setIsRecording(false);
@@ -131,11 +143,11 @@ export default function ChatRoom() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const audioUrl = URL.createObjectURL(audioBlob); // إنشاء رابط حقيقي للصوت
+        const audioUrl = URL.createObjectURL(audioBlob); 
         
         const msg = {
           id: Date.now(), senderId: 'me', isMe: true, type: 'audio',
-          audioUrl: audioUrl, // الرابط الحقيقي
+          audioUrl: audioUrl,
           duration: formatTime(recordingTime),
           time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
         };
@@ -151,13 +163,10 @@ export default function ChatRoom() {
     }
   };
 
-  // دالة لتشغيل الصوت عند الضغط على Play
   const playAudio = (url) => {
     const audio = new Audio(url);
     audio.play();
   };
-
-  // -------------------------------------------------------------
 
   const handleSendMessage = (e) => {
     e?.preventDefault();
@@ -165,6 +174,20 @@ export default function ChatRoom() {
     const msg = { id: Date.now(), senderId: 'me', text: newMessage, type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), isMe: true };
     setMessages([...messages, msg]);
     setNewMessage('');
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const msg = { id: Date.now(), senderId: 'me', isMe: true, type: 'image', fileUrl: URL.createObjectURL(file), time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+    setMessages([...messages, msg]);
+  };
+
+  const handleDocUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const msg = { id: Date.now(), senderId: 'me', isMe: true, type: 'document', fileName: file.name, fileSize: (file.size / 1024 / 1024).toFixed(2) + " MB", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+    setMessages([...messages, msg]);
   };
 
   const handleDeleteMessage = (id) => { setMessages(messages.filter(msg => msg.id !== id)); };
@@ -177,12 +200,10 @@ export default function ChatRoom() {
 
   const activeChatData = chats.find(c => c.id === activeChat) || chats[0];
 
-  // 🎨 فرض الألوان القوية الزجاجية لقتل البياض الممل
   const mainWrapperBg = isDarkMode 
     ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900' 
-    : 'bg-gradient-to-br from-cyan-300 via-fuchsia-300 to-emerald-300'; // ألوان مشبعة جداً
+    : 'bg-gradient-to-br from-cyan-300 via-fuchsia-300 to-emerald-300'; 
   
-  // خلفيات نصف شفافة لتمرير الألوان المتدرجة
   const panelBg = isDarkMode ? 'bg-slate-900/50 backdrop-blur-2xl border-slate-700/50' : 'bg-white/30 backdrop-blur-xl border-white/50';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-600';
@@ -280,7 +301,22 @@ export default function ChatRoom() {
                     </div>
                   )}
 
-                  {/* 🎙️ الرسالة الصوتية الحقيقية (بزر Play مبرمج) */}
+                  {msg.type === 'image' && (
+                    <div className={`p-1.5 rounded-2xl shadow-md ${msg.isMe ? 'bg-teal-500 rounded-tr-sm' : 'bg-white/80 backdrop-blur-md rounded-tl-sm'}`}>
+                      <img src={msg.fileUrl} alt="attachment" className="max-w-[250px] rounded-xl object-cover" />
+                    </div>
+                  )}
+
+                  {msg.type === 'document' && (
+                    <div className={`p-4 rounded-3xl shadow-sm flex items-center gap-3 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
+                      <div className="p-3 bg-white/20 dark:bg-slate-700 rounded-xl"><FileText size={24}/></div>
+                      <div>
+                        <p className="text-sm font-black">{msg.fileName}</p>
+                        <p className="text-xs opacity-80">{msg.fileSize}</p>
+                      </div>
+                    </div>
+                  )}
+
                   {msg.type === 'audio' && (
                     <div className={`p-3 rounded-full shadow-sm flex items-center gap-3 w-64 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
                       <button onClick={() => playAudio(msg.audioUrl)} className="w-10 h-10 rounded-full bg-white/30 dark:bg-slate-700 flex items-center justify-center hover:bg-white/50 transition-colors shadow-sm">
@@ -321,18 +357,25 @@ export default function ChatRoom() {
                     {msg.isMe && <CheckCheck size={14} className="text-teal-600 dark:text-teal-500" />}
                   </div>
                 </div>
+
+                {!msg.isMe && (
+                  <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all">
+                    <Trash2 size={16}/>
+                  </button>
+                )}
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
 
           <div className={`p-4 bg-white/30 dark:bg-slate-900/40 backdrop-blur-xl border-t relative z-10 ${isDarkMode ? 'border-slate-700/50' : 'border-white/50'}`}>
-            
-            {/* واجهة التسجيل الصوتي الحقيقية */}
+            <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageUpload} className="hidden" />
+            <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" ref={docInputRef} onChange={handleDocUpload} className="hidden" />
+
             {isRecording ? (
               <div className={`flex items-center gap-4 p-3 rounded-3xl animate-pulse ${isDarkMode ? 'bg-red-900/40 border border-red-500/50' : 'bg-red-100/80 backdrop-blur-md border border-red-300 shadow-sm'}`}>
-                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center animate-bounce shadow-lg shadow-red-500/40">
-                   <Mic className="text-white" size={20} />
+                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center shadow-lg shadow-red-500/40">
+                   <Mic className="text-white animate-bounce mt-1" size={20} />
                 </div>
                 <span className={`font-black text-sm flex-1 ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>{t.recording}</span>
                 <span className={`font-mono font-black text-lg ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>{formatTime(recordingTime)}</span>
@@ -345,7 +388,8 @@ export default function ChatRoom() {
             ) : (
               <form onSubmit={handleSendMessage} className="flex items-end gap-2">
                 <div className="flex gap-1">
-                  <button type="button" className={`p-3 rounded-2xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-800/80' : 'text-slate-700 hover:bg-white/80 shadow-sm'}`}><Paperclip size={20}/></button>
+                  <button type="button" onClick={() => docInputRef.current.click()} className={`p-3 rounded-2xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-800/80' : 'text-slate-700 hover:bg-white/80 shadow-sm'}`}><Paperclip size={20}/></button>
+                  <button type="button" onClick={() => imageInputRef.current.click()} className={`p-3 rounded-2xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-800/80' : 'text-slate-700 hover:bg-white/80 shadow-sm'}`}><ImageIcon size={20}/></button>
                 </div>
                 
                 <div className={`flex-1 relative border rounded-3xl overflow-hidden transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/30 ${glassInputBg}`}>
@@ -373,11 +417,28 @@ export default function ChatRoom() {
           </div>
         </div>
       </div>
-      
-      <style>{`
-        @keyframes gradient-xy { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .animate-gradient-slow { animation: gradient-xy 12s ease infinite; }
-      `}</style>
+
+      {activeCall && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-xl animate-fade-in">
+          <div className="text-center">
+            <div className="relative mb-8 mx-auto w-32 h-32">
+              <div className="absolute inset-0 bg-teal-500 rounded-full animate-ping opacity-20"></div>
+              <div className="absolute inset-2 bg-teal-500 rounded-full animate-ping opacity-40 animation-delay-300"></div>
+              <div className="relative w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-5xl font-black text-white shadow-2xl shadow-teal-500/50">
+                {activeChatData?.avatar}
+              </div>
+            </div>
+            <h2 className="text-3xl font-black text-white mb-2">{activeChatData?.name}</h2>
+            <p className="text-teal-400 font-bold mb-12 animate-pulse">{t.calling} ({activeCall === 'video' ? 'فيديو' : 'صوت'})</p>
+            
+            <div className="flex justify-center gap-6">
+              <button className="p-5 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors border border-slate-700"><Mic size={28}/></button>
+              {activeCall === 'video' && <button className="p-5 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors border border-slate-700"><Video size={28}/></button>}
+              <button onClick={() => setActiveCall(null)} className="p-5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-110 shadow-lg shadow-red-500/30"><Phone size={28} className="rotate-[135deg]"/></button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
