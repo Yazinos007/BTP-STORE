@@ -3,7 +3,7 @@ import { useOutletContext, useLocation } from 'react-router-dom';
 import { 
   Search, Send, Paperclip, Mic, Phone, Video, 
   MoreVertical, CheckCheck, X, ShoppingCart, 
-  Image as ImageIcon, Briefcase, FileText, Play, Trash2
+  Image as ImageIcon, Briefcase, FileText, Trash2
 } from 'lucide-react';
 
 export default function ChatRoom() {
@@ -31,10 +31,9 @@ export default function ChatRoom() {
   const imageInputRef = useRef(null);
   const docInputRef = useRef(null);
 
-  // 🚀 تم إصلاح الخطأ القاتل هنا (الشبح الأبيض)
-  const translations = {
+  const t = {
     ar: {
-      title: "صندوق الرسائل 🟢", searchPlaceholder: "ابحث في المحادثات...",
+      title: "صندوق الرسائل", searchPlaceholder: "ابحث في المحادثات...",
       typeMessage: "اكتب رسالة...", online: "متصل الآن", offline: "آخر ظهور منذ ساعتين",
       orderCardTitle: "طلب عرض سعر (Bon de Commande)", total: "المجموع التقديري:",
       accept: "قبول العرض", reject: "رفض العرض", negotiate: "قيد التفاوض...",
@@ -43,26 +42,15 @@ export default function ChatRoom() {
       clearChat: "إفراغ المحادثة", deleteMsg: "حذف"
     },
     fr: {
-      title: "Boîte de Réception 🟢", searchPlaceholder: "Rechercher...",
+      title: "Boîte de Réception", searchPlaceholder: "Rechercher...",
       typeMessage: "Écrivez un message...", online: "En ligne", offline: "Vu il y a 2 heures",
       orderCardTitle: "Demande de Devis (Bon de Commande)", total: "Total Estimé :",
       accept: "Accepter", reject: "Refuser", negotiate: "En négociation...",
       recording: "Enregistrement...", cancel: "Annuler", send: "Envoyer",
       calling: "Appel en cours...", endCall: "Raccrocher",
       clearChat: "Vider le chat", deleteMsg: "Supprimer"
-    },
-    en: {
-      title: "Inbox 🟢", searchPlaceholder: "Search conversations...",
-      typeMessage: "Type a message...", online: "Online", offline: "Last seen 2 hours ago",
-      orderCardTitle: "Request for Quote (Purchase Order)", total: "Estimated Total:",
-      accept: "Accept", reject: "Reject", negotiate: "Negotiating...",
-      recording: "Recording...", cancel: "Cancel", send: "Send",
-      calling: "Calling...", endCall: "End Call",
-      clearChat: "Clear Chat", deleteMsg: "Delete"
     }
-  };
-
-  const t = translations[language] || translations.ar;
+  }[language] || t.ar;
 
   const [chats, setChats] = useState([
     { id: 1, name: "LafargeHolcim (المورد)", avatar: "LH", type: "supplier", unread: 0, status: "online", lastMessage: "متى تريد التوصيل؟" },
@@ -70,10 +58,22 @@ export default function ChatRoom() {
     { id: 3, name: "المهندس كريم", avatar: "ك", type: "team", unread: 0, status: "online", lastMessage: "تم الانتهاء من صب الأساسات." },
   ]);
 
-  const [messages, setMessages] = useState([
-    { id: 1, senderId: 1, text: "مرحباً بك في شركة لافارچ، كيف يمكننا خدمتك اليوم؟", time: "10:00 AM", isMe: false },
-    { id: 2, senderId: 'me', text: "أهلاً، أحتاج إلى عرض سعر لكمية من الإسمنت.", time: "10:05 AM", isMe: true }
-  ]);
+  // 🚀 السحر: جلب الرسائل من الذاكرة الدائمة LocalStorage
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = localStorage.getItem('souqbtp_chat_messages');
+    if (savedMessages) {
+      try { return JSON.parse(savedMessages); } catch (e) { return null; }
+    }
+    return [
+      { id: 1, senderId: 1, text: "مرحباً بك في شركة لافارچ، كيف يمكننا خدمتك اليوم؟", time: "10:00 AM", isMe: false },
+      { id: 2, senderId: 'me', text: "أهلاً، أحتاج إلى عرض سعر لكمية من الإسمنت.", time: "10:05 AM", isMe: true }
+    ];
+  });
+
+  // 🚀 حفظ الرسائل في الذاكرة الدائمة كلما تغيرت
+  useEffect(() => {
+    localStorage.setItem('souqbtp_chat_messages', JSON.stringify(messages));
+  }, [messages]);
 
   useEffect(() => {
     if (cartOrder && supplierName) {
@@ -142,7 +142,8 @@ export default function ChatRoom() {
   const sendAudioMessage = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        // 🚀 إزالة تحديد نوع الصيغة لكي يعمل على جميع المتصفحات (Safari & Chrome)
+        const audioBlob = new Blob(audioChunksRef.current); 
         const audioUrl = URL.createObjectURL(audioBlob); 
         
         const msg = {
@@ -161,11 +162,6 @@ export default function ChatRoom() {
       setIsRecording(false);
       setRecordingTime(0);
     }
-  };
-
-  const playAudio = (url) => {
-    const audio = new Audio(url);
-    audio.play();
   };
 
   const handleSendMessage = (e) => {
@@ -317,15 +313,10 @@ export default function ChatRoom() {
                     </div>
                   )}
 
+                  {/* 🎙️ مشغل الصوت الأصلي للمتصفح (قوي ولا يخطئ) */}
                   {msg.type === 'audio' && (
-                    <div className={`p-3 rounded-full shadow-sm flex items-center gap-3 w-64 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
-                      <button onClick={() => playAudio(msg.audioUrl)} className="w-10 h-10 rounded-full bg-white/30 dark:bg-slate-700 flex items-center justify-center hover:bg-white/50 transition-colors shadow-sm">
-                        <Play size={16} className="ml-1" fill="currentColor"/>
-                      </button>
-                      <div className="flex-1 h-2 bg-white/40 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className="w-1/3 h-full bg-white dark:bg-teal-400 rounded-full animate-pulse"></div>
-                      </div>
-                      <span className="text-xs font-black mr-2">{msg.duration}</span>
+                    <div className={`p-2 rounded-3xl shadow-sm flex items-center gap-2 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
+                      <audio controls src={msg.audioUrl} className="h-10 w-[240px] outline-none rounded-full" />
                     </div>
                   )}
 
