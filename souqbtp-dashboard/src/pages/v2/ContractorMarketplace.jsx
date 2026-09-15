@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext, Link } from 'react-router-dom';
+import { useOutletContext, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { 
   ShoppingCart, Search, Filter, Package, 
@@ -31,6 +31,7 @@ const getCurrencyIcon = (curr) => {
 };
 
 export default function ContractorMarketplace() {
+  const navigate = useNavigate();
   const context = useOutletContext() || {};
   const isDarkMode = context.isDarkMode || false;
   const language = context.language || 'ar';
@@ -421,7 +422,20 @@ export default function ContractorMarketplace() {
                         {items.reduce((sum, item) => sum + ((item.qty >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail) * item.qty), 0).toLocaleString()} {getCurrencySymbol(items[0].product.currency || 'MAD')}
                       </p>
                     </div>
-                    <button className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg shadow-black/10">
+                    <button 
+                      onClick={() => {
+                        // حساب المجموع الخاص بهذا المورد فقط
+                        const supplierTotal = items.reduce((sum, item) => sum + ((item.qty >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail) * item.qty), 0);
+                        // إرسال البيانات إلى صندوق الرسائل
+                        navigate('/v2/messages', { 
+                          state: { 
+                            cartOrder: { items: items, total: supplierTotal },
+                            supplierName: supplierName 
+                          } 
+                        });
+                      }}
+                      className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg shadow-black/10 hover:-translate-y-0.5"
+                    >
                       <MessageCircle size={16}/> {t.orderFrom}
                     </button>
                   </div>
