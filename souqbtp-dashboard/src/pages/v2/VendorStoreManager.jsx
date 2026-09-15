@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { 
   PackagePlus, Trash2, Edit, Tag, ShoppingBag, 
   Plus, X, Loader2, DollarSign, Store, Image as ImageIcon, CheckCircle2 
