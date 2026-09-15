@@ -58,7 +58,6 @@ export default function ChatRoom() {
     { id: 3, name: "المهندس كريم", avatar: "ك", type: "team", unread: 0, status: "online", lastMessage: "تم الانتهاء من صب الأساسات." },
   ]);
 
-  // 🚀 السحر: جلب الرسائل من الذاكرة الدائمة LocalStorage
   const [messages, setMessages] = useState(() => {
     const savedMessages = localStorage.getItem('souqbtp_chat_messages');
     if (savedMessages) {
@@ -70,7 +69,6 @@ export default function ChatRoom() {
     ];
   });
 
-  // 🚀 حفظ الرسائل في الذاكرة الدائمة كلما تغيرت
   useEffect(() => {
     localStorage.setItem('souqbtp_chat_messages', JSON.stringify(messages));
   }, [messages]);
@@ -142,18 +140,21 @@ export default function ChatRoom() {
   const sendAudioMessage = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.onstop = () => {
-        // 🚀 إزالة تحديد نوع الصيغة لكي يعمل على جميع المتصفحات (Safari & Chrome)
         const audioBlob = new Blob(audioChunksRef.current); 
-        const audioUrl = URL.createObjectURL(audioBlob); 
-        
-        const msg = {
-          id: Date.now(), senderId: 'me', isMe: true, type: 'audio',
-          audioUrl: audioUrl,
-          duration: formatTime(recordingTime),
-          time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        // 🚀 الحل السحري: تحويل الأوديو إلى Base64 ليحفظ في المتصفح إلى الأبد
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          const base64Audio = reader.result;
+          const msg = {
+            id: Date.now(), senderId: 'me', isMe: true, type: 'audio',
+            audioUrl: base64Audio,
+            duration: formatTime(recordingTime),
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+          };
+          setMessages(prev => [...prev, msg]);
+          audioChunksRef.current = [];
         };
-        setMessages(prev => [...prev, msg]);
-        audioChunksRef.current = [];
       };
       
       mediaRecorderRef.current.stop();
@@ -175,8 +176,13 @@ export default function ChatRoom() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const msg = { id: Date.now(), senderId: 'me', isMe: true, type: 'image', fileUrl: URL.createObjectURL(file), time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
-    setMessages([...messages, msg]);
+    // 🚀 تطبيق نفس الحل للصور لكي لا تختفي عند التحديث
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => {
+      const msg = { id: Date.now(), senderId: 'me', isMe: true, type: 'image', fileUrl: reader.result, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+      setMessages(prev => [...prev, msg]);
+    };
   };
 
   const handleDocUpload = (e) => {
@@ -313,7 +319,6 @@ export default function ChatRoom() {
                     </div>
                   )}
 
-                  {/* 🎙️ مشغل الصوت الأصلي للمتصفح (قوي ولا يخطئ) */}
                   {msg.type === 'audio' && (
                     <div className={`p-2 rounded-3xl shadow-sm flex items-center gap-2 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
                       <audio controls src={msg.audioUrl} className="h-10 w-[240px] outline-none rounded-full" />
