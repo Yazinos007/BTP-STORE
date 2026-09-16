@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom'; // 🚀 السلاح السري لاختراق الإطارات
 import { useOutletContext } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { 
@@ -91,15 +92,12 @@ export default function ContractorCamera() {
     ]);
   }, []);
 
-  // 🚀 دوال الأرشفة والحذف للتقارير
   const handleArchiveReport = (id) => {
-    // في الإنتاج: يتم إرسال أمر الأرشفة لقاعدة البيانات Supabase
     setReports(prev => prev.filter(r => r.id !== id));
   };
 
   const handleDeleteReport = (id) => {
     if(window.confirm(t.confirmDelete)) {
-      // في الإنتاج: يتم مسح التقرير من القاعدة
       setReports(prev => prev.filter(r => r.id !== id));
     }
   };
@@ -328,7 +326,6 @@ export default function ContractorCamera() {
                   </div>
                 </div>
                 
-                {/* 🚀 أزرار الأرشفة والحذف التي تظهر عند تمرير الماوس */}
                 <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <button onClick={(e) => { e.stopPropagation(); handleArchiveReport(rep.id); }} className="p-2 bg-slate-900/80 hover:bg-amber-500 text-white rounded-xl backdrop-blur-md transition-colors border border-white/10" title={t.archiveBtn}>
                     <Archive size={16} />
@@ -348,13 +345,12 @@ export default function ContractorCamera() {
     );
   }
 
-  // --- Live Room (Immersive UI) ---
-  return (
-    /* 🚀 كسر كل إطارات المنصة هنا باستخدام fixed و z-[99999] و w-screen h-screen */
-    <div className="fixed inset-0 w-screen h-screen z-[99999] bg-[#020617] flex flex-col font-cairo overflow-hidden" dir={isRtl ? 'rtl' : 'ltr'}>
+  // 🚀 إنشاء البوابة السحرية (Portal) لكسر الإطار العلوي وتغطية الشاشة 100%
+  const liveRoomUI = (
+    <div className="fixed inset-0 w-screen h-screen z-[999999] bg-[#020617] flex flex-col font-cairo overflow-hidden" dir={isRtl ? 'rtl' : 'ltr'}>
       
       {/* 🚀 Floating Status Pill */}
-      <div className={`absolute top-6 ${isRtl ? 'right-6' : 'left-6'} z-50 px-5 py-2.5 rounded-full text-sm font-black border flex items-center gap-2 backdrop-blur-md transition-all duration-500 shadow-xl ${
+      <div className={`absolute top-8 ${isRtl ? 'right-6' : 'left-6'} z-[999999] px-5 py-2.5 rounded-full text-sm font-black border flex items-center gap-2 backdrop-blur-md transition-all duration-500 shadow-xl ${
         connectionStatus === t.connected 
           ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500/50' 
           : 'bg-slate-900/80 text-slate-300 border-slate-700'
@@ -369,7 +365,6 @@ export default function ContractorCamera() {
 
       <div className="flex-1 relative flex justify-center items-center bg-black overflow-hidden h-full w-full">
         
-        {/* Remote Video */}
         <video ref={remoteVideoRef} className={`absolute inset-0 w-full h-full object-cover md:object-contain transition-opacity duration-300 ${isFrozen ? 'opacity-0' : 'opacity-100'}`} autoPlay playsInline></video>
         <canvas ref={freezeCanvasRef} className={`absolute inset-0 w-full h-full object-cover md:object-contain transition-opacity duration-300 ${isFrozen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}></canvas>
         <canvas 
@@ -379,8 +374,7 @@ export default function ContractorCamera() {
           onTouchStart={startInteraction} onTouchMove={doInteraction} onTouchEnd={stopInteraction}
         ></canvas>
 
-        {/* 📸 Local Camera with Integrated Buttons */}
-        <div className={`absolute bottom-24 md:bottom-8 left-4 md:left-6 w-[100px] h-[140px] md:w-[130px] md:h-[180px] z-50 bg-slate-900 rounded-2xl border-2 border-teal-500 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300 ${isFrozen ? 'opacity-40 hover:opacity-100 scale-90 origin-bottom-left' : 'opacity-100'}`}>
+        <div className={`absolute bottom-24 md:bottom-8 left-4 md:left-6 w-[100px] h-[140px] md:w-[130px] md:h-[180px] z-[9999] bg-slate-900 rounded-2xl border-2 border-teal-500 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300 ${isFrozen ? 'opacity-40 hover:opacity-100 scale-90 origin-bottom-left' : 'opacity-100'}`}>
           <video ref={localVideoRef} className="w-full h-full object-cover" autoPlay playsInline muted></video>
           
           <button onClick={toggleTorch} className="absolute top-2 right-2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center border border-white/20 hover:bg-amber-500 hover:border-amber-400 transition-colors" title="الفلاش">
@@ -391,9 +385,8 @@ export default function ContractorCamera() {
           </button>
         </div>
 
-        {/* 🛠️ Smart Tools (Left Panel) */}
         {isFrozen && (
-          <div className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[30px] shadow-2xl transition-all duration-400 overflow-hidden flex flex-col items-center group w-[55px] h-[55px] hover:w-[280px] hover:h-auto hover:max-h-[85vh] hover:items-start hover:p-4 hover:rounded-2xl cursor-pointer">
+          <div className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-[9999] bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[30px] shadow-2xl transition-all duration-400 overflow-hidden flex flex-col items-center group w-[55px] h-[55px] hover:w-[280px] hover:h-auto hover:max-h-[85vh] hover:items-start hover:p-4 hover:rounded-2xl cursor-pointer">
             <div className="w-full h-full flex items-center justify-center group-hover:hidden text-2xl transition-opacity">🛠️</div>
             
             <div className="hidden group-hover:flex flex-col w-full h-full animate-fade-in overflow-y-auto custom-scrollbar pr-2 space-y-4">
@@ -433,9 +426,8 @@ export default function ContractorCamera() {
           </div>
         )}
 
-        {/* 🖌️ Drawing Tools (Right Panel) */}
         {isFrozen && (
-          <div className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[30px] shadow-2xl transition-all duration-400 overflow-hidden flex flex-col items-center group w-[55px] h-[55px] hover:w-[70px] hover:h-auto hover:max-h-[85vh] hover:py-4 hover:rounded-2xl cursor-pointer">
+          <div className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-[9999] bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[30px] shadow-2xl transition-all duration-400 overflow-hidden flex flex-col items-center group w-[55px] h-[55px] hover:w-[70px] hover:h-auto hover:max-h-[85vh] hover:py-4 hover:rounded-2xl cursor-pointer">
             <div className="w-full h-full flex items-center justify-center group-hover:hidden text-white"><PenTool size={22} /></div>
             
             <div className="hidden group-hover:flex flex-col items-center w-full gap-3 animate-fade-in">
@@ -466,9 +458,8 @@ export default function ContractorCamera() {
           </div>
         )}
 
-        {/* 🧮 BOQ Estimate Popup */}
         {boqResult && isFrozen && (
-          <div className="absolute top-20 md:top-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-xl border-2 border-amber-500 p-6 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-slide-down w-[90%] md:w-auto">
+          <div className="absolute top-20 md:top-8 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur-xl border-2 border-amber-500 p-6 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-slide-down w-[90%] md:w-auto">
             <h3 className="text-amber-500 font-black text-center mb-4 text-lg">🧮 الكميات التقديرية ({boqResult.area} m²)</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-slate-300">🧱 <b className="text-sky-400 text-lg">{boqResult.bricks}</b> آجور</div>
@@ -482,8 +473,7 @@ export default function ContractorCamera() {
 
       </div>
 
-      {/* 🚀 Floating Bottom Controls */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex justify-center gap-3 md:gap-4 z-50 w-[90%] md:w-auto">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex justify-center gap-3 md:gap-4 z-[9999] w-[90%] md:w-auto">
         <button onClick={toggleFreeze} className={`${isFrozen ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'} flex-1 md:flex-none text-white px-6 md:px-10 py-3.5 md:py-4 rounded-2xl md:rounded-full font-black text-xs md:text-sm transition-all flex items-center justify-center gap-2 shadow-2xl hover:scale-105`}>
           {isFrozen ? <><Play size={18}/> {t.unfreeze}</> : <><PauseCircle size={18}/> {t.freeze}</>}
         </button>
@@ -495,4 +485,7 @@ export default function ContractorCamera() {
 
     </div>
   );
+
+  // 🚀 إرجاع البوابة (Portal) للمتصفح لكسر كل القيود والإطارات
+  return createPortal(liveRoomUI, document.body);
 }
