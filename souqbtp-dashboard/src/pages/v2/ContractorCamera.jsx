@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { 
   Camera, Video, X, PenTool, Undo, Trash2, FileText, Play,
-  PauseCircle, PhoneOff, Lightbulb, RefreshCcw, Loader2
+  PauseCircle, PhoneOff, Lightbulb, RefreshCcw, Loader2, Archive
 } from 'lucide-react';
 
 export default function ContractorCamera() {
@@ -25,7 +25,6 @@ export default function ContractorCamera() {
   const [penSize, setPenSize] = useState(4);
   const [isSmartMode, setIsSmartMode] = useState(false);
   
-  // حالة الاتصال والكاميرا
   const [connectionStatus, setConnectionStatus] = useState('جاري تجهيز الكاميرا...');
   const [useFrontCamera, setUseFrontCamera] = useState(false);
 
@@ -59,16 +58,18 @@ export default function ContractorCamera() {
       noReports: "لا توجد تقارير مسجلة بعد.", freeze: "تجميد للرسم", unfreeze: "استئناف الفيديو",
       endCall: "إنهاء الزيارة", saveReport: "استخراج تقرير", clear: "مسح الكل", undo: "تراجع",
       tools: "أدوات البناء", radar: "رادار الأخطاء", 
-      connected: "متصل ومباشر", waiting: "جاري الاتصال بالطرف الآخر..."
+      connected: "متصل ومباشر", waiting: "جاري الاتصال بالطرف الآخر...",
+      archiveBtn: "أرشفة", deleteBtn: "حذف نهائي", confirmDelete: "هل أنت متأكد من الحذف النهائي للتقرير؟"
     },
     fr: {
       title: "Caméra du Chantier & Rapports", subtitle: "Salle d'opérations en direct, streaming et rapports certifiés.",
       startNew: "Démarrer une visite (Nouvelle salle)", joinExisting: "Rejoindre un architecte",
-      roomCode: "Code de la salle...", joinBtn: "Rejoindre", recentReports: "Rapports Récents",
+      roomCode: "Code de visite...", joinBtn: "Rejoindre", recentReports: "Rapports Récents",
       noReports: "Aucun rapport enregistré.", freeze: "Figer & Dessiner", unfreeze: "Reprendre Vidéo",
       endCall: "Quitter", saveReport: "Générer Rapport", clear: "Effacer", undo: "Annuler",
       tools: "Outils BTP", radar: "Radar Défauts", 
-      connected: "Connecté et En Direct", waiting: "Connexion en cours..."
+      connected: "Connecté et En Direct", waiting: "Connexion en cours...",
+      archiveBtn: "Archiver", deleteBtn: "Supprimer", confirmDelete: "Confirmer la suppression définitive ?"
     },
     en: {
       title: "Site Camera & Reports", subtitle: "Live operations room, streaming, and certified field reports.",
@@ -77,7 +78,8 @@ export default function ContractorCamera() {
       noReports: "No reports recorded yet.", freeze: "Freeze to Draw", unfreeze: "Resume Video",
       endCall: "End Visit", saveReport: "Generate Report", clear: "Clear All", undo: "Undo",
       tools: "Construction Tools", radar: "Defect Radar", 
-      connected: "Connected Live", waiting: "Connecting to peer..."
+      connected: "Connected Live", waiting: "Connecting to peer...",
+      archiveBtn: "Archive", deleteBtn: "Delete", confirmDelete: "Are you sure you want to permanently delete this report?"
     }
   };
   const t = translations[language] || translations.ar;
@@ -85,10 +87,22 @@ export default function ContractorCamera() {
   useEffect(() => {
     setReports([
       { id: 1, date: '2026-09-15 10:30', author: 'المهندس كريم', img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500&auto=format' },
-      // 🚀 تم إصلاح الصورة المكسورة برابط صالح
       { id: 2, date: '2026-09-10 14:15', author: 'SouqBTP VIP', img: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=500&auto=format' }
     ]);
   }, []);
+
+  // 🚀 دوال الأرشفة والحذف للتقارير
+  const handleArchiveReport = (id) => {
+    // في الإنتاج: يتم إرسال أمر الأرشفة لقاعدة البيانات Supabase
+    setReports(prev => prev.filter(r => r.id !== id));
+  };
+
+  const handleDeleteReport = (id) => {
+    if(window.confirm(t.confirmDelete)) {
+      // في الإنتاج: يتم مسح التقرير من القاعدة
+      setReports(prev => prev.filter(r => r.id !== id));
+    }
+  };
 
   const handleStartSession = () => { setRoomId(Math.floor(100000 + Math.random() * 900000).toString()); setIsInRoom(true); };
   const handleJoinSession = () => { if (joinInput.trim().length > 3) { setRoomId(joinInput.trim()); setIsInRoom(true); } };
@@ -104,7 +118,6 @@ export default function ContractorCamera() {
       localStream.current = stream;
       if (localVideoRef.current) { localVideoRef.current.srcObject = stream; localVideoRef.current.muted = true; }
       
-      // 🚀 تم حذف الفيديو الافتراضي (الأرنب) لينتظر البث الحقيقي
       setTimeout(() => {
         setConnectionStatus(t.connected);
       }, 3000);
@@ -112,7 +125,6 @@ export default function ContractorCamera() {
     } catch (err) { setConnectionStatus("⚠️ يرجى تفعيل الكاميرا"); }
   };
 
-  // 🚀 أزرار التحكم في الكاميرا المحلية
   const toggleCamera = async () => {
     const nextMode = !useFrontCamera;
     setUseFrontCamera(nextMode);
@@ -173,7 +185,6 @@ export default function ContractorCamera() {
     return { x: clientX - rect.left, y: clientY - rect.top };
   };
 
-  // --- التفاعل والرسم ---
   const startInteraction = (e) => {
     if (!isFrozen) return;
     const pos = getCanvasPos(e);
@@ -295,7 +306,6 @@ export default function ContractorCamera() {
                 <Video size={24} /> {t.startNew}
               </button>
               
-              {/* 🚀 تم إصلاح تصميم حواف زر الانضمام ليكون مثالياً */}
               <div className="flex-1 flex bg-slate-800/80 border-2 border-slate-700 rounded-2xl focus-within:border-purple-500 transition-colors p-1.5">
                 <input type="text" placeholder={t.roomCode} value={joinInput} onChange={(e)=>setJoinInput(e.target.value)} className="w-full bg-transparent text-white px-3 font-bold outline-none text-center" dir="ltr" />
                 <button onClick={handleJoinSession} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-black transition-colors h-full flex items-center justify-center">
@@ -310,13 +320,28 @@ export default function ContractorCamera() {
           <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2 mb-6"><FileText className="text-teal-500" /> {t.recentReports}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {reports.map(rep => (
-              <div key={rep.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-lg group cursor-pointer hover:-translate-y-2 transition-transform">
+              <div key={rep.id} className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-lg group relative cursor-pointer">
                 <div className="h-48 overflow-hidden relative">
                   <img src={rep.img} alt="Report" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4"><div><p className="text-white font-black">{rep.author}</p><p className="text-slate-300 text-xs font-bold">{rep.date}</p></div></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4">
+                    <div><p className="text-white font-black">{rep.author}</p><p className="text-slate-300 text-xs font-bold">{rep.date}</p></div>
+                  </div>
+                </div>
+                
+                {/* 🚀 أزرار الأرشفة والحذف التي تظهر عند تمرير الماوس */}
+                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <button onClick={(e) => { e.stopPropagation(); handleArchiveReport(rep.id); }} className="p-2 bg-slate-900/80 hover:bg-amber-500 text-white rounded-xl backdrop-blur-md transition-colors border border-white/10" title={t.archiveBtn}>
+                    <Archive size={16} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDeleteReport(rep.id); }} className="p-2 bg-slate-900/80 hover:bg-red-500 text-white rounded-xl backdrop-blur-md transition-colors border border-white/10" title={t.deleteBtn}>
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
             ))}
+            {reports.length === 0 && (
+              <p className="col-span-full text-center text-slate-500 py-10 font-bold">{t.noReports}</p>
+            )}
           </div>
         </div>
       </div>
@@ -325,9 +350,10 @@ export default function ContractorCamera() {
 
   // --- Live Room (Immersive UI) ---
   return (
-    <div className="fixed inset-0 z-[9999] bg-[#020617] flex flex-col font-cairo overflow-hidden" dir={isRtl ? 'rtl' : 'ltr'}>
+    /* 🚀 كسر كل إطارات المنصة هنا باستخدام fixed و z-[99999] و w-screen h-screen */
+    <div className="fixed inset-0 w-screen h-screen z-[99999] bg-[#020617] flex flex-col font-cairo overflow-hidden" dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 Floating Status Pill (مؤشر الاتصال العائم أعلى الشاشة) */}
+      {/* 🚀 Floating Status Pill */}
       <div className={`absolute top-6 ${isRtl ? 'right-6' : 'left-6'} z-50 px-5 py-2.5 rounded-full text-sm font-black border flex items-center gap-2 backdrop-blur-md transition-all duration-500 shadow-xl ${
         connectionStatus === t.connected 
           ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500/50' 
@@ -357,7 +383,6 @@ export default function ContractorCamera() {
         <div className={`absolute bottom-24 md:bottom-8 left-4 md:left-6 w-[100px] h-[140px] md:w-[130px] md:h-[180px] z-50 bg-slate-900 rounded-2xl border-2 border-teal-500 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300 ${isFrozen ? 'opacity-40 hover:opacity-100 scale-90 origin-bottom-left' : 'opacity-100'}`}>
           <video ref={localVideoRef} className="w-full h-full object-cover" autoPlay playsInline muted></video>
           
-          {/* 🚀 أزرار الكاميرا المصغرة المدمجة */}
           <button onClick={toggleTorch} className="absolute top-2 right-2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center border border-white/20 hover:bg-amber-500 hover:border-amber-400 transition-colors" title="الفلاش">
             <Lightbulb size={14} />
           </button>
@@ -366,7 +391,7 @@ export default function ContractorCamera() {
           </button>
         </div>
 
-        {/* 🛠️ Smart Tools (Left Panel - Hover Expansion) */}
+        {/* 🛠️ Smart Tools (Left Panel) */}
         {isFrozen && (
           <div className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[30px] shadow-2xl transition-all duration-400 overflow-hidden flex flex-col items-center group w-[55px] h-[55px] hover:w-[280px] hover:h-auto hover:max-h-[85vh] hover:items-start hover:p-4 hover:rounded-2xl cursor-pointer">
             <div className="w-full h-full flex items-center justify-center group-hover:hidden text-2xl transition-opacity">🛠️</div>
@@ -408,7 +433,7 @@ export default function ContractorCamera() {
           </div>
         )}
 
-        {/* 🖌️ Drawing Tools (Right Panel - Hover Expansion) */}
+        {/* 🖌️ Drawing Tools (Right Panel) */}
         {isFrozen && (
           <div className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[30px] shadow-2xl transition-all duration-400 overflow-hidden flex flex-col items-center group w-[55px] h-[55px] hover:w-[70px] hover:h-auto hover:max-h-[85vh] hover:py-4 hover:rounded-2xl cursor-pointer">
             <div className="w-full h-full flex items-center justify-center group-hover:hidden text-white"><PenTool size={22} /></div>
@@ -457,7 +482,7 @@ export default function ContractorCamera() {
 
       </div>
 
-      {/* 🚀 Floating Bottom Controls (تطفو دائماً لتوفير المساحة وتختفي القوائم العلوية) */}
+      {/* 🚀 Floating Bottom Controls */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex justify-center gap-3 md:gap-4 z-50 w-[90%] md:w-auto">
         <button onClick={toggleFreeze} className={`${isFrozen ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'} flex-1 md:flex-none text-white px-6 md:px-10 py-3.5 md:py-4 rounded-2xl md:rounded-full font-black text-xs md:text-sm transition-all flex items-center justify-center gap-2 shadow-2xl hover:scale-105`}>
           {isFrozen ? <><Play size={18}/> {t.unfreeze}</> : <><PauseCircle size={18}/> {t.freeze}</>}
