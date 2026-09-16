@@ -8,6 +8,7 @@ import ContractorMarketplace from './ContractorMarketplace'; // 🛒 واجهة 
 import VendorStoreManager from './VendorStoreManager';       // 📦 لوحة إضافة المنتجات (للبائع)
 import ChatRoom from './ChatRoom';
 import ContractorCamera from './ContractorCamera';
+import TenderRadar from './TenderRadar';
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
@@ -46,7 +47,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="marketplace" element={<ContractorMarketplace />} />  {/* 🛒 واجهة التسوق للمقاول */}
         <Route path="store-manager" element={<VendorStoreManager />} /> {/* 📦 إدارة المتجر للتاجر */}
         
-        <Route path="tenders" element={<UnderConstruction title="رادار المناقصات (Appels d'offres)" icon="📡" />} />
+       <Route path="tenders" element={<TenderRadar />} />
         
         {/* المالية والمحاسبة */}
         <Route path="accounts" element={<UnderConstruction title="الصناديق والحسابات" icon="🏦" />} />
