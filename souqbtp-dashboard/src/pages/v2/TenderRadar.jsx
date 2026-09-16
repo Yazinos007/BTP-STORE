@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Building2, Calendar, ArrowUpRight, Filter, Loader2, Sparkles, Gavel, Hash } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import useSettingsStore from '../store/useSettingsStore';
+import { supabase } from '../../lib/supabase';
+import useSettingsStore from '../../store/useSettingsStore';
 
 const translations = {
   ar: {
