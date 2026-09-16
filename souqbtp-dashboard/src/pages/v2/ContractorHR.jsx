@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 
 export default function ContractorHR() {
-  // 🚀 الحماية الفولاذية للسياق لمنع الصفحة البيضاء
   const context = useOutletContext() || {};
   const isDarkMode = context.isDarkMode || false;
   const language = context.language || 'ar';
@@ -24,7 +23,6 @@ export default function ContractorHR() {
   const [editingId, setEditingId] = useState(null);
   const [showPayslip, setShowPayslip] = useState(false);
 
-  // Simulated States for UI
   const [trainings, setTrainings] = useState(['Habilitation Électrique (B1V)', "Sécurité de Chantier"]);
   const [showAddTraining, setShowAddTraining] = useState(false);
   const [newTraining, setNewTraining] = useState('');
@@ -53,7 +51,6 @@ export default function ContractorHR() {
   
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 🚀 قاموس الترجمة المحمي
   const translations = {
     ar: {
       title: 'إدارة الموارد البشرية', subtitle: 'إدارة موظفي شركتك، فرق الورش، والرواتب.',
@@ -152,15 +149,22 @@ export default function ContractorHR() {
   const modalBg = isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200';
   const inputBg = isDarkMode ? 'bg-slate-950 border-slate-800 text-white placeholder-slate-600' : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400';
 
+  // 🚀 السحر الأول: حفظ البيانات تلقائياً في الذاكرة الدائمة للمتصفح
+  useEffect(() => {
+    if (employees.length > 0) {
+      localStorage.setItem('souqbtp_hr_employees', JSON.stringify(employees));
+    }
+  }, [employees]);
+
   useEffect(() => {
     let isMounted = true;
     const initHR = async () => {
       setLoading(true);
       try {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (isMounted && currentUser) {
+        if (isMounted) {
           setUser(currentUser);
-          await fetchEmployees(currentUser.id);
+          await fetchEmployees(currentUser?.id);
         }
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -175,29 +179,40 @@ export default function ContractorHR() {
 
   const fetchEmployees = async (userId) => {
     try {
-      const { data, error } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('supplier_id', userId) 
-        .order('created_at', { ascending: false });
-        
-      if (!error && data && data.length > 0) {
-         setEmployees(data);
+      if (userId) {
+        const { data, error } = await supabase
+          .from('employees')
+          .select('*')
+          .eq('supplier_id', userId) 
+          .order('created_at', { ascending: false });
+          
+        if (!error && data && data.length > 0) {
+           setEmployees(data);
+           return;
+        }
+      }
+      
+      // 🚀 إذا فشل الاتصال بقاعدة البيانات، استرجع البيانات من الذاكرة المحلية
+      const localData = localStorage.getItem('souqbtp_hr_employees');
+      if (localData) {
+        setEmployees(JSON.parse(localData));
       } else {
-         setEmployees([
-           { id: '1', full_name: 'Ahmed Benali', role: 'Chef de Chantier', base_salary: 8500, status: 'Actif', cin: 'AE12345', phone: '0600000001' },
-           { id: '2', full_name: 'Youssef Rami', role: 'Ingénieur', base_salary: 12000, status: 'Actif', cin: 'BJ98765', phone: '0600000002' },
-           { id: '3', full_name: 'Said Karim', role: 'Gardien', base_salary: 3000, status: 'on_leave', cin: 'CD45678', phone: '0600000003' }
-         ]);
+        // البيانات الافتراضية لأول مرة فقط
+        setEmployees([
+          { id: '1', full_name: 'Ahmed Benali', role: 'Chef de Chantier', base_salary: 8500, status: 'Actif', cin: 'AE12345', phone: '0600000001' },
+          { id: '2', full_name: 'Youssef Rami', role: 'Ingénieur', base_salary: 12000, status: 'Actif', cin: 'BJ98765', phone: '0600000002' },
+          { id: '3', full_name: 'Said Karim', role: 'Gardien', base_salary: 3000, status: 'on_leave', cin: 'CD45678', phone: '0600000003' }
+        ]);
       }
     } catch (err) {
       console.error(err);
+      const localData = localStorage.getItem('souqbtp_hr_employees');
+      if(localData) setEmployees(JSON.parse(localData));
     }
   };
 
   const handleSaveEmployee = async (e) => {
     e.preventDefault();
-    if (!user) return;
     
     const empData = {
       full_name: formData.full_name, 
@@ -208,15 +223,21 @@ export default function ContractorHR() {
       primes_avances: parseFloat(formData.primes || 0),
       retenues: parseFloat(formData.retenues || 0), 
       status: formData.status, 
-      supplier_id: user.id 
+      supplier_id: user?.id || 'demo_user'
     };
 
     try {
         if (editingId) {
-            setEmployees(employees.map(emp => emp.id === editingId ? { ...emp, ...empData, id: editingId } : emp));
+            // تحديث الشاشة فوراً
+            setEmployees(prev => prev.map(emp => emp.id === editingId ? { ...emp, ...empData } : emp));
+            // محاولة الحفظ في Supabase إن أمكن
+            if(user) await supabase.from('employees').update(empData).eq('id', editingId);
         } else {
             const newEmp = { ...empData, id: Date.now().toString(), created_at: new Date().toISOString() };
-            setEmployees([newEmp, ...employees]);
+            // تحديث الشاشة فوراً
+            setEmployees(prev => [newEmp, ...prev]);
+            // محاولة الحفظ في Supabase
+            if(user) await supabase.from('employees').insert([newEmp]);
         }
     } catch (err) {
         console.error(err);
@@ -251,7 +272,12 @@ export default function ContractorHR() {
 
   const handleDeleteClick = async (id) => {
     if (window.confirm(t.confirmDelete)) {
-      setEmployees(employees.filter(emp => emp.id !== id));
+      // الحذف من الشاشة فوراً
+      setEmployees(prev => prev.filter(emp => emp.id !== id));
+      // محاولة الحذف من Supabase
+      try {
+        if(user) await supabase.from('employees').delete().eq('id', id);
+      } catch(e) { console.error(e); }
     }
   };
 
@@ -280,8 +306,14 @@ export default function ContractorHR() {
   };
 
   const totalEmployees = employees.length;
-  const activeEmployees = employees.filter(emp => emp.status === 'Actif' || emp.status === 'active').length;
-  const totalPayroll = employees.filter(emp => emp.status === 'Actif' || emp.status === 'active').reduce((sum, emp) => sum + Number(emp.base_salary || 0), 0);
+  
+  // 🚀 السحر الثاني: إصلاح دالة حساب الموظفين النشطين (الكل ما عدا المطرودين)
+  const activeEmployees = employees.filter(emp => emp.status !== 'terminated' && emp.status !== 'Résilié').length;
+  
+  // 🚀 السحر الثالث: حساب الرواتب للموظفين النشطين ومن هم في إجازة (يستثني فقط المطرودين)
+  const totalPayroll = employees
+    .filter(emp => emp.status !== 'terminated' && emp.status !== 'Résilié')
+    .reduce((sum, emp) => sum + Number(emp.base_salary || 0), 0);
 
   const statusConfig = {
     active: { label: t.statusActive, color: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
