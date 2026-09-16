@@ -152,7 +152,6 @@ export default function ContractorMarketplace() {
     setTimeout(() => setAddedItem(null), 2000);
   };
 
-  // 🚀 الدالة العبقرية لتحديث الكمية مع حماية النظام
   const updateQuantity = (productId, newQty) => {
     setCart(prev => prev.map(item => item.product.id === productId ? { ...item, qty: newQty } : item));
   };
@@ -251,13 +250,16 @@ export default function ContractorMarketplace() {
 
               <div className="p-5 flex-1 flex flex-col">
                 <h3 className={`font-black text-lg leading-tight mb-2 ${textTitle}`}>{product.name}</h3>
+                
                 <div className="flex items-center gap-1 mb-4">
                   <Star size={14} className="text-amber-400 fill-amber-400" />
                   <span className={`text-xs font-bold ${textMuted}`}>{product.rating || '4.5'}</span>
-                  <span className={`text-[10px] mx-2 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 ${textMuted}`}>
+                  {/* 🚀 تم حل مشكلة اللون هنا: إطار أسود مع نص أبيض واضح في كلا الوضعين! */}
+                  <span className="text-[10px] font-black mx-2 px-2.5 py-1 rounded-lg bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-200 shadow-md">
                     {t.categories?.[product.category] || product.category}
                   </span>
                 </div>
+
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <div className={`p-2 rounded-xl border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                     <p className={`text-[10px] font-bold ${textMuted}`}>{t.retail}</p>
@@ -268,6 +270,7 @@ export default function ContractorMarketplace() {
                     <p className="font-black text-indigo-600" dir="ltr">{product.price_wholesale} {getCurrencySymbol(product.currency || 'MAD')}</p>
                   </div>
                 </div>
+
                 <div className={`mt-auto pt-4 border-t border-dashed ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                   <p className={`text-xs font-bold mb-3 flex items-center gap-1.5 ${textMuted}`}>
                     <Briefcase size={14} className="text-teal-500"/> {t.supplier} <span className={textTitle}>{product.supplier || 'Vendeur Indépendant'}</span>
@@ -291,7 +294,6 @@ export default function ContractorMarketplace() {
                 <ShoppingCart size={24} className="text-white" />
               </div>
               <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full animate-bounce shadow-lg">
-                {/* 🚀 حماية الجمع */}
                 {cart.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0)}
               </span>
             </div>
@@ -326,7 +328,7 @@ export default function ContractorMarketplace() {
 
                   <div className="p-4 space-y-4">
                     {items.map(item => {
-                      const safeQty = parseInt(item.qty) || 0; // 🚀 حماية الكمية
+                      const safeQty = parseInt(item.qty) || 0; 
                       const isWholesale = safeQty >= item.product.min_wholesale_qty;
                       const activePrice = isWholesale ? item.product.price_wholesale : item.product.price_retail;
                       const symbol = getCurrencySymbol(item.product.currency || 'MAD');
@@ -354,7 +356,6 @@ export default function ContractorMarketplace() {
                                   )}
                                 </div>
                                 
-                                {/* 🚀 الإدخال اليدوي المحدث والمحمي */}
                                 <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border shadow-inner ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-300 bg-white'}`}>
                                   <button onClick={() => updateQuantity(item.product.id, safeQty > 1 ? safeQty - 1 : 1)} className="p-1 text-slate-400 hover:text-blue-500 transition-colors"><Minus size={14}/></button>
                                   <input 
@@ -362,12 +363,10 @@ export default function ContractorMarketplace() {
                                     inputMode="numeric"
                                     value={item.qty} 
                                     onChange={(e) => {
-                                      // يمسح أي أحرف ويسمح بالفراغ المؤقت
                                       const val = e.target.value.replace(/[^0-9]/g, '');
                                       updateQuantity(item.product.id, val === '' ? '' : parseInt(val));
                                     }}
                                     onBlur={() => {
-                                      // إذا تركه فارغاً وذهب، يعيده إلى 1
                                       if (item.qty === '' || parseInt(item.qty) < 1) updateQuantity(item.product.id, 1);
                                     }}
                                     className={`font-black text-sm w-12 text-center outline-none bg-transparent ${textTitle}`} 
@@ -387,7 +386,6 @@ export default function ContractorMarketplace() {
                     <div>
                       <p className={`text-xs font-bold ${textMuted}`}>{t.total}</p>
                       <p className="font-black text-lg text-emerald-500" dir="ltr">
-                        {/* 🚀 حماية المجموع */}
                         {items.reduce((sum, item) => {
                           const q = parseInt(item.qty) || 0;
                           const p = q >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail;
