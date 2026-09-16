@@ -3,7 +3,7 @@ import { useOutletContext, useLocation } from 'react-router-dom';
 import { 
   Search, Send, Paperclip, Mic, Phone, Video, 
   MoreVertical, CheckCheck, X, ShoppingCart, 
-  Image as ImageIcon, Briefcase, FileText, Trash2
+  Image as ImageIcon, Briefcase, FileText, Play, Trash2
 } from 'lucide-react';
 
 export default function ChatRoom() {
@@ -20,6 +20,9 @@ export default function ChatRoom() {
   
   const [activeCall, setActiveCall] = useState(null); 
   const [showDropdown, setShowDropdown] = useState(false);
+  
+  // 🚀 حالة جديدة لمحاكاة أن المورد يكتب رداً
+  const [isTyping, setIsTyping] = useState(false);
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -39,7 +42,7 @@ export default function ChatRoom() {
       accept: "قبول العرض", reject: "رفض العرض", negotiate: "قيد التفاوض...",
       recording: "جاري التسجيل...", cancel: "إلغاء", send: "إرسال",
       calling: "جاري الاتصال...", endCall: "إنهاء المكالمة",
-      clearChat: "إفراغ المحادثة", deleteMsg: "حذف"
+      clearChat: "إفراغ المحادثة", deleteMsg: "حذف", typing: "يكتب الآن..."
     },
     fr: {
       title: "Boîte de Réception", searchPlaceholder: "Rechercher...",
@@ -48,16 +51,7 @@ export default function ChatRoom() {
       accept: "Accepter", reject: "Refuser", negotiate: "En négociation...",
       recording: "Enregistrement...", cancel: "Annuler", send: "Envoyer",
       calling: "Appel en cours...", endCall: "Raccrocher",
-      clearChat: "Vider le chat", deleteMsg: "Supprimer"
-    },
-    en: {
-      title: "Inbox", searchPlaceholder: "Search conversations...",
-      typeMessage: "Type a message...", online: "Online", offline: "Last seen 2 hours ago",
-      orderCardTitle: "Request for Quote (Purchase Order)", total: "Estimated Total:",
-      accept: "Accept", reject: "Reject", negotiate: "Negotiating...",
-      recording: "Recording...", cancel: "Cancel", send: "Send",
-      calling: "Calling...", endCall: "End Call",
-      clearChat: "Clear Chat", deleteMsg: "Delete"
+      clearChat: "Vider le chat", deleteMsg: "Supprimer", typing: "Entraîne d'écrire..."
     }
   }[language] || t.ar;
 
@@ -67,43 +61,73 @@ export default function ChatRoom() {
     { id: 3, name: "المهندس كريم", avatar: "ك", type: "team", unread: 0, status: "online", lastMessage: "تم الانتهاء من صب الأساسات." },
   ]);
 
+  // 🚀 تمت إضافة "chatId" لكل رسالة لكي يتم فرزها حسب الغرفة!
   const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem('souqbtp_chat_messages');
+    const savedMessages = localStorage.getItem('souqbtp_chat_messages_v2');
     if (savedMessages) {
       try { return JSON.parse(savedMessages); } catch (e) { return null; }
     }
     return [
-      { id: 1, senderId: 1, text: "مرحباً بك في شركة لافارچ، كيف يمكننا خدمتك اليوم؟", time: "10:00 AM", isMe: false },
-      { id: 2, senderId: 'me', text: "أهلاً، أحتاج إلى عرض سعر لكمية من الإسمنت.", time: "10:05 AM", isMe: true }
+      { id: 1, chatId: 1, senderId: 1, text: "مرحباً بك في شركة لافارچ، كيف يمكننا خدمتك اليوم؟", time: "10:00 AM", isMe: false },
+      { id: 2, chatId: 1, senderId: 'me', text: "أهلاً، أحتاج إلى عرض سعر لكمية من الإسمنت.", time: "10:05 AM", isMe: true }
     ];
   });
 
   useEffect(() => {
-    localStorage.setItem('souqbtp_chat_messages', JSON.stringify(messages));
+    localStorage.setItem('souqbtp_chat_messages_v2', JSON.stringify(messages));
   }, [messages]);
+
+  // 🤖 دالة الرد الآلي الذكي لمحاكاة الطرف الآخر
+  const simulateSupplierReply = (targetChatId, type = 'text') => {
+    setIsTyping(true);
+    setTimeout(() => {
+      const replyMsg = {
+        id: Date.now(), chatId: targetChatId, senderId: 'supplier', 
+        text: type === 'order' ? "تم استلام طلب التفاوض الخاص بك! ✅ لقد وافقنا على السعر الإجمالي، وسنقوم بتجهيز الشحنة فوراً. 🚛" : "شكراً لتواصلك، لقد استلمنا رسالتك وسنقوم بالرد في أقرب وقت.", 
+        type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), isMe: false
+      };
+      setMessages(prev => [...prev, replyMsg]);
+      setIsTyping(false);
+    }, 3500); // تأخير 3 ثواني لمحاكاة الكتابة
+  };
 
   useEffect(() => {
     if (cartOrder && supplierName) {
       const existingChat = chats.find(c => c.name.includes(supplierName));
+      let currentChatId = activeChat;
+
       if (!existingChat) {
         const newId = Date.now();
-        setChats(prev => [{ id: newId, name: supplierName, avatar: supplierName.slice(0,2).toUpperCase(), type: "supplier", unread: 0, status: "online", lastMessage: "طلب تسعيرة جديد" }, ...prev]);
+        setChats(prev => [{ id: newId, name: supplierName, avatar: supplierName.slice(0,2).toUpperCase(), type: "supplier", unread: 0, status: "online", lastMessage: "طلب تفاوض جديد" }, ...prev]);
+        currentChatId = newId;
         setActiveChat(newId);
       } else {
+        currentChatId = existingChat.id;
         setActiveChat(existingChat.id);
       }
+
+      // 🚀 إرسال الطلبية وربطها بـ chatId الخاص بالمورد
       const orderMessage = {
-        id: Date.now(), senderId: 'me', isMe: true, type: 'order_card',
+        id: Date.now(), chatId: currentChatId, senderId: 'me', isMe: true, type: 'order_card',
         time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderData: cartOrder
       };
-      setMessages(prev => [...prev, orderMessage]);
+      
+      setMessages(prev => {
+        // منع تكرار نفس الطلبية إذا قمنا بعمل تحديث للصفحة
+        if (prev.some(m => m.type === 'order_card' && m.time === orderMessage.time)) return prev;
+        return [...prev, orderMessage];
+      });
+
+      // 🤖 تشغيل الرد الآلي بعد إرسال الطلب
+      simulateSupplierReply(currentChatId, 'order');
+      
       window.history.replaceState({}, document.title);
     }
   }, [cartOrder, supplierName]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -149,7 +173,6 @@ export default function ChatRoom() {
   const sendAudioMessage = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.onstop = () => {
-        // 🚀 الحل: إضافة "نوع الملف" (MimeType) لكي يتعرف عليه المشغل بعد التحويل
         const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType }); 
         
@@ -158,13 +181,14 @@ export default function ChatRoom() {
         reader.onloadend = () => {
           const base64Audio = reader.result;
           const msg = {
-            id: Date.now(), senderId: 'me', isMe: true, type: 'audio',
+            id: Date.now(), chatId: activeChat, senderId: 'me', isMe: true, type: 'audio', // 🚀 إضافة chatId
             audioUrl: base64Audio,
             duration: formatTime(recordingTime),
             time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
           };
           setMessages(prev => [...prev, msg]);
           audioChunksRef.current = [];
+          simulateSupplierReply(activeChat, 'text'); // الرد الآلي
         };
       };
       
@@ -179,9 +203,10 @@ export default function ChatRoom() {
   const handleSendMessage = (e) => {
     e?.preventDefault();
     if (!newMessage.trim()) return;
-    const msg = { id: Date.now(), senderId: 'me', text: newMessage, type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), isMe: true };
+    const msg = { id: Date.now(), chatId: activeChat, senderId: 'me', text: newMessage, type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), isMe: true };
     setMessages([...messages, msg]);
     setNewMessage('');
+    simulateSupplierReply(activeChat, 'text'); // الرد الآلي
   };
 
   const handleImageUpload = (e) => {
@@ -190,27 +215,34 @@ export default function ChatRoom() {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = () => {
-      const msg = { id: Date.now(), senderId: 'me', isMe: true, type: 'image', fileUrl: reader.result, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+      const msg = { id: Date.now(), chatId: activeChat, senderId: 'me', isMe: true, type: 'image', fileUrl: reader.result, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
       setMessages(prev => [...prev, msg]);
+      simulateSupplierReply(activeChat, 'text');
     };
   };
 
   const handleDocUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const msg = { id: Date.now(), senderId: 'me', isMe: true, type: 'document', fileName: file.name, fileSize: (file.size / 1024 / 1024).toFixed(2) + " MB", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+    const msg = { id: Date.now(), chatId: activeChat, senderId: 'me', isMe: true, type: 'document', fileName: file.name, fileSize: (file.size / 1024 / 1024).toFixed(2) + " MB", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
     setMessages([...messages, msg]);
+    simulateSupplierReply(activeChat, 'text');
   };
 
   const handleDeleteMessage = (id) => { setMessages(messages.filter(msg => msg.id !== id)); };
   
   const handleClearChat = () => {
-    if (window.confirm("هل أنت متأكد من إفراغ المحادثة؟")) {
-      setMessages([]); setShowDropdown(false);
+    if (window.confirm("هل أنت متأكد من إفراغ محادثة هذا المورد فقط؟")) {
+      // 🚀 تفريغ رسائل الغرفة الحالية فقط وليس كل الرسائل!
+      setMessages(messages.filter(msg => msg.chatId !== activeChat)); 
+      setShowDropdown(false);
     }
   };
 
   const activeChatData = chats.find(c => c.id === activeChat) || chats[0];
+  
+  // 🚀 فلترة الرسائل لتظهر فقط الخاصة بالمورد المحدد
+  const currentMessages = messages.filter(msg => msg.chatId === activeChat);
 
   const mainWrapperBg = isDarkMode 
     ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900' 
@@ -272,6 +304,8 @@ export default function ChatRoom() {
                 <h3 className={`font-black ${textTitle}`}>{activeChatData?.name}</h3>
                 <p className={`text-xs font-bold flex items-center gap-1 ${activeChatData?.status === 'online' ? 'text-emerald-600 dark:text-emerald-400' : textMuted}`}>
                   {activeChatData?.status === 'online' ? t.online : t.offline}
+                  {/* 🚀 إظهار جاري الكتابة في الشريط العلوي */}
+                  {isTyping && <span className="text-teal-500 ml-2 animate-pulse text-[10px]">{t.typing}</span>}
                 </p>
               </div>
             </div>
@@ -296,7 +330,8 @@ export default function ChatRoom() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar relative z-10" onClick={() => setShowDropdown(false)}>
-            {messages.map((msg) => (
+            {/* 🚀 يتم عرض الرسائل المفلترة الخاصة بالمورد المفتوح فقط */}
+            {currentMessages.map((msg) => (
               <div key={msg.id} className={`group relative flex ${msg.isMe ? 'justify-end' : 'justify-start'} animate-slide-up items-center gap-3`}>
                 
                 {msg.isMe && (
@@ -329,7 +364,6 @@ export default function ChatRoom() {
                     </div>
                   )}
 
-                  {/* 🎙️ مشغل الصوت القوي الأصلي */}
                   {msg.type === 'audio' && (
                     <div className={`p-2 rounded-3xl shadow-sm flex items-center gap-2 ${msg.isMe ? 'bg-teal-500 text-white rounded-tr-sm' : isDarkMode ? 'bg-slate-800/80 text-white rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm'}`}>
                       <audio controls src={msg.audioUrl} className="h-10 w-[240px] outline-none rounded-full" />
@@ -372,6 +406,18 @@ export default function ChatRoom() {
                 )}
               </div>
             ))}
+            
+            {/* 🤖 فقاعة "جاري الكتابة..." تظهر حين يرد المورد */}
+            {isTyping && (
+              <div className="flex justify-start animate-fade-in">
+                <div className={`p-4 rounded-3xl shadow-sm flex items-center gap-2 ${isDarkMode ? 'bg-slate-800/80 backdrop-blur-md text-slate-300 border border-slate-700/50 rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-500 border border-white/60 rounded-tl-sm'}`}>
+                  <span className="w-2 h-2 rounded-full bg-teal-500 animate-bounce" style={{animationDelay: '0ms'}}></span>
+                  <span className="w-2 h-2 rounded-full bg-teal-500 animate-bounce" style={{animationDelay: '150ms'}}></span>
+                  <span className="w-2 h-2 rounded-full bg-teal-500 animate-bounce" style={{animationDelay: '300ms'}}></span>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
 
