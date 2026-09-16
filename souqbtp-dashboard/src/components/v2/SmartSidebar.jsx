@@ -10,7 +10,6 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
 
   const isRtl = language === 'ar';
   
-  // 🌍 قاموس الترجمة للسايدبار
   const t = {
     ar: {
       roleTitle: "مكتب المقاول",
@@ -111,7 +110,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
         { name: t.dash, icon: LayoutDashboard, path: '/v2/contractor-dashboard' },
         { name: t.path, icon: Map, path: '/v2/project-path' },
         { name: t.calc, icon: Calculator, path: '/v2/cost-calculator' },
-        { name: t.cam, icon: Camera, path: '/v2/site-reports' },
+        // 🚀 تم تصحيح مسار الكاميرا هنا ليطابق مكون ContractorCamera
+        { name: t.cam, icon: Camera, path: '/v2/field-camera' },
       ]},
       { category: t.cat2, color: 'emerald', items: [
         { name: t.msg, icon: MessageCircle, path: '/v2/messages' },
@@ -172,7 +172,6 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
                     <NavLink 
                       key={idx} 
                       to={item.path} 
-                      // 🌍 ضبط الحدود والاتجاه حسب اللغة
                       className={({ isActive }) => `flex items-center gap-3 px-6 py-3 text-sm transition-all duration-300 ${isRtl ? 'border-r-4' : 'border-l-4'} ${
                         isActive 
                           ? `${theme.active} font-black ${theme.border} my-1 mx-2 ${isRtl ? 'rounded-l-lg' : 'rounded-r-lg'}` 
