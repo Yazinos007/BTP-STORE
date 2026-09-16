@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { 
-  Camera, Video, X, PenTool, Undo, Trash2, FileText, Settings, Play,
-  PauseCircle, PhoneOff
+  Camera, Video, X, PenTool, Undo, Trash2, FileText, Play,
+  PauseCircle, PhoneOff, Lightbulb, RefreshCcw, Loader2
 } from 'lucide-react';
 
 export default function ContractorCamera() {
@@ -24,10 +24,13 @@ export default function ContractorCamera() {
   const [currentStamp, setCurrentStamp] = useState('');
   const [penSize, setPenSize] = useState(4);
   const [isSmartMode, setIsSmartMode] = useState(false);
+  
+  // حالة الاتصال والكاميرا
   const [connectionStatus, setConnectionStatus] = useState('جاري تجهيز الكاميرا...');
+  const [useFrontCamera, setUseFrontCamera] = useState(false);
 
   // --- Measurement & BOQ States ---
-  const [measureMode, setMeasureMode] = useState(null); // 'calibrate' or 'measure'
+  const [measureMode, setMeasureMode] = useState(null); 
   const [calibrationFactor, setCalibrationFactor] = useState(null);
   const [boqResult, setBoqResult] = useState(null);
   const [quoteText, setQuoteText] = useState('');
@@ -48,7 +51,6 @@ export default function ContractorCamera() {
   const undoStack = useRef([]);
   const measureStart = useRef(null);
 
-  // 🚀 تم تأمين القاموس وحل مشكلة الشبح عند اختيار English
   const translations = {
     ar: {
       title: "كاميرا الميدان والتقارير", subtitle: "غرفة العمليات الحية، البث المباشر، والتقارير الميدانية المصادق عليها.",
@@ -56,7 +58,8 @@ export default function ContractorCamera() {
       roomCode: "أدخل كود الغرفة...", joinBtn: "دخول", recentReports: "التقارير الميدانية الأخيرة",
       noReports: "لا توجد تقارير مسجلة بعد.", freeze: "تجميد للرسم", unfreeze: "استئناف الفيديو",
       endCall: "إنهاء الزيارة", saveReport: "استخراج تقرير", clear: "مسح الكل", undo: "تراجع",
-      tools: "أدوات البناء", radar: "رادار الأخطاء", connected: "🟢 متصل ومباشر", waiting: "⏳ في انتظار الطرف الآخر..."
+      tools: "أدوات البناء", radar: "رادار الأخطاء", 
+      connected: "متصل ومباشر", waiting: "جاري الاتصال بالطرف الآخر..."
     },
     fr: {
       title: "Caméra du Chantier & Rapports", subtitle: "Salle d'opérations en direct, streaming et rapports certifiés.",
@@ -64,7 +67,8 @@ export default function ContractorCamera() {
       roomCode: "Code de la salle...", joinBtn: "Rejoindre", recentReports: "Rapports Récents",
       noReports: "Aucun rapport enregistré.", freeze: "Figer & Dessiner", unfreeze: "Reprendre Vidéo",
       endCall: "Quitter", saveReport: "Générer Rapport", clear: "Effacer", undo: "Annuler",
-      tools: "Outils BTP", radar: "Radar Défauts", connected: "🟢 Connecté", waiting: "⏳ En attente..."
+      tools: "Outils BTP", radar: "Radar Défauts", 
+      connected: "Connecté et En Direct", waiting: "Connexion en cours..."
     },
     en: {
       title: "Site Camera & Reports", subtitle: "Live operations room, streaming, and certified field reports.",
@@ -72,7 +76,8 @@ export default function ContractorCamera() {
       roomCode: "Enter room code...", joinBtn: "Join", recentReports: "Recent Field Reports",
       noReports: "No reports recorded yet.", freeze: "Freeze to Draw", unfreeze: "Resume Video",
       endCall: "End Visit", saveReport: "Generate Report", clear: "Clear All", undo: "Undo",
-      tools: "Construction Tools", radar: "Defect Radar", connected: "🟢 Connected", waiting: "⏳ Waiting for peer..."
+      tools: "Construction Tools", radar: "Defect Radar", 
+      connected: "Connected Live", waiting: "Connecting to peer..."
     }
   };
   const t = translations[language] || translations.ar;
@@ -80,7 +85,8 @@ export default function ContractorCamera() {
   useEffect(() => {
     setReports([
       { id: 1, date: '2026-09-15 10:30', author: 'المهندس كريم', img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500&auto=format' },
-      { id: 2, date: '2026-09-10 14:15', author: 'SouqBTP VIP', img: 'https://images.unsplash.com/photo-1541888086925-920a0f62272c?w=500&auto=format' }
+      // 🚀 تم إصلاح الصورة المكسورة برابط صالح
+      { id: 2, date: '2026-09-10 14:15', author: 'SouqBTP VIP', img: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=500&auto=format' }
     ]);
   }, []);
 
@@ -97,15 +103,45 @@ export default function ContractorCamera() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: true });
       localStream.current = stream;
       if (localVideoRef.current) { localVideoRef.current.srcObject = stream; localVideoRef.current.muted = true; }
+      
+      // 🚀 تم حذف الفيديو الافتراضي (الأرنب) لينتظر البث الحقيقي
       setTimeout(() => {
         setConnectionStatus(t.connected);
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.src = "https://www.w3schools.com/html/mov_bbb.mp4"; 
-          remoteVideoRef.current.loop = true; remoteVideoRef.current.muted = true;
-          remoteVideoRef.current.play().catch(e=>console.log(e));
-        }
       }, 3000);
+      
     } catch (err) { setConnectionStatus("⚠️ يرجى تفعيل الكاميرا"); }
+  };
+
+  // 🚀 أزرار التحكم في الكاميرا المحلية
+  const toggleCamera = async () => {
+    const nextMode = !useFrontCamera;
+    setUseFrontCamera(nextMode);
+    try {
+        if (localStream.current) {
+            localStream.current.getTracks().forEach(track => track.stop());
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: nextMode ? 'user' : 'environment' }, 
+            audio: true 
+        });
+        localStream.current = stream;
+        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+    } catch(e) { console.error("Error switching camera:", e); }
+  };
+
+  const toggleTorch = async () => {
+    try {
+        const track = localStream.current?.getVideoTracks()[0];
+        if (track) {
+            const capabilities = track.getCapabilities();
+            if (capabilities.torch) {
+                const isTorchOn = track.getSettings().torch || false;
+                await track.applyConstraints({ advanced: [{ torch: !isTorchOn }] });
+            } else {
+                alert("جهازك لا يدعم تشغيل الفلاش 💡");
+            }
+        }
+    } catch(e) { console.error("Error toggling torch:", e); }
   };
 
   const cleanupRoom = () => {
@@ -119,8 +155,10 @@ export default function ContractorCamera() {
     if (nextState) {
       const rVideo = remoteVideoRef.current; const fCanvas = freezeCanvasRef.current; const dCanvas = canvasRef.current;
       if (rVideo && fCanvas && dCanvas) {
-        fCanvas.width = dCanvas.width = rVideo.clientWidth; fCanvas.height = dCanvas.height = rVideo.clientHeight;
-        const ctx = fCanvas.getContext('2d'); ctx.drawImage(rVideo, 0, 0, fCanvas.width, fCanvas.height);
+        fCanvas.width = dCanvas.width = rVideo.clientWidth || window.innerWidth; 
+        fCanvas.height = dCanvas.height = rVideo.clientHeight || window.innerHeight;
+        const ctx = fCanvas.getContext('2d'); 
+        ctx.drawImage(rVideo, 0, 0, fCanvas.width, fCanvas.height);
       }
     } else {
       const dCanvas = canvasRef.current;
@@ -135,7 +173,7 @@ export default function ContractorCamera() {
     return { x: clientX - rect.left, y: clientY - rect.top };
   };
 
-  // 🚀 نظام التفاعل الهندسي الشامل 🚀
+  // --- التفاعل والرسم ---
   const startInteraction = (e) => {
     if (!isFrozen) return;
     const pos = getCanvasPos(e);
@@ -173,7 +211,7 @@ export default function ContractorCamera() {
           const realDistM = (realDistCm / 100).toFixed(2);
           
           if (measureMode === 'area') {
-            const area = (realDistM * 3).toFixed(2); // تقدير ارتفاع 3 متر
+            const area = (realDistM * 3).toFixed(2); 
             setBoqResult({
               area: area, bricks: Math.round(area * 60), cement: (area * 0.55).toFixed(1),
               sand: (area * 0.07).toFixed(2), steel: (area * 2.5).toFixed(1)
@@ -251,17 +289,23 @@ export default function ContractorCamera() {
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight">{t.title}</h1>
             <p className="text-slate-400 font-bold text-lg max-w-2xl mx-auto mb-10">{t.subtitle}</p>
+            
             <div className="flex flex-col md:flex-row gap-4 justify-center w-full max-w-xl mx-auto">
               <button onClick={handleStartSession} className="flex-1 bg-gradient-to-r from-teal-500 to-emerald-600 text-white py-4 px-6 rounded-2xl font-black text-lg hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
                 <Video size={24} /> {t.startNew}
               </button>
-              <div className="flex-1 flex bg-slate-800 border-2 border-slate-700 rounded-2xl overflow-hidden focus-within:border-purple-500 transition-colors">
-                <input type="text" placeholder={t.roomCode} value={joinInput} onChange={(e)=>setJoinInput(e.target.value)} className="w-full bg-transparent text-white px-4 font-bold outline-none text-center" dir="ltr" />
-                <button onClick={handleJoinSession} className="bg-purple-600 hover:bg-purple-700 text-white px-6 font-black transition-colors">{t.joinBtn}</button>
+              
+              {/* 🚀 تم إصلاح تصميم حواف زر الانضمام ليكون مثالياً */}
+              <div className="flex-1 flex bg-slate-800/80 border-2 border-slate-700 rounded-2xl focus-within:border-purple-500 transition-colors p-1.5">
+                <input type="text" placeholder={t.roomCode} value={joinInput} onChange={(e)=>setJoinInput(e.target.value)} className="w-full bg-transparent text-white px-3 font-bold outline-none text-center" dir="ltr" />
+                <button onClick={handleJoinSession} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-black transition-colors h-full flex items-center justify-center">
+                  {t.joinBtn}
+                </button>
               </div>
             </div>
           </div>
         </div>
+        
         <div className="mb-6">
           <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2 mb-6"><FileText className="text-teal-500" /> {t.recentReports}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -283,20 +327,25 @@ export default function ContractorCamera() {
   return (
     <div className="fixed inset-0 z-[9999] bg-[#020617] flex flex-col font-cairo overflow-hidden" dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 Header (يختفي تماماً في وضع التجميد Immersive Mode) */}
-      <div className={`absolute top-0 w-full bg-slate-900/90 backdrop-blur-md border-b border-white/10 px-6 py-4 flex justify-between items-center z-50 shadow-lg transition-transform duration-300 ${isFrozen ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
-        <h1 className="text-xl font-black text-teal-400 m-0 flex items-center gap-2 drop-shadow-md">
-          <Camera size={24}/> {t.title} <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
-        </h1>
-        <div className={`px-4 py-1.5 rounded-full text-sm font-bold border ${connectionStatus.includes('متصل') ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>
-          {connectionStatus} | غرفة: {roomId}
-        </div>
+      {/* 🚀 Floating Status Pill (مؤشر الاتصال العائم أعلى الشاشة) */}
+      <div className={`absolute top-6 ${isRtl ? 'right-6' : 'left-6'} z-50 px-5 py-2.5 rounded-full text-sm font-black border flex items-center gap-2 backdrop-blur-md transition-all duration-500 shadow-xl ${
+        connectionStatus === t.connected 
+          ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500/50' 
+          : 'bg-slate-900/80 text-slate-300 border-slate-700'
+      }`}>
+         {connectionStatus === t.connected ? (
+           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]"></div>
+         ) : (
+           <Loader2 size={16} className="animate-spin text-slate-400" />
+         )}
+         {connectionStatus} <span className="opacity-50 mx-1">|</span> {roomId}
       </div>
 
       <div className="flex-1 relative flex justify-center items-center bg-black overflow-hidden h-full w-full">
         
-        <video ref={remoteVideoRef} className={`absolute inset-0 w-full h-full object-cover md:object-contain ${isFrozen ? 'opacity-0' : 'opacity-100'}`} autoPlay playsInline></video>
-        <canvas ref={freezeCanvasRef} className={`absolute inset-0 w-full h-full object-cover md:object-contain ${isFrozen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}></canvas>
+        {/* Remote Video */}
+        <video ref={remoteVideoRef} className={`absolute inset-0 w-full h-full object-cover md:object-contain transition-opacity duration-300 ${isFrozen ? 'opacity-0' : 'opacity-100'}`} autoPlay playsInline></video>
+        <canvas ref={freezeCanvasRef} className={`absolute inset-0 w-full h-full object-cover md:object-contain transition-opacity duration-300 ${isFrozen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}></canvas>
         <canvas 
           ref={canvasRef} 
           className={`absolute inset-0 w-full h-full object-cover md:object-contain z-20 ${isFrozen ? 'cursor-crosshair' : 'pointer-events-none'}`}
@@ -304,14 +353,22 @@ export default function ContractorCamera() {
           onTouchStart={startInteraction} onTouchMove={doInteraction} onTouchEnd={stopInteraction}
         ></canvas>
 
-        {/* 📸 Local Camera */}
-        <div className={`absolute bottom-24 md:bottom-6 left-4 md:left-6 w-[100px] h-[140px] md:w-[130px] md:h-[180px] z-50 bg-slate-800 rounded-2xl border-2 border-teal-400 shadow-2xl overflow-hidden transition-all duration-300 ${isFrozen ? 'opacity-50 hover:opacity-100 scale-90' : 'opacity-100'}`}>
+        {/* 📸 Local Camera with Integrated Buttons */}
+        <div className={`absolute bottom-24 md:bottom-8 left-4 md:left-6 w-[100px] h-[140px] md:w-[130px] md:h-[180px] z-50 bg-slate-900 rounded-2xl border-2 border-teal-500 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300 ${isFrozen ? 'opacity-40 hover:opacity-100 scale-90 origin-bottom-left' : 'opacity-100'}`}>
           <video ref={localVideoRef} className="w-full h-full object-cover" autoPlay playsInline muted></video>
+          
+          {/* 🚀 أزرار الكاميرا المصغرة المدمجة */}
+          <button onClick={toggleTorch} className="absolute top-2 right-2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center border border-white/20 hover:bg-amber-500 hover:border-amber-400 transition-colors" title="الفلاش">
+            <Lightbulb size={14} />
+          </button>
+          <button onClick={toggleCamera} className="absolute bottom-2 right-2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center border border-white/20 hover:bg-sky-500 hover:border-sky-400 transition-colors" title="قلب الكاميرا">
+            <RefreshCcw size={14} />
+          </button>
         </div>
 
         {/* 🛠️ Smart Tools (Left Panel - Hover Expansion) */}
         {isFrozen && (
-          <div className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[30px] shadow-2xl transition-all duration-400 overflow-hidden flex flex-col items-center group w-[55px] h-[55px] hover:w-[280px] hover:h-auto hover:max-h-[85vh] hover:items-start hover:p-4 hover:rounded-2xl cursor-pointer">
+          <div className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[30px] shadow-2xl transition-all duration-400 overflow-hidden flex flex-col items-center group w-[55px] h-[55px] hover:w-[280px] hover:h-auto hover:max-h-[85vh] hover:items-start hover:p-4 hover:rounded-2xl cursor-pointer">
             <div className="w-full h-full flex items-center justify-center group-hover:hidden text-2xl transition-opacity">🛠️</div>
             
             <div className="hidden group-hover:flex flex-col w-full h-full animate-fade-in overflow-y-auto custom-scrollbar pr-2 space-y-4">
@@ -353,11 +410,11 @@ export default function ContractorCamera() {
 
         {/* 🖌️ Drawing Tools (Right Panel - Hover Expansion) */}
         {isFrozen && (
-          <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[30px] shadow-2xl transition-all duration-400 overflow-hidden flex flex-col items-center group w-[55px] h-[55px] hover:w-[70px] hover:h-auto hover:max-h-[85vh] hover:py-4 hover:rounded-2xl cursor-pointer">
+          <div className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[30px] shadow-2xl transition-all duration-400 overflow-hidden flex flex-col items-center group w-[55px] h-[55px] hover:w-[70px] hover:h-auto hover:max-h-[85vh] hover:py-4 hover:rounded-2xl cursor-pointer">
             <div className="w-full h-full flex items-center justify-center group-hover:hidden text-white"><PenTool size={22} /></div>
             
             <div className="hidden group-hover:flex flex-col items-center w-full gap-3 animate-fade-in">
-              <button onClick={() => setActiveTool('pen')} className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${activeTool === 'pen' ? 'bg-teal-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}><PenTool size={20}/></button>
+              <button onClick={() => setActiveTool('pen')} className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${activeTool === 'pen' ? 'bg-teal-500 text-white shadow-[0_0_15px_rgba(20,184,166,0.5)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}><PenTool size={20}/></button>
               
               <div className="w-full h-px bg-slate-700 my-1"></div>
               
@@ -369,45 +426,45 @@ export default function ContractorCamera() {
               <div className="w-full h-px bg-slate-700 my-1"></div>
               
               <div className="w-full flex flex-col items-center px-1">
-                <span className="text-[9px] text-slate-400 mb-1">السُمك</span>
+                <span className="text-[9px] text-slate-400 mb-1 font-bold">السُمك</span>
                 <input type="range" min="2" max="15" value={penSize} onChange={(e) => setPenSize(e.target.value)} className="w-full accent-blue-500 h-1" />
               </div>
 
-              <button onClick={() => setIsSmartMode(!isSmartMode)} className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isSmartMode ? 'bg-blue-600 text-white border-2 border-sky-300' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'}`} title="الرسم المستقيم الهندسي">📐</button>
+              <button onClick={() => setIsSmartMode(!isSmartMode)} className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all mt-2 ${isSmartMode ? 'bg-blue-600 text-white border-2 border-sky-300 shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'}`} title="الرسم المستقيم الهندسي">📐</button>
 
               <div className="w-full h-px bg-slate-700 my-1"></div>
               
-              <button onClick={handleUndo} className="w-10 h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center hover:bg-slate-600"><Undo size={18}/></button>
-              <button onClick={handleClear} className="w-10 h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center hover:bg-red-500"><Trash2 size={18}/></button>
-              <button onClick={handleSaveReport} className="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center hover:bg-sky-600 shadow-lg shadow-sky-500/40 mt-2"><FileText size={18}/></button>
+              <button onClick={handleUndo} className="w-10 h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center hover:bg-slate-600" title={t.undo}><Undo size={18}/></button>
+              <button onClick={handleClear} className="w-10 h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center hover:bg-red-500" title={t.clear}><Trash2 size={18}/></button>
+              <button onClick={handleSaveReport} className="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center hover:bg-sky-600 shadow-lg shadow-sky-500/40 mt-2" title={t.saveReport}><FileText size={18}/></button>
             </div>
           </div>
         )}
 
         {/* 🧮 BOQ Estimate Popup */}
         {boqResult && isFrozen && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 backdrop-blur-md border-2 border-amber-500 p-6 rounded-3xl shadow-2xl animate-slide-down">
-            <h3 className="text-amber-500 font-black text-center mb-3 text-lg">🧮 الكميات التقديرية ({boqResult.area} m²)</h3>
+          <div className="absolute top-20 md:top-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-xl border-2 border-amber-500 p-6 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-slide-down w-[90%] md:w-auto">
+            <h3 className="text-amber-500 font-black text-center mb-4 text-lg">🧮 الكميات التقديرية ({boqResult.area} m²)</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="bg-white/5 p-2 rounded-xl border border-white/10 text-slate-300">🧱 <b className="text-sky-400">{boqResult.bricks}</b> آجور</div>
-              <div className="bg-white/5 p-2 rounded-xl border border-white/10 text-slate-300">🌑 <b className="text-sky-400">{boqResult.cement}</b> إسمنت</div>
-              <div className="bg-white/5 p-2 rounded-xl border border-white/10 text-slate-300">⏳ <b className="text-sky-400">{boqResult.sand}</b> رمل</div>
-              <div className="bg-white/5 p-2 rounded-xl border border-white/10 text-slate-300">🏗️ <b className="text-sky-400">{boqResult.steel}</b> حديد</div>
+              <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-slate-300">🧱 <b className="text-sky-400 text-lg">{boqResult.bricks}</b> آجور</div>
+              <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-slate-300">🌑 <b className="text-sky-400 text-lg">{boqResult.cement}</b> إسمنت</div>
+              <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-slate-300">⏳ <b className="text-sky-400 text-lg">{boqResult.sand}</b> رمل</div>
+              <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-slate-300">🏗️ <b className="text-sky-400 text-lg">{boqResult.steel}</b> حديد</div>
             </div>
-            <button onClick={() => setBoqResult(null)} className="w-full mt-4 bg-amber-500 text-slate-900 font-black py-2 rounded-xl">إغلاق</button>
+            <button onClick={() => setBoqResult(null)} className="w-full mt-5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-black py-2.5 rounded-xl transition-colors">إغلاق</button>
           </div>
         )}
 
       </div>
 
-      {/* 🚀 Floating Bottom Controls (تطفو دائماً لتوفير المساحة) */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex justify-center gap-3 md:gap-4 z-50">
-        <button onClick={() => {cleanupRoom(); setIsInRoom(false);}} className="bg-slate-900/80 backdrop-blur-md border border-red-500/50 hover:bg-red-600 text-red-500 hover:text-white px-5 md:px-8 py-3.5 rounded-full font-black text-xs md:text-sm transition-all flex items-center gap-2 shadow-2xl">
-          <PhoneOff size={18}/> <span className="hidden sm:inline">{t.endCall}</span>
-        </button>
-        
-        <button onClick={toggleFreeze} className={`${isFrozen ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-purple-600 shadow-purple-600/30'} text-white px-6 md:px-10 py-3.5 rounded-full font-black text-xs md:text-sm transition-all flex items-center gap-2 shadow-2xl hover:scale-105`}>
+      {/* 🚀 Floating Bottom Controls (تطفو دائماً لتوفير المساحة وتختفي القوائم العلوية) */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex justify-center gap-3 md:gap-4 z-50 w-[90%] md:w-auto">
+        <button onClick={toggleFreeze} className={`${isFrozen ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'} flex-1 md:flex-none text-white px-6 md:px-10 py-3.5 md:py-4 rounded-2xl md:rounded-full font-black text-xs md:text-sm transition-all flex items-center justify-center gap-2 shadow-2xl hover:scale-105`}>
           {isFrozen ? <><Play size={18}/> {t.unfreeze}</> : <><PauseCircle size={18}/> {t.freeze}</>}
+        </button>
+
+        <button onClick={() => {cleanupRoom(); setIsInRoom(false);}} className="bg-slate-900/90 backdrop-blur-md border border-red-500/50 hover:bg-red-600 text-red-500 hover:text-white px-5 md:px-8 py-3.5 md:py-4 flex-1 md:flex-none rounded-2xl md:rounded-full font-black text-xs md:text-sm transition-all flex items-center justify-center gap-2 shadow-2xl">
+          <PhoneOff size={18}/> <span className="hidden sm:inline">{t.endCall}</span>
         </button>
       </div>
 
