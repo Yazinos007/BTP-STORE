@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Calculator, UserCircle, MessageCircle, Store, Map, Users, Wallet, 
-  Receipt, Landmark, BarChart3, Radar, Camera
+  Receipt, Landmark, BarChart3, Radar, Camera, Truck
 } from 'lucide-react';
 import useSettingsStore from '../../store/useSettingsStore';
 
