@@ -29,6 +29,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "المصاريف والرسوم",
       tax: "النظام الجبائي",
       cpc: "المحاسبة العامة",
+      b2bInvoices: 'فواتير B2B',
+      freight: 'بورصة الشحن',
       prof: "الملف الشخصي"
     },
     fr: {
@@ -49,6 +51,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "Dépenses & Frais",
       tax: "Système Fiscal",
       cpc: "Comptabilité Générale",
+      b2bInvoices: 'Factures B2B',
+      freight: 'Bourse de Fret',
       prof: "Profil"
     },
     en: {
@@ -69,6 +73,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "Expenses & Fees",
       tax: "Tax System",
       cpc: "General Accounting",
+      b2bInvoices: 'B2B Invoices',
+      freight: 'Freight Exchange',
       prof: "Profile"
     }
   }[language] || {};
@@ -110,18 +116,17 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
         { name: t.dash, icon: LayoutDashboard, path: '/v2/contractor-dashboard' },
         { name: t.path, icon: Map, path: '/v2/project-path' },
         { name: t.calc, icon: Calculator, path: '/v2/cost-calculator' },
-        // 🚀 تم تصحيح مسار الكاميرا هنا ليطابق مكون ContractorCamera
         { name: t.cam, icon: Camera, path: '/v2/field-camera' },
       ]},
       { category: t.cat2, color: 'emerald', items: [
         { name: t.msg, icon: MessageCircle, path: '/v2/messages' },
         { name: t.market, icon: Store, path: '/v2/marketplace' },
         { name: t.radar, icon: Radar, path: '/v2/tenders' },
-        { name: "بورصة الشحن", icon: Truck, path: '/v2/freight-exchange' },
+        { name: t.freight, icon: Truck, path: '/v2/freight-exchange' },
       ]},
       { category: t.cat3, color: 'blue', items: [
         { name: t.hr, icon: Users, path: '/v2/hr' },
-        { name: "فواتير B2B", icon: Receipt, path: '/v2/b2b-invoices' },
+        { name: t.b2bInvoices, icon: Receipt, path: '/v2/b2b-invoices' },
         { name: t.acc, icon: Wallet, path: '/v2/accounts' },
         { name: t.exp, icon: Receipt, path: '/v2/expenses' },
         { name: t.tax, icon: Landmark, path: '/v2/taxes' },
