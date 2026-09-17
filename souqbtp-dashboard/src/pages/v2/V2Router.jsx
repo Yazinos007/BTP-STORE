@@ -9,6 +9,7 @@ import VendorStoreManager from './VendorStoreManager';       // 📦 لوحة إ
 import ChatRoom from './ChatRoom';
 import ContractorCamera from './ContractorCamera';
 import TenderRadar from './TenderRadar';
+import AccountsManager from './AccountsManager'; // 🚀 تم استدعاء قسم الحسابات الجديد
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
@@ -46,11 +47,15 @@ export default function V2Router({ session, supplier }) {
         {/* 🚀 السوق المتعدد الأطراف */}
         <Route path="marketplace" element={<ContractorMarketplace />} />  {/* 🛒 واجهة التسوق للمقاول */}
         <Route path="store-manager" element={<VendorStoreManager />} /> {/* 📦 إدارة المتجر للتاجر */}
+        <Route path="tenders" element={<TenderRadar />} />
         
-       <Route path="tenders" element={<TenderRadar />} />
+        {/* 🚀 المالية والمحاسبة */}
+        <Route path="accounts" element={<AccountsManager />} /> {/* 🚀 تم التفعيل */}
         
-        {/* المالية والمحاسبة */}
-        <Route path="accounts" element={<UnderConstruction title="الصناديق والحسابات" icon="🏦" />} />
+        {/* 🚀 مسارات جديدة تمت إضافتها */}
+        <Route path="b2b-invoices" element={<UnderConstruction title="فواتير B2B" icon="📑" />} />
+        <Route path="freight-exchange" element={<UnderConstruction title="بورصة الشحن التعاونية" icon="🚛" />} />
+
         <Route path="expenses" element={<UnderConstruction title="المصاريف والرسوم" icon="🧾" />} />
         <Route path="taxes" element={<UnderConstruction title="النظام الجبائي (TVA)" icon="⚖️" />} />
         <Route path="accounting" element={<UnderConstruction title="المحاسبة العامة والـ CPC" icon="📊" />} />

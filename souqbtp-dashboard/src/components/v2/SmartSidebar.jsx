@@ -115,11 +115,13 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       ]},
       { category: t.cat2, color: 'emerald', items: [
         { name: t.msg, icon: MessageCircle, path: '/v2/messages' },
-        { name: t.hr, icon: Users, path: '/v2/hr' },
         { name: t.market, icon: Store, path: '/v2/marketplace' },
         { name: t.radar, icon: Radar, path: '/v2/tenders' },
+        { name: "بورصة الشحن", icon: Truck, path: '/v2/freight-exchange' },
       ]},
       { category: t.cat3, color: 'blue', items: [
+        { name: t.hr, icon: Users, path: '/v2/hr' },
+        { name: "فواتير B2B", icon: Receipt, path: '/v2/b2b-invoices' },
         { name: t.acc, icon: Wallet, path: '/v2/accounts' },
         { name: t.exp, icon: Receipt, path: '/v2/expenses' },
         { name: t.tax, icon: Landmark, path: '/v2/taxes' },
