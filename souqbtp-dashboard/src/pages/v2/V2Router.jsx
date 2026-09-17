@@ -17,6 +17,7 @@ import ContractorExpenses from './ContractorExpenses';
 import Taxes from './Taxes';
 import ContractorAccounting from './ContractorAccounting';
 import AIAudit from './AIAudit';
+import ContractorProfile from './ContractorProfile';
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
@@ -65,7 +66,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="audit" element={<AIAudit />} />
         
         {/* الإعدادات */}
-        <Route path="profile" element={<UnderConstruction title="إعدادات الملف الشخصي" icon="⚙️" />} />
+        <Route path="profile" element={<ContractorProfile />} />
 
         {/* 🚨 التوجيه التلقائي */}
         <Route path="*" element={<Navigate to="contractor-dashboard" replace />} />
