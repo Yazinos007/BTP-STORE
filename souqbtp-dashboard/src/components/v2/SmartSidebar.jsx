@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Calculator, UserCircle, MessageCircle, Store, Map, Users, Wallet, 
-  Receipt, Landmark, BarChart3, Radar, Camera, Truck
+  Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package
 } from 'lucide-react';
 import useSettingsStore from '../../store/useSettingsStore';
 
@@ -31,6 +31,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       cpc: "المحاسبة العامة",
       b2bInvoices: 'فواتير B2B',
       freight: 'بورصة الشحن',
+      liveOrders: 'الطلبات اللحظية', // 🚀 تمت إضافته هنا
       prof: "الملف الشخصي"
     },
     fr: {
@@ -53,6 +54,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       cpc: "Comptabilité Générale",
       b2bInvoices: 'Factures B2B',
       freight: 'Bourse de Fret',
+      liveOrders: 'Commandes Live', // 🚀 تمت إضافته هنا
       prof: "Profil"
     },
     en: {
@@ -75,6 +77,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       cpc: "General Accounting",
       b2bInvoices: 'B2B Invoices',
       freight: 'Freight Exchange',
+      liveOrders: 'Live Orders', // 🚀 تمت إضافته هنا
       prof: "Profile"
     }
   }[language] || {};
@@ -123,6 +126,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
         { name: t.market, icon: Store, path: '/v2/marketplace' },
         { name: t.radar, icon: Radar, path: '/v2/tenders' },
         { name: t.freight, icon: Truck, path: '/v2/freight-exchange' },
+        { name: t.liveOrders, icon: Package, path: '/v2/live-orders' }, // 🚀 تمت إضافة الطلبات اللحظية هنا بامتياز
       ]},
       { category: t.cat3, color: 'blue', items: [
         { name: t.hr, icon: Users, path: '/v2/hr' },
@@ -181,8 +185,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
                       to={item.path} 
                       className={({ isActive }) => `flex items-center gap-3 px-6 py-3 text-sm transition-all duration-300 ${isRtl ? 'border-r-4' : 'border-l-4'} ${
                         isActive 
-                          ? `${theme.active} font-black ${theme.border} my-1 mx-2 ${isRtl ? 'rounded-l-lg' : 'rounded-r-lg'}` 
-                          : `border-transparent font-bold text-slate-400 ${theme.hover} ${isRtl ? 'hover:-translate-x-1' : 'hover:translate-x-1'}`
+                          ? `${theme.active} font-black ${theme.border} my-1 mx-2${isRtl ? 'rounded-l-lg' : 'rounded-r-lg'}` 
+                          : `border-transparent font-bold text-slate-400 ${theme.hover}${isRtl ? 'hover:-translate-x-1' : 'hover:translate-x-1'}`
                       }`}
                     >
                       {({ isActive }) => (
