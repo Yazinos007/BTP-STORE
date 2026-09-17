@@ -14,6 +14,7 @@ import FreightExchange from './FreightExchange';
 import B2bInvoices from './B2bInvoices';
 import LiveOrders from './LiveOrders';
 import ContractorExpenses from './ContractorExpenses';
+import Taxes from './Taxes';
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
@@ -61,7 +62,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="freight-exchange" element={<FreightExchange />} />
         <Route path="live-orders" element={<LiveOrders />} />
         <Route path="expenses" element={<ContractorExpenses />} />
-        <Route path="taxes" element={<UnderConstruction title="النظام الجبائي (TVA)" icon="⚖️" />} />
+        <Route path="taxes" element={<Taxes />} />
         <Route path="accounting" element={<UnderConstruction title="المحاسبة العامة والـ CPC" icon="📊" />} />
         
         {/* الإعدادات */}
