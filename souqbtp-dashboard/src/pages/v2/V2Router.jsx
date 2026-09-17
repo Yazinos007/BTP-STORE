@@ -15,6 +15,7 @@ import B2bInvoices from './B2bInvoices';
 import LiveOrders from './LiveOrders';
 import ContractorExpenses from './ContractorExpenses';
 import Taxes from './Taxes';
+import ContractorAccounting from './ContractorAccounting';
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
@@ -63,7 +64,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="live-orders" element={<LiveOrders />} />
         <Route path="expenses" element={<ContractorExpenses />} />
         <Route path="taxes" element={<Taxes />} />
-        <Route path="accounting" element={<UnderConstruction title="المحاسبة العامة والـ CPC" icon="📊" />} />
+        <Route path="accounting" element={<ContractorAccounting />} />
         
         {/* الإعدادات */}
         <Route path="profile" element={<UnderConstruction title="إعدادات الملف الشخصي" icon="⚙️" />} />
