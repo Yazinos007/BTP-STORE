@@ -16,6 +16,7 @@ import LiveOrders from './LiveOrders';
 import ContractorExpenses from './ContractorExpenses';
 import Taxes from './Taxes';
 import ContractorAccounting from './ContractorAccounting';
+import AIAudit from './AIAudit';
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
@@ -48,23 +49,20 @@ export default function V2Router({ session, supplier }) {
         
         {/* التواصل والمشتريات */}
         <Route path="messages" element={<ChatRoom />} />
-        <Route path="hr" element={<ContractorHR />} /> 
-        
-        {/* 🚀 السوق المتعدد الأطراف */}
-        <Route path="marketplace" element={<ContractorMarketplace />} />  {/* 🛒 واجهة التسوق للمقاول */}
-        <Route path="store-manager" element={<VendorStoreManager />} /> {/* 📦 إدارة المتجر للتاجر */}
+        <Route path="marketplace" element={<ContractorMarketplace />} />
+        <Route path="store-manager" element={<VendorStoreManager />} /> 
         <Route path="tenders" element={<TenderRadar />} />
-        
-        {/* 🚀 المالية والمحاسبة */}
-        <Route path="accounts" element={<AccountsManager />} /> {/* 🚀 تم التفعيل */}
-        
-        {/* 🚀 مسارات جديدة تمت إضافتها */}
-        <Route path="b2b-invoices" element={<B2bInvoices />} />
         <Route path="freight-exchange" element={<FreightExchange />} />
         <Route path="live-orders" element={<LiveOrders />} />
+            
+        {/* 🚀 المالية والمحاسبة */}
+        <Route path="hr" element={<ContractorHR />} /> 
+        <Route path="b2b-invoices" element={<B2bInvoices />} />
+        <Route path="accounts" element={<AccountsManager />} /> 
         <Route path="expenses" element={<ContractorExpenses />} />
         <Route path="taxes" element={<Taxes />} />
         <Route path="accounting" element={<ContractorAccounting />} />
+        <Route path="audit" element={<AIAudit />} />
         
         {/* الإعدادات */}
         <Route path="profile" element={<UnderConstruction title="إعدادات الملف الشخصي" icon="⚙️" />} />

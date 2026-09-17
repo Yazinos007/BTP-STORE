@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Calculator, UserCircle, MessageCircle, Store, Map, Users, Wallet, 
-  Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package
+  Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package, ShieldCheck
 } from 'lucide-react';
 import useSettingsStore from '../../store/useSettingsStore';
 
@@ -29,9 +29,10 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "المصاريف والرسوم",
       tax: "النظام الجبائي",
       cpc: "المحاسبة العامة",
+      audit: "التدقيق الذكي (Audit)",
       b2bInvoices: 'فواتير B2B',
       freight: 'بورصة الشحن',
-      liveOrders: 'الطلبات اللحظية', // 🚀 تمت إضافته هنا
+      liveOrders: 'الطلبات اللحظية', 
       prof: "الملف الشخصي"
     },
     fr: {
@@ -52,6 +53,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "Dépenses & Frais",
       tax: "Système Fiscal",
       cpc: "Comptabilité Générale",
+      audit: "Audit IA",
       b2bInvoices: 'Factures B2B',
       freight: 'Bourse de Fret',
       liveOrders: 'Commandes Live', // 🚀 تمت إضافته هنا
@@ -75,9 +77,10 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "Expenses & Fees",
       tax: "Tax System",
       cpc: "General Accounting",
+      audit: "Smart Audit",
       b2bInvoices: 'B2B Invoices',
       freight: 'Freight Exchange',
-      liveOrders: 'Live Orders', // 🚀 تمت إضافته هنا
+      liveOrders: 'Live Orders', 
       prof: "Profile"
     }
   }[language] || {};
@@ -126,7 +129,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
         { name: t.market, icon: Store, path: '/v2/marketplace' },
         { name: t.radar, icon: Radar, path: '/v2/tenders' },
         { name: t.freight, icon: Truck, path: '/v2/freight-exchange' },
-        { name: t.liveOrders, icon: Package, path: '/v2/live-orders' }, // 🚀 تمت إضافة الطلبات اللحظية هنا بامتياز
+        { name: t.liveOrders, icon: Package, path: '/v2/live-orders' },
       ]},
       { category: t.cat3, color: 'blue', items: [
         { name: t.hr, icon: Users, path: '/v2/hr' },
@@ -135,6 +138,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
         { name: t.exp, icon: Receipt, path: '/v2/expenses' },
         { name: t.tax, icon: Landmark, path: '/v2/taxes' },
         { name: t.cpc, icon: BarChart3, path: '/v2/accounting' },
+        { name: t.audit, icon: ShieldCheck, path: '/v2/audit' },
       ]},
       { category: t.cat4, color: 'purple', items: [
         { name: t.prof, icon: UserCircle, path: '/v2/profile' },
