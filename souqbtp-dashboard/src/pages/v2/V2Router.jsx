@@ -10,6 +10,7 @@ import ChatRoom from './ChatRoom';
 import ContractorCamera from './ContractorCamera';
 import TenderRadar from './TenderRadar';
 import AccountsManager from './AccountsManager'; // 🚀 تم استدعاء قسم الحسابات الجديد
+import FreightExchange from './FreightExchange';
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
@@ -54,7 +55,7 @@ export default function V2Router({ session, supplier }) {
         
         {/* 🚀 مسارات جديدة تمت إضافتها */}
         <Route path="b2b-invoices" element={<UnderConstruction title="فواتير B2B" icon="📑" />} />
-        <Route path="freight-exchange" element={<UnderConstruction title="بورصة الشحن التعاونية" icon="🚛" />} />
+        <Route path="freight-exchange" element={<FreightExchange />} />
 
         <Route path="expenses" element={<UnderConstruction title="المصاريف والرسوم" icon="🧾" />} />
         <Route path="taxes" element={<UnderConstruction title="النظام الجبائي (TVA)" icon="⚖️" />} />
