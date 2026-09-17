@@ -12,6 +12,7 @@ import TenderRadar from './TenderRadar';
 import AccountsManager from './AccountsManager'; 
 import FreightExchange from './FreightExchange';
 import B2bInvoices from './B2bInvoices';
+import LiveOrders from './LiveOrders';
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
