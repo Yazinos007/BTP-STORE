@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { 
   Truck, Search, MapPin, Calendar, Weight, ArrowRightLeft, 
-  Sparkles, CheckCircle2, Plus, Filter, Zap, ShieldCheck
+  Sparkles, CheckCircle2, Plus, Filter, Zap, ShieldCheck,
+  TrendingUp, ArrowUpRight
 } from 'lucide-react';
 import useSettingsStore from '../../store/useSettingsStore';
 
