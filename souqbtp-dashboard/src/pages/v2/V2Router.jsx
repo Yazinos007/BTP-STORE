@@ -4,13 +4,14 @@ import ContractorDashboard from './ContractorDashboard';
 import CostCalculator from './CostCalculator'; 
 import ProjectPath from './ProjectPath'; 
 import ContractorHR from './ContractorHR'; 
-import ContractorMarketplace from './ContractorMarketplace'; // 🛒 واجهة التسوق (للمشتري)
-import VendorStoreManager from './VendorStoreManager';       // 📦 لوحة إضافة المنتجات (للبائع)
+import ContractorMarketplace from './ContractorMarketplace'; 
+import VendorStoreManager from './VendorStoreManager';       
 import ChatRoom from './ChatRoom';
 import ContractorCamera from './ContractorCamera';
 import TenderRadar from './TenderRadar';
-import AccountsManager from './AccountsManager'; // 🚀 تم استدعاء قسم الحسابات الجديد
+import AccountsManager from './AccountsManager'; 
 import FreightExchange from './FreightExchange';
+import B2bInvoices from './B2bInvoices';
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
@@ -54,7 +55,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="accounts" element={<AccountsManager />} /> {/* 🚀 تم التفعيل */}
         
         {/* 🚀 مسارات جديدة تمت إضافتها */}
-        <Route path="b2b-invoices" element={<UnderConstruction title="فواتير B2B" icon="📑" />} />
+        <Route path="b2b-invoices" element={<B2bInvoices />} />
         <Route path="freight-exchange" element={<FreightExchange />} />
 
         <Route path="expenses" element={<UnderConstruction title="المصاريف والرسوم" icon="🧾" />} />
