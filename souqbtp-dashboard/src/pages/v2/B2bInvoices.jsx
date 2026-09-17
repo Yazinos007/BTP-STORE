@@ -5,7 +5,7 @@ import useSettingsStore from '../../store/useSettingsStore';
 import useSupplierStore from '../../store/useSupplierStore';
 import { 
   FileText, Search, Download, Loader2, Trash2, Plus, 
-  X, FilePlus, Save 
+  X, FilePlus, Save, Printer 
 } from 'lucide-react'; 
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -26,7 +26,7 @@ export default function B2bInvoices() {
       empty: 'لا توجد وثائق مطابقة.', loading: 'جاري التحميل...', currency: 'درهم', defaultB2B: 'تاجر B2B',
       confirmDelete: 'هل أنت متأكد من حذف هذه الوثيقة؟', successDelete: '✅ تم الحذف بنجاح', errorDelete: 'خطأ في الحذف',
       pdfBilledTo: 'موجه إلى :', pdfDesignation: 'البيان', pdfQty: 'الكمية', pdfPrice: 'السعر', pdfTotalNet: 'الإجمالي الصافي للدفع',
-      pdfCertified: 'وثيقة معتمدة من SouqBTP Cloud ERP',
+      pdfCertified: 'وثيقة معتمدة من SouqBTP Cloud ERP', print: 'طباعة',
       createDoc: 'إنشاء مستند جديد', docType: 'نوع المستند', clientName: 'اسم العميل / الشركة',
       tva: 'نسبة الضريبة (TVA)', addItem: 'إضافة سطر جديد', totalHT: 'الإجمالي (HT):',
       totalTTC: 'الإجمالي (TTC):', saveDoc: 'حفظ وإصدار المستند', 
@@ -44,7 +44,7 @@ export default function B2bInvoices() {
       empty: 'Aucun document trouvé.', loading: 'Chargement...', currency: 'MAD', defaultB2B: 'Client B2B (Auto)',
       confirmDelete: 'Êtes-vous sûr de vouloir supprimer ce document ?', successDelete: '✅ Document supprimé', errorDelete: 'Erreur de suppression',
       pdfBilledTo: 'Facturé / Adressé à :', pdfDesignation: 'Désignation', pdfQty: 'Qté', pdfPrice: 'Prix', pdfTotalNet: 'Total Net à Payer',
-      pdfCertified: 'Document certifié par SouqBTP Cloud ERP',
+      pdfCertified: 'Document certifié par SouqBTP Cloud ERP', print: 'Imprimer',
       createDoc: 'Créer un Nouveau Document', docType: 'Type de document', clientName: 'Nom du Prospect / Client',
       tva: 'Taux TVA (%)', addItem: 'Ajouter une ligne', totalHT: 'Total HT :',
       totalTTC: 'Total TTC :', saveDoc: 'Enregistrer le Document', 
@@ -62,7 +62,7 @@ export default function B2bInvoices() {
       empty: 'No documents found.', loading: 'Loading...', currency: 'MAD', defaultB2B: 'B2B Client (Auto)',
       confirmDelete: 'Are you sure you want to delete this document?', successDelete: '✅ Document deleted', errorDelete: 'Deletion error',
       pdfBilledTo: 'Billed / Addressed to:', pdfDesignation: 'Description', pdfQty: 'Qty', pdfPrice: 'Price', pdfTotalNet: 'Total Net to Pay',
-      pdfCertified: 'Document certified by SouqBTP Cloud ERP',
+      pdfCertified: 'Document certified by SouqBTP Cloud ERP', print: 'Print',
       createDoc: 'Create New Document', docType: 'Document Type', clientName: 'Client / Company Name',
       tva: 'VAT Rate (%)', addItem: 'Add Line Item', totalHT: 'Total HT:',
       totalTTC: 'Total TTC:', saveDoc: 'Save Document', 
@@ -83,15 +83,10 @@ export default function B2bInvoices() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [docForm, setDocForm] = useState({
-    type: 'Facture',
-    clientName: '',
-    tva: 20,
-    items: [{ designation: '', quantity: 1, price: 0 }]
+    type: 'Facture', clientName: '', tva: 20, items: [{ designation: '', quantity: 1, price: 0 }]
   });
 
-  useEffect(() => {
-    fetchInvoices();
-  }, [supplier]);
+  useEffect(() => { fetchInvoices(); }, [supplier]);
 
   const fetchInvoices = async () => {
     setIsLoading(true);
@@ -105,19 +100,10 @@ export default function B2bInvoices() {
     }, 800);
   };
 
-  const handleAddItem = () => {
-    setDocForm({ ...docForm, items: [...docForm.items, { designation: '', quantity: 1, price: 0 }] });
-  };
-
-  const handleRemoveItem = (index) => {
-    const newItems = docForm.items.filter((_, i) => i !== index);
-    setDocForm({ ...docForm, items: newItems });
-  };
-
+  const handleAddItem = () => setDocForm({ ...docForm, items: [...docForm.items, { designation: '', quantity: 1, price: 0 }] });
+  const handleRemoveItem = (index) => setDocForm({ ...docForm, items: docForm.items.filter((_, i) => i !== index) });
   const handleItemChange = (index, field, value) => {
-    const newItems = [...docForm.items];
-    newItems[index][field] = value;
-    setDocForm({ ...docForm, items: newItems });
+    const newItems = [...docForm.items]; newItems[index][field] = value; setDocForm({ ...docForm, items: newItems });
   };
 
   const totalHT = docForm.items.reduce((acc, item) => acc + (parseFloat(item.quantity || 0) * parseFloat(item.price || 0)), 0);
@@ -127,74 +113,68 @@ export default function B2bInvoices() {
   const handleSaveDocument = (e) => {
     e.preventDefault();
     if (!docForm.clientName || docForm.items.length === 0) return;
-
-    let prefix = 'DOC';
-    if (docForm.type === 'Facture') prefix = 'FAC';
-    else if (docForm.type === 'Devis') prefix = 'DEV';
-    else if (docForm.type === 'Bon de Livraison') prefix = 'BL';
-    else if (docForm.type === 'Bon de Commande') prefix = 'BC';
-    else if (docForm.type === 'Facture Achat') prefix = 'ACH';
-    else if (docForm.type === 'Avoir') prefix = 'AVR';
-    else if (docForm.type === "Fiche d'Expédition") prefix = 'EXP';
-
+    const prefixes = { 'Facture': 'FAC', 'Devis': 'DEV', 'Bon de Livraison': 'BL', 'Bon de Commande': 'BC', 'Facture Achat': 'ACH', 'Avoir': 'AVR', "Fiche d'Expédition": 'EXP' };
     const newDoc = {
-      id: Date.now(),
-      ref_number: `${prefix}-2026-${Math.floor(Math.random() * 1000)}`,
-      type: docForm.type,
-      client_name: docForm.clientName,
-      total_amount: docForm.type === 'Avoir' ? -totalTTC : totalTTC,
-      created_at: new Date().toISOString(),
+      id: Date.now(), ref_number: `${prefixes[docForm.type] || 'DOC'}-2026-${Math.floor(Math.random() * 1000)}`, type: docForm.type, client_name: docForm.clientName,
+      total_amount: docForm.type === 'Avoir' ? -totalTTC : totalTTC, created_at: new Date().toISOString(),
       items: docForm.items.map(item => ({ name: item.designation, quantity: item.quantity, price: item.price }))
     };
-
-    setInvoices([newDoc, ...invoices]);
-    setIsCreateModalOpen(false);
+    setInvoices([newDoc, ...invoices]); setIsCreateModalOpen(false);
     setDocForm({ type: 'Facture', clientName: '', tva: 20, items: [{ designation: '', quantity: 1, price: 0 }] });
   };
 
-  const handleDownloadPDF = async (invoice) => {
-    const isRTL = language === 'ar';
-    const alignStart = isRTL ? 'right' : 'left';
-    const alignEnd = isRTL ? 'left' : 'right';
-    const date = new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(invoice.created_at));
-    
-    const printElement = document.createElement('div');
-    printElement.style.padding = '40px'; printElement.style.width = '800px'; printElement.style.backgroundColor = 'white'; printElement.style.color = 'black'; printElement.style.fontFamily = 'Arial, sans-serif'; printElement.style.position = 'absolute'; printElement.style.left = '-9999px'; printElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
-
-    printElement.innerHTML = `
-      <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px;">
-        <div><h1 style="font-size: 32px; color: #1e293b; margin: 0; text-transform: uppercase;">${invoice.type}</h1><p style="margin: 5px 0; color: #64748b;">Réf: ${invoice.ref_number}</p></div>
-        <div style="text-align: ${alignEnd};"><h2 style="margin: 0; color: #1e293b;">${supplier?.store_name || 'ENTREPRISE BTP'}</h2><p style="margin: 5px 0; color: #64748b;">Date: ${date}</p></div>
+  const generateHTML = (invoice) => {
+    const isRTL = language === 'ar'; const alignStart = isRTL ? 'right' : 'left'; const alignEnd = isRTL ? 'left' : 'right';
+    const date = new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(invoice.created_at));
+    return `
+      <div style="direction: ${isRTL ? 'rtl' : 'ltr'}; font-family: Arial, sans-serif; color: black; padding: 40px; background: white; width: 800px;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px;">
+          <div><h1 style="font-size: 32px; color: #1e293b; margin: 0; text-transform: uppercase;">${invoice.type}</h1><p style="margin: 5px 0; color: #64748b;">Réf: ${invoice.ref_number}</p></div>
+          <div style="text-align: ${alignEnd};"><h2 style="margin: 0; color: #1e293b;">${supplier?.store_name || 'ENTREPRISE BTP'}</h2><p style="margin: 5px 0; color: #64748b;">Date: ${date}</p></div>
+        </div>
+        <div style="margin-bottom: 40px; padding: 20px; background: #f8fafc; border-radius: 10px; text-align: ${alignStart};">
+          <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: bold;">${t.pdfBilledTo}</p><p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #1e293b;">${invoice.client_name}</p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+          <thead><tr style="background: #1e293b; color: white;"><th style="padding: 15px; text-align: ${alignStart};">${t.pdfDesignation}</th><th style="padding: 15px; text-align: center;">${t.pdfQty}</th><th style="padding: 15px; text-align: ${alignEnd};">${t.pdfPrice} (${t.currency})</th></tr></thead>
+          <tbody>
+            ${(invoice.items || []).map(item => `<tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 15px; font-weight: bold; text-align: ${alignStart};">${item.name}</td><td style="padding: 15px; text-align: center;">${item.quantity}</td><td style="padding: 15px; text-align: ${alignEnd};" dir="ltr">${Number(item.price).toLocaleString()}</td></tr>`).join('')}
+          </tbody>
+        </table>
+        <div style="text-align: ${alignEnd}; border-top: 2px solid #1e293b; padding-top: 20px;">
+          <p style="font-size: 14px; color: #64748b; margin: 0;">${t.pdfTotalNet}</p><p style="font-size: 36px; font-weight: 900; color: ${invoice.type === 'Avoir' ? '#ef4444' : '#059669'}; margin: 5px 0;" dir="ltr">${Number(invoice.total_amount).toLocaleString()} ${t.currency}</p>
+        </div>
+        <div style="margin-top: 100px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 20px;"><p style="font-size: 10px; color: #94a3b8;">${t.pdfCertified}</p></div>
       </div>
-      <div style="margin-bottom: 40px; padding: 20px; background: #f8fafc; border-radius: 10px; text-align: ${alignStart};">
-        <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: bold;">${t.pdfBilledTo}</p>
-        <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #1e293b;">${invoice.client_name}</p>
-      </div>
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
-        <thead><tr style="background: #1e293b; color: white;"><th style="padding: 15px; text-align: ${alignStart};">${t.pdfDesignation}</th><th style="padding: 15px; text-align: center;">${t.pdfQty}</th><th style="padding: 15px; text-align: ${alignEnd};">${t.pdfPrice} (${t.currency})</th></tr></thead>
-        <tbody>
-          ${(invoice.items || []).map(item => `
-            <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 15px; font-weight: bold; text-align: ${alignStart};">${item.name}</td><td style="padding: 15px; text-align: center;">${item.quantity}</td><td style="padding: 15px; text-align: ${alignEnd};" dir="ltr">${Number(item.price).toLocaleString()}</td></tr>
-          `).join('')}
-        </tbody>
-      </table>
-      <div style="text-align: ${alignEnd}; border-top: 2px solid #1e293b; padding-top: 20px;">
-        <p style="font-size: 14px; color: #64748b; margin: 0;">${t.pdfTotalNet}</p>
-        <p style="font-size: 36px; font-weight: 900; color: ${invoice.type === 'Avoir' ? '#ef4444' : '#059669'}; margin: 5px 0;" dir="ltr">${Number(invoice.total_amount).toLocaleString()} ${t.currency}</p>
-      </div>
-      <div style="margin-top: 100px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 20px;"><p style="font-size: 10px; color: #94a3b8;">${t.pdfCertified}</p></div>
     `;
+  };
 
+  const handleDownloadPDF = async (invoice) => {
+    const printElement = document.createElement('div');
+    printElement.style.position = 'absolute'; printElement.style.left = '-9999px';
+    printElement.innerHTML = generateHTML(invoice);
     document.body.appendChild(printElement);
     try {
-      const canvas = await html2canvas(printElement, { scale: 2 });
+      const canvas = await html2canvas(printElement.firstElementChild, { scale: 2 });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`${invoice.type}_${invoice.ref_number}.pdf`);
+      const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight); pdf.save(`${invoice.type}_${invoice.ref_number}.pdf`);
     } catch(err) { console.error(err); } finally { document.body.removeChild(printElement); }
+  };
+
+  // 🖨️ وظيفة الطباعة المباشرة
+  const handlePrintDocument = (invoice) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    iframe.contentDocument.write(generateHTML(invoice));
+    iframe.contentDocument.close();
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 500);
   };
 
   const handleDeleteInvoice = async (id) => {
@@ -230,26 +210,20 @@ export default function B2bInvoices() {
 
   return (
     <div className={`space-y-8 animate-fade-in max-w-7xl mx-auto pb-24`} dir={isRtl ? 'rtl' : 'ltr'}>
-      
       <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${bgMain} border-2 p-8 rounded-[2rem] shadow-xl relative overflow-hidden`}>
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
         <div className="relative z-10">
-          <h2 className={`text-3xl md:text-4xl font-black ${textMain} flex items-center gap-4`}>
-            <FileText className="text-emerald-500" size={36} /> {t.title}
-          </h2>
+          <h2 className={`text-3xl md:text-4xl font-black ${textMain} flex items-center gap-4`}><FileText className="text-emerald-500" size={36} /> {t.title}</h2>
           <p className={`${textMuted} font-bold mt-2`}>{t.subtitle}</p>
         </div>
-
         <div className="flex flex-wrap items-center gap-3 relative z-10 w-full md:w-auto">
           <div className="relative flex-1 md:flex-none">
             <Search className={`absolute ${isRtl ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-slate-500`} size={18} />
             <input type="text" placeholder={t.searchPlaceholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full md:w-64 ${isRtl ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3.5 ${bgInput} border-2 rounded-xl outline-none focus:border-emerald-500 transition-all font-bold text-sm`} />
           </div>
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className={`${bgInput} border-2 rounded-xl px-5 py-3.5 outline-none focus:border-emerald-500 text-sm font-black cursor-pointer transition-all`}>
-            <option value="All">{t.filterAll}</option>
-            {Object.keys(t.docTypes).map(key => <option key={key} value={key}>{t.docTypes[key]}</option>)}
+            <option value="All">{t.filterAll}</option>{Object.keys(t.docTypes).map(key => <option key={key} value={key}>{t.docTypes[key]}</option>)}
           </select>
-          
           <button onClick={() => setIsCreateModalOpen(true)} className="bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-emerald-500/30 flex items-center gap-2">
             <Plus size={18} /> <span className="hidden md:inline">{t.createDoc}</span>
           </button>
@@ -261,37 +235,29 @@ export default function B2bInvoices() {
           <table className="w-full text-start">
             <thead>
               <tr className={`border-b ${tableHeadBg} text-xs uppercase font-black`}>
-                <th className="p-6 tracking-widest text-start">{t.ref}</th>
-                <th className="p-6 tracking-widest text-start">{t.client}</th>
-                <th className="p-6 tracking-widest text-start">{t.date}</th>
-                <th className="p-6 tracking-widest text-start">{t.type}</th>
-                <th className={`p-6 tracking-widest ${isRtl ? 'text-start' : 'text-end'}`}>{t.amount}</th>
-                <th className="p-6 tracking-widest text-center">{t.actions}</th>
+                <th className="p-6 tracking-widest text-start">{t.ref}</th><th className="p-6 tracking-widest text-start">{t.client}</th><th className="p-6 tracking-widest text-start">{t.date}</th><th className="p-6 tracking-widest text-start">{t.type}</th><th className={`p-6 tracking-widest ${isRtl ? 'text-start' : 'text-end'}`}>{t.amount}</th><th className="p-6 tracking-widest text-center">{t.actions}</th>
               </tr>
             </thead>
             <tbody className={`divide-y ${tableRowHover}`}>
-              {isLoading ? (
-                <tr><td colSpan="6" className="p-16 text-center"><Loader2 size={36} className="animate-spin text-emerald-500 mx-auto"/></td></tr>
-              ) : filteredInvoices.length === 0 ? (
-                <tr><td colSpan="6" className={`p-16 text-center ${textMuted} font-black text-lg`}>{t.empty}</td></tr>
-              ) : (
+              {isLoading ? (<tr><td colSpan="6" className="p-16 text-center"><Loader2 size={36} className="animate-spin text-emerald-500 mx-auto"/></td></tr>) 
+              : filteredInvoices.length === 0 ? (<tr><td colSpan="6" className={`p-16 text-center ${textMuted} font-black text-lg`}>{t.empty}</td></tr>) 
+              : (
                 filteredInvoices.map(inv => (
                   <tr key={inv.id} className={`transition-colors group ${isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'}`}>
                     <td className={`p-6 font-black ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`} dir="ltr">#{inv.ref_number}</td>
                     <td className={`p-6 font-black ${textMain}`}>{inv.client_name}</td>
                     <td className={`p-6 ${textMuted} text-sm font-bold`}>{new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(inv.created_at))}</td>
-                    <td className="p-6">
-                      <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${getDocBadgeStyle(inv.type)}`}>
-                        {inv.type}
-                      </span>
-                    </td>
+                    <td className="p-6"><span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${getDocBadgeStyle(inv.type)}`}>{inv.type}</span></td>
                     <td className={`p-6 ${isRtl ? 'text-start' : 'text-end'} font-black text-xl ${inv.type === 'Avoir' ? 'text-red-500' : textMain} font-mono`} dir="ltr">
                       {Number(inv.total_amount).toLocaleString()} <span className={`text-xs ${textMuted} font-black uppercase`}>{t.currency}</span>
                     </td>
                     <td className="p-6 text-center">
-                      <div className="flex justify-center items-center gap-3">
-                        <button onClick={() => handleDownloadPDF(inv)} className={`p-3 ${isDarkMode ? 'bg-slate-800 hover:bg-emerald-600 text-slate-300' : 'bg-slate-100 hover:bg-emerald-500 text-slate-600'} hover:text-white rounded-xl transition-all shadow-sm group-hover:scale-105`} title="تحميل PDF"><Download size={18} /></button>
-                        <button onClick={() => handleDeleteInvoice(inv.id)} className={`p-3 ${isDarkMode ? 'bg-slate-800 hover:bg-red-600 text-slate-300' : 'bg-slate-100 hover:bg-red-500 text-slate-600'} hover:text-white rounded-xl transition-all shadow-sm group-hover:scale-105`} title="حذف"><Trash2 size={18} /></button>
+                      <div className="flex justify-center items-center gap-2">
+                        {/* 🖨️ زر الطباعة المباشرة */}
+                        <button onClick={() => handlePrintDocument(inv)} className={`p-3 ${isDarkMode ? 'bg-slate-800 hover:bg-blue-600 text-slate-300' : 'bg-slate-100 hover:bg-blue-500 text-slate-600'} hover:text-white rounded-xl transition-all shadow-sm group-hover:scale-105`} title={t.print}><Printer size={18} /></button>
+                        {/* 📄 زر استخراج الـ PDF */}
+                        <button onClick={() => handleDownloadPDF(inv)} className={`p-3 ${isDarkMode ? 'bg-slate-800 hover:bg-emerald-600 text-slate-300' : 'bg-slate-100 hover:bg-emerald-500 text-slate-600'} hover:text-white rounded-xl transition-all shadow-sm group-hover:scale-105`} title="PDF"><Download size={18} /></button>
+                        <button onClick={() => handleDeleteInvoice(inv.id)} className={`p-3 ${isDarkMode ? 'bg-slate-800 hover:bg-red-600 text-slate-300' : 'bg-slate-100 hover:bg-red-500 text-slate-600'} hover:text-white rounded-xl transition-all shadow-sm group-hover:scale-105`} title="Delete"><Trash2 size={18} /></button>
                       </div>
                     </td>
                   </tr>
@@ -305,15 +271,10 @@ export default function B2bInvoices() {
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex justify-center items-center p-4 animate-fade-in" dir={isRtl ? 'rtl' : 'ltr'}>
           <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} border w-full max-w-4xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col`}>
-            
-            <div className={`p-6 border-b ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex justify-between items-center`}>
-              <h3 className={`text-xl font-black ${textMain} flex items-center gap-3`}><FilePlus className="text-emerald-500" /> {t.createDoc}</h3>
-              <button onClick={() => setIsCreateModalOpen(false)} className={`p-2 rounded-xl transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-200 text-slate-600'}`}><X size={20}/></button>
-            </div>
+            <div className={`p-6 border-b ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex justify-between items-center`}><h3 className={`text-xl font-black ${textMain} flex items-center gap-3`}><FilePlus className="text-emerald-500" /> {t.createDoc}</h3><button onClick={() => setIsCreateModalOpen(false)} className={`p-2 rounded-xl transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-200 text-slate-600'}`}><X size={20}/></button></div>
             
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
               <form id="docForm" onSubmit={handleSaveDocument} className="space-y-6">
-                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className={`text-xs font-bold ${textMuted}`}>{t.docType}</label>
@@ -323,7 +284,7 @@ export default function B2bInvoices() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className={`text-xs font-bold ${textMuted}`}>{t.clientName}</label>
-                    <input required type="text" placeholder="..." value={docForm.clientName} onChange={(e) => setDocForm({...docForm, clientName: e.target.value})} className={`w-full p-4 rounded-xl border outline-none font-bold text-sm focus:border-emerald-500 ${bgInput}`} />
+                    <input required type="text" value={docForm.clientName} onChange={(e) => setDocForm({...docForm, clientName: e.target.value})} className={`w-full p-4 rounded-xl border outline-none font-bold text-sm focus:border-emerald-500 ${bgInput}`} placeholder="..." />
                   </div>
                 </div>
 
@@ -337,57 +298,29 @@ export default function B2bInvoices() {
                   
                   {docForm.items.map((item, index) => (
                     <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-center animate-slide-down">
-                      <div className="md:col-span-6">
-                        <input required type="text" placeholder="Ex: Ciment Portland..." value={item.designation} onChange={(e) => handleItemChange(index, 'designation', e.target.value)} className={`w-full p-3.5 rounded-xl border outline-none font-bold text-sm focus:border-emerald-500 ${bgInput}`} />
-                      </div>
-                      <div className="md:col-span-2">
-                        <input required type="number" min="1" placeholder="1" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className={`w-full p-3.5 rounded-xl border outline-none font-bold text-sm text-center focus:border-emerald-500 ${bgInput}`} />
-                      </div>
-                      <div className="md:col-span-3">
-                        <input required type="number" min="0" placeholder="0.00" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} className={`w-full p-3.5 rounded-xl border outline-none font-mono font-bold text-sm text-center focus:border-emerald-500 ${bgInput}`} />
-                      </div>
-                      <div className="md:col-span-1 text-center">
-                        <button type="button" onClick={() => handleRemoveItem(index)} disabled={docForm.items.length === 1} className="p-3 text-red-500 hover:bg-red-500/10 rounded-xl disabled:opacity-30 transition-colors">
-                          <Trash2 size={20} />
-                        </button>
-                      </div>
+                      <div className="md:col-span-6"><input required type="text" value={item.designation} onChange={(e) => handleItemChange(index, 'designation', e.target.value)} className={`w-full p-3.5 rounded-xl border outline-none font-bold text-sm focus:border-emerald-500 ${bgInput}`} placeholder="..." /></div>
+                      <div className="md:col-span-2"><input required type="number" min="1" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className={`w-full p-3.5 rounded-xl border outline-none font-bold text-sm text-center focus:border-emerald-500 ${bgInput}`} /></div>
+                      <div className="md:col-span-3"><input required type="number" min="0" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} className={`w-full p-3.5 rounded-xl border outline-none font-mono font-bold text-sm text-center focus:border-emerald-500 ${bgInput}`} /></div>
+                      <div className="md:col-span-1 text-center"><button type="button" onClick={() => handleRemoveItem(index)} disabled={docForm.items.length === 1} className="p-3 text-red-500 hover:bg-red-500/10 rounded-xl disabled:opacity-30 transition-colors"><Trash2 size={20} /></button></div>
                     </div>
                   ))}
-
-                  <button type="button" onClick={handleAddItem} className="mt-2 text-blue-500 hover:text-blue-400 font-black text-sm flex items-center gap-2 transition-colors">
-                    <Plus size={16} /> {t.addItem}
-                  </button>
+                  <button type="button" onClick={handleAddItem} className="mt-2 text-blue-500 hover:text-blue-400 font-black text-sm flex items-center gap-2 transition-colors"><Plus size={16} /> {t.addItem}</button>
                 </div>
 
                 <div className="flex flex-col md:flex-row justify-between items-end gap-6 pt-4">
                   <div className="w-full md:w-48 space-y-2">
                     <label className={`text-xs font-bold ${textMuted}`}>{t.tva}</label>
-                    <select value={docForm.tva} onChange={(e) => setDocForm({...docForm, tva: Number(e.target.value)})} className={`w-full p-4 rounded-xl border outline-none font-bold text-sm ${bgInput}`}>
-                      <option value="20">20%</option>
-                      <option value="14">14%</option>
-                      <option value="0">0%</option>
-                    </select>
+                    <select value={docForm.tva} onChange={(e) => setDocForm({...docForm, tva: Number(e.target.value)})} className={`w-full p-4 rounded-xl border outline-none font-bold text-sm ${bgInput}`}><option value="20">20%</option><option value="14">14%</option><option value="0">0%</option></select>
                   </div>
-                  
                   <div className={`w-full md:w-72 p-6 rounded-2xl border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                    <div className={`flex justify-between items-center mb-3 text-sm font-bold ${textMuted}`}>
-                      <span>{t.totalHT}</span>
-                      <span className="font-mono" dir="ltr">{totalHT.toLocaleString()}</span>
-                    </div>
-                    <div className={`flex justify-between items-center mb-4 text-sm font-bold ${textMuted}`}>
-                      <span>TVA ({docForm.tva}%) :</span>
-                      <span className="font-mono" dir="ltr">{tvaAmount.toLocaleString()}</span>
-                    </div>
-                    <div className={`flex justify-between items-center pt-4 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-300'}`}>
-                      <span className={`font-black ${textMain}`}>{t.totalTTC}</span>
-                      <span className={`text-xl font-black ${docForm.type === 'Avoir' ? 'text-red-500' : 'text-emerald-500'} font-mono`} dir="ltr">{totalTTC.toLocaleString()}</span>
-                    </div>
+                    <div className={`flex justify-between items-center mb-3 text-sm font-bold ${textMuted}`}><span>{t.totalHT}</span><span className="font-mono" dir="ltr">{totalHT.toLocaleString()}</span></div>
+                    <div className={`flex justify-between items-center mb-4 text-sm font-bold ${textMuted}`}><span>TVA ({docForm.tva}%) :</span><span className="font-mono" dir="ltr">{tvaAmount.toLocaleString()}</span></div>
+                    <div className={`flex justify-between items-center pt-4 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-300'}`}><span className={`font-black ${textMain}`}>{t.totalTTC}</span><span className={`text-xl font-black ${docForm.type === 'Avoir' ? 'text-red-500' : 'text-emerald-500'} font-mono`} dir="ltr">{totalTTC.toLocaleString()}</span></div>
                   </div>
                 </div>
-
               </form>
             </div>
-
+            
             <div className={`p-6 border-t ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex justify-end`}>
               <button form="docForm" type="submit" className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 px-8 rounded-xl transition-all shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2">
                 <Save size={20} /> {t.saveDoc}
@@ -397,7 +330,6 @@ export default function B2bInvoices() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
