@@ -3,14 +3,13 @@ import { useOutletContext } from 'react-router-dom';
 import useSettingsStore from '../../store/useSettingsStore';
 import { 
   ShieldCheck, AlertTriangle, TrendingUp, Download, FileSignature, 
-  CheckCircle, Loader2, BrainCircuit, Activity, FileText, CreditCard,
-  Wifi
+  CheckCircle, Loader2, BrainCircuit, Activity, FileText, CreditCard 
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, CartesianGrid, Tooltip, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// 🚀 خوارزمية الرسوم المتحركة الدرامية (7 ثواني للتحميل الأولي)
+// 🚀 خوارزمية الرسوم المتحركة للأرقام الإحصائية
 function useAnimatedNumber(endValue, duration = 7000) {
   const [value, setValue] = useState(0);
   useEffect(() => {
@@ -28,6 +27,26 @@ function useAnimatedNumber(endValue, duration = 7000) {
   return value;
 }
 
+// 🚀 خوارزمية توليد بيانات "منصة التداول" المتذبذبة
+const generateTradingData = (numPoints) => {
+  let data = [];
+  let currentBudget = 20000;
+  let currentSpent = 15000;
+  for (let i = 0; i < numPoints; i++) {
+    currentBudget += (134400 - 20000) / numPoints; // تصاعد تدريجي للميزانية
+    // تذبذب حاد للإنفاق لمحاكاة التداول (Volatility)
+    const volatility = (Math.random() * 8000) - 3000; 
+    currentSpent += ((122800 - 15000) / numPoints) + volatility;
+    
+    data.push({
+      name: `T-${numPoints - i}`,
+      budget: Math.floor(currentBudget),
+      spent: Math.floor(currentSpent),
+    });
+  }
+  return data;
+};
+
 export default function AIAudit() {
   const context = useOutletContext() || {};
   const isDarkMode = context.isDarkMode !== undefined ? context.isDarkMode : true; 
@@ -38,40 +57,35 @@ export default function AIAudit() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
 
-  // توليد بيانات تاريخية لتبدو مثل منصة تداول حقيقية (20 نقطة زمنية)
-  const initialChartData = Array.from({ length: 20 }, (_, i) => {
-    const progress = i / 19;
-    return {
-      name: `Day ${i + 1}`,
-      budget: Math.floor(20000 + (progress * 114400)), // يتصاعد لـ 134400
-      spent: Math.floor(18000 + (progress * 104800) + (Math.random() * 2000 - 1000)), // يتصاعد لـ 122800 مع تذبذب
-    };
-  });
-
-  const [liveChartData, setLiveChartData] = useState(initialChartData);
+  // حالة بيانات الرسم البياني (60 نقطة لجعله معقداً كشاشة التداول)
+  const [liveChartData, setLiveChartData] = useState([]);
 
   useEffect(() => { 
+    setLiveChartData(generateTradingData(60));
     setTimeout(() => setIsLoading(false), 800); 
     setTimeout(() => setMounted(true), 1200);
 
-    // 🚀 خوارزمية التداول الحي (تحديث النقطة الأخيرة ببطء وسلاسة)
+    // 🚀 محرك الشاشة المتحركة (Scrolling Ticker Engine)
     const timer = setTimeout(() => {
       const interval = setInterval(() => {
         setLiveChartData(prevData => {
-          const newData = [...prevData];
-          const lastIndex = newData.length - 1;
-          const currentSpent = newData[lastIndex].spent;
+          const newData = [...prevData.slice(1)]; // حذف أقدم نقطة (للحركة المستمرة)
+          const lastPoint = prevData[prevData.length - 1];
           
-          // تموج بطيء بمقدار +/- 300 درهم
-          const fluctuation = Math.sin(Date.now() / 2000) * 300; 
+          // توليد نقطة جديدة بتموج حاد (Trading Tick)
+          const volatility = (Math.random() * 5000) - 2000; 
+          const newSpent = Math.max(0, lastPoint.spent + volatility);
           
-          newData[lastIndex] = {
-            ...newData[lastIndex],
-            spent: Math.max(0, Math.floor(122800 + fluctuation)) // التمركز حول 122800
-          };
+          newData.push({
+            name: 'LIVE',
+            budget: 134400, // الميزانية النهائية ثابتة في هذه المرحلة
+            spent: Math.floor(newSpent),
+          });
+          
           return newData;
         });
-      }, 2500); // تحديث كل ثانيتين ونصف ليسمح بالقراءة المريحة
+      }, 1000); // تحديث كل ثانية ليعطي نبضاً حياً ومستمراً!
+      
       return () => clearInterval(interval);
     }, 7000);
 
@@ -238,31 +252,23 @@ export default function AIAudit() {
     <>
       <style>
         {`
-          /* 🚀 تأثير الهولوغرام السابح (Breathing Wave Animation) */
+          /* 🚀 تأثير الهولوغرام السابح */
           @keyframes hologram-swim {
             0% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(6,182,212,0.3)); }
             50% { transform: translateY(-6px); filter: drop-shadow(0 0 25px rgba(6,182,212,0.6)); }
             100% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(6,182,212,0.3)); }
           }
-          .animate-hologram {
-            animation: hologram-swim 6s ease-in-out infinite;
-          }
+          .animate-hologram { animation: hologram-swim 6s ease-in-out infinite; }
           
           /* تأثير خط المسح الديجيتال (Radar Scan Line) */
           @keyframes scanline {
             0% { transform: translateX(-100%) skewX(-15deg); }
             100% { transform: translateX(300%) skewX(-15deg); }
           }
-          .animate-scan {
-            animation: scanline 3s linear infinite;
-          }
+          .animate-scan { animation: scanline 3s linear infinite; }
 
           /* زوايا الـ HUD للبطاقات */
-          .hud-corner {
-            position: absolute; width: 15px; height: 15px;
-            border-color: #06b6d4; border-style: solid;
-            pointer-events: none; opacity: 0.7;
-          }
+          .hud-corner { position: absolute; width: 15px; height: 15px; border-color: #06b6d4; border-style: solid; pointer-events: none; opacity: 0.7; }
           .hud-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; border-top-left-radius: 20px;}
           .hud-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; border-top-right-radius: 20px;}
           .hud-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; border-bottom-left-radius: 20px;}
@@ -314,10 +320,10 @@ export default function AIAudit() {
           </div>
         </div>
 
-        {/* 🌌 Holographic Trading Chart (MASSIVE & BREATHING) */}
+        {/* 🌌 Holographic Trading Chart (MASSIVE & BREATHING LIKE FOREX) */}
         <div className={`${bgMain} border-2 border-cyan-500/30 rounded-[2rem] p-8 shadow-[0_0_40px_rgba(6,182,212,0.15)] relative overflow-hidden animate-hologram`}>
           {/* Cyberpunk grid background */}
-          <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#06b6d4 1px, transparent 1px), linear-gradient(90deg, #06b6d4 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+          <div className="absolute inset-0 pointer-events-none opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(#06b6d4 1px, transparent 1px), linear-gradient(90deg, #06b6d4 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
           {/* Scanning Line */}
           <div className="absolute top-0 bottom-0 w-48 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent pointer-events-none animate-scan z-20"></div>
 
@@ -333,6 +339,7 @@ export default function AIAudit() {
           {/* 🚀 ارتفاع هائل للمخطط ليفقد المحاسب صوابه (500px) */}
           <div className="h-[500px] w-full relative z-10" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
+              {/* 🚀 غيرنا النوع إلى linear ليعطي شكل تداول حاد */}
               <AreaChart data={liveChartData} margin={{ top: 30, right: 0, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorSpent" x1="0" y1="0" x2="0" y2="1">
@@ -344,16 +351,19 @@ export default function AIAudit() {
                     <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                {/* شبكة إحداثيات مستقبلية */}
-                <CartesianGrid strokeDasharray="3 10" vertical={false} stroke={isDarkMode ? 'rgba(51, 65, 85, 0.5)' : '#e2e8f0'} />
+                {/* 🚀 شبكة إحداثيات مرئية بقوة لمحاكاة منصات التداول */}
+                <CartesianGrid strokeDasharray="3 3" vertical={true} stroke={isDarkMode ? 'rgba(6,182,212,0.15)' : 'rgba(6,182,212,0.2)'} />
                 
+                <XAxis dataKey="name" hide />
+                <YAxis hide domain={['dataMin - 1000', 'dataMax + 1000']} />
+
                 <Tooltip 
                   contentStyle={{ borderRadius: '16px', border: '1px solid rgba(6,182,212,0.5)', background: isDarkMode ? 'rgba(15,23,42,0.95)' : '#fff', color: isDarkMode ? '#fff' : '#000', fontWeight: 'bold', boxShadow: '0 0 30px rgba(6,182,212,0.5)', backdropFilter: 'blur(10px)' }} 
                 />
                 
-                {/* 🚀 الترجمة مدمجة هنا في name مع انيميشن سلسة */}
-                <Area type="monotone" dataKey="budget" name={t.chartBudget} stroke="#a855f7" strokeWidth={3} fillOpacity={1} fill="url(#colorBudget)" animationDuration={7000} strokeDasharray="5 5" />
-                <Area type="monotone" dataKey="spent" name={t.chartSpent} stroke="#06b6d4" strokeWidth={5} fillOpacity={1} fill="url(#colorSpent)" activeDot={{ r: 12, fill: '#06b6d4', stroke: '#fff', strokeWidth: 3, style: { filter: 'drop-shadow(0px 0px 20px #06b6d4)'} }} animationDuration={1000} animationEasing="linear" />
+                {/* 🚀 استخدام type="linear" للحصول على الخطوط الحادة كالأسهم */}
+                <Area type="linear" dataKey="budget" name={t.chartBudget} stroke="#a855f7" strokeWidth={3} fillOpacity={1} fill="url(#colorBudget)" animationDuration={300} strokeDasharray="5 5" />
+                <Area type="linear" dataKey="spent" name={t.chartSpent} stroke="#06b6d4" strokeWidth={4} fillOpacity={1} fill="url(#colorSpent)" activeDot={{ r: 8, fill: '#06b6d4', stroke: '#fff', strokeWidth: 3, style: { filter: 'drop-shadow(0px 0px 15px #06b6d4)'} }} animationDuration={300} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
