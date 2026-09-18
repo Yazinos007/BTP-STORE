@@ -14,7 +14,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
     ar: {
       roleTitle: "مكتب المقاول",
       premium: "الترقية والـ VIP 👑",
-      sub: "باقات الاشتراك ⚡",
+      sub: "الترقية للإمبراطورية ⚡",
       cat1: "القيادة والميدان",
       cat2: "التواصل والمشتريات",
       cat3: "المالية والمحاسبة",
@@ -66,7 +66,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
     en: {
       roleTitle: "Contractor Office",
       premium: "Upgrade & VIP 👑",
-      sub: "Subscriptions ⚡",
+      sub: "Upgrade to Enterprise ⚡",
       cat1: "Leadership & Field",
       cat2: "Communication & Purchases",
       cat3: "Finance & Accounting",
@@ -92,13 +92,13 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
   }[language] || {};
 
   const colorMap = {
-    // 🌟 اللون الذهبي/العنبري الخاص بباقة الاشتراك في الأعلى
-    amber: {
-      active: 'bg-amber-500/20 border-amber-500 text-amber-400 active-pulse-amber',
-      icon: 'text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]',
-      hover: 'hover:bg-amber-500/10 hover:text-amber-300',
-      border: 'border-amber-500',
-      header: 'bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-400 text-shimmer'
+    // 🌟 اللون الخاص بالترقية (VIP) المغناطيسي
+    vip: {
+      active: 'bg-orange-500/20 border-orange-500 text-orange-400 active-pulse-vip',
+      icon: 'text-orange-400 drop-shadow-[0_0_12px_rgba(249,115,22,0.9)] animate-pulse',
+      hover: 'hover:bg-orange-500/10 hover:text-orange-300',
+      border: 'border-orange-500',
+      header: 'text-orange-400 font-black tracking-widest drop-shadow-[0_0_5px_rgba(249,115,22,0.6)]'
     },
     orange: {
       active: 'bg-orange-500/20 border-orange-500 text-white active-pulse-orange',
@@ -132,9 +132,9 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
 
   const roleMenus = {
     contractor: [
-      // 🚀 تم وضع الاشتراك في القمة بلون جذّاب
-      { category: t.premium, color: 'amber', items: [
-        { name: t.sub, icon: Zap, path: '/v2/subscription' },
+      // 🚀 تمييز قسم الـ VIP بقوة في الأعلى
+      { category: t.premium, color: 'vip', items: [
+        { name: t.sub, icon: Zap, path: '/v2/subscription', isVIP: true },
       ]},
       { category: t.cat1, color: 'orange', items: [
         { name: t.dash, icon: LayoutDashboard, path: '/v2/contractor-dashboard' },
@@ -173,9 +173,22 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
           @keyframes shimmer-sweep { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
           .text-shimmer { background-size: 200% auto; animation: shimmer-sweep 5s linear infinite; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
           
-          /* 🌟 تأثير النبض الذهبي للزر الجديد */
-          @keyframes pulse-border-amber { 0% { box-shadow: 0 0 0 0 rgba(245,158,11,0.5); } 70% { box-shadow: 0 0 0 8px rgba(245,158,11,0); } 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); } }
-          .active-pulse-amber { animation: pulse-border-amber 2s infinite; }
+          /* 🌟 تأثير النبض الجذاب للـ VIP */
+          @keyframes pulse-border-vip { 
+            0% { box-shadow: 0 0 0 0 rgba(249,115,22,0.6); background-color: rgba(249,115,22,0.1); } 
+            70% { box-shadow: 0 0 0 10px rgba(249,115,22,0); background-color: rgba(249,115,22,0.2); } 
+            100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); background-color: rgba(249,115,22,0.1); } 
+          }
+          .active-pulse-vip { animation: pulse-border-vip 2s infinite; }
+          .vip-btn-glow { 
+            background: linear-gradient(90deg, rgba(249,115,22,0.15) 0%, rgba(249,115,22,0.05) 100%);
+            border-left-color: #f97316;
+            animation: pulse-border-vip 3s infinite;
+          }
+          .vip-text-glow {
+            text-shadow: 0 0 8px rgba(249,115,22,0.8);
+            color: #fb923c !important;
+          }
           
           @keyframes pulse-border-orange { 0% { box-shadow: 0 0 0 0 rgba(249,115,22,0.5); } 70% { box-shadow: 0 0 0 8px rgba(249,115,22,0); } 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); } }
           @keyframes pulse-border-emerald { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
@@ -211,16 +224,16 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
                     <NavLink 
                       key={idx} 
                       to={item.path} 
-                      className={({ isActive }) => `flex items-center gap-3 px-6 py-3 text-sm transition-all duration-300 ${isRtl ? 'border-r-4' : 'border-l-4'} ${
+                      className={({ isActive }) => `flex items-center gap-3 px-6 py-3.5 text-sm transition-all duration-300 ${isRtl ? 'border-r-4' : 'border-l-4'} ${
                         isActive 
                           ? `${theme.active} font-black ${theme.border} my-1 mx-2${isRtl ? 'rounded-l-lg' : 'rounded-r-lg'}` 
-                          : `border-transparent font-bold text-slate-400 ${theme.hover}${isRtl ? 'hover:-translate-x-1' : 'hover:translate-x-1'}`
+                          : `font-bold text-slate-400 border-transparent ${theme.hover} ${isRtl ? 'hover:-translate-x-1' : 'hover:translate-x-1'} ${item.isVIP ? 'vip-btn-glow' : ''}`
                       }`}
                     >
                       {({ isActive }) => (
                         <>
-                          <item.icon size={20} className={`transition-all duration-300 shrink-0 ${isActive ? theme.icon : "opacity-70"}`} />
-                          <span>{item.name}</span>
+                          <item.icon size={20} className={`transition-all duration-300 shrink-0 ${isActive ? theme.icon : item.isVIP ? 'text-orange-500 animate-pulse' : 'opacity-70'}`} />
+                          <span className={item.isVIP && !isActive ? 'vip-text-glow' : ''}>{item.name}</span>
                         </>
                       )}
                     </NavLink>
