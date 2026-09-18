@@ -3,13 +3,14 @@ import { useOutletContext } from 'react-router-dom';
 import useSettingsStore from '../../store/useSettingsStore';
 import { 
   ShieldCheck, AlertTriangle, TrendingUp, Download, FileSignature, 
-  CheckCircle, Loader2, BrainCircuit, Activity, FileText, CreditCard 
+  CheckCircle, Loader2, BrainCircuit, Activity, FileText, CreditCard,
+  Wifi
 } from 'lucide-react';
-import { AreaChart, Area, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// 🚀 خوارزمية الرسوم المتحركة البطيئة والدرامية للأرقام الأولية (7 ثواني)
+// 🚀 خوارزمية الرسوم المتحركة الدرامية (7 ثواني للتحميل الأولي)
 function useAnimatedNumber(endValue, duration = 7000) {
   const [value, setValue] = useState(0);
   useEffect(() => {
@@ -37,20 +38,40 @@ export default function AIAudit() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
 
-  // 🚀 خوارزمية "النبض الحي" لمحاكاة منصات التداول
-  const [liveSpent, setLiveSpent] = useState(122800);
+  // توليد بيانات تاريخية لتبدو مثل منصة تداول حقيقية (20 نقطة زمنية)
+  const initialChartData = Array.from({ length: 20 }, (_, i) => {
+    const progress = i / 19;
+    return {
+      name: `Day ${i + 1}`,
+      budget: Math.floor(20000 + (progress * 114400)), // يتصاعد لـ 134400
+      spent: Math.floor(18000 + (progress * 104800) + (Math.random() * 2000 - 1000)), // يتصاعد لـ 122800 مع تذبذب
+    };
+  });
+
+  const [liveChartData, setLiveChartData] = useState(initialChartData);
 
   useEffect(() => { 
     setTimeout(() => setIsLoading(false), 800); 
     setTimeout(() => setMounted(true), 1200);
 
-    // بعد انتهاء أنيميشن البداية (7 ثواني)، يبدأ الرسم البياني بالتموج والتنفس المستمر!
+    // 🚀 خوارزمية التداول الحي (تحديث النقطة الأخيرة ببطء وسلاسة)
     const timer = setTimeout(() => {
       const interval = setInterval(() => {
-        // إنشاء موجة بطيئة تصعد وتهبط بهدوء شديد (محاكاة تغير السيولة اللحظية)
-        const wave = Math.sin(Date.now() / 1500) * 1200; 
-        setLiveSpent(122800 + wave);
-      }, 1500); 
+        setLiveChartData(prevData => {
+          const newData = [...prevData];
+          const lastIndex = newData.length - 1;
+          const currentSpent = newData[lastIndex].spent;
+          
+          // تموج بطيء بمقدار +/- 300 درهم
+          const fluctuation = Math.sin(Date.now() / 2000) * 300; 
+          
+          newData[lastIndex] = {
+            ...newData[lastIndex],
+            spent: Math.max(0, Math.floor(122800 + fluctuation)) // التمركز حول 122800
+          };
+          return newData;
+        });
+      }, 2500); // تحديث كل ثانيتين ونصف ليسمح بالقراءة المريحة
       return () => clearInterval(interval);
     }, 7000);
 
@@ -63,49 +84,50 @@ export default function AIAudit() {
       budget: 'الميزانية الإجمالية', spent: 'إجمالي المنصرف', balance: 'الرصيد المتبقي', health: 'مؤشر الأمان المالي',
       aiInsights: 'تحليلات المستشار الذكي', riskLow: 'مخاطر منخفضة', riskMedium: 'تنبيه سيولة',
       tranches: 'تتبع أشطر المشروع (Tranches)', tranche1: 'الشطر الأول (50%)', tranche2: 'الشطر الثاني (30%)', tranche3: 'الشطر الثالث (20%)',
-      exportReport: 'استخراج التقرير الختامي (PDF)', cashFlow: 'توقع مسار السيولة (Live Hologram)',
+      exportReport: 'استخراج التقرير الختامي', cashFlow: 'مؤشر السيولة اللحظي (Live Ticker)',
       tableTitle: 'سجل العمليات الدقيق', date: 'التاريخ', beneficiary: 'المستفيد', amount: 'المبلغ', mode: 'طريقة الدفع / المرجع',
       currency: 'درهم', generating: 'جاري استخراج التقرير...', generatedBy: 'تم التدقيق آلياً بواسطة SouqBTP AI',
       txSupervisors: 'تعويضات المشرفين', txTrainers: 'تعويضات المكونين', txSupplies: 'لوازم الورش / الجمعية', txAccounting: 'أتعاب محاسبية',
       aiMsg1: 'صرف الشطر الأول متوافق تماماً مع التوقعات والميزانية المخصصة.',
       aiMsg2: 'تحذير: معدل إنفاق الشطر الثاني أسرع بـ 12% من المخطط له.',
-      chartBudget: 'الميزانية المخصصة', chartSpent: 'الإنفاق الفعلي (مباشر)'
+      chartBudget: 'الميزانية المخصصة', chartSpent: 'الإنفاق الفعلي (مباشر)', liveSignal: 'مباشر'
     },
     fr: {
       title: 'Audit Financier IA', subtitle: 'Analyse des risques, suivi des tranches et rapports certifiés.',
       budget: 'Budget Total Alloué', spent: 'Total Dépensé', balance: 'Solde Restant', health: 'Indice de Santé Financière',
       aiInsights: 'Conseiller IA - Insights', riskLow: 'Risque Faible', riskMedium: 'Alerte Liquidité',
       tranches: 'Suivi des Tranches du Projet', tranche1: '1ère Tranche (50%)', tranche2: '2ème Tranche (30%)', tranche3: '3ème Tranche (20%)',
-      exportReport: 'Générer Rapport d\'Audit (PDF)', cashFlow: 'Prévision de Trésorerie (Live Hologram)',
+      exportReport: 'Générer Rapport d\'Audit', cashFlow: 'Indicateur de Liquidité (Live Ticker)',
       tableTitle: 'Journal des Opérations', date: 'Date', beneficiary: 'Bénéficiaire', amount: 'Montant', mode: 'Mode / N° Pièce',
       currency: 'MAD', generating: 'Génération en cours...', generatedBy: 'Audité automatiquement par SouqBTP AI',
       txSupervisors: 'Indemnités de superviseurs', txTrainers: 'Indemnités de formateurs', txSupplies: 'Fournitures de chantier', txAccounting: 'Honoraires comptables',
       aiMsg1: 'Les dépenses de la 1ère tranche sont parfaitement alignées avec le budget.',
       aiMsg2: 'Alerte : Le rythme de dépense de la 2ème tranche est 12% plus rapide que prévu.',
-      chartBudget: 'Budget Alloué', chartSpent: 'Dépense Réelle (Live)'
+      chartBudget: 'Budget Alloué', chartSpent: 'Dépense Réelle (Live)', liveSignal: 'EN DIRECT'
     },
     en: {
       title: 'Smart AI Audit', subtitle: 'Risk analysis, milestone tracking, and certified reports.',
       budget: 'Total Allocated Budget', spent: 'Total Spent', balance: 'Remaining Balance', health: 'Financial Health Score',
       aiInsights: 'AI Advisor Insights', riskLow: 'Low Risk', riskMedium: 'Liquidity Alert',
       tranches: 'Project Milestones (Tranches)', tranche1: 'Milestone 1 (50%)', tranche2: 'Milestone 2 (30%)', tranche3: 'Milestone 3 (20%)',
-      exportReport: 'Generate Audit Report (PDF)', cashFlow: 'Cash Flow Prediction (Live Hologram)',
+      exportReport: 'Generate Audit Report', cashFlow: 'Liquidity Indicator (Live Ticker)',
       tableTitle: 'Operations Log', date: 'Date', beneficiary: 'Beneficiary', amount: 'Amount', mode: 'Mode / Ref',
       currency: 'MAD', generating: 'Generating Report...', generatedBy: 'Automatically audited by SouqBTP AI',
-      txSupervisors: 'Supervisors Compensation', txTrainers: 'Trainers Compensation', txSupplies: 'Site Supplies', txAccounting: 'Accounting Fees',
+      txSupervisors: 'Supervisors Comp.', txTrainers: 'Trainers Comp.', txSupplies: 'Site Supplies', txAccounting: 'Accounting Fees',
       aiMsg1: 'Milestone 1 spending is perfectly aligned with the allocated budget.',
       aiMsg2: 'Warning: Milestone 2 spending rate is 12% faster than planned.',
-      chartBudget: 'Allocated Budget', chartSpent: 'Actual Spent (Live)'
+      chartBudget: 'Allocated Budget', chartSpent: 'Actual Spent (Live)', liveSignal: 'LIVE'
     }
   };
   
   const t = translations[language] || translations.ar;
 
   const totalBudget = 134400;
-  const remainingBalance = totalBudget - 122800;
+  const totalSpent = 122800; 
+  const remainingBalance = totalBudget - totalSpent;
 
   const animatedBudget = useAnimatedNumber(totalBudget, 7000);
-  const animatedSpent = useAnimatedNumber(122800, 7000);
+  const animatedSpent = useAnimatedNumber(totalSpent, 7000);
   const animatedBalance = useAnimatedNumber(remainingBalance, 7000);
   const animatedHealth = useAnimatedNumber(92, 7000);
 
@@ -123,15 +145,7 @@ export default function AIAudit() {
     { id: 5, date: '15/07/2026', beneficiary: 'DIFTRAV SARL', amount: 8800, mode: 'Chèque N° 2415047' },
   ];
 
-  // 🚀 البيانات الحية للرسم البياني
-  const liveChartData = [
-    { name: 'M1', budget: 20000, spent: 18000 },
-    { name: 'M2', budget: 45000, spent: 40000 },
-    { name: 'M3', budget: 80000, spent: 85000 },
-    { name: 'M4', budget: 110000, spent: 105000 },
-    { name: 'M5', budget: 134400, spent: liveSpent }, // النقطة التي تتنفس وتتغير
-  ];
-
+  // 🖨️ نظام استخراج التقرير
   const handleGenerateAuditReport = async () => {
     setIsExporting(true);
     const printElement = document.createElement('div');
@@ -227,25 +241,36 @@ export default function AIAudit() {
           /* 🚀 تأثير الهولوغرام السابح (Breathing Wave Animation) */
           @keyframes hologram-swim {
             0% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(6,182,212,0.3)); }
-            50% { transform: translateY(-8px); filter: drop-shadow(0 0 30px rgba(6,182,212,0.8)); }
+            50% { transform: translateY(-6px); filter: drop-shadow(0 0 25px rgba(6,182,212,0.6)); }
             100% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(6,182,212,0.3)); }
           }
           .animate-hologram {
             animation: hologram-swim 6s ease-in-out infinite;
           }
           
-          /* تأثير خط المسح الديجيتال */
+          /* تأثير خط المسح الديجيتال (Radar Scan Line) */
           @keyframes scanline {
             0% { transform: translateX(-100%) skewX(-15deg); }
-            100% { transform: translateX(200%) skewX(-15deg); }
+            100% { transform: translateX(300%) skewX(-15deg); }
           }
           .animate-scan {
-            animation: scanline 4s linear infinite;
+            animation: scanline 3s linear infinite;
           }
+
+          /* زوايا الـ HUD للبطاقات */
+          .hud-corner {
+            position: absolute; width: 15px; height: 15px;
+            border-color: #06b6d4; border-style: solid;
+            pointer-events: none; opacity: 0.7;
+          }
+          .hud-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; border-top-left-radius: 20px;}
+          .hud-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; border-top-right-radius: 20px;}
+          .hud-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; border-bottom-left-radius: 20px;}
+          .hud-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; border-bottom-right-radius: 20px;}
         `}
       </style>
 
-      <div className="space-y-8 animate-fade-in max-w-[1400px] mx-auto pb-24" dir={isRtl ? 'rtl' : 'ltr'}>
+      <div className="space-y-8 animate-fade-in max-w-[1500px] mx-auto pb-24" dir={isRtl ? 'rtl' : 'ltr'}>
         
         {/* 🚀 Header */}
         <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${bgMain} border-2 p-8 rounded-[2rem] shadow-xl relative overflow-hidden`}>
@@ -261,39 +286,51 @@ export default function AIAudit() {
           </button>
         </div>
 
-        {/* 🚀 Futuristic KPI Cards */}
+        {/* 🚀 Futuristic KPI Cards with HUD Corners */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className={`p-6 rounded-[2rem] border-2 shadow-[0_0_15px_rgba(0,0,0,0.2)] ${isDarkMode ? 'bg-slate-900/80 border-slate-700 hover:border-blue-500/50' : 'bg-slate-50 border-slate-200'} transition-all duration-500`}>
+          <div className={`p-6 rounded-[2rem] border-2 shadow-[0_0_15px_rgba(0,0,0,0.2)] ${isDarkMode ? 'bg-slate-900/80 border-slate-700 hover:border-blue-500/50' : 'bg-slate-50 border-slate-200'} transition-all duration-500 relative`}>
+            <div className="hud-corner hud-tl"></div><div className="hud-corner hud-tr"></div><div className="hud-corner hud-bl"></div><div className="hud-corner hud-br"></div>
             <p className={`font-black text-sm mb-2 uppercase tracking-widest ${textMuted}`}>{t.budget}</p>
             <h3 className={`text-3xl font-black text-blue-500 font-mono drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]`} dir="ltr">{animatedBudget.toLocaleString()} <span className="text-xs">{t.currency}</span></h3>
           </div>
-          <div className={`p-6 rounded-[2rem] border-2 shadow-[0_0_15px_rgba(0,0,0,0.2)] ${isDarkMode ? 'bg-slate-900/80 border-slate-700 hover:border-cyan-500/50' : 'bg-slate-50 border-slate-200'} transition-all duration-500`}>
+          
+          <div className={`p-6 rounded-[2rem] border-2 shadow-[0_0_15px_rgba(0,0,0,0.2)] ${isDarkMode ? 'bg-slate-900/80 border-slate-700 hover:border-cyan-500/50' : 'bg-slate-50 border-slate-200'} transition-all duration-500 relative`}>
+            <div className="hud-corner hud-tl"></div><div className="hud-corner hud-tr"></div><div className="hud-corner hud-bl"></div><div className="hud-corner hud-br"></div>
             <p className={`font-black text-sm mb-2 uppercase tracking-widest ${textMuted}`}>{t.spent}</p>
             <h3 className={`text-3xl font-black text-cyan-500 font-mono drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]`} dir="ltr">{animatedSpent.toLocaleString()} <span className="text-xs">{t.currency}</span></h3>
           </div>
-          <div className={`p-6 rounded-[2rem] border-2 shadow-[0_0_15px_rgba(0,0,0,0.2)] ${isDarkMode ? 'bg-slate-900/80 border-slate-700 hover:border-emerald-500/50' : 'bg-slate-50 border-slate-200'} transition-all duration-500`}>
+          
+          <div className={`p-6 rounded-[2rem] border-2 shadow-[0_0_15px_rgba(0,0,0,0.2)] ${isDarkMode ? 'bg-slate-900/80 border-slate-700 hover:border-emerald-500/50' : 'bg-slate-50 border-slate-200'} transition-all duration-500 relative`}>
+            <div className="hud-corner hud-tl"></div><div className="hud-corner hud-tr"></div><div className="hud-corner hud-bl"></div><div className="hud-corner hud-br"></div>
             <p className={`font-black text-sm mb-2 uppercase tracking-widest ${textMuted}`}>{t.balance}</p>
             <h3 className={`text-3xl font-black text-emerald-400 font-mono drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]`} dir="ltr">{animatedBalance.toLocaleString()} <span className="text-xs">{t.currency}</span></h3>
           </div>
+          
           <div className={`p-6 rounded-[2rem] relative overflow-hidden shadow-[0_0_20px_rgba(6,182,212,0.3)] ${isDarkMode ? 'bg-slate-950 border-2 border-cyan-500/30' : 'bg-cyan-50 border-2 border-cyan-200'}`}>
+            <div className="hud-corner hud-tl"></div><div className="hud-corner hud-tr"></div><div className="hud-corner hud-bl"></div><div className="hud-corner hud-br"></div>
             <div className="absolute -right-2 -top-2 opacity-20 text-cyan-500 animate-pulse"><Activity size={100}/></div>
             <p className={`font-black text-sm mb-2 uppercase tracking-widest ${isDarkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{t.health}</p>
             <h3 className={`text-4xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} font-mono drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]`} dir="ltr">{animatedHealth} <span className="text-xl">%</span></h3>
           </div>
         </div>
 
-        {/* 🌌 Holographic Chart (MASSIVE & ALIVE) */}
-        <div className={`${bgMain} border-2 rounded-[2rem] p-8 shadow-[0_0_40px_rgba(0,0,0,0.4)] relative overflow-hidden animate-hologram`}>
-          {/* Cyberpunk grid background overlay */}
-          <div className="absolute inset-0 pointer-events-none opacity-5" style={{ backgroundImage: 'linear-gradient(#06b6d4 1px, transparent 1px), linear-gradient(90deg, #06b6d4 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+        {/* 🌌 Holographic Trading Chart (MASSIVE & BREATHING) */}
+        <div className={`${bgMain} border-2 border-cyan-500/30 rounded-[2rem] p-8 shadow-[0_0_40px_rgba(6,182,212,0.15)] relative overflow-hidden animate-hologram`}>
+          {/* Cyberpunk grid background */}
+          <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#06b6d4 1px, transparent 1px), linear-gradient(90deg, #06b6d4 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
           {/* Scanning Line */}
-          <div className="absolute top-0 bottom-0 w-32 bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent opacity-50 pointer-events-none animate-scan z-20"></div>
+          <div className="absolute top-0 bottom-0 w-48 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent pointer-events-none animate-scan z-20"></div>
 
-          <h3 className={`text-2xl font-black ${textMain} mb-8 flex items-center gap-3 relative z-10`}>
-            <TrendingUp className="text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,1)]" size={32}/> {t.cashFlow}
-          </h3>
+          <div className="flex justify-between items-center mb-8 relative z-10">
+            <h3 className={`text-2xl font-black ${textMain} flex items-center gap-3`}>
+              <TrendingUp className="text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,1)]" size={32}/> {t.cashFlow}
+            </h3>
+            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full text-emerald-400 text-xs font-black uppercase tracking-widest">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> {t.liveSignal}
+            </div>
+          </div>
           
-          {/* ارتفاع هائل للمخطط ليفقد المحاسب صوابه (500px) */}
+          {/* 🚀 ارتفاع هائل للمخطط ليفقد المحاسب صوابه (500px) */}
           <div className="h-[500px] w-full relative z-10" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={liveChartData} margin={{ top: 30, right: 0, left: 0, bottom: 0 }}>
@@ -307,13 +344,16 @@ export default function AIAudit() {
                     <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 10" vertical={false} stroke={isDarkMode ? '#334155' : '#e2e8f0'} />
+                {/* شبكة إحداثيات مستقبلية */}
+                <CartesianGrid strokeDasharray="3 10" vertical={false} stroke={isDarkMode ? 'rgba(51, 65, 85, 0.5)' : '#e2e8f0'} />
+                
                 <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: '1px solid rgba(6,182,212,0.4)', background: isDarkMode ? 'rgba(15,23,42,0.95)' : '#fff', color: isDarkMode ? '#fff' : '#000', fontWeight: 'bold', boxShadow: '0 0 30px rgba(6,182,212,0.4)', backdropFilter: 'blur(10px)' }} 
+                  contentStyle={{ borderRadius: '16px', border: '1px solid rgba(6,182,212,0.5)', background: isDarkMode ? 'rgba(15,23,42,0.95)' : '#fff', color: isDarkMode ? '#fff' : '#000', fontWeight: 'bold', boxShadow: '0 0 30px rgba(6,182,212,0.5)', backdropFilter: 'blur(10px)' }} 
                 />
-                {/* 🚀 الترجمة مدمجة هنا في name */}
+                
+                {/* 🚀 الترجمة مدمجة هنا في name مع انيميشن سلسة */}
                 <Area type="monotone" dataKey="budget" name={t.chartBudget} stroke="#a855f7" strokeWidth={3} fillOpacity={1} fill="url(#colorBudget)" animationDuration={7000} strokeDasharray="5 5" />
-                <Area type="monotone" dataKey="spent" name={t.chartSpent} stroke="#06b6d4" strokeWidth={5} fillOpacity={1} fill="url(#colorSpent)" activeDot={{ r: 10, fill: '#06b6d4', stroke: '#fff', strokeWidth: 3, style: { filter: 'drop-shadow(0px 0px 15px #06b6d4)'} }} animationDuration={1000} animationEasing="ease-in-out" />
+                <Area type="monotone" dataKey="spent" name={t.chartSpent} stroke="#06b6d4" strokeWidth={5} fillOpacity={1} fill="url(#colorSpent)" activeDot={{ r: 12, fill: '#06b6d4', stroke: '#fff', strokeWidth: 3, style: { filter: 'drop-shadow(0px 0px 20px #06b6d4)'} }} animationDuration={1000} animationEasing="linear" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
