@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Calculator, UserCircle, MessageCircle, Store, Map, Users, Wallet, 
-  Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package, ShieldCheck
+  Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package, ShieldCheck, Zap 
 } from 'lucide-react';
 import useSettingsStore from '../../store/useSettingsStore';
 
@@ -13,6 +13,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
   const t = {
     ar: {
       roleTitle: "مكتب المقاول",
+      premium: "الترقية والـ VIP 👑",
+      sub: "باقات الاشتراك ⚡",
       cat1: "القيادة والميدان",
       cat2: "التواصل والمشتريات",
       cat3: "المالية والمحاسبة",
@@ -29,14 +31,16 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "المصاريف والرسوم",
       tax: "النظام الجبائي",
       cpc: "المحاسبة العامة",
-      audit: "التدقيق الذكي (Audit)",
       b2bInvoices: 'فواتير B2B',
       freight: 'بورصة الشحن',
-      liveOrders: 'الطلبات اللحظية', 
+      liveOrders: 'الطلبات اللحظية',
+      audit: 'التدقيق الذكي (Audit)',
       prof: "الملف الشخصي"
     },
     fr: {
       roleTitle: "Bureau d'Entrepreneur",
+      premium: "Abonnement VIP 👑",
+      sub: "Passer à l'Enterprise ⚡",
       cat1: "Direction & Terrain",
       cat2: "Communication & Achats",
       cat3: "Finance & Comptabilité",
@@ -53,14 +57,16 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "Dépenses & Frais",
       tax: "Système Fiscal",
       cpc: "Comptabilité Générale",
-      audit: "Audit IA",
       b2bInvoices: 'Factures B2B',
       freight: 'Bourse de Fret',
-      liveOrders: 'Commandes Live', // 🚀 تمت إضافته هنا
+      liveOrders: 'Commandes Live',
+      audit: 'Audit IA',
       prof: "Profil"
     },
     en: {
       roleTitle: "Contractor Office",
+      premium: "Upgrade & VIP 👑",
+      sub: "Subscriptions ⚡",
       cat1: "Leadership & Field",
       cat2: "Communication & Purchases",
       cat3: "Finance & Accounting",
@@ -77,15 +83,23 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "Expenses & Fees",
       tax: "Tax System",
       cpc: "General Accounting",
-      audit: "Smart Audit",
       b2bInvoices: 'B2B Invoices',
       freight: 'Freight Exchange',
-      liveOrders: 'Live Orders', 
+      liveOrders: 'Live Orders',
+      audit: 'Smart Audit',
       prof: "Profile"
     }
   }[language] || {};
 
   const colorMap = {
+    // 🌟 اللون الذهبي/العنبري الخاص بباقة الاشتراك في الأعلى
+    amber: {
+      active: 'bg-amber-500/20 border-amber-500 text-amber-400 active-pulse-amber',
+      icon: 'text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]',
+      hover: 'hover:bg-amber-500/10 hover:text-amber-300',
+      border: 'border-amber-500',
+      header: 'bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-400 text-shimmer'
+    },
     orange: {
       active: 'bg-orange-500/20 border-orange-500 text-white active-pulse-orange',
       icon: 'text-orange-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]',
@@ -118,6 +132,10 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
 
   const roleMenus = {
     contractor: [
+      // 🚀 تم وضع الاشتراك في القمة بلون جذّاب
+      { category: t.premium, color: 'amber', items: [
+        { name: t.sub, icon: Zap, path: '/v2/subscription' },
+      ]},
       { category: t.cat1, color: 'orange', items: [
         { name: t.dash, icon: LayoutDashboard, path: '/v2/contractor-dashboard' },
         { name: t.path, icon: Map, path: '/v2/project-path' },
@@ -154,10 +172,16 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
         {`
           @keyframes shimmer-sweep { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
           .text-shimmer { background-size: 200% auto; animation: shimmer-sweep 5s linear infinite; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+          
+          /* 🌟 تأثير النبض الذهبي للزر الجديد */
+          @keyframes pulse-border-amber { 0% { box-shadow: 0 0 0 0 rgba(245,158,11,0.5); } 70% { box-shadow: 0 0 0 8px rgba(245,158,11,0); } 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); } }
+          .active-pulse-amber { animation: pulse-border-amber 2s infinite; }
+          
           @keyframes pulse-border-orange { 0% { box-shadow: 0 0 0 0 rgba(249,115,22,0.5); } 70% { box-shadow: 0 0 0 8px rgba(249,115,22,0); } 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); } }
           @keyframes pulse-border-emerald { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
           @keyframes pulse-border-blue { 0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); } 70% { box-shadow: 0 0 0 8px rgba(59,130,246,0); } 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); } }
           @keyframes pulse-border-purple { 0% { box-shadow: 0 0 0 0 rgba(168,85,247,0.5); } 70% { box-shadow: 0 0 0 8px rgba(168,85,247,0); } 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); } }
+          
           .active-pulse-orange { animation: pulse-border-orange 2s infinite; }
           .active-pulse-emerald { animation: pulse-border-emerald 2s infinite; }
           .active-pulse-blue { animation: pulse-border-blue 2s infinite; }
