@@ -51,7 +51,7 @@ export default function ContractorSubscription() {
           name: 'Enterprise (Verified)',
           desc: 'قوة الذكاء الاصطناعي واقتناص المناقصات لكبار الموردين.',
           badge: 'SouqBTP موثق 🛡️',
-          features: ['كل ما في باقة Pro ERP', 'شارة "مورد معتمد" الذهبية', 'رادار المناقصات الحية الجغرافي', 'نظام التدقيق المالي الآلي (AI Audit)', 'مدير حساب شخصي', 'أولوية الظهور المطلقة'],
+          features: ['كل ما في باقة Pro ERP', 'شارة "مقاول معتمد" الذهبية', 'رادار المناقصات الحية الجغرافي', 'نظام التدقيق المالي الآلي (AI Audit)', 'مدير حساب شخصي', 'أولوية الظهور المطلقة'],
           missing: []
         }
       },
@@ -92,7 +92,7 @@ export default function ContractorSubscription() {
           name: 'Enterprise (Verified)',
           desc: 'La puissance de l\'IA et la capture d\'appels d\'offres.',
           badge: 'SouqBTP Vérifié 🛡️',
-          features: ['Tout de l\'offre Pro ERP', 'Badge d\'Or "Fournisseur Certifié"', 'Radar d\'Appels d\'Offres Live', 'Audit Financier IA', 'Account Manager Dédié', 'Priorité absolue'],
+          features: ['Tout de l\'offre Pro ERP', 'Badge d\'Or "Entrepreneur Certifié"', 'Radar d\'Appels d\'Offres Live', 'Audit Financier IA', 'Account Manager Dédié', 'Priorité absolue'],
           missing: []
         }
       },
@@ -133,7 +133,7 @@ export default function ContractorSubscription() {
           name: 'Enterprise (Verified)',
           desc: 'AI power and tender capture for market leaders.',
           badge: 'SouqBTP Verified 🛡️',
-          features: ['Everything in Pro ERP', 'Gold Certified Badge', 'Live Tenders Radar', 'AI Financial Audit', 'Dedicated Account Manager', 'Absolute priority'],
+          features: ['Everything in Pro ERP', 'Gold Badge "Certified Contractor"', 'Live Tenders Radar', 'AI Financial Audit', 'Dedicated Account Manager', 'Absolute priority'],
           missing: []
         }
       },
