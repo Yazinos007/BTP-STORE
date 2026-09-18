@@ -162,7 +162,6 @@ export default function ContractorSubscription() {
   const handleUpgradeClick = (tierKey) => {
     const planData = t.plans[tierKey];
     const price = isAnnual ? prices[tierKey].annual : prices[tierKey].monthly;
-    // تم الإصلاح هنا: تمرير الـ id برمجياً لضمان فتح الـ VIP Modal بغض النظر عن اللغة
     setSelectedPlan({ id: tierKey, name: planData.name, price: price });
     setSkipVip(false);
     setShowPaymentModal(true);
@@ -214,25 +213,25 @@ export default function ContractorSubscription() {
           </h2>
           <p className={`text-lg ${textMuted} font-medium leading-relaxed`}>{t.subtitle}</p>
 
-          {/* 🚀 Toggle Billing */}
+          {/* 🚀 Toggle Billing - تصميم الكبسولة الجديد */}
           <div className="flex items-center justify-center mt-8">
-            <div className={`p-1.5 rounded-2xl inline-flex items-center relative select-none border-2 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
-              <button onClick={() => setIsAnnual(false)} className={`relative z-10 px-8 py-3.5 rounded-xl font-black text-sm transition-all duration-300 ${!isAnnual ? 'text-white' : textMuted}`}>
+            <div className={`p-1.5 rounded-full inline-flex items-center relative select-none shadow-inner ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-slate-100 border border-slate-300'}`}>
+              <button onClick={() => setIsAnnual(false)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 ${!isAnnual ? 'text-white' : textMuted}`}>
                 {t.monthly}
               </button>
-              <button onClick={() => setIsAnnual(true)} className={`relative z-10 px-8 py-3.5 rounded-xl font-black text-sm transition-all duration-300 flex items-center gap-2 ${isAnnual ? 'text-white' : textMuted}`}>
+              <button onClick={() => setIsAnnual(true)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 flex items-center gap-2 ${isAnnual ? 'text-white' : textMuted}`}>
                 {t.annual}
-                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${isAnnual ? 'bg-emerald-500 text-white shadow-md' : 'bg-emerald-500/20 text-emerald-500'}`}>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${isAnnual ? 'bg-emerald-500 text-white shadow-md' : 'bg-emerald-500/20 text-emerald-600'}`}>
                   {t.save20}
                 </span>
               </button>
-              <div className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-blue-600 rounded-xl transition-all duration-500 ease-out shadow-lg" style={{ [isRtl ? 'right' : 'left']: isAnnual ? 'calc(50% + 3px)' : '6px' }}></div>
+              <div className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-blue-600 rounded-full transition-all duration-500 ease-out shadow-lg" style={{ [isRtl ? 'right' : 'left']: isAnnual ? 'calc(50% + 3px)' : '6px' }}></div>
             </div>
           </div>
         </div>
 
         {/* 🚀 Pricing Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch mt-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch mt-12 pt-6">
           
           {/* Starter Plan */}
           <div className={`${bgMain} border-2 rounded-[2.5rem] p-8 hover:border-blue-500/50 transition-all duration-500 relative shadow-xl text-start flex flex-col`}>
@@ -263,10 +262,11 @@ export default function ContractorSubscription() {
 
           {/* Pro Plan (Popular) */}
           <div className={`${isDarkMode ? 'bg-slate-900 border-blue-600' : 'bg-white border-blue-500'} border-2 rounded-[2.5rem] p-8 relative transform lg:-translate-y-6 shadow-2xl shadow-blue-600/20 transition-all duration-500 text-start flex flex-col`}>
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-lg">
+            {/* الشارة البارزة (Cutout effect) */}
+            <div className={`absolute -top-5 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg border-4 ${isDarkMode ? 'border-slate-900' : 'border-white'}`}>
               {t.plans.pro.badge}
             </div>
-            <h3 className={`text-2xl font-black ${textMain} mb-2`}>{t.plans.pro.name}</h3>
+            <h3 className={`text-2xl font-black ${textMain} mb-2 mt-2`}>{t.plans.pro.name}</h3>
             <p className={`text-sm ${textMuted} font-medium h-12 mb-6 leading-relaxed`}>{t.plans.pro.desc}</p>
             <div className="mb-8">
               <span className={`text-6xl font-black ${textMain} font-mono`} dir="ltr">
@@ -294,13 +294,14 @@ export default function ContractorSubscription() {
           </div>
 
           {/* Enterprise Plan */}
-          <div className={`bg-gradient-to-br ${isDarkMode ? 'from-slate-900 to-slate-950 border-amber-500/50' : 'from-amber-50 to-white border-amber-300'} border-2 rounded-[2.5rem] p-8 relative shadow-[0_0_40px_rgba(245,158,11,0.15)] group hover:border-amber-400 transition-all duration-500 text-start flex flex-col overflow-hidden`}>
+          <div className={`bg-gradient-to-br ${isDarkMode ? 'from-slate-900 to-slate-950 border-amber-500/50' : 'from-amber-50 to-white border-amber-300'} border-2 rounded-[2.5rem] p-8 relative shadow-[0_0_40px_rgba(245,158,11,0.15)] group hover:border-amber-400 transition-all duration-500 text-start flex flex-col overflow-visible`}>
             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px] pointer-events-none"></div>
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-900 px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-amber-500/30 z-20">
+            {/* الشارة البارزة باللون الذهبي */}
+            <div className={`absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-900 px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-amber-500/30 z-20 border-4 ${isDarkMode ? 'border-slate-900' : 'border-[#fffbeb]'}`}>
               <ShieldCheck size={16} /> {t.plans.enterprise.badge}
             </div>
             
-            <h3 className="text-2xl font-black text-amber-500 mb-2 relative z-10">{t.plans.enterprise.name}</h3>
+            <h3 className="text-2xl font-black text-amber-500 mb-2 relative z-10 mt-2">{t.plans.enterprise.name}</h3>
             <p className={`text-sm ${textMuted} font-medium h-12 mb-6 leading-relaxed relative z-10`}>{t.plans.enterprise.desc}</p>
             <div className="mb-8 relative z-10">
               <span className={`text-6xl font-black ${textMain} font-mono`} dir="ltr">
@@ -309,7 +310,6 @@ export default function ContractorSubscription() {
               <span className={`font-bold ml-2 ${textMuted}`}>{t.currency} {isAnnual ? t.yr : t.mo}</span>
             </div>
             
-            {/* 🧲 الزر المغناطيسي الجديد باللون البرتقالي الترابي والنبض */}
             <button 
               onClick={() => handleUpgradeClick('enterprise')}
               disabled={isSubmitting} 
@@ -337,7 +337,6 @@ export default function ContractorSubscription() {
               <div className={`flex justify-between items-center p-6 border-b ${isDarkMode ? 'border-slate-800 bg-slate-950/80' : 'border-slate-200 bg-slate-50'}`}>
                 <h3 className={`text-2xl font-black ${textMain} flex items-center gap-3`}>
                   <ShieldCheck className="text-blue-500" size={28}/> 
-                  {/* استخدام id للتحقق بدلاً من name */}
                   {selectedPlan?.id === 'enterprise' && !skipVip ? m.vipTitle : m.paymentTitle}
                 </h3>
                 <button onClick={() => setShowPaymentModal(false)} className={`p-2 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}>
@@ -441,12 +440,14 @@ export default function ContractorSubscription() {
                     )}
                   </div>
 
+                  {/* 🚀 الزر الواضح الذي طلبته لرفع الملفات */}
                   <div className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${receiptFile ? 'border-emerald-500 bg-emerald-500/10' : (isDarkMode ? 'border-slate-700 bg-slate-900/50 hover:border-blue-500' : 'border-slate-300 bg-slate-50 hover:border-blue-400')}`}>
                     <UploadCloud size={40} className={`mx-auto mb-4 ${receiptFile ? 'text-emerald-500' : textMuted}`} />
                     <p className={`font-black mb-1 ${textMain}`}>{m.uploadTitle}</p>
                     <p className={`text-sm font-bold mb-6 ${textMuted}`}>{m.uploadDesc}</p>
-                    <label className={`cursor-pointer px-8 py-3.5 rounded-xl font-black transition-colors inline-block ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'}`}>
-                      {receiptFile ? <span className="text-emerald-500 flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile.slice(0, 15)}...</span> : m.chooseFile}
+                    
+                    <label className="cursor-pointer px-8 py-3.5 rounded-xl font-black transition-all inline-block bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30">
+                      {receiptFile ? <span className="flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile.slice(0, 15)}...</span> : m.chooseFile}
                       <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={handleReceiptUpload} />
                     </label>
                   </div>
