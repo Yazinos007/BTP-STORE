@@ -21,9 +21,9 @@ import ContractorProfile from './ContractorProfile';
 import ContractorSubscription from './ContractorSubscription';
 
 // استيراد صفحات الهبوط (المغناطيس)
-import EmpireLanding from './landing-pages/EmpireLanding';
-import RetailLanding from './landing-pages/RetailLanding';
-import ContractorLanding from './landing-pages/ContractorLanding'; 
+import EmpireLanding from './EmpireLanding';
+import RetailLanding from './RetailLanding';
+import ContractorLanding from '.ContractorLanding'; 
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
