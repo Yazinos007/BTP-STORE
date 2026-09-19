@@ -4,7 +4,6 @@ const ContractorLanding = () => {
   return (
     <div className="contractor-landing-page" dir="rtl" style={{ fontFamily: "'Tajawal', sans-serif", backgroundColor: '#0f172a', color: '#f8fafc', minHeight: '100vh', overflowX: 'hidden' }}>
       
-      {/* 🎨 Styles Definition */}
       <style>{`
         .contractor-landing-page {
             --primary-steel: #1e3a8a;
@@ -65,13 +64,10 @@ const ContractorLanding = () => {
         }
 
         .enterprise-card { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(25px); border: 2px solid rgba(249, 115, 22, 0.3); border-radius: 25px; padding: 50px 30px 40px; text-align: center; position: relative; box-shadow: inset 0 0 30px rgba(249, 115, 22, 0.1); }
-        
         .badge { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: linear-gradient(90deg, var(--accent-yellow), var(--accent-orange)); color: #000; padding: 10px 30px; border-radius: 50px; font-weight: 900; font-size: 1rem; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.5); white-space: nowrap; display: flex; align-items: center; gap: 10px; border: 4px solid var(--dark-bg); }
-        
         .card-icon { font-size: 3.5rem; margin-bottom: 15px; text-shadow: 0 0 20px rgba(249, 115, 22, 0.5); }
         .card-title { font-size: 2.4rem; font-weight: 900; color: #fff; margin-bottom: 5px; }
         .card-subtitle { color: var(--accent-orange); font-weight: 800; font-size: 1.2rem; margin-bottom: 30px; }
-        
         .features-list { list-style: none; text-align: right; margin-bottom: 30px; padding: 0; }
         .features-list li { margin-bottom: 18px; font-size: 1.15rem; display: flex; align-items: flex-start; gap: 12px; color: #e2e8f0; font-weight: 500; }
         .features-list li::before { content: '🏗️'; font-size: 1.2rem; }
@@ -107,7 +103,6 @@ const ContractorLanding = () => {
         }
       `}</style>
 
-      {/* 🚀 Hero Section */}
       <header className="hero">
         <div className="hero-content">
           <div className="shock-alert">⚠️ تحذير: كبريات الشركات العقارية تنقل أنشطتها إلى العالم الرقمي‫!‬ آش باقي تتساين؟‫!‬؟‫!‬</div>
@@ -144,10 +139,9 @@ const ContractorLanding = () => {
         </div>
       </header>
 
-      {/* 🚀 Gifts Section */}
       <section className="gifts-section">
         <h2 className="section-title">أو باش تزيد التقة بيناتنا غادي نعطيوك 3 الهدايا مجانية غادي تعاونك بزاف في خدمتك!</h2>
-        <div style={{textAlign: 'center', maxWidth: '900px', margin: '0 auto 50px', color: '#e2e8f0', fontSize: '1.2rem', fontWeight: '500', lineHeight: '1.8'}}>
+        <div style={{ textAlign: 'center', maxWidth: '900px', margin: '0 auto 50px', color: '#e2e8f0', fontSize: '1.2rem', fontWeight: '500', lineHeight: '1.8' }}>
           ملي غتشترك معانا فالباقة السنوية، غنعطيوك هاد الهدايا الحصرية باش تدخل للعالم الرقمي بقوة وهيبة، وتخلي المنافسين ديالك موراك:
         </div>
         
@@ -164,26 +158,24 @@ const ContractorLanding = () => {
             <p className="gift-desc">مساعد ذكي مدمج فالسيت، مدرب على قوانين الضرائب المغربية باش يجاوب على أسئلتك اليومية ويوجهك كيفاش تحمي مقاولتك من الغرامات.</p>
           </div>
 
-          <div className="gift-box" style={{borderColor: 'var(--accent-yellow)', boxShadow: '0 0 20px rgba(245, 158, 11, 0.1)'}}>
-            <div className="gift-icon" style={{color: 'var(--accent-yellow)'}}>🏅</div>
-            <h3 className="gift-title" style={{color: 'var(--accent-yellow)'}}>حقيبة الهيبة (VIP Kit)</h3>
+          <div className="gift-box" style={{ borderColor: 'var(--accent-yellow)', boxShadow: '0 0 20px rgba(245, 158, 11, 0.1)' }}>
+            <div className="gift-icon" style={{ color: 'var(--accent-yellow)' }}>🏅</div>
+            <h3 className="gift-title" style={{ color: 'var(--accent-yellow)' }}>حقيبة الهيبة (VIP Kit)</h3>
             <p className="gift-desc">غيوصلك لــلبيرو ديالك درع أكريليك ذهبي (مقاول معتمد SouqBTP) + مفكرة جلدية فاخرة + 10 بطاقات NFC ذكية باش تبارطاجي معلومات شركتك مع الكليان غير بالسكان ديال QR!</p>
           </div>
         </div>
       </section>
 
-      {/* 🚀 VIP Box */}
-      <div style={{padding: '20px'}}>
+      <div style={{ padding: '20px' }}>
         <div className="vip-box">
           <h4><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg> حل سحري للمقاولين المشغولين جداً!</h4>
-          <p style={{color: 'var(--text-light)', fontSize: '1.15rem', lineHeight: '1.8', margin: '0'}}>
+          <p style={{ color: 'var(--text-light)', fontSize: '1.15rem', lineHeight: '1.8', margin: '0' }}>
             هاد النظام صايبناه باش تسير بيه خدمتك من تليفونك، ولكن... <strong>إلا كان وقتك عامر وما مساليش نهائياً؟</strong><br/><br/>
             وفرنا ليك <strong>خدمة الـ VIP (تسيير شامل)</strong>. فريق محترف من عندنا غيتكلف بإدخال الفواتير ديالك، حساب الخدامة، ومتابعة المصاريف يومياً عن بعد. بحال إلا عندك جيش ديال الموظفين خبراء في الميدان ديالهم بـ 10% من ثمنهم الحقيقي! (سولنا عليها فالواتساب).
           </p>
         </div>
       </div>
 
-      {/* 🚀 CTA Section */}
       <section className="cta-container">
         <a href="https://wa.me/212700715399?text=مرحباً،%20أنا%20مقاول%20ومهتم%20بمشروع%20الإمبراطورية%20وباقة%20Enterprise%20السنوية!" className="btn-whatsapp" target="_blank" rel="noreferrer">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
