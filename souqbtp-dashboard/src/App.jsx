@@ -22,9 +22,6 @@ import Contracts from './pages/Contracts';
 import AnalyticsB2B from './pages/AnalyticsB2B'; 
 import SupplierSettings from './pages/SupplierSettings';
 import SupplierSubscription from './pages/SupplierSubscription';
-import EmpireLanding from "./landing-pages/EmpireLanding";
-import RetailLanding from "./landing-pages/RetailLanding";
-import ContractorLanding from "./landing-pages/ContractorLanding"; 
 import RetailerSettings from './pages/Settings'; 
 import RetailerSubscription from './pages/RetailerSubscription';
 import TenderRadar from './pages/TenderRadar';
@@ -56,12 +53,18 @@ import SupplierProduction from './pages/SupplierProduction';
 import MarketplaceOrders from './pages/MarketplaceOrders';
 import FleetManagement from './pages/FleetManagement';
 import LogisticsBourse from './pages/LogisticsBourse';
+
 // 🚀 أشرطة الفترة التجريبية
-import TrialBanner from './components/TrialBanner'; // للمورد
-import RetailTrialBanner from './components/RetailTrialBanner'; // 🚀 استدعاء الشريط الجديد للتاجر
+import TrialBanner from './components/TrialBanner'; 
+import RetailTrialBanner from './components/RetailTrialBanner'; 
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
 import V2Router from './pages/v2/V2Router';
+
+// 🚀 صفحات الهبوط (المغناطيس)
+import EmpireLanding from './landing-pages/EmpireLanding';
+import RetailLanding from './landing-pages/RetailLanding';
+import ContractorLanding from './landing-pages/ContractorLanding';
 
 // 🛑 الحارس الإلكتروني (الجدار الزجاجي) للأقسام المدفوعة
 const PremiumGuard = ({ children }) => {
@@ -426,6 +429,69 @@ const WholesalerDashboard = ({ supplier, children }) => {
   );
 };
 
+// 💎 مكون التاجر الداعم لإخفاء السيدبار السلس
+const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  return (
+    <div className="flex flex-col h-screen overflow-hidden">
+      
+      {/* 🚀 1. شريط الفترة التجريبية للتاجر هنا في الأعلى */}
+      <RetailTrialBanner />
+      
+      <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        <div className={`shrink-0 h-full transition-all duration-300 ${isSidebarOpen ? (language === 'ar' ? 'w-64 border-l' : 'w-64 border-r') : 'w-0 overflow-hidden border-none'} bg-white z-20`}>
+          <div className="w-64 h-full">
+              <Sidebar />
+          </div>
+        </div>
+        
+        <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full relative">
+          <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                className="flex items-center gap-2 p-2 bg-gray-100 hover:bg-blue-50 border border-gray-200 rounded-xl text-gray-600 hover:text-blue-600 transition-all shadow-sm group"
+              >
+                {isSidebarOpen ? <X size={22} className="text-red-500 group-hover:text-red-600 transition-colors" /> : <Menu size={22} className="text-blue-500 group-hover:text-blue-600 transition-colors" />}
+                
+                <span className="hidden sm:block text-[11px] font-black tracking-wide">
+                  {isSidebarOpen 
+                    ? (language === 'ar' ? 'إخفاء' : language === 'en' ? 'Close' : 'Fermer') 
+                    : (language === 'ar' ? 'القائمة' : language === 'en' ? 'Menu' : 'Menu')
+                  }
+                </span>
+              </button>
+              <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate text-start">
+                {language === 'fr' ? 'Bienvenue, ' : language === 'en' ? 'Welcome, ' : 'مرحباً بك، '} <span className="text-blue-600 truncate">{storeName}</span>
+              </h2>
+            </div>
+            <div className="flex items-center gap-3 md:gap-4 shrink-0">
+
+              <Link to="/v2" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3 py-2 md:px-4 rounded-lg font-black flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all whitespace-nowrap animate-pulse">
+                🚀 معاينة V2
+              </Link>
+
+              <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
+                 <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
+              </Link>
+              
+              <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
+                {storeInitial}
+              </div>
+            </div>
+          </header>
+          <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full">
+            <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
+              {children}
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [isMinimal] = useState(() => window.location.search.includes('minimal=true') || window.location.href.includes('minimal=true'));
   
@@ -516,40 +582,15 @@ function App() {
     );
   }
 
-  const hostname = window.location.hostname;
   const pathname = window.location.pathname;
 
-  // 🟢 استثناء صفحات الدخول والتسجيل لكي تعمل الأزرار
+  // السماح بمرور مسارات محددة بدون تسجيل دخول
+  const isV2Path = pathname.startsWith('/v2');
+  const isLandingPage = pathname.startsWith('/empire') || pathname.startsWith('/pro') || pathname.startsWith('/contractor');
   const isAuthPage = pathname.includes('/login') || pathname.includes('/register');
 
-  // 🚀 الإصلاح الأول: استخدام === بدلاً من includes حتى لا تتداخل الحروف
-  const isEmpireLanding = !isAuthPage && (pathname === '/empire' || pathname === '/empire/' || hostname === 'empire.souqbtp.ma');
-  const isRetailLanding = !isAuthPage && (pathname === '/pro' || pathname === '/pro/' || hostname === 'pro.souqbtp.ma');
-
-  if (isEmpireLanding) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="*" element={<EmpireLanding />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  if (isRetailLanding) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="*" element={<RetailLanding />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  // 🚀 الإصلاح الثاني: إخبار الحارس أن يتجاهل مسارات V2 ويتركها تمر حتى بدون تسجيل دخول
-  const isV2Path = pathname.startsWith('/v2');
-
-  if (!session && !isV2Path) {
+  // الحارس الإلكتروني الأساسي
+  if (!session && !isV2Path && !isLandingPage && !isAuthPage && !isStorePage) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         <div className="text-5xl mb-4">⛔</div>
@@ -586,13 +627,17 @@ function App() {
 
   return (
     <BrowserRouter>
-      {/* 🚀 إضافة Routes خارجية لتحتضن العالمين (V2 والقديم) 🚀 */}
       <Routes>
         
-        {/* البوابة السرية لبيئة V2 المستقلة تماماً */}
+        {/* 🚀 مسارات الهبوط المستقلة والمباشرة 🚀 */}
+        <Route path="/empire" element={<EmpireLanding />} />
+        <Route path="/pro" element={<RetailLanding />} />
+        <Route path="/contractor" element={<ContractorLanding />} />
+
+        {/* 🚀 البوابة السرية لبيئة V2 المستقلة تماماً */}
         <Route path="/v2/*" element={<V2Router session={session} supplier={supplier} />} />
 
-        {/* 🛡️ المنصة القديمة: تمت إضافة /* في المسار وإغلاق الأقواس في الأسفل */}
+        {/* 🛡️ المنصة القديمة */}
         <Route path="/*" element={
           isWholesaler ? (
             <WholesalerDashboard supplier={supplier}>
@@ -607,8 +652,6 @@ function App() {
                 <Route path="/orders" element={<SupplierOrders />} />
                 <Route path="/settings" element={<SupplierSettings />} />
                 <Route path="/subscription" element={<SupplierSubscription />} />
-                <Route path="/empire" element={<EmpireLanding />} />
-                <Route path="/pro" element={<RetailLanding />} />
 
                 {/* 🔒 أقسام باقة Pro ERP */}
                 <Route path="/clients" element={<PremiumGuard><Clients isWholesaler={true} /></PremiumGuard>} />
@@ -659,73 +702,11 @@ function App() {
               </Routes>
             </RetailerLayout>
           )
-        } />  {/* 🎯 تم إصلاح الخطأ 1: إغلاق عنصر الـ Route الخارجي هنا */}
+        } />
 
-      </Routes> {/* 🎯 تم إصلاح الخطأ 2: إغلاق الوسم الشامل */}
+      </Routes>
     </BrowserRouter>
   );
 }
 
-// 💎 مكون التاجر الداعم لإخفاء السيدبار السلس (يبقى كما هو بدون تغيير)
-const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-  return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      
-      {/* 🚀 1. شريط الفترة التجريبية للتاجر هنا في الأعلى */}
-      <RetailTrialBanner />
-      
-      <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-        <div className={`shrink-0 h-full transition-all duration-300 ${isSidebarOpen ? (language === 'ar' ? 'w-64 border-l' : 'w-64 border-r') : 'w-0 overflow-hidden border-none'} bg-white z-20`}>
-          <div className="w-64 h-full">
-              <Sidebar />
-          </div>
-        </div>
-        
-        <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full relative">
-          <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full">
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-                className="flex items-center gap-2 p-2 bg-gray-100 hover:bg-blue-50 border border-gray-200 rounded-xl text-gray-600 hover:text-blue-600 transition-all shadow-sm group"
-              >
-                {isSidebarOpen ? <X size={22} className="text-red-500 group-hover:text-red-600 transition-colors" /> : <Menu size={22} className="text-blue-500 group-hover:text-blue-600 transition-colors" />}
-                
-                <span className="hidden sm:block text-[11px] font-black tracking-wide">
-                  {isSidebarOpen 
-                    ? (language === 'ar' ? 'إخفاء' : language === 'en' ? 'Close' : 'Fermer') 
-                    : (language === 'ar' ? 'القائمة' : language === 'en' ? 'Menu' : 'Menu')
-                  }
-                </span>
-              </button>
-              <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate text-start">
-                {language === 'fr' ? 'Bienvenue, ' : language === 'en' ? 'Welcome, ' : 'مرحباً بك، '} <span className="text-blue-600 truncate">{storeName}</span>
-              </h2>
-            </div>
-            <div className="flex items-center gap-3 md:gap-4 shrink-0">
-
-              <Link to="/v2" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3 py-2 md:px-4 rounded-lg font-black flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all whitespace-nowrap animate-pulse">
-                🚀 معاينة V2
-              </Link>
-
-              <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
-                 <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
-              </Link>
-              
-              <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
-                {storeInitial}
-              </div>
-            </div>
-          </header>
-          <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full">
-            <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
-              {children}
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-};
 export default App;
