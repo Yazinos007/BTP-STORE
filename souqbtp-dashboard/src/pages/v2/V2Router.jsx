@@ -20,6 +20,11 @@ import AIAudit from './AIAudit';
 import ContractorProfile from './ContractorProfile';
 import ContractorSubscription from './ContractorSubscription';
 
+// استيراد صفحات الهبوط (المغناطيس)
+import EmpireLanding from './landing-pages/EmpireLanding';
+import RetailLanding from './landing-pages/RetailLanding';
+import ContractorLanding from './landing-pages/ContractorLanding'; 
+
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
   const { isDarkMode } = useOutletContext(); 
@@ -39,6 +44,13 @@ export default function V2Router({ session, supplier }) {
   
   return (
     <Routes>
+      
+      {/* 🚀 1. مسارات صفحات الهبوط (Magnet Pages) - خارج الـ Layout لتعمل بكامل الشاشة */}
+      <Route path="empire" element={<EmpireLanding />} />
+      <Route path="pro" element={<RetailLanding />} />
+      <Route path="contractor" element={<ContractorLanding />} />
+
+      {/* 🛡️ 2. مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout (يحتوي على Sidebar) */}
       <Route element={<V2Layout accountType={accountType} storeName={storeName} storeInitial={storeInitial} />}>
         
         {/* الرئيسية */}
@@ -73,6 +85,7 @@ export default function V2Router({ session, supplier }) {
         {/* 🚨 التوجيه التلقائي */}
         <Route path="*" element={<Navigate to="contractor-dashboard" replace />} />
       </Route>
+      
     </Routes>
   );
 }
