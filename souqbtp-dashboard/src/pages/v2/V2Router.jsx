@@ -44,11 +44,6 @@ export default function V2Router({ session, supplier }) {
   
   return (
     <Routes>
-      
-      {/* 🚀 1. مسارات صفحات الهبوط (Magnet Pages) - خارج الـ Layout لتعمل بكامل الشاشة */}
-      <Route path="empire" element={<EmpireLanding />} />
-      <Route path="pro" element={<RetailLanding />} />
-      <Route path="contractor" element={<ContractorLanding />} />
 
       {/* 🛡️ 2. مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout (يحتوي على Sidebar) */}
       <Route element={<V2Layout accountType={accountType} storeName={storeName} storeInitial={storeInitial} />}>
