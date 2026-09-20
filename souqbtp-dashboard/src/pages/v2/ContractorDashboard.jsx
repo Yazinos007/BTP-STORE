@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Link, useOutletContext } from 'react-router-dom';
+import useSupplierStore from '../../store/useSupplierStore';
 import { 
   Calculator, Star, MessageCircle, Briefcase, Camera, Wallet, 
   FolderOpen, LifeBuoy, CheckCircle2, AlertCircle, Upload, 
