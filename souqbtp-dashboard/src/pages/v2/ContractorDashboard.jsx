@@ -32,17 +32,18 @@ export default function ContractorDashboard() {
     { id: 4, percent: 0, completed: 0, total: 0, color: '#22c55e', icon: '📜' }
   ]);
 
-  const [profile, setProfile] = useState({ store_name: '', phone: '', city: '', project_name: '' });
+  const [profile, setProfile] = useState({ store_name: '', phone: '', address: '' });
+
   useEffect(() => {
     if (supplier) {
       setProfile({
         store_name: supplier.store_name || '',
         phone: supplier.phone || '',
-        city: supplier.city || '',
-        project_name: supplier.project_name || ''
+        address: supplier.address || '' // 🚀 استبدال المدينة والورش بالعنوان
       });
     }
   }, [supplier]);
+
   const [conversations, setConversations] = useState([]);
   const [onlineProviders, setOnlineProviders] = useState([]);
   const [team, setTeam] = useState([]);
@@ -466,13 +467,12 @@ export default function ContractorDashboard() {
     if(!supplier) return;
     setSaveStatus('loading');
     try {
-      // 🚀 استخدام الدالة الموحدة لتحديث قاعدة البيانات والمخزن المركزي في نفس اللحظة
       if (updateProfile) {
+        // 🚀 إرسال الحقول الصحيحة المطابقة لقاعدة البيانات
         await updateProfile({
           store_name: profile.store_name,
           phone: profile.phone,
-          city: profile.city,
-          project_name: profile.project_name
+          address: profile.address 
         });
       }
       setSaveStatus('success');
@@ -652,12 +652,15 @@ export default function ContractorDashboard() {
             <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
             <form onSubmit={handleProfileUpdate} className="space-y-5">
               <input type="text" placeholder={t.compName} value={profile.store_name || ''} onChange={e => setProfile({...profile, store_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              
               <input type="tel" placeholder={t.phone} value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-              <div className="grid grid-cols-2 gap-4">
-                <input type="text" placeholder={t.city} value={profile.city || ''} onChange={e => setProfile({...profile, city: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                <input type="text" placeholder={t.currentSite} value={profile.project_name || ''} onChange={e => setProfile({...profile, project_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-              </div>
-              <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1">{t.saveBtn}</button>
+              
+              {/* 🚀 حقل العنوان الموحد بدلاً من المدينة والورش */}
+              <input type="text" placeholder={language === 'ar' ? 'العنوان' : language === 'fr' ? 'Adresse' : 'Address'} value={profile.address || ''} onChange={e => setProfile({...profile, address: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              
+              <button type="submit" disabled={saveStatus === 'loading'} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1">
+                {saveStatus === 'loading' ? '⏳...' : t.saveBtn}
+              </button>
             </form>
           </div>
 
