@@ -301,7 +301,7 @@ export default function ContractorProfile() {
               <p className="text-xs font-black text-blue-500 uppercase tracking-widest mb-1">{t.activePlan}</p>
               <h5 className={`text-2xl font-black ${textMain}`}>Starter B2B</h5>
             </div>
-            <button onClick={() => navigate('/subscription')} className={`w-full py-3.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-300'} font-black rounded-xl transition-all border-2 flex justify-center items-center gap-2`}>
+            <button onClick={() => navigate('/v2/subscription')} className={`w-full py-3.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-300'} font-black rounded-xl transition-all border-2 flex justify-center items-center gap-2`}>
               <Lock size={18} /> {t.upgradeBtn}
             </button>
           </div>

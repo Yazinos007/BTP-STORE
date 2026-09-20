@@ -11,6 +11,9 @@ export default function ContractorDashboard() {
   const { isDarkMode, language = 'ar' } = useOutletContext(); 
   const isRtl = language === 'ar';
 
+  // 🚀 استدعاء المخزن المركزي لتوحيد البيانات مع البروفايل
+  const { supplier, updateProfile } = useSupplierStore();
+
   const [loading, setLoading] = useState(true);
   const [startAnimation, setStartAnimation] = useState(false);
   const [user, setUser] = useState(null);
@@ -28,7 +31,17 @@ export default function ContractorDashboard() {
     { id: 4, percent: 0, completed: 0, total: 0, color: '#22c55e', icon: '📜' }
   ]);
 
-  const [profile, setProfile] = useState({ full_name: '', phone: '', city: '', project_name: '' });
+  const [profile, setProfile] = useState({ store_name: '', phone: '', city: '', project_name: '' });
+  useEffect(() => {
+    if (supplier) {
+      setProfile({
+        store_name: supplier.store_name || '',
+        phone: supplier.phone || '',
+        city: supplier.city || '',
+        project_name: supplier.project_name || ''
+      });
+    }
+  }, [supplier]);
   const [conversations, setConversations] = useState([]);
   const [onlineProviders, setOnlineProviders] = useState([]);
   const [team, setTeam] = useState([]);
@@ -449,14 +462,25 @@ export default function ContractorDashboard() {
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    if(!user) return;
+    if(!supplier) return;
     setSaveStatus('loading');
     try {
-      const { error } = await supabase.from('profiles').upsert({ id: user.id, ...profile, updated_at: new Date().toISOString() });
-      if (error) throw error;
+      // 🚀 استخدام الدالة الموحدة لتحديث قاعدة البيانات والمخزن المركزي في نفس اللحظة
+      if (updateProfile) {
+        await updateProfile({
+          store_name: profile.store_name,
+          phone: profile.phone,
+          city: profile.city,
+          project_name: profile.project_name
+        });
+      }
       setSaveStatus('success');
+      alert(t.saveBtn + ' ✅');
       setTimeout(() => setSaveStatus(null), 3000);
-    } catch (error) { setSaveStatus('error'); setTimeout(() => setSaveStatus(null), 3000); }
+    } catch (error) { 
+      setSaveStatus('error'); 
+      setTimeout(() => setSaveStatus(null), 3000); 
+    }
   };
 
   const handleDocumentUpload = async (e) => {
@@ -626,7 +650,7 @@ export default function ContractorDashboard() {
           <div className={cardClass}>
             <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
             <form onSubmit={handleProfileUpdate} className="space-y-5">
-              <input type="text" placeholder={t.compName} value={profile.full_name || ''} onChange={e => setProfile({...profile, full_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              <input type="text" placeholder={t.compName} value={profile.store_name || ''} onChange={e => setProfile({...profile, store_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
               <input type="tel" placeholder={t.phone} value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
               <div className="grid grid-cols-2 gap-4">
                 <input type="text" placeholder={t.city} value={profile.city || ''} onChange={e => setProfile({...profile, city: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
