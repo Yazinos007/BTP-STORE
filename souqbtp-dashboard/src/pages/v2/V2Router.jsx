@@ -78,9 +78,11 @@ export default function V2Router({ session, supplier }) {
         <Route path="subscription" element={<ContractorSubscription />} />
 
         {/* 🚨 التوجيه التلقائي */}
+        <Route path="empire" element={<Navigate to="/empire" replace />} />
+        <Route path="pro" element={<Navigate to="/pro" replace />} />
+        <Route path="contractor" element={<Navigate to="/contractor" replace />} />
         <Route path="*" element={<Navigate to="contractor-dashboard" replace />} />
       </Route>
-      
     </Routes>
   );
 }
