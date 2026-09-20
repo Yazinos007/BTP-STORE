@@ -622,7 +622,7 @@ export default function ContractorDashboard() {
         <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 p-6 rounded-3xl border-2 shadow-xl ${isDarkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-white/90 border-slate-200'}`}>
           <div>
             <h1 className={`text-3xl md:text-4xl font-black tracking-tight ${isDarkMode ? 'text-white drop-shadow-md' : 'text-[#0f3b25] drop-shadow-sm'}`}>{t.pageTitle}</h1>
-            <p className={`text-sm font-bold mt-1 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>اختر الورش:</p>
+            <p className={`text-sm font-bold mt-1 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{t.selectProject}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
@@ -646,8 +646,23 @@ export default function ContractorDashboard() {
               onClick={() => setIsNewProjectModalOpen(true)}
               className="bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-xl font-black shadow-lg transition-all hover:scale-105 flex items-center justify-center shrink-0 w-full sm:w-auto gap-2"
             >
-              <Plus size={24} /> <span className="sm:hidden">إضافة ورش</span>
+              <Plus size={24} /> <span className="sm:hidden">{t.newProjectBtn}</span>
             </button>
+
+            {activeProject && activeProject.status !== 'completed' && (
+              <button
+                onClick={async () => {
+                  if(confirm(language === 'ar' ? 'هل أنت متأكد من أرشفة هذا الورش وإنهائه؟' : 'Archiver ce chantier ?')) {
+                    const { archiveProject } = useProjectStore.getState();
+                    await archiveProject(activeProject.id);
+                  }
+                }}
+                className={`p-4 rounded-xl font-black shadow-lg transition-all hover:scale-105 flex items-center justify-center shrink-0 w-full sm:w-auto ${isDarkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
+              >
+                📦 <span className="sm:hidden">{language === 'ar' ? 'أرشفة الورش' : 'Archiver'}</span>
+              </button>
+            )}
+
           </div>
         </div>
 
@@ -1010,7 +1025,9 @@ export default function ContractorDashboard() {
                 <input type="number" placeholder="0.00" value={newProjectBudget} onChange={e => setNewProjectBudget(e.target.value)} className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500' : 'bg-slate-50 border-slate-200 focus:border-blue-500'}`} />
               </div>
               <div className="flex gap-4 mt-8">
-                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-all hover:-translate-y-1">{t.createBtn}</button>
+                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-all hover:-translate-y-1">
+                  {t.createBtn || (language === 'fr' ? 'Créer et Démarrer' : 'إنشاء وبدء العمل')}
+                </button>
                 <button type="button" onClick={() => setIsNewProjectModalOpen(false)} className={`px-8 font-black py-4 rounded-xl transition-all ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>{t.cancel}</button>
               </div>
             </form>

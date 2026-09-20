@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Link, useOutletContext, useNavigate } from 'react-router-dom';
+import useProjectStore from '../../store/useProjectStore';
 import { 
   CheckCircle2, Circle, Users, Briefcase, 
   Map, LayoutDashboard, X, Search 
@@ -13,6 +14,7 @@ export default function ProjectPath() {
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const { activeProject } = useProjectStore();
   
   const [selectedStage, setSelectedStage] = useState(1);
   const [services, setServices] = useState([]);
@@ -253,17 +255,25 @@ export default function ProjectPath() {
         if(authListener) authListener.subscription.unsubscribe(); 
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStage, language]);
+  }, [selectedStage, language, activeProject]);
 
+  // 🚀 1. تعديل دالة تحميل البيانات
   const loadStageData = async (stageId, passedUser, isMounted = true) => {
     setProviders([]);
     setSelectedService(null);
     try {
+      // 🚀 إذا لم يكن هناك ورش نشط، قم بتفريغ البيانات ولا تفعل شيئاً
+      if (!activeProject) {
+        setServices([]); setChecklists([]); setUserProgress([]); setTeam([]); setOverallProgress(0);
+        if(isMounted) setLoading(false);
+        return;
+      }
+
       const [servicesRes, checklistsRes, progressRes, teamRes, totalTasksRes] = await Promise.all([
         supabase.from('services').select('*').eq('stage_id', stageId),
         supabase.from('checklists').select('*').order('sort_order'),
-        passedUser ? supabase.from('user_progress').select('task_id').eq('user_id', passedUser.id) : { data: [] },
-        passedUser ? supabase.from('milestone_assignments').select('*').eq('user_id', passedUser.id).eq('stage_id', stageId) : { data: [] },
+        passedUser ? supabase.from('user_progress').select('task_id').eq('project_id', activeProject.id) : { data: [] }, // 🚀 project_id
+        passedUser ? supabase.from('milestone_assignments').select('*').eq('project_id', activeProject.id).eq('stage_id', stageId) : { data: [] }, // 🚀 project_id
         supabase.from('checklists').select('id', { count: 'exact', head: true })
       ]);
 
@@ -287,9 +297,15 @@ export default function ProjectPath() {
     if(isMounted) setLoading(false);
   };
 
+  // 🚀 2. تعديل دالة إكمال المهام
   const toggleTask = async (taskId) => {
     if (!user) {
       alert(t.loginRequired);
+      return;
+    }
+    // منع الحفظ إذا لم يكن هناك ورش
+    if (!activeProject) {
+      alert(language === 'ar' ? 'يرجى إنشاء ورش أولاً في لوحة القيادة!' : 'Veuillez d\'abord créer un chantier !');
       return;
     }
 
@@ -298,10 +314,12 @@ export default function ProjectPath() {
 
     if (isDone) {
       newProgress = newProgress.filter(id => id !== taskId);
-      await supabase.from('user_progress').delete().eq('user_id', user.id).eq('task_id', taskId);
+      // 🚀 المسح بناءً على project_id
+      await supabase.from('user_progress').delete().eq('project_id', activeProject.id).eq('task_id', taskId);
     } else {
       newProgress.push(taskId);
-      await supabase.from('user_progress').insert({ user_id: user.id, task_id: taskId });
+      // 🚀 الحفظ بناءً على project_id
+      await supabase.from('user_progress').insert({ user_id: user.id, project_id: activeProject.id, task_id: taskId });
     }
 
     setUserProgress(newProgress);
@@ -353,13 +371,16 @@ export default function ProjectPath() {
     } catch (err) { console.error(err); }
   };
 
+  // 🚀 3. تعديل دالة تعيين الفريق
   const handleAssignSubmit = async () => {
     if (!user) return alert(t.loginRequired);
     if (!assignForm.name) return;
+    if (!activeProject) return alert(language === 'ar' ? 'يرجى اختيار الورش أولاً!' : 'Veuillez sélectionner un chantier !');
 
     try {
       await supabase.from('milestone_assignments').insert([{
         user_id: user.id,
+        project_id: activeProject.id, // 🚀 إضافة project_id
         stage_id: selectedStage,
         worker_name: assignForm.name,
         worker_phone: assignForm.phone || ''
