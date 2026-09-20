@@ -14,6 +14,8 @@ export default function ProjectPath() {
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  
+  // 🚀 استدعاء الورش النشط من غرفة العمليات
   const { activeProject } = useProjectStore();
   
   const [selectedStage, setSelectedStage] = useState(1);
@@ -21,6 +23,7 @@ export default function ProjectPath() {
   const [checklists, setChecklists] = useState([]);
   const [userProgress, setUserProgress] = useState([]);
   const [overallProgress, setOverallProgress] = useState(0);
+  const [totalTasks, setTotalTasks] = useState(28); // 🚀 حفظ إجمالي المهام للعمليات الحسابية
   const [team, setTeam] = useState([]);
   
   const [providers, setProviders] = useState([]);
@@ -30,7 +33,7 @@ export default function ProjectPath() {
   const [assignType, setAssignType] = useState('private');
   const [assignForm, setAssignForm] = useState({ name: '', phone: '', providerId: '' });
 
-  // 🚀 1. حماية القاموس لمنع الصفحة البيضاء نهائياً
+  // 1. حماية القاموس لمنع الصفحة البيضاء نهائياً
   const translations = {
     ar: {
       title: "رحلة بناء مشروعك",
@@ -130,10 +133,9 @@ export default function ProjectPath() {
     }
   };
 
-  // تأمين اختيار اللغة لتفادي انهيار التطبيق
   const t = translations[language] || translations.ar;
 
-  // 🚀 2. القاموس الذكي الجديد (يبحث بالكلمات المفتاحية لاصطياد كل شيء)
+  // 2. القاموس الذكي الجديد 
   const dbTranslations = {
     // Stage 1
     "تصميم معماري": { fr: "Conception Architecturale", en: "Architectural Design" },
@@ -157,7 +159,7 @@ export default function ProjectPath() {
     "كهرباء": { fr: "Électricité", en: "Electricity" },
     "سباكة": { fr: "Plomberie", en: "Plumbing" },
     "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
-    "حجرية": { fr: "Travaux de pierre", en: "Stone works" }, // يطابق "اعمال حجرية" و "أعمال حجرية"
+    "حجرية": { fr: "Travaux de pierre", en: "Stone works" },
     "أساسات": { fr: "Fondations", en: "Foundations" },
     "طوب": { fr: "Briques", en: "Bricks" },
     "هيكل خرساني": { fr: "Structure en béton", en: "Concrete structure" },
@@ -178,14 +180,14 @@ export default function ProjectPath() {
     "صيانة": { fr: "Entretien et Rénovation", en: "Maintenance & Renovation" },
     "جبص": { fr: "Plâtre & Céramique", en: "Plaster & Ceramic" },
     "دهان": { fr: "Peinture et Enduit", en: "Painting & Plastering" },
-    "أبواب": { fr: "Portes, fenêtres, cuisines, placards...", en: "Doors, windows, kitchens, closets..." }, // يصطاد الكلمة رغم وجود النقاط
+    "أبواب": { fr: "Portes, fenêtres, cuisines, placards...", en: "Doors, windows, kitchens, closets..." },
     "أرضيات": { fr: "Revêtement sol/mur, marbre, plâtre...", en: "Flooring, marble, ceramic, plaster..." },
     "المرطوب": { fr: "Enduit (Mortier)", en: "Plastering (Enduit)" },
     "زليج": { fr: "Pose de Céramique et Carrelage", en: "Ceramic & Tiling Installation" },
     "صباغة": { fr: "Peinture et Façades Extérieures", en: "Painting & Exterior Facades" },
     "نجارة": { fr: "Menuiserie Bois", en: "Wood Carpentry" },
     "التشطيب النهائي": { fr: "Finitions Finales (Plomberie & Électricité)", en: "Final Touches (Plumbing & Electrical)" },
-    "Jour": { fr: "Menuiserie Aluminium / PVC", en: "Aluminum / PVC Carpentry" }, // ترجمة Jour
+    "Jour": { fr: "Menuiserie Aluminium / PVC", en: "Aluminum / PVC Carpentry" },
     
     // Stage 4
     "شهادة السكنى": { fr: "Permis d'Habiter", en: "Occupancy Permit" },
@@ -201,32 +203,27 @@ export default function ProjectPath() {
   };
 
   const translateDB = (text) => {
-    // 🛡️ حماية فورية لمنع تحطم React في حال كانت القيمة فارغة
     if (!text || typeof text !== 'string') return text; 
-    
     if (language === 'ar') return text;
-    
     const clean = text.trim();
-    
-    // 1. محاولة التطابق التام
-    if (dbTranslations[clean] && dbTranslations[clean][language]) {
-      return dbTranslations[clean][language];
-    }
-    
-    // 2. البحث الذكي المتسامح (يجد الكلمة حتى لو كان قبلها نقاط أو همزات متغيرة)
+    if (dbTranslations[clean] && dbTranslations[clean][language]) return dbTranslations[clean][language];
     for (const [arKey, trans] of Object.entries(dbTranslations)) {
       if (clean.includes(arKey)) return trans[language];
     }
-    
     return text;
   };
 
   const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-800 shadow-md';
   const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
 
+  // 🚀 مراقب الإحصائيات الفوري (يفصل الحسابات عن النقرات لمنع الأخطاء)
+  useEffect(() => {
+    const total = totalTasks > 0 ? totalTasks : 28;
+    setOverallProgress(Math.round((userProgress.length / total) * 100));
+  }, [userProgress, totalTasks]);
+
   useEffect(() => {
     let isMounted = true;
-
     const fetchInitialData = async () => {
       setLoading(true);
       const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -254,17 +251,16 @@ export default function ProjectPath() {
         isMounted = false;
         if(authListener) authListener.subscription.unsubscribe(); 
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // 🚀 تحديث الصفحة تلقائياً عند تغيير الورش من الأعلى
   }, [selectedStage, language, activeProject]);
 
-  // 🚀 1. تعديل دالة تحميل البيانات
   const loadStageData = async (stageId, passedUser, isMounted = true) => {
     setProviders([]);
     setSelectedService(null);
     try {
-      // 🚀 إذا لم يكن هناك ورش نشط، قم بتفريغ البيانات ولا تفعل شيئاً
+      // 🚀 تفريغ البيانات إذا لم يكن هناك ورش نشط
       if (!activeProject) {
-        setServices([]); setChecklists([]); setUserProgress([]); setTeam([]); setOverallProgress(0);
+        setServices([]); setChecklists([]); setUserProgress([]); setTeam([]); 
         if(isMounted) setLoading(false);
         return;
       }
@@ -272,8 +268,8 @@ export default function ProjectPath() {
       const [servicesRes, checklistsRes, progressRes, teamRes, totalTasksRes] = await Promise.all([
         supabase.from('services').select('*').eq('stage_id', stageId),
         supabase.from('checklists').select('*').order('sort_order'),
-        passedUser ? supabase.from('user_progress').select('task_id').eq('project_id', activeProject.id) : { data: [] }, // 🚀 project_id
-        passedUser ? supabase.from('milestone_assignments').select('*').eq('project_id', activeProject.id).eq('stage_id', stageId) : { data: [] }, // 🚀 project_id
+        passedUser ? supabase.from('user_progress').select('task_id').eq('project_id', activeProject.id).eq('user_id', passedUser.id) : { data: [] },
+        passedUser ? supabase.from('milestone_assignments').select('*').eq('project_id', activeProject.id).eq('stage_id', stageId) : { data: [] },
         supabase.from('checklists').select('id', { count: 'exact', head: true })
       ]);
 
@@ -281,14 +277,20 @@ export default function ProjectPath() {
 
       if (servicesRes.data) setServices(servicesRes.data);
       if (checklistsRes.data) setChecklists(checklistsRes.data);
+      
       if (progressRes.data) {
-        const completedIds = progressRes.data.map(p => p.task_id);
+        // 🚀 إزالة التكرارات الناتجة عن الأخطاء القديمة
+        const completedIds = [...new Set(progressRes.data.map(p => p.task_id))];
         setUserProgress(completedIds);
-        
-        const total = totalTasksRes.count || 28;
-        const pct = total > 0 ? Math.round((completedIds.length / total) * 100) : 0;
-        setOverallProgress(pct);
       }
+      
+      // 🚀 حفظ إجمالي المهام بدقة
+      if (totalTasksRes.count) {
+        setTotalTasks(totalTasksRes.count);
+      } else if (checklistsRes.data) {
+        setTotalTasks(checklistsRes.data.length);
+      }
+
       if (teamRes.data) setTeam(teamRes.data);
 
     } catch (error) {
@@ -297,34 +299,51 @@ export default function ProjectPath() {
     if(isMounted) setLoading(false);
   };
 
-  // 🚀 2. تعديل دالة إكمال المهام
+  // 🚀 درع الحماية ضد النقرات السريعة والمسح العشوائي
   const toggleTask = async (taskId) => {
-    if (!user) {
-      alert(t.loginRequired);
-      return;
-    }
-    // منع الحفظ إذا لم يكن هناك ورش
-    if (!activeProject) {
-      alert(language === 'ar' ? 'يرجى إنشاء ورش أولاً في لوحة القيادة!' : 'Veuillez d\'abord créer un chantier !');
-      return;
-    }
+    if (!user) return alert(t.loginRequired);
+    if (!activeProject) return alert(language === 'ar' ? 'يرجى إنشاء ورش أولاً في لوحة القيادة!' : 'Veuillez d\'abord créer un chantier !');
 
-    const isDone = userProgress.includes(taskId);
-    let newProgress = [...userProgress];
+    // 1. التحديث الفوري للذاكرة (Optimistic UI) لمنع تداخل النقرات
+    setUserProgress(prevProgress => {
+      const isDone = prevProgress.includes(taskId);
+      let newProgress;
 
-    if (isDone) {
-      newProgress = newProgress.filter(id => id !== taskId);
-      // 🚀 المسح بناءً على project_id
-      await supabase.from('user_progress').delete().eq('project_id', activeProject.id).eq('task_id', taskId);
-    } else {
-      newProgress.push(taskId);
-      // 🚀 الحفظ بناءً على project_id
-      await supabase.from('user_progress').insert({ user_id: user.id, project_id: activeProject.id, task_id: taskId });
-    }
+      if (isDone) {
+        newProgress = prevProgress.filter(id => id !== taskId);
+        
+        // عملية الحذف في الخلفية بأمان
+        supabase.from('user_progress')
+          .delete()
+          .eq('project_id', activeProject.id)
+          .eq('task_id', taskId)
+          .eq('user_id', user.id)
+          .then(({error}) => { if(error) console.error("Sync Delete Error:", error); });
+          
+      } else {
+        // حماية إضافية لتنظيف أي تكرار
+        newProgress = [...new Set([...prevProgress, taskId])];
+        
+        // التأكد من عدم الإضافة مرتين في قاعدة البيانات
+        supabase.from('user_progress')
+          .select('id')
+          .eq('project_id', activeProject.id)
+          .eq('task_id', taskId)
+          .eq('user_id', user.id)
+          .maybeSingle()
+          .then(({ data: existing }) => {
+            if (!existing) {
+              supabase.from('user_progress').insert({ 
+                user_id: user.id, 
+                project_id: activeProject.id, 
+                task_id: taskId 
+              }).then(({error}) => { if(error) console.error("Sync Insert Error:", error); });
+            }
+          });
+      }
 
-    setUserProgress(newProgress);
-    const total = checklists.length > 0 ? checklists.length : 28;
-    setOverallProgress(Math.round((newProgress.length / total) * 100));
+      return newProgress;
+    });
   };
 
   const handleShowProviders = async (serviceId, serviceName) => {
@@ -362,6 +381,7 @@ export default function ProjectPath() {
       const today = new Date().toISOString().split('T')[0];
       await supabase.from('appointments').insert([{
           user_id: user.id, provider_id: providerId, service_id: selectedService.id,
+          project_id: activeProject?.id, // 🚀 دمج الورش في المواعيد
           appointment_date: today, status: 'pending', notes: `طلب من صفحة المراحل: ${translateDB(selectedService.name)}`
       }]);
 
@@ -371,16 +391,15 @@ export default function ProjectPath() {
     } catch (err) { console.error(err); }
   };
 
-  // 🚀 3. تعديل دالة تعيين الفريق
   const handleAssignSubmit = async () => {
     if (!user) return alert(t.loginRequired);
     if (!assignForm.name) return;
-    if (!activeProject) return alert(language === 'ar' ? 'يرجى اختيار الورش أولاً!' : 'Veuillez sélectionner un chantier !');
+    if (!activeProject) return alert(language === 'ar' ? 'يرجى اختيار الورش أولاً من لوحة القيادة!' : 'Veuillez sélectionner un chantier !');
 
     try {
       await supabase.from('milestone_assignments').insert([{
         user_id: user.id,
-        project_id: activeProject.id, // 🚀 إضافة project_id
+        project_id: activeProject.id, // 🚀 تعيين الفريق في الورش المحدد
         stage_id: selectedStage,
         worker_name: assignForm.name,
         worker_phone: assignForm.phone || ''
@@ -401,6 +420,11 @@ export default function ProjectPath() {
         <div className="relative z-10">
           <h1 className="text-3xl md:text-4xl font-black text-white mb-2 flex items-center justify-center md:justify-start gap-3">🏗️ {t.title}</h1>
           <p className="text-blue-100 font-bold text-lg">{t.subtitle}</p>
+          {activeProject && (
+            <div className="mt-4 inline-block bg-white/10 px-4 py-1.5 rounded-full border border-white/20 text-white font-bold text-sm backdrop-blur-sm">
+              الورش الحالي: <span className="text-amber-300">{activeProject.name}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -468,6 +492,10 @@ export default function ProjectPath() {
         
         {loading ? (
           <div className="text-center py-16 text-slate-400 font-bold">{t.loadingData}</div>
+        ) : !activeProject ? (
+          <div className={`text-center py-16 rounded-3xl border-2 border-dashed font-bold ${isDarkMode ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
+            {language === 'ar' ? 'قم بإنشاء ورش من لوحة القيادة لتبدأ بتسجيل المهام' : 'Veuillez créer un chantier dans le tableau de bord pour commencer'}
+          </div>
         ) : services.length === 0 ? (
           <div className={`text-center py-16 rounded-3xl border-2 border-dashed font-bold ${isDarkMode ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
             {t.noServices}
@@ -480,7 +508,6 @@ export default function ProjectPath() {
               return (
                 <div key={service.id} className={`rounded-3xl border-2 p-6 transition-all hover:shadow-xl ${cardBg} hover:-translate-y-1`}>
                   
-                  {/* 🚀 الترجمة الديناميكية لاسم الخدمة */}
                   <h3 className={`text-xl font-black mb-5 pb-3 border-b ${isDarkMode ? 'border-slate-700 text-blue-300' : 'border-slate-100 text-blue-900'}`}>
                     {translateDB(service.name)} 
                   </h3>
@@ -501,7 +528,6 @@ export default function ProjectPath() {
                           <div className={`mt-0.5 shrink-0 ${isDone ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`}>
                             {isDone ? <CheckCircle2 size={20} className="fill-emerald-100 dark:fill-emerald-900" /> : <Circle size={20} />}
                           </div>
-                          {/* 🚀 الترجمة الديناميكية لاسم المهمة */}
                           <span className="font-bold text-sm leading-snug">{translateDB(task.task_description)}</span>
                         </div>
                       )
