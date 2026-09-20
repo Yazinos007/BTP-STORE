@@ -45,7 +45,12 @@ export default function V2Router({ session, supplier }) {
   return (
     <Routes>
       
-      {/* 🛡️ 2. مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout (يحتوي على Sidebar) */}
+      {/* 🚀 فخ التوجيه: خارج الـ Layout تماماً لمنع رسم أي واجهة بالخطأ */}
+      <Route path="empire" element={<Navigate to="/empire" replace />} />
+      <Route path="pro" element={<Navigate to="/pro" replace />} />
+      <Route path="contractor" element={<Navigate to="/contractor" replace />} />
+
+      {/* 🛡️ مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout */}
       <Route element={<V2Layout accountType={accountType} storeName={storeName} storeInitial={storeInitial} />}>
         
         {/* الرئيسية */}
@@ -64,7 +69,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="freight-exchange" element={<FreightExchange />} />
         <Route path="live-orders" element={<LiveOrders />} />
             
-        {/* 🚀 المالية والمحاسبة */}
+        {/* المالية والمحاسبة */}
         <Route path="hr" element={<ContractorHR />} /> 
         <Route path="b2b-invoices" element={<B2bInvoices />} />
         <Route path="accounts" element={<AccountsManager />} /> 
@@ -77,10 +82,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="profile" element={<ContractorProfile />} />
         <Route path="subscription" element={<ContractorSubscription />} />
 
-        {/* 🚨 التوجيه التلقائي */}
-        <Route path="empire" element={<Navigate to="/empire" replace />} />
-        <Route path="pro" element={<Navigate to="/pro" replace />} />
-        <Route path="contractor" element={<Navigate to="/contractor" replace />} />
+        {/* 🚨 التوجيه التلقائي للمسارات المجهولة داخل v2 */}
         <Route path="*" element={<Navigate to="contractor-dashboard" replace />} />
       </Route>
     </Routes>

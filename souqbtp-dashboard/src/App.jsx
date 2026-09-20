@@ -589,11 +589,11 @@ function App() {
   const isLandingPage = pathname.startsWith('/empire') || pathname.startsWith('/pro') || pathname.startsWith('/contractor');
   const isAuthPage = pathname.includes('/login') || pathname.includes('/register');
 
+  // 🚀 مانع الوميض الصارم: لا ترسم أي واجهة قبل استقرار حالة النظام
   if (loading) {
     return <div className="h-screen w-full bg-[#0f172a]"></div>; 
   }
-  
-  // الحارس الإلكتروني الأساسي
+
   if (!session && !isV2Path && !isLandingPage && !isAuthPage && !isStorePage) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans" dir={language === 'ar' ? 'rtl' : 'ltr'}>
