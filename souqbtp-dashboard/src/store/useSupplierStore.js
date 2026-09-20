@@ -1,17 +1,13 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
-const useSupplierStore = create((set, get) => ({
+const useSupplierStore = create((set) => ({
   supplier: null,
   teamMembers: [],
   isLoading: true, 
   isAuthenticated: false,
 
-  // 🚀 البيانات الجديدة الخاصة بالأوراش المتعددة (V2)
-  projects: [],           // قائمة كل الأوراش الخاصة بالمقاول
-  activeProject: null,    // الورش النشط (المحدد) حالياً
-
-  // الدالة الأساسية (للمقاول والمورد)
+  // 🧠 الدالة الأساسية التي يبحث عنها النظام
   fetchSupplierProfile: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -41,13 +37,10 @@ const useSupplierStore = create((set, get) => ({
           supplier: { ...employeeData, role: 'employé', tier: 'enterprise', store_name: employeeData.full_name }, 
           isAuthenticated: true, isLoading: false 
         });
-        
-        // جلب الأوراش لهذا الموظف (إذا أردت تخصيص الصلاحيات لاحقاً)
-        get().fetchUserProjects(userId);
         return;
       }
 
-      // الفحص 2: إذن هو المدير أو المقاول
+      // الفحص 2: إذن هو المدير 
       let { data: adminData } = await supabase
         .from('suppliers')
         .select('*')
@@ -56,12 +49,18 @@ const useSupplierStore = create((set, get) => ({
 
       if (adminData) {
         
-        // ترقية الموردين الأوائل
+        // 🚀 الكود السحري: عرض شركاء التأسيس (أول 100 مورد)
         if (adminData.tier === 'free' && !adminData.is_founding_partner) {
-          const { count } = await supabase.from('suppliers').select('*', { count: 'exact', head: true });
+          // حساب عدد الموردين في المنصة
+          const { count } = await supabase
+            .from('suppliers')
+            .select('*', { count: 'exact', head: true });
+
+          // إذا كان العدد 100 أو أقل، قم بالترقية الفورية!
           if (count !== null && count <= 100) {
             const sixMonthsFromNow = new Date();
             sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
+
             const { data: updatedData, error: updateError } = await supabase
               .from('suppliers')
               .update({
@@ -72,108 +71,31 @@ const useSupplierStore = create((set, get) => ({
               .eq('id', userId)
               .select()
               .single();
-            if (!updateError && updatedData) adminData = updatedData; 
+            
+            if (!updateError && updatedData) {
+              adminData = updatedData; // تحديث بيانات الجلسة الحالية لتشمل الترقية
+              console.log("🎊 تم تفعيل اشتراك Pro لمدة 6 أشهر بنجاح!");
+            }
           }
         }
 
         set({ supplier: adminData, isAuthenticated: true, isLoading: false });
-        
-        // 🚀 جلب كل الأوراش الخاصة بهذا المقاول
-        get().fetchUserProjects(userId);
         return;
       }
 
-      // إذا لم يكن في جدول الموردين (مثلاً مستخدم جديد تماماً في V2)
-      set({ 
-        supplier: { id: userId, email: userEmail, store_name: session.user.user_metadata?.company_name || 'مقاول' }, 
-        isAuthenticated: true, 
-        isLoading: false 
-      });
-      get().fetchUserProjects(userId);
-
+      set({ supplier: null, isAuthenticated: false, isLoading: false });
     } catch (error) {
       console.error("Error fetching profile:", error);
       set({ isLoading: false, isAuthenticated: false });
     }
   },
 
-  // ==========================================
-  // 🏗️ دوال إدارة الأوراش (V2 Projects HQ)
-  // ==========================================
-
-  // جلب كل الأوراش وتحديد الورش النشط
-  fetchUserProjects: async (userId) => {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // إذا كان لديه أوراش، نجعل أول واحد هو "النشط" افتراضياً
-      // إذا لم يكن لديه، تبقى القائمة فارغة
-      set({ 
-        projects: data || [], 
-        activeProject: data && data.length > 0 ? data[0] : null 
-      });
-
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-    }
-  },
-
-  // تبديل الجبهة (اختيار ورش آخر للعمل عليه)
-  setActiveProject: (projectId) => {
-    const { projects } = get();
-    const selected = projects.find(p => p.id === projectId);
-    if (selected) {
-      set({ activeProject: selected });
-      console.log("تم الانتقال إلى الورش:", selected.name);
-    }
-  },
-
-  // إطلاق ورش جديد
-  createNewProject: async (projectName, initialBudget = 0) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { success: false };
-
-      const { data, error } = await supabase
-        .from('projects')
-        .insert([{ 
-          user_id: user.id, 
-          name: projectName, 
-          budget: initialBudget 
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // إضافة الورش الجديد للقائمة وجعله النشط فوراً
-      set((state) => ({ 
-        projects: [data, ...state.projects],
-        activeProject: data
-      }));
-
-      return { success: true, project: data };
-    } catch (error) {
-      console.error("Error creating project:", error);
-      return { success: false, error };
-    }
-  },
-
-  // ==========================================
-  // باقي الدوال القديمة (كما هي)
-  // ==========================================
-
   updateProfile: async (updates) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { success: false, error: 'User not authenticated' };
       
+      // ✅ الكود الصحيح: نستخدم update لتعديل البيانات، ونستخدم user.id للتعرف على المورد
       const { data, error } = await supabase
         .from('suppliers')
         .update(updates)
@@ -181,10 +103,17 @@ const useSupplierStore = create((set, get) => ({
         .select()
         .single();
         
-      if (error) return { success: false, error };
+      if (error) {
+        console.error("Supabase Update Error:", error);
+        return { success: false, error };
+      }
+      
+      // ✅ تحديث البيانات في الواجهة فوراً
       set({ supplier: data });
       return { success: true };
+      
     } catch (err) {
+      console.error("Store Update Error:", err);
       return { success: false, error: err };
     }
   },
