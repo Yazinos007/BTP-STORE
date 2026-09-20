@@ -347,18 +347,20 @@ export default function CostCalculator() {
     
     setSaveStatus({ type: 'loading', msg: t.saving });
     try {
-      // 1. فحص هل توجد ميزانية سابقة لهذا الورش؟
-      const { data: existingEstimate } = await supabase
+      const { data: existingEstimate, error: fetchError } = await supabase
         .from('user_estimates')
         .select('id')
         .eq('user_id', user.id)
         .eq('project_id', activeProject.id)
         .maybeSingle();
 
+      if (fetchError) {
+        console.error("🔍 خطأ أثناء البحث عن الفاتورة:", fetchError);
+      }
+
       let dbError;
 
       if (existingEstimate) {
-        // 2. إذا كانت موجودة -> نقوم بتحديثها (Update)
         const { error } = await supabase
           .from('user_estimates')
           .update({
@@ -369,7 +371,6 @@ export default function CostCalculator() {
           .eq('id', existingEstimate.id);
         dbError = error;
       } else {
-        // 3. إذا لم تكن موجودة -> نقوم بإنشائها (Insert)
         const { error } = await supabase
           .from('user_estimates')
           .insert({
@@ -388,7 +389,8 @@ export default function CostCalculator() {
       setSaveStatus({ type: 'success', msg: t.saveSuccess });
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
-      console.error("❌ Error saving estimate:", error);
+      // 🚀 هذا السطر سيفضح لنا سبب المشكلة الحقيقي في الكونسول
+      console.error("❌ الخطأ التفصيلي من قاعدة البيانات:", error);
       setSaveStatus({ type: 'error', msg: "Error saving estimate" });
     }
   };
