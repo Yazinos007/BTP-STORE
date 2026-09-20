@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Link, useOutletContext } from 'react-router-dom';
 import useSupplierStore from '../../store/useSupplierStore';
+import useProjectStore from '../../store/useProjectStore';
 import { 
   Calculator, Star, MessageCircle, Briefcase, Camera, Wallet, 
   FolderOpen, LifeBuoy, CheckCircle2, AlertCircle, Upload, 
-  Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft
+  Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft, Plus
 } from 'lucide-react';
 
 export default function ContractorDashboard() {
@@ -14,6 +15,14 @@ export default function ContractorDashboard() {
 
   // 🚀 استدعاء المخزن المركزي لتوحيد البيانات مع البروفايل
   const { supplier, updateProfile } = useSupplierStore();
+
+  // 🚀 استدعاء بيانات الأوراش من غرفة العمليات
+  const { projects, activeProject, setActiveProject, fetchProjects, addProject } = useProjectStore();
+  
+  // حالة نافذة إضافة ورش جديد
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectBudget, setNewProjectBudget] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [startAnimation, setStartAnimation] = useState(false);
@@ -33,6 +42,11 @@ export default function ContractorDashboard() {
   ]);
 
   const [profile, setProfile] = useState({ store_name: '', phone: '', address: '' });
+
+  // 🚀 جلب الأوراش عند تحميل الصفحة
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   useEffect(() => {
     if (supplier) {
@@ -313,27 +327,32 @@ export default function ContractorDashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  // 🚀 3. جلب البيانات المحمي من الأخطاء
+  // 🚀 3. جلب بيانات الورش النشط (Active Project) فقط!
   useEffect(() => {
     let isMounted = true;
     const initializeDashboard = async () => {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      await fetchDashboardData(session?.user || null, isMounted);
+      if (session && isMounted) setUser(session.user);
+
+      if (activeProject) {
+        await fetchDashboardData(session?.user || null, isMounted);
+      } else {
+        if (isMounted) setLoading(false);
+      }
     };
 
     initializeDashboard();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (isMounted) fetchDashboardData(session?.user || null, isMounted);
+      if (isMounted && activeProject) fetchDashboardData(session?.user || null, isMounted);
     });
 
     return () => { 
       isMounted = false;
       if(authListener) authListener.subscription.unsubscribe(); 
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language]); 
+  }, [activeProject, language]); 
 
   const fetchDashboardData = async (currentUser, isMounted) => {
     try {
@@ -355,8 +374,8 @@ export default function ContractorDashboard() {
         const [servicesRes, checklistsRes, progressRes, profileRes] = await Promise.all([
           supabase.from('services').select('id, stage_id'),
           supabase.from('checklists').select('id, service_id'),
-          supabase.from('user_progress').select('task_id').eq('user_id', currentUser.id),
-          supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle() // 🚀 استخدام maybeSingle لتجنب الأعطال
+          supabase.from('user_progress').select('task_id').eq('project_id', activeProject.id),
+          supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle() 
         ]);
 
         if (profileRes.data && isMounted) setProfile(profileRes.data);
@@ -393,8 +412,8 @@ export default function ContractorDashboard() {
           total: totalOverallTasks
         };
 
-        const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-        const { data: expenses } = await supabase.from('project_expenses').select('amount').eq('user_id', currentUser.id);
+        const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget').eq('project_id', activeProject.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        const { data: expenses } = await supabase.from('project_expenses').select('amount').eq('project_id', activeProject.id);
         
         const estBudget = estimate ? parseFloat(estimate.total_cost || estimate.total_budget || 0) : 0;
         const totalSpent = expenses ? expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) : 0;
@@ -421,16 +440,16 @@ export default function ContractorDashboard() {
           setConversations(convosWithDetails);
         }
 
-        const { data: teamData } = await supabase.from('milestone_assignments').select('*').eq('user_id', currentUser.id).order('stage_id', { ascending: true });
+        const { data: teamData } = await supabase.from('milestone_assignments').select('*').eq('project_id', activeProject.id).order('stage_id', { ascending: true });
         if (teamData && isMounted) setTeam(teamData);
 
-        const { data: reportsData } = await supabase.from('site_reports').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(10);
+        const { data: reportsData } = await supabase.from('site_reports').select('*').eq('project_id', activeProject.id).order('created_at', { ascending: false }).limit(10);
         if (reportsData && isMounted) setReports(reportsData);
 
-        const { data: docsData } = await supabase.from('project_documents').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+        const { data: docsData } = await supabase.from('project_documents').select('*').eq('project_id', activeProject.id).order('created_at', { ascending: false });
         if (docsData && isMounted) setDocuments(docsData);
 
-        const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('user_id', currentUser.id);
+        const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('project_id', activeProject.id);
         if (appsData && isMounted) setAppointments(appsData);
         
       } else {
@@ -484,28 +503,38 @@ export default function ContractorDashboard() {
     }
   };
 
+  // 🚀 دالة إنشاء الورش الجديد
+  const handleCreateProject = async (e) => {
+    e.preventDefault();
+    if (!newProjectName) return;
+    await addProject(newProjectName, parseFloat(newProjectBudget || 0));
+    setIsNewProjectModalOpen(false);
+    setNewProjectName('');
+    setNewProjectBudget('');
+  };
+
   const handleDocumentUpload = async (e) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !user) return;
+    if (!files || files.length === 0 || !user || !activeProject) return;
     setUploadingDoc(true);
     let successCount = 0;
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fileName = `${Math.random().toString(36).substring(2, 10)}_${file.name.replace(/\s+/g, '_')}`;
-      const filePath = `${user.id}/${fileName}`;
+      const filePath = `${user.id}/${activeProject.id}/${fileName}`;
       const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, file);
       if (uploadError) continue;
       
       const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
       const { error: dbError } = await supabase.from('project_documents').insert([{ 
-        user_id: user.id, file_name: file.name, file_url: urlData.publicUrl, category: docCategory 
+        user_id: user.id, project_id: activeProject.id, file_name: file.name, file_url: urlData.publicUrl, category: docCategory 
       }]);
       if (!dbError) successCount++;
     }
     
     if (successCount > 0) {
-      const { data } = await supabase.from('project_documents').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+      const { data } = await supabase.from('project_documents').select('*').eq('project_id', activeProject.id).order('created_at', { ascending: false });
       setDocuments(data || []);
     }
     setUploadingDoc(false);
@@ -589,309 +618,353 @@ export default function ContractorDashboard() {
 
       <div className="relative z-10 space-y-8 animate-fade-in pb-24">
         
-        <div className="mb-4">
-          <h1 className={`text-4xl font-black tracking-tight ${isDarkMode ? 'text-white drop-shadow-md' : 'text-[#0f3b25] drop-shadow-sm'}`}>{t.pageTitle}</h1>
-        </div>
-
-        <div className="flex flex-wrap gap-4 mb-6">
-          <Link to="/v2/cost-calculator" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
-            <Calculator className="text-blue-500" size={24} /> {t.calcBtn}
-          </Link>
-          <Link to="/v2/project-path" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
-            <FolderOpen className="text-orange-500" size={24} /> {t.projectPathBtn}
-          </Link>
-        </div>
-
-        {/* 🚀 البطاقات الثلاث الإحصائية في القمة مع العداد المتصاعد */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
-            <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
-            <span className="text-6xl font-black drop-shadow-md">{displayStats.progress}%</span>
-          </div>
-          <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
-            <span className="text-sm font-bold opacity-90 mb-2">{t.tasksDone}</span>
-            <span className="text-6xl font-black drop-shadow-md">{displayStats.completed}</span>
-          </div>
-          <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(6,182,212,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
-            <span className="text-sm font-bold opacity-90 mb-2">{t.tasksLeft}</span>
-            <span className="text-6xl font-black drop-shadow-md">{displayStats.remaining}</span>
-          </div>
-        </div>
-
-        {/* 🚀 منطقة الإحصائيات التفصيلية (الدوائر الأربع النابضة) تحتها مباشرة */}
-        <div className={`${cardClass} mb-6`}>
-          <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
-          <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {displayStages.map(stage => (
-              <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all flex flex-col items-center justify-center group ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
-                <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
-                  {t.stageNames[stage.id]} {stage.icon}
-                </div>
-                
-                <div 
-                  className="relative w-32 h-32 rounded-full flex items-center justify-center mb-4 shadow-inner group-hover:shadow-[0_0_20px_rgba(0,0,0,0.1)] transition-shadow duration-500" 
-                  style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}
-                >
-                  <div className={`absolute rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`} style={{ width: '82%', height: '82%' }}>
-                    <span className="text-2xl font-black animate-pulse" style={{ color: stage.color }}>{stage.percent}%</span>
-                  </div>
-                </div>
-                
-                <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                  {stage.completed} / {stage.total} {t.taskUnit}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className={cardClass}>
-            <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
-            <form onSubmit={handleProfileUpdate} className="space-y-5">
-              <input type="text" placeholder={t.compName} value={profile.store_name || ''} onChange={e => setProfile({...profile, store_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-              
-              <input type="tel" placeholder={t.phone} value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-              
-              {/* 🚀 حقل العنوان الموحد بدلاً من المدينة والورش */}
-              <input type="text" placeholder={language === 'ar' ? 'العنوان' : language === 'fr' ? 'Adresse' : 'Address'} value={profile.address || ''} onChange={e => setProfile({...profile, address: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-              
-              <button type="submit" disabled={saveStatus === 'loading'} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1">
-                {saveStatus === 'loading' ? '⏳...' : t.saveBtn}
-              </button>
-            </form>
+        {/* 🚀 السلاح الجديد: مبدّل الأوراش (Project Switcher) */}
+        <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 p-6 rounded-3xl border-2 shadow-xl ${isDarkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-white/90 border-slate-200'}`}>
+          <div>
+            <h1 className={`text-3xl md:text-4xl font-black tracking-tight ${isDarkMode ? 'text-white drop-shadow-md' : 'text-[#0f3b25] drop-shadow-sm'}`}>{t.pageTitle}</h1>
+            <p className={`text-sm font-bold mt-1 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>اختر الورش:</p>
           </div>
 
-          <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
-            <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
-              <div>
-                <h2 className="text-xl font-black flex items-center gap-2"><Camera className="text-blue-500" /> {t.camTitle}</h2>
-                <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.camSub}</p>
-              </div>
-              <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all hover:scale-105">
-                <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></span> {t.liveBtn}
-              </button>
-            </div>
-            
-            <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar snap-x">
-              {reports.length === 0 ? (
-                <div className={`w-full text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noReports}</div>
-              ) : (
-                reports.map(r => (
-                  <div key={r.id} className={`min-w-[260px] rounded-xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
-                    <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm`}>
-                      <Trash2 size={16}/>
-                    </button>
-                    <div className="relative h-40 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
-                      <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-                      <span className={`absolute bottom-2 ${isRtl ? 'right-2' : 'left-2'} text-white text-[11px] font-bold`}>
-                        🕒 {new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
-                      </span>
-                    </div>
-                    <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
-                      <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>{r.description || t.interactiveShot}</p>
-                      <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1">👷 {r.provider_name || t.souqTeam}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className={`${cardClass} border-t-4 border-t-blue-500`}>
-          <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
-            <h2 className="text-xl font-black flex items-center gap-2"><MessageCircle className="text-blue-500" /> {t.inboxTitle}</h2>
-            <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/30 px-4 py-1.5 rounded-full">
-              <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> {t.onlineStatus} ({onlineProviders.length}) {t.available}
-            </span>
-          </div>
-          <div className="overflow-x-auto">
-            {conversations.length === 0 ? (
-              <div className={`text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noChats}</div>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            {projects.length > 0 ? (
+              <select
+                value={activeProject?.id || ''}
+                onChange={(e) => setActiveProject(e.target.value)}
+                className={`p-4 rounded-xl font-black border-2 outline-none cursor-pointer flex-1 md:w-72 shadow-inner transition-colors ${isDarkMode ? 'bg-slate-900 border-blue-500/50 text-white focus:border-blue-400' : 'bg-slate-50 border-blue-200 text-slate-800 focus:border-blue-500'}`}
+              >
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>
+                    🏗️ {p.name} {p.status === 'completed' ? '(أرشيف)' : ''}
+                  </option>
+                ))}
+              </select>
             ) : (
-              <table className={`w-full ${isRtl ? 'text-right' : 'text-left'} border-collapse`}>
-                <tbody>
-                  {conversations.map(c => {
-                    const isOnline = onlineProviders.includes(c.partnerId?.toString());
-                    const msgText = c.lastMsg?.content?.startsWith('AUDIO_MSG') ? t.voiceMsg : (c.lastMsg?.content || t.chatStarted);
-                    const token = Array.from(c.id.toString()).map(ch => ch.charCodeAt(0).toString(16)).join('');
-                    return (
-                      <tr key={c.id} className={`border-b transition-colors ${isDarkMode ? 'border-slate-700/50 hover:bg-slate-700/40' : 'border-slate-100 hover:bg-slate-50'} ${c.unread > 0 ? (isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50/70') : ''}`}>
-                        <td className="p-4 font-bold flex items-center gap-3">
-                          <span className={`w-3 h-3 rounded-full ${isOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-slate-300'}`}></span>
-                          {c.icon} {c.partnerName}
-                          {c.unread > 0 && <span className={`bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse shadow-lg ${isRtl ? 'mr-2' : 'ml-2'}`}>{c.unread}</span>}
-                        </td>
-                        <td className={`p-4 text-sm max-w-[200px] truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{msgText}</td>
-                        <td className={`p-4 ${isRtl ? 'text-left' : 'text-right'}`}>
-                          <Link to={`/v2/chat/${token}`} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg hover:shadow-blue-500/30">{t.enterChat}</Link>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+              <span className="text-sm font-black text-amber-500 bg-amber-500/10 px-4 py-2 rounded-xl">لا توجد أوراش</span>
             )}
+
+            <button
+              onClick={() => setIsNewProjectModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-xl font-black shadow-lg transition-all hover:scale-105 flex items-center justify-center shrink-0 w-full sm:w-auto gap-2"
+            >
+              <Plus size={24} /> <span className="sm:hidden">إضافة ورش</span>
+            </button>
           </div>
         </div>
 
-        <div className={cardClass}>
-          <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
-            <h2 className="text-xl font-black flex items-center gap-2">{t.budgetTitle}</h2>
-            <div className="flex gap-2 flex-wrap">
-              <button className="bg-[#e74c3c] hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-500/20 transition-all hover:-translate-y-1">
-                <FileText size={18} /> {t.pdfBtn}
-              </button>
-              <button className="bg-[#25D366] hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-green-500/20 transition-all hover:-translate-y-1">
-                📲 {t.waBtn}
-              </button>
-              <Link to="/v2/cost-calculator" className={`px-5 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-1 ${isDarkMode ? 'border border-slate-600 hover:bg-slate-700 text-slate-200' : 'bg-white border border-slate-200 text-slate-700 shadow-sm'}`}>
-                {t.editBudgetBtn}
+        {/* 🚀 الشرط الذكي: هل يوجد ورش نشط أم لا؟ */}
+        {!activeProject ? (
+          <div className={`flex flex-col items-center justify-center py-20 rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-slate-800/50 border-slate-600' : 'bg-white/50 border-slate-300'}`}>
+            <FolderOpen size={80} className="text-slate-400 mb-6 opacity-50" />
+            <h2 className={`text-2xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>لا توجد أوراش نشطة</h2>
+            <p className={`font-bold mb-8 text-center max-w-md ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              قم بالضغط على زر إضافة لإنشاء أول ورش لك والبدء في إدارة مشروعك.
+            </p>
+            <button onClick={() => setIsNewProjectModalOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-black shadow-lg hover:-translate-y-1 transition-transform flex items-center gap-2 mt-4">
+              <Plus size={24} /> إنشاء أول ورش
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-4 mb-6">
+              <Link to="/v2/cost-calculator" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
+                <Calculator className="text-blue-500" size={24} /> {t.calcBtn}
+              </Link>
+              <Link to="/v2/project-path" className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all transform hover:-translate-y-1 shadow-lg border-2 ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/90 border-white text-slate-800 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] backdrop-blur-md'}`}>
+                <FolderOpen className="text-orange-500" size={24} /> {t.projectPathBtn}
               </Link>
             </div>
-          </div>
-          
-          {!budget.isCalculated ? (
-             <div className={`text-center py-8 rounded-xl mt-4 border border-dashed flex flex-col items-center justify-center gap-4 ${isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-slate-300 bg-blue-50/50'}`}>
-               <p className={`font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.noBudget}</p>
-               <Link to="/v2/cost-calculator" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-black shadow-lg shadow-blue-500/30 transition-transform hover:-translate-y-1">
-                 {t.calcBtn}
-               </Link>
-             </div>
-          ) : (
-            <div className={`text-center py-6 rounded-xl mt-4 border-2 ${isDarkMode ? 'bg-slate-900/50 border-emerald-500/30' : 'bg-emerald-50/50 border-emerald-200'}`}>
-              <p className="font-bold text-slate-500 mb-1">{t.budgetCalculated}</p>
-              <div className="font-black text-3xl text-emerald-600 drop-shadow-sm">{budget.total.toLocaleString()} {t.currency}</div>
-            </div>
-          )}
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className={cardClass}>
-            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
-              <h2 className="text-xl font-black flex items-center gap-2"><Wallet className="text-blue-500" /> {t.radarTitle}</h2>
-              {budget.isCalculated && (
-                <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${radarStatusColor} ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-                  {radarStatus}
-                </span>
-              )}
+            {/* 🚀 البطاقات الثلاث الإحصائية في القمة مع العداد المتصاعد */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
+                <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
+                <span className="text-6xl font-black drop-shadow-md">{displayStats.progress}%</span>
+              </div>
+              <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
+                <span className="text-sm font-bold opacity-90 mb-2">{t.tasksDone}</span>
+                <span className="text-6xl font-black drop-shadow-md">{displayStats.completed}</span>
+              </div>
+              <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(6,182,212,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
+                <span className="text-sm font-bold opacity-90 mb-2">{t.tasksLeft}</span>
+                <span className="text-6xl font-black drop-shadow-md">{displayStats.remaining}</span>
+              </div>
             </div>
-            
-            {!budget.isCalculated ? (
-               <div className={`text-center py-8 rounded-xl border border-dashed flex flex-col items-center justify-center gap-3 ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-slate-50/50'}`}>
-                 <p className="font-bold">{t.noBudget}</p>
-                 <Link to="/v2/cost-calculator" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold transition-all shadow-md">
-                   {t.calcBtn}
-                 </Link>
-               </div>
-            ) : (
-              <div className={`p-6 rounded-2xl border-2 mb-6 ${isDarkMode ? 'bg-slate-900/80 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
-                <div className="flex justify-between font-bold mb-4 text-lg">
-                  <span>{t.spent} <span className="text-orange-500 drop-shadow-sm">{budget.spent.toLocaleString()}</span> {t.currency}</span>
-                  <span>{t.estimated} <span className="text-blue-500 drop-shadow-sm">{budget.total.toLocaleString()}</span> {t.currency}</span>
-                </div>
-                <div className={`w-full h-6 rounded-full overflow-hidden shadow-inner p-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  <div 
-                    className={`h-full rounded-full bg-gradient-to-r ${radarColor} flex items-center justify-end pr-2 transition-all duration-1000 ease-out`} 
-                    style={{ width: `${Math.max(budgetPercent, 5)}%` }}
-                  >
-                    {budgetPercent > 10 && <span className="text-[10px] text-white font-black">{Math.round(budgetPercent)}%</span>}
+
+            {/* 🚀 منطقة الإحصائيات التفصيلية (الدوائر الأربع النابضة) تحتها مباشرة */}
+            <div className={`${cardClass} mb-6`}>
+              <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
+              <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {displayStages.map(stage => (
+                  <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all flex flex-col items-center justify-center group ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
+                    <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
+                      {t.stageNames[stage.id]} {stage.icon}
+                    </div>
+                    
+                    <div 
+                      className="relative w-32 h-32 rounded-full flex items-center justify-center mb-4 shadow-inner group-hover:shadow-[0_0_20px_rgba(0,0,0,0.1)] transition-shadow duration-500" 
+                      style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}
+                    >
+                      <div className={`absolute rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`} style={{ width: '82%', height: '82%' }}>
+                        <span className="text-2xl font-black animate-pulse" style={{ color: stage.color }}>{stage.percent}%</span>
+                      </div>
+                    </div>
+                    
+                    <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                      {stage.completed} / {stage.total} {t.taskUnit}
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className={cardClass}>
+                <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
+                <form onSubmit={handleProfileUpdate} className="space-y-5">
+                  <input type="text" placeholder={t.compName} value={profile.store_name || ''} onChange={e => setProfile({...profile, store_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+                  
+                  <input type="tel" placeholder={t.phone} value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+                  
+                  <input type="text" placeholder={language === 'ar' ? 'العنوان' : language === 'fr' ? 'Adresse' : 'Address'} value={profile.address || ''} onChange={e => setProfile({...profile, address: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+                  
+                  <button type="submit" disabled={saveStatus === 'loading'} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1">
+                    {saveStatus === 'loading' ? '⏳...' : t.saveBtn}
+                  </button>
+                </form>
+              </div>
+
+              <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
+                <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
+                  <div>
+                    <h2 className="text-xl font-black flex items-center gap-2"><Camera className="text-blue-500" /> {t.camTitle}</h2>
+                    <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.camSub}</p>
+                  </div>
+                  <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all hover:scale-105">
+                    <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></span> {t.liveBtn}
+                  </button>
+                </div>
+                
+                <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar snap-x">
+                  {reports.length === 0 ? (
+                    <div className={`w-full text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noReports}</div>
+                  ) : (
+                    reports.map(r => (
+                      <div key={r.id} className={`min-w-[260px] rounded-xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
+                        <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm`}>
+                          <Trash2 size={16}/>
+                        </button>
+                        <div className="relative h-40 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
+                          <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                          <span className={`absolute bottom-2 ${isRtl ? 'right-2' : 'left-2'} text-white text-[11px] font-bold`}>
+                            🕒 {new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                        <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
+                          <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>{r.description || t.interactiveShot}</p>
+                          <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1">👷 {r.provider_name || t.souqTeam}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className={cardClass}>
-            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
-              <button onClick={() => changeMonth(-1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
-                <ChevronRight size={20} className={isRtl ? '' : 'rotate-180'}/>
-              </button>
-              <h3 className="text-xl font-black">{calendarDate.toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })}</h3>
-              <button onClick={() => changeMonth(1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
-                <ChevronLeft size={20} className={isRtl ? '' : 'rotate-180'}/>
-              </button>
+            <div className={`${cardClass} border-t-4 border-t-blue-500`}>
+              <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
+                <h2 className="text-xl font-black flex items-center gap-2"><MessageCircle className="text-blue-500" /> {t.inboxTitle}</h2>
+                <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/30 px-4 py-1.5 rounded-full">
+                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> {t.onlineStatus} ({onlineProviders.length}) {t.available}
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                {conversations.length === 0 ? (
+                  <div className={`text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noChats}</div>
+                ) : (
+                  <table className={`w-full ${isRtl ? 'text-right' : 'text-left'} border-collapse`}>
+                    <tbody>
+                      {conversations.map(c => {
+                        const isOnline = onlineProviders.includes(c.partnerId?.toString());
+                        const msgText = c.lastMsg?.content?.startsWith('AUDIO_MSG') ? t.voiceMsg : (c.lastMsg?.content || t.chatStarted);
+                        const token = Array.from(c.id.toString()).map(ch => ch.charCodeAt(0).toString(16)).join('');
+                        return (
+                          <tr key={c.id} className={`border-b transition-colors ${isDarkMode ? 'border-slate-700/50 hover:bg-slate-700/40' : 'border-slate-100 hover:bg-slate-50'} ${c.unread > 0 ? (isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50/70') : ''}`}>
+                            <td className="p-4 font-bold flex items-center gap-3">
+                              <span className={`w-3 h-3 rounded-full ${isOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-slate-300'}`}></span>
+                              {c.icon} {c.partnerName}
+                              {c.unread > 0 && <span className={`bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse shadow-lg ${isRtl ? 'mr-2' : 'ml-2'}`}>{c.unread}</span>}
+                            </td>
+                            <td className={`p-4 text-sm max-w-[200px] truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{msgText}</td>
+                            <td className={`p-4 ${isRtl ? 'text-left' : 'text-right'}`}>
+                              <Link to={`/v2/chat/${token}`} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg hover:shadow-blue-500/30">{t.enterChat}</Link>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-7 gap-1 text-center mb-3">
-              {t.days.map(d => <div key={d} className={`text-sm font-black ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{d}</div>)}
-            </div>
-            <div className="grid grid-cols-7 gap-1.5">
-              {renderCalendarDays()}
-            </div>
-          </div>
-        </div>
 
-        <div className={cardClass}>
-          <h2 className="text-xl font-black mb-6 pb-4 border-b border-slate-200/20">👷 {t.teamTitle}</h2>
-          {team.length === 0 ? (
-             <p className={`text-center ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.noTeam}</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {team.map(worker => (
-                <div key={worker.id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-slate-900/80 border-slate-700 shadow-md' : 'bg-white border-slate-100 shadow-sm'}`}>
-                  <div>
-                    <h4 className="font-bold text-lg">{worker.worker_name}</h4>
-                    <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>📞 {worker.worker_phone || 'SouqBTP'}</p>
-                  </div>
-                  <span className="bg-indigo-500/10 text-indigo-500 px-4 py-1.5 rounded-full text-sm font-bold border border-indigo-500/20">{t.master}</span>
+            <div className={cardClass}>
+              <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
+                <h2 className="text-xl font-black flex items-center gap-2">{t.budgetTitle}</h2>
+                <div className="flex gap-2 flex-wrap">
+                  <button className="bg-[#e74c3c] hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-500/20 transition-all hover:-translate-y-1">
+                    <FileText size={18} /> {t.pdfBtn}
+                  </button>
+                  <button className="bg-[#25D366] hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-green-500/20 transition-all hover:-translate-y-1">
+                    📲 {t.waBtn}
+                  </button>
+                  <Link to="/v2/cost-calculator" className={`px-5 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-1 ${isDarkMode ? 'border border-slate-600 hover:bg-slate-700 text-slate-200' : 'bg-white border border-slate-200 text-slate-700 shadow-sm'}`}>
+                    {t.editBudgetBtn}
+                  </Link>
                 </div>
-              ))}
+              </div>
+              
+              {!budget.isCalculated ? (
+                 <div className={`text-center py-8 rounded-xl mt-4 border border-dashed flex flex-col items-center justify-center gap-4 ${isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-slate-300 bg-blue-50/50'}`}>
+                   <p className={`font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.noBudget}</p>
+                   <Link to="/v2/cost-calculator" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-black shadow-lg shadow-blue-500/30 transition-transform hover:-translate-y-1">
+                     {t.calcBtn}
+                   </Link>
+                 </div>
+              ) : (
+                <div className={`text-center py-6 rounded-xl mt-4 border-2 ${isDarkMode ? 'bg-slate-900/50 border-emerald-500/30' : 'bg-emerald-50/50 border-emerald-200'}`}>
+                  <p className="font-bold text-slate-500 mb-1">{t.budgetCalculated}</p>
+                  <div className="font-black text-3xl text-emerald-600 drop-shadow-sm">{budget.total.toLocaleString()} {t.currency}</div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <div className={cardClass}>
-          <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
-            <h2 className="text-xl font-black flex items-center gap-2"><FolderOpen className="text-blue-500" /> {t.vaultTitle}</h2>
-            <div className="flex gap-2">
-              <select 
-                value={docCategory} 
-                onChange={e => setDocCategory(e.target.value)} 
-                className={`p-2.5 border rounded-xl text-sm font-bold outline-none cursor-pointer transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 shadow-sm'}`}
-              >
-                {categoryOptions[language]?.map((cat, idx) => <option key={idx}>{cat}</option>)}
-              </select>
-              <label className={`bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 cursor-pointer shadow-lg shadow-blue-500/20 transition-all ${uploadingDoc ? 'opacity-50' : 'hover:-translate-y-1 hover:bg-blue-700'}`}>
-                <Upload size={18} /> {uploadingDoc ? t.uploading : t.uploadBtn}
-                <input type="file" className="hidden" multiple onChange={handleDocumentUpload} disabled={uploadingDoc} />
-              </label>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5">
-            {documents.length === 0 ? <p className="col-span-full text-center text-slate-400 py-4">{t.emptyVault}</p> :
-              documents.map(doc => {
-                let Icon = FileText;
-                if(doc.category === categoryOptions[language]?.[1]) Icon = FileImage; 
-                if(doc.category === categoryOptions[language]?.[0]) Icon = FileSignature; 
-                if(doc.category.includes('فاتورة') || doc.category.includes('Facture') || doc.category.includes('Invoice')) Icon = Receipt;
-
-                return (
-                  <div key={doc.id} className={`p-5 rounded-2xl text-center border-2 relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${isDarkMode ? 'bg-slate-900/90 border-slate-700 hover:border-blue-500/50' : 'bg-white border-slate-100 hover:border-blue-400'}`}>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); deleteDocument(doc.id); }} 
-                      className={`absolute -top-3 ${isRtl ? '-left-3' : '-right-3'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-[0_5px_15px_rgba(239,68,68,0.5)] hover:scale-110`}
-                    >
-                      <Trash2 size={16}/>
-                    </button>
-                    <a href={doc.file_url} target="_blank" rel="noreferrer" className="block">
-                      <Icon size={40} className="mx-auto text-blue-400 mb-4 drop-shadow-sm" />
-                      <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`} title={doc.file_name}>{doc.file_name}</p>
-                      <span className={`text-[10px] px-3 py-1.5 rounded-lg font-bold inline-block ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-50 text-slate-600 border border-slate-200'}`}>{doc.category}</span>
-                    </a>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className={cardClass}>
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
+                  <h2 className="text-xl font-black flex items-center gap-2"><Wallet className="text-blue-500" /> {t.radarTitle}</h2>
+                  {budget.isCalculated && (
+                    <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${radarStatusColor} ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                      {radarStatus}
+                    </span>
+                  )}
+                </div>
+                
+                {!budget.isCalculated ? (
+                   <div className={`text-center py-8 rounded-xl border border-dashed flex flex-col items-center justify-center gap-3 ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-slate-50/50'}`}>
+                     <p className="font-bold">{t.noBudget}</p>
+                     <Link to="/v2/cost-calculator" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold transition-all shadow-md">
+                       {t.calcBtn}
+                     </Link>
+                   </div>
+                ) : (
+                  <div className={`p-6 rounded-2xl border-2 mb-6 ${isDarkMode ? 'bg-slate-900/80 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
+                    <div className="flex justify-between font-bold mb-4 text-lg">
+                      <span>{t.spent} <span className="text-orange-500 drop-shadow-sm">{budget.spent.toLocaleString()}</span> {t.currency}</span>
+                      <span>{t.estimated} <span className="text-blue-500 drop-shadow-sm">{budget.total.toLocaleString()}</span> {t.currency}</span>
+                    </div>
+                    <div className={`w-full h-6 rounded-full overflow-hidden shadow-inner p-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                      <div 
+                        className={`h-full rounded-full bg-gradient-to-r ${radarColor} flex items-center justify-end pr-2 transition-all duration-1000 ease-out`} 
+                        style={{ width: `${Math.max(budgetPercent, 5)}%` }}
+                      >
+                        {budgetPercent > 10 && <span className="text-[10px] text-white font-black">{Math.round(budgetPercent)}%</span>}
+                      </div>
+                    </div>
                   </div>
-                )
-              })
-            }
-          </div>
-        </div>
+                )}
+              </div>
 
+              <div className={cardClass}>
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
+                  <button onClick={() => changeMonth(-1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
+                    <ChevronRight size={20} className={isRtl ? '' : 'rotate-180'}/>
+                  </button>
+                  <h3 className="text-xl font-black">{calendarDate.toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })}</h3>
+                  <button onClick={() => changeMonth(1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
+                    <ChevronLeft size={20} className={isRtl ? '' : 'rotate-180'}/>
+                  </button>
+                </div>
+                <div className="grid grid-cols-7 gap-1 text-center mb-3">
+                  {t.days.map(d => <div key={d} className={`text-sm font-black ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{d}</div>)}
+                </div>
+                <div className="grid grid-cols-7 gap-1.5">
+                  {renderCalendarDays()}
+                </div>
+              </div>
+            </div>
+
+            <div className={cardClass}>
+              <h2 className="text-xl font-black mb-6 pb-4 border-b border-slate-200/20">👷 {t.teamTitle}</h2>
+              {team.length === 0 ? (
+                 <p className={`text-center ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.noTeam}</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {team.map(worker => (
+                    <div key={worker.id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-slate-900/80 border-slate-700 shadow-md' : 'bg-white border-slate-100 shadow-sm'}`}>
+                      <div>
+                        <h4 className="font-bold text-lg">{worker.worker_name}</h4>
+                        <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>📞 {worker.worker_phone || 'SouqBTP'}</p>
+                      </div>
+                      <span className="bg-indigo-500/10 text-indigo-500 px-4 py-1.5 rounded-full text-sm font-bold border border-indigo-500/20">{t.master}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={cardClass}>
+              <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
+                <h2 className="text-xl font-black flex items-center gap-2"><FolderOpen className="text-blue-500" /> {t.vaultTitle}</h2>
+                <div className="flex gap-2">
+                  <select 
+                    value={docCategory} 
+                    onChange={e => setDocCategory(e.target.value)} 
+                    className={`p-2.5 border rounded-xl text-sm font-bold outline-none cursor-pointer transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 shadow-sm'}`}
+                  >
+                    {categoryOptions[language]?.map((cat, idx) => <option key={idx}>{cat}</option>)}
+                  </select>
+                  <label className={`bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 cursor-pointer shadow-lg shadow-blue-500/20 transition-all ${uploadingDoc ? 'opacity-50' : 'hover:-translate-y-1 hover:bg-blue-700'}`}>
+                    <Upload size={18} /> {uploadingDoc ? t.uploading : t.uploadBtn}
+                    <input type="file" className="hidden" multiple onChange={handleDocumentUpload} disabled={uploadingDoc} />
+                  </label>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5">
+                {documents.length === 0 ? <p className="col-span-full text-center text-slate-400 py-4">{t.emptyVault}</p> :
+                  documents.map(doc => {
+                    let Icon = FileText;
+                    if(doc.category === categoryOptions[language]?.[1]) Icon = FileImage; 
+                    if(doc.category === categoryOptions[language]?.[0]) Icon = FileSignature; 
+                    if(doc.category.includes('فاتورة') || doc.category.includes('Facture') || doc.category.includes('Invoice')) Icon = Receipt;
+
+                    return (
+                      <div key={doc.id} className={`p-5 rounded-2xl text-center border-2 relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${isDarkMode ? 'bg-slate-900/90 border-slate-700 hover:border-blue-500/50' : 'bg-white border-slate-100 hover:border-blue-400'}`}>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); deleteDocument(doc.id); }} 
+                          className={`absolute -top-3 ${isRtl ? '-left-3' : '-right-3'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-[0_5px_15px_rgba(239,68,68,0.5)] hover:scale-110`}
+                        >
+                          <Trash2 size={16}/>
+                        </button>
+                        <a href={doc.file_url} target="_blank" rel="noreferrer" className="block">
+                          <Icon size={40} className="mx-auto text-blue-400 mb-4 drop-shadow-sm" />
+                          <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`} title={doc.file_name}>{doc.file_name}</p>
+                          <span className={`text-[10px] px-3 py-1.5 rounded-lg font-bold inline-block ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-50 text-slate-600 border border-slate-200'}`}>{doc.category}</span>
+                        </a>
+                      </div>
+                    )
+                  })
+                }
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
+      {/* أزرار عائمة */}
       <button 
         onClick={() => setIsSosOpen(true)} 
         className={`group fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} flex items-center bg-red-500/40 hover:bg-gradient-to-br hover:from-red-500 hover:to-red-700 text-white rounded-full transition-all duration-500 overflow-hidden z-50 backdrop-blur-sm hover:backdrop-blur-none border border-red-400/30 hover:border-red-400/80 w-14 h-14 hover:w-56 shadow-lg hover:shadow-[0_0_30px_rgba(239,68,68,0.8)]`}
@@ -902,6 +975,7 @@ export default function ContractorDashboard() {
         <span className={`whitespace-nowrap font-black text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isRtl ? 'mr-1' : 'ml-1'}`}>{t.sosBtn}</span>
       </button>
 
+      {/* النوافذ المنبثقة (Modals) */}
       {isSosOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setIsSosOpen(false)}>
           <div className={`rounded-3xl p-8 w-full max-w-md shadow-2xl animate-fade-in border-2 ${isDarkMode ? 'bg-slate-800 border-slate-600' : 'bg-white border-white'}`} onClick={e => e.stopPropagation()}>
@@ -921,6 +995,29 @@ export default function ContractorDashboard() {
           </div>
         </div>
       )}
+
+      {isNewProjectModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in" onClick={() => setIsNewProjectModalOpen(false)}>
+          <div className={`rounded-3xl p-8 w-full max-w-md shadow-2xl border-2 ${isDarkMode ? 'bg-slate-800 border-slate-600' : 'bg-white border-white'}`} onClick={e => e.stopPropagation()}>
+            <h2 className={`text-2xl font-black mb-6 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{t.createProjectModal}</h2>
+            <form onSubmit={handleCreateProject} className="space-y-5">
+              <div>
+                <label className={`block text-sm font-bold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.projectNameLabel}</label>
+                <input required type="text" placeholder="..." value={newProjectName} onChange={e => setNewProjectName(e.target.value)} className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500' : 'bg-slate-50 border-slate-200 focus:border-blue-500'}`} />
+              </div>
+              <div>
+                <label className={`block text-sm font-bold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.projectBudgetLabel}</label>
+                <input type="number" placeholder="0.00" value={newProjectBudget} onChange={e => setNewProjectBudget(e.target.value)} className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500' : 'bg-slate-50 border-slate-200 focus:border-blue-500'}`} />
+              </div>
+              <div className="flex gap-4 mt-8">
+                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-all hover:-translate-y-1">{t.createBtn}</button>
+                <button type="button" onClick={() => setIsNewProjectModalOpen(false)} className={`px-8 font-black py-4 rounded-xl transition-all ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>{t.cancel}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
