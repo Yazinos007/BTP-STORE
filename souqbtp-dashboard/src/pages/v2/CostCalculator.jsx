@@ -347,20 +347,48 @@ export default function CostCalculator() {
     
     setSaveStatus({ type: 'loading', msg: t.saving });
     try {
-      const { error } = await supabase.from('user_estimates').upsert({
-        user_id: user.id,
-        project_id: activeProject.id, // 🚀 ربط الميزانية بالورش الحالي
-        total_cost: grandTotal,
-        total_budget: grandTotal,
-        details: estimate, // 🚀 حفظ تفاصيل الميزانية
-        created_at: new Date().toISOString()
-      }, { onConflict: 'user_id, project_id' }); // 🚀 التحديث بناءً على الورش والمستخدم
+      // 1. فحص هل توجد ميزانية سابقة لهذا الورش؟
+      const { data: existingEstimate } = await supabase
+        .from('user_estimates')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('project_id', activeProject.id)
+        .maybeSingle();
+
+      let dbError;
+
+      if (existingEstimate) {
+        // 2. إذا كانت موجودة -> نقوم بتحديثها (Update)
+        const { error } = await supabase
+          .from('user_estimates')
+          .update({
+            total_cost: grandTotal,
+            total_budget: grandTotal,
+            details: estimate
+          })
+          .eq('id', existingEstimate.id);
+        dbError = error;
+      } else {
+        // 3. إذا لم تكن موجودة -> نقوم بإنشائها (Insert)
+        const { error } = await supabase
+          .from('user_estimates')
+          .insert({
+            user_id: user.id,
+            project_id: activeProject.id,
+            total_cost: grandTotal,
+            total_budget: grandTotal,
+            details: estimate,
+            created_at: new Date().toISOString()
+          });
+        dbError = error;
+      }
       
-      if(error) throw error;
+      if (dbError) throw dbError;
+      
       setSaveStatus({ type: 'success', msg: t.saveSuccess });
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
-      console.error(error);
+      console.error("❌ Error saving estimate:", error);
       setSaveStatus({ type: 'error', msg: "Error saving estimate" });
     }
   };
