@@ -299,51 +299,45 @@ export default function ProjectPath() {
     if(isMounted) setLoading(false);
   };
 
-  // 🚀 درع الحماية ضد النقرات السريعة والمسح العشوائي
+  // 🚀 دالة تحديث المهام المدرعة (الجزء المعني فقط)
   const toggleTask = async (taskId) => {
     if (!user) return alert(t.loginRequired);
-    if (!activeProject) return alert(language === 'ar' ? 'يرجى إنشاء ورش أولاً في لوحة القيادة!' : 'Veuillez d\'abord créer un chantier !');
+    if (!activeProject) return alert(language === 'ar' ? 'يرجى إنشاء ورش أولاً من لوحة القيادة!' : 'Veuillez créer un chantier d\'abord !');
 
-    // 1. التحديث الفوري للذاكرة (Optimistic UI) لمنع تداخل النقرات
-    setUserProgress(prevProgress => {
-      const isDone = prevProgress.includes(taskId);
-      let newProgress;
+    const isDone = userProgress.includes(taskId);
 
-      if (isDone) {
-        newProgress = prevProgress.filter(id => id !== taskId);
-        
-        // عملية الحذف في الخلفية بأمان
-        supabase.from('user_progress')
-          .delete()
-          .eq('project_id', activeProject.id)
-          .eq('task_id', taskId)
-          .eq('user_id', user.id)
-          .then(({error}) => { if(error) console.error("Sync Delete Error:", error); });
-          
-      } else {
-        // حماية إضافية لتنظيف أي تكرار
-        newProgress = [...new Set([...prevProgress, taskId])];
-        
-        // التأكد من عدم الإضافة مرتين في قاعدة البيانات
-        supabase.from('user_progress')
-          .select('id')
-          .eq('project_id', activeProject.id)
-          .eq('task_id', taskId)
-          .eq('user_id', user.id)
-          .maybeSingle()
-          .then(({ data: existing }) => {
-            if (!existing) {
-              supabase.from('user_progress').insert({ 
-                user_id: user.id, 
-                project_id: activeProject.id, 
-                task_id: taskId 
-              }).then(({error}) => { if(error) console.error("Sync Insert Error:", error); });
-            }
-          });
-      }
-
-      return newProgress;
+    // 1. التحديث الفوري للواجهة (Optimistic UI) لمنع تداخل النقرات السريعة
+    setUserProgress(prev => {
+      const updated = isDone ? prev.filter(id => id !== taskId) : [...new Set([...prev, taskId])];
+      const total = totalTasks > 0 ? totalTasks : 28;
+      setOverallProgress(Math.round((updated.length / total) * 100));
+      return updated;
     });
+
+    // 2. إرسال البيانات لقاعدة البيانات في الخلفية
+    try {
+      if (isDone) {
+        const { error } = await supabase.from('user_progress')
+          .delete()
+          .match({ project_id: activeProject.id, task_id: taskId, user_id: user.id });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('user_progress')
+          .insert({ user_id: user.id, project_id: activeProject.id, task_id: taskId });
+        
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error("❌ فشل المزامنة:", error);
+      // 3. التراجع الفوري عن الواجهة إذا رفضت قاعدة البيانات الحفظ
+      setUserProgress(prev => {
+        const reverted = !isDone ? prev.filter(id => id !== taskId) : [...new Set([...prev, taskId])];
+        const total = totalTasks > 0 ? totalTasks : 28;
+        setOverallProgress(Math.round((reverted.length / total) * 100));
+        return reverted;
+      });
+      alert(language === 'ar' ? 'تعذرت المزامنة! تأكد من اتصالك بالإنترنت.' : 'Erreur de synchronisation !');
+    }
   };
 
   const handleShowProviders = async (serviceId, serviceName) => {
