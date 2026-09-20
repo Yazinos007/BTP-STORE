@@ -589,6 +589,10 @@ function App() {
   const isLandingPage = pathname.startsWith('/empire') || pathname.startsWith('/pro') || pathname.startsWith('/contractor');
   const isAuthPage = pathname.includes('/login') || pathname.includes('/register');
 
+  if (loading) {
+    return <div className="h-screen w-full bg-[#0f172a]"></div>; 
+  }
+  
   // الحارس الإلكتروني الأساسي
   if (!session && !isV2Path && !isLandingPage && !isAuthPage && !isStorePage) {
     return (
