@@ -23,7 +23,7 @@ export default function ProjectPath() {
   const [checklists, setChecklists] = useState([]);
   const [userProgress, setUserProgress] = useState([]);
   const [overallProgress, setOverallProgress] = useState(0);
-  const [totalTasks, setTotalTasks] = useState(28); // 🚀 حفظ إجمالي المهام للعمليات الحسابية
+  const [totalTasks, setTotalTasks] = useState(28); 
   const [team, setTeam] = useState([]);
   
   const [providers, setProviders] = useState([]);
@@ -33,7 +33,6 @@ export default function ProjectPath() {
   const [assignType, setAssignType] = useState('private');
   const [assignForm, setAssignForm] = useState({ name: '', phone: '', providerId: '' });
 
-  // 1. حماية القاموس لمنع الصفحة البيضاء نهائياً
   const translations = {
     ar: {
       title: "رحلة بناء مشروعك",
@@ -135,7 +134,6 @@ export default function ProjectPath() {
 
   const t = translations[language] || translations.ar;
 
-  // 2. القاموس الذكي الجديد 
   const dbTranslations = {
     // Stage 1
     "تصميم معماري": { fr: "Conception Architecturale", en: "Architectural Design" },
@@ -216,7 +214,6 @@ export default function ProjectPath() {
   const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-800 shadow-md';
   const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
 
-  // 🚀 مراقب الإحصائيات الفوري (يفصل الحسابات عن النقرات لمنع الأخطاء)
   useEffect(() => {
     const total = totalTasks > 0 ? totalTasks : 28;
     setOverallProgress(Math.round((userProgress.length / total) * 100));
@@ -251,14 +248,12 @@ export default function ProjectPath() {
         isMounted = false;
         if(authListener) authListener.subscription.unsubscribe(); 
     };
-    // 🚀 تحديث الصفحة تلقائياً عند تغيير الورش من الأعلى
-  }, [selectedStage, language, activeProject]);
+  }, [selectedStage, language, activeProject]); 
 
   const loadStageData = async (stageId, passedUser, isMounted = true) => {
     setProviders([]);
     setSelectedService(null);
     try {
-      // 🚀 تفريغ البيانات إذا لم يكن هناك ورش نشط
       if (!activeProject) {
         setServices([]); setChecklists([]); setUserProgress([]); setTeam([]); 
         if(isMounted) setLoading(false);
@@ -279,12 +274,10 @@ export default function ProjectPath() {
       if (checklistsRes.data) setChecklists(checklistsRes.data);
       
       if (progressRes.data) {
-        // 🚀 إزالة التكرارات الناتجة عن الأخطاء القديمة
         const completedIds = [...new Set(progressRes.data.map(p => p.task_id))];
         setUserProgress(completedIds);
       }
       
-      // 🚀 حفظ إجمالي المهام بدقة
       if (totalTasksRes.count) {
         setTotalTasks(totalTasksRes.count);
       } else if (checklistsRes.data) {
@@ -299,44 +292,42 @@ export default function ProjectPath() {
     if(isMounted) setLoading(false);
   };
 
-  // 🚀 دالة تحديث المهام المدرعة (الجزء المعني فقط)
+  // 🚀 دالة الحفظ الفولاذية (مع فحص الأخطاء والتراجع التلقائي)
   const toggleTask = async (taskId) => {
     if (!user) return alert(t.loginRequired);
-    if (!activeProject) return alert(language === 'ar' ? 'يرجى إنشاء ورش أولاً من لوحة القيادة!' : 'Veuillez créer un chantier d\'abord !');
+    if (!activeProject) return alert(language === 'ar' ? 'يرجى إنشاء ورش أولاً في لوحة القيادة!' : 'Veuillez créer un chantier d\'abord !');
 
     const isDone = userProgress.includes(taskId);
 
-    // 1. التحديث الفوري للواجهة (Optimistic UI) لمنع تداخل النقرات السريعة
+    // 1. التحديث الفوري للواجهة لضمان السرعة
     setUserProgress(prev => {
       const updated = isDone ? prev.filter(id => id !== taskId) : [...new Set([...prev, taskId])];
-      const total = totalTasks > 0 ? totalTasks : 28;
-      setOverallProgress(Math.round((updated.length / total) * 100));
       return updated;
     });
 
-    // 2. إرسال البيانات لقاعدة البيانات في الخلفية
+    // 2. إرسال الطلب لقاعدة البيانات مع المراقبة المشددة
     try {
       if (isDone) {
         const { error } = await supabase.from('user_progress')
           .delete()
           .match({ project_id: activeProject.id, task_id: taskId, user_id: user.id });
-        if (error) throw error;
+          
+        if (error) throw error; // 🚀 إجبار الكود على فضح الخطأ إذا حدث
       } else {
         const { error } = await supabase.from('user_progress')
           .insert({ user_id: user.id, project_id: activeProject.id, task_id: taskId });
-        
-        if (error) throw error;
+          
+        // 🚀 الرمز 23505 يعني أن المهمة مسجلة مسبقاً (Unique Violation)، نتجاهله لأنه آمن
+        if (error && error.code !== '23505') throw error; 
       }
     } catch (error) {
-      console.error("❌ فشل المزامنة:", error);
-      // 3. التراجع الفوري عن الواجهة إذا رفضت قاعدة البيانات الحفظ
+      console.error("❌ خطأ المزامنة:", error);
+      // 3. التراجع الفوري عن اللون الأخضر إذا رفضت قاعدة البيانات الحفظ!
       setUserProgress(prev => {
         const reverted = !isDone ? prev.filter(id => id !== taskId) : [...new Set([...prev, taskId])];
-        const total = totalTasks > 0 ? totalTasks : 28;
-        setOverallProgress(Math.round((reverted.length / total) * 100));
         return reverted;
       });
-      alert(language === 'ar' ? 'تعذرت المزامنة! تأكد من اتصالك بالإنترنت.' : 'Erreur de synchronisation !');
+      alert(language === 'ar' ? 'تعذرت مزامنة المهمة! يرجى المحاولة مرة أخرى.' : 'Erreur de synchronisation !');
     }
   };
 
@@ -375,7 +366,7 @@ export default function ProjectPath() {
       const today = new Date().toISOString().split('T')[0];
       await supabase.from('appointments').insert([{
           user_id: user.id, provider_id: providerId, service_id: selectedService.id,
-          project_id: activeProject?.id, // 🚀 دمج الورش في المواعيد
+          project_id: activeProject?.id, 
           appointment_date: today, status: 'pending', notes: `طلب من صفحة المراحل: ${translateDB(selectedService.name)}`
       }]);
 
@@ -388,21 +379,27 @@ export default function ProjectPath() {
   const handleAssignSubmit = async () => {
     if (!user) return alert(t.loginRequired);
     if (!assignForm.name) return;
-    if (!activeProject) return alert(language === 'ar' ? 'يرجى اختيار الورش أولاً من لوحة القيادة!' : 'Veuillez sélectionner un chantier !');
+    if (!activeProject) return alert(language === 'ar' ? 'يرجى اختيار الورش أولاً!' : 'Veuillez sélectionner un chantier !');
 
     try {
-      await supabase.from('milestone_assignments').insert([{
+      const { error } = await supabase.from('milestone_assignments').insert([{
         user_id: user.id,
-        project_id: activeProject.id, // 🚀 تعيين الفريق في الورش المحدد
+        project_id: activeProject.id,
         stage_id: selectedStage,
         worker_name: assignForm.name,
         worker_phone: assignForm.phone || ''
       }]);
+      
+      if(error) throw error;
+      
       setIsAssignModalOpen(false);
       setAssignForm({ name: '', phone: '', providerId: '' });
       alert(t.successAssign);
       loadStageData(selectedStage, user);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+      alert(language === 'ar' ? 'حدث خطأ أثناء تعيين الفريق' : 'Erreur lors de l\'assignation de l\'équipe');
+    }
   };
 
   return (
@@ -416,7 +413,7 @@ export default function ProjectPath() {
           <p className="text-blue-100 font-bold text-lg">{t.subtitle}</p>
           {activeProject && (
             <div className="mt-4 inline-block bg-white/10 px-4 py-1.5 rounded-full border border-white/20 text-white font-bold text-sm backdrop-blur-sm">
-              الورش الحالي: <span className="text-amber-300">{activeProject.name}</span>
+              {isRtl ? 'الورش الحالي:' : 'Chantier actuel :'} <span className="text-amber-300">{activeProject.name}</span>
             </div>
           )}
         </div>
