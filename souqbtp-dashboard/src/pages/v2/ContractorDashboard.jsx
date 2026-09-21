@@ -1242,8 +1242,8 @@ export default function ContractorDashboard() {
       <style>{`
         @media print {
           body * { visibility: hidden; }
-          #invoice-print, #invoice-print * { visibility: visible; display: block !important; }
-          #invoice-print { position: absolute; left: 0; top: 0; width: 100%; padding: 40px; background: white; }
+          #invoice-print { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+          #invoice-print * { visibility: visible; }
         }
       `}</style>
 
