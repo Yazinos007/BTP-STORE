@@ -416,9 +416,16 @@ export default function ContractorDashboard() {
         const { data: expenses } = await supabase.from('project_expenses').select('amount').eq('project_id', activeProject.id);
         
         const estBudget = estimate ? parseFloat(estimate.total_cost || estimate.total_budget || 0) : 0;
-        const totalSpent = expenses ? expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) : 0;
         
-        currentBudget = { total: estBudget, spent: totalSpent, isCalculated: estBudget > 0 };
+        // 🚀 الربط السحري: حساب المبلغ الفعلي المستهلك بناءً على نسبة المهام المنجزة
+        const progressPercentage = totalOverallTasks > 0 ? (totalCompletedTasks / totalOverallTasks) : 0;
+        const dynamicSpent = estBudget * progressPercentage; 
+        
+        currentBudget = { 
+          total: estBudget, 
+          spent: dynamicSpent, // الرادار الآن يتبع نسبة تقدم المهام حرفياً
+          isCalculated: estBudget > 0 
+        };
 
         const { data: convos } = await supabase.from('conversations').select('id, provider_id, architect_id').eq('client_id', currentUser.id);
         if (convos && isMounted) {
@@ -585,6 +592,23 @@ export default function ContractorDashboard() {
       );
     }
     return days;
+  };
+
+  // 🚀 دالة طباعة تقرير الورش (PDF)
+  const handlePrintPDF = () => {
+    window.print();
+  };
+
+  // 🚀 دالة مشاركة التقرير عبر واتساب
+  const handleWhatsAppShare = () => {
+    if (!activeProject) return;
+    const text = `📊 تقرير مشروع: *${activeProject.name}*\n\n` +
+                 `📈 نسبة التقدم الإجمالي: *${stats.progress}%*\n` +
+                 `💰 الميزانية التقديرية: *${budget.total.toLocaleString()}* درهم\n` +
+                 `💸 التكلفة المستهلكة (حسب التقدم): *${budget.spent.toLocaleString()}* درهم\n\n` +
+                 `تم الاستخراج من منصة *SouqBTP* 🏗️`;
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encodedText}`, '_blank');
   };
 
   if (loading) return (
@@ -829,12 +853,12 @@ export default function ContractorDashboard() {
               <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
                 <h2 className="text-xl font-black flex items-center gap-2">{t.budgetTitle}</h2>
                 <div className="flex gap-2 flex-wrap">
-                  <button className="bg-[#e74c3c] hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-500/20 transition-all hover:-translate-y-1">
-                    <FileText size={18} /> {t.pdfBtn}
-                  </button>
-                  <button className="bg-[#25D366] hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-green-500/20 transition-all hover:-translate-y-1">
-                    📲 {t.waBtn}
-                  </button>
+                  <button onClick={handlePrintPDF} className="bg-[#e74c3c] hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-500/20 transition-all hover:-translate-y-1">
+                <FileText size={18} /> {t.pdfBtn}
+              </button>
+              <button onClick={handleWhatsAppShare} className="bg-[#25D366] hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-green-500/20 transition-all hover:-translate-y-1">
+                📲 {t.waBtn}
+              </button>
                   <Link to="/v2/cost-calculator" className={`px-5 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-1 ${isDarkMode ? 'border border-slate-600 hover:bg-slate-700 text-slate-200' : 'bg-white border border-slate-200 text-slate-700 shadow-sm'}`}>
                     {t.editBudgetBtn}
                   </Link>
