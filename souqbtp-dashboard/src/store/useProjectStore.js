@@ -6,7 +6,16 @@ const useProjectStore = create((set, get) => ({
   activeProject: null,    // الورش المفتوح حالياً أمام المقاول
   isLoading: false,
 
-  // 1. جلب كل الأوراش من قاعدة البيانات
+  // 1. تحديث الورش النشط وحفظه في الذاكرة
+  setActiveProject: (projectId) => set((state) => {
+    const project = state.projects.find(p => p.id === projectId) || null;
+    if (project) {
+      localStorage.setItem('activeProjectId', project.id); // 🚀 ترسيخ الورش في الذاكرة
+    }
+    return { activeProject: project };
+  }),
+
+  // 2. جلب الأوراش واسترجاع الورش المحفوظ
   fetchProjects: async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -21,29 +30,29 @@ const useProjectStore = create((set, get) => ({
       if (error) throw error;
 
       set((state) => {
-        // 🚀 السحر هنا: هل لدينا ورش نشط حالياً؟
-        const currentActive = state.activeProject;
-        // هل هذا الورش لا يزال موجوداً في قاعدة البيانات؟
-        const keepCurrent = currentActive && data.find(p => p.id === currentActive.id);
+        // 🚀 محاولة قراءة الورش الأخير من الذاكرة
+        const savedId = localStorage.getItem('activeProjectId');
+        let active = null;
+        
+        if (savedId) {
+          active = data.find(p => p.id === savedId);
+        }
+        
+        // إذا لم نجد الورش (أو كان هذا أول دخول)، نختار الأول ونحفظه
+        if (!active && data.length > 0) {
+          active = data[0];
+          localStorage.setItem('activeProjectId', active.id);
+        } else if (!active) {
+          localStorage.removeItem('activeProjectId'); // تنظيف الذاكرة إذا حذفت كل الأوراش
+        }
 
         return {
           projects: data,
-          // إذا كان موجوداً اتركه، وإلا اختر الأول في القائمة
-          activeProject: keepCurrent ? currentActive : (data.length > 0 ? data[0] : null)
+          activeProject: active
         };
       });
     } catch (error) {
       console.error("Error fetching projects:", error);
-    }
-  },
-
-  // 2. التبديل الفوري بين الأوراش (Project Switcher)
-  setActiveProject: (projectId) => {
-    const { projects } = get();
-    const selected = projects.find(p => p.id === projectId);
-    if (selected) {
-      set({ activeProject: selected });
-      console.log("🔄 تم التبديل إلى الورش:", selected.name);
     }
   },
 

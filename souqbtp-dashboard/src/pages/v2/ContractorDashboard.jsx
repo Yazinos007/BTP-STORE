@@ -918,32 +918,36 @@ export default function ContractorDashboard() {
 
             {activeProject && activeProject.status !== 'completed' && (
               <div className="flex items-center gap-2 w-full sm:w-auto">
+                {/* 🚀 زر الأرشفة مترجم بالكامل */}
                 <button
                   onClick={async () => {
-                    if(confirm(language === 'ar' ? 'هل أنت متأكد من أرشفة هذا الورش وإنهائه؟' : 'Archiver ce chantier ?')) {
+                    const msg = language === 'ar' ? 'هل أنت متأكد من أرشفة هذا الورش وإنهائه؟' : language === 'fr' ? 'Archiver ce chantier ?' : 'Are you sure you want to archive this project?';
+                    if(confirm(msg)) {
                       const { archiveProject } = useProjectStore.getState();
                       await archiveProject(activeProject.id);
                     }
                   }}
                   className={`p-4 rounded-xl font-black shadow-lg transition-all hover:scale-105 flex items-center justify-center shrink-0 w-full sm:w-auto ${isDarkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
-                  title={language === 'ar' ? 'أرشفة الورش' : 'Archiver'}
+                  title={language === 'ar' ? 'أرشفة الورش' : language === 'fr' ? 'Archiver' : 'Archive'}
                 >
-                  📦 <span className="sm:hidden">{language === 'ar' ? 'أرشفة' : 'Archiver'}</span>
+                  📦 <span className="sm:hidden">{language === 'ar' ? 'أرشفة' : language === 'fr' ? 'Archiver' : 'Archive'}</span>
                 </button>
 
-                {/* 🚀 زر الحذف النهائي الجديد */}
+                {/* 🚀 زر الحذف مترجم بالكامل */}
                 <button
                   onClick={async () => {
-                    if(confirm(language === 'ar' ? '⚠️ تحذير: هل أنت متأكد من حذف هذا الورش نهائياً؟ سيتم مسح كل المهام والميزانيات المرتبطة به. لا يمكن التراجع!' : 'Supprimer définitivement ce chantier ?')) {
+                    const msg = language === 'ar' ? '⚠️ تحذير: هل أنت متأكد من حذف هذا الورش نهائياً؟ سيتم مسح كل المهام والميزانيات المرتبطة به. لا يمكن التراجع!' : language === 'fr' ? 'Supprimer définitivement ce chantier ?' : '⚠️ Warning: Permanently delete this project? All associated data will be lost. This cannot be undone!';
+                    if(confirm(msg)) {
                       await supabase.from('projects').delete().eq('id', activeProject.id);
+                      localStorage.removeItem('activeProjectId'); // 🚀 مسح الورش المحذوف من الذاكرة فوراً
                       const { fetchProjects } = useProjectStore.getState();
-                      await fetchProjects(); // تحديث القائمة بعد الحذف
+                      await fetchProjects(); // تحديث القائمة لإظهار الورش التالي
                     }
                   }}
                   className={`p-4 rounded-xl font-black shadow-lg transition-all hover:scale-105 flex items-center justify-center shrink-0 w-full sm:w-auto bg-red-100/80 text-red-600 hover:bg-red-200 hover:text-red-700`}
-                  title={language === 'ar' ? 'حذف نهائي' : 'Supprimer'}
+                  title={language === 'ar' ? 'حذف نهائي' : language === 'fr' ? 'Supprimer' : 'Delete'}
                 >
-                  <Trash2 size={20} /> <span className="sm:hidden">{language === 'ar' ? 'حذف' : 'Supprimer'}</span>
+                  <Trash2 size={20} /> <span className="sm:hidden">{language === 'ar' ? 'حذف' : language === 'fr' ? 'Supprimer' : 'Delete'}</span>
                 </button>
               </div>
             )}
