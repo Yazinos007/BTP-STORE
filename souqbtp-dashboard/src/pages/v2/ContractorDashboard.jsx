@@ -264,9 +264,8 @@ export default function ContractorDashboard() {
 
   const t = translations[language] || translations.ar;
 
-  // 🚀 القاموس الذكي للترجمة (لإصلاح الشبح الأزرق في الفاتورة المطبوعة)
   const dbTranslations = {
-    // المهام
+    // Stage 1
     "تصميم معماري": { fr: "Conception Architecturale", en: "Architectural Design" },
     "البلان": { fr: "Conception Architecturale (Plan)", en: "Architectural Design (Plan)" },
     "هندسة ودراسات": { fr: "Ingénierie et Études", en: "Engineering & Studies" },
@@ -282,11 +281,15 @@ export default function ContractorDashboard() {
     "عقود المهندسين": { fr: "Contrats d'Ingénieurs", en: "Engineers Contracts" },
     "طبوغرافي": { fr: "Relevé Topographique", en: "Topographic Survey" },
     "تربة": { fr: "Étude de Sol (Laboratoire)", en: "Soil Study (Laboratory)" },
+    "دراسات الخرسانة": { fr: "Études de Béton et Acier", en: "Concrete & Steel Studies" },
+    "رخصة البناء": { fr: "Obtention du Permis de Construire", en: "Building Permit" },
+    
+    // Stage 2
     "أعمال البناء": { fr: "Gros Œuvres / Maçonnerie", en: "Construction / Masonry" },
     "كهرباء": { fr: "Électricité", en: "Electricity" },
     "سباكة": { fr: "Plomberie", en: "Plumbing" },
     "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
-    "حجرية": { fr: "Travaux de pierre", en: "Stone works" },
+    "أعمال حجرية": { fr: "Travaux de pierre", en: "Stone works" },
     "أساسات": { fr: "Fondations", en: "Foundations" },
     "طوب": { fr: "Briques", en: "Bricks" },
     "هيكل خرساني": { fr: "Structure en béton", en: "Concrete structure" },
@@ -297,11 +300,10 @@ export default function ContractorDashboard() {
     "تمديدات مياه": { fr: "Conduites d'eau", en: "Water pipes" },
     "تركيب حمامات": { fr: "Installation de salles de bain", en: "Bathroom installation" },
     "حفر الأساسات": { fr: "Terrassement", en: "Excavation (Terrassement)" },
-    "صب الخرسانة": { fr: "Béton armé", en: "Reinforced Concrete" },
+    "صب الخرسانة المسلحة (سلعة ويد)": { fr: "Béton armé (Fourniture et Pose)", en: "Reinforced Concrete (Material & Labor)" },
     "بناء الجدران": { fr: "Maçonnerie et Cloisons (Briques)", en: "Wall Construction & Partitioning" },
-    "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
-    "دراسات الخرسانة": { fr: "Études de Béton et Acier", en: "Concrete & Steel Studies" },
-    "رخصة البناء": { fr: "Obtention du Permis de Construire", en: "Building Permit" },
+    
+    // Stage 3
     "صيانة": { fr: "Entretien et Rénovation", en: "Maintenance & Renovation" },
     "جبص": { fr: "Plâtre & Céramique", en: "Plaster & Ceramic" },
     "دهان": { fr: "Peinture et Enduit", en: "Painting & Plastering" },
@@ -312,6 +314,10 @@ export default function ContractorDashboard() {
     "صباغة": { fr: "Peinture et Façades Extérieures", en: "Painting & Exterior Facades" },
     "نجارة": { fr: "Menuiserie Bois", en: "Wood Carpentry" },
     "التشطيب النهائي": { fr: "Finitions Finales (Plomberie & Électricité)", en: "Final Touches (Plumbing & Electrical)" },
+    "الألمنيوم والزجاج": { fr: "Menuiserie Aluminium et Vitrage", en: "Aluminum and Glass" },
+    "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
+    
+    // Stage 4
     "شهادة السكنى": { fr: "Permis d'Habiter", en: "Occupancy Permit" },
     "عداد الكهرباء": { fr: "Compteur Électrique", en: "Electricity Meter" },
     "ضريبة السكن": { fr: "Taxe d'Habitation", en: "Housing Tax" },
@@ -320,17 +326,18 @@ export default function ContractorDashboard() {
     "التسجيل الجبائي": { fr: "Enregistrement fiscal", en: "Tax registration" },
     "تحفيظ العقار": { fr: "Immatriculation foncière", en: "Property registration" },
     "تحيين التصميم": { fr: "Mise à jour du Plan Topographique", en: "Topographic Plan Update" },
-    "الربط بشبكة": { fr: "Raccordement Eau et Électricité", en: "Water & Electricity Connection" },
+    "الربط بشبكة الماء والكهرباء": { fr: "Raccordement Eau et Électricité", en: "Water & Electricity Connection" },
     "مصاريف الموثق": { fr: "Frais de Notaire et Conservation", en: "Notary & Land Registry Fees" },
-    
+    "رخصة السكن وشهادة المطابقة": { fr: "Permis d'Habiter et Conformité", en: "Occupancy Permit & Conformity" },
+
     // الوحدات (Units)
     "رخصة": { fr: "Licence", en: "License" },
     "إجمالي": { fr: "Global", en: "Total" },
     "طابق": { fr: "Étage", en: "Floor" },
     "باب": { fr: "Porte", en: "Door" },
     "عداد": { fr: "Compteur", en: "Meter" },
-    "متر": { fr: "Mètre", en: "Meter" },
     "متر مربع": { fr: "Mètre Carré", en: "Square Meter" },
+    "متر": { fr: "Mètre", en: "Meter" },
     "يوم": { fr: "Jour", en: "Day" }
   };
 
