@@ -8,28 +8,32 @@ const useProjectStore = create((set, get) => ({
 
   // 1. جلب كل الأوراش من قاعدة البيانات
   fetchProjects: async () => {
-    set({ isLoading: true });
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return set({ projects: [], activeProject: null, isLoading: false });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const projectsList = data || [];
-      
-      // تعيين الورش النشط افتراضياً (أول ورش غير مكتمل، أو أول ورش في القائمة)
-      const active = projectsList.find(p => p.status === 'active') || projectsList[0] || null;
+      set((state) => {
+        // 🚀 السحر هنا: هل لدينا ورش نشط حالياً؟
+        const currentActive = state.activeProject;
+        // هل هذا الورش لا يزال موجوداً في قاعدة البيانات؟
+        const keepCurrent = currentActive && data.find(p => p.id === currentActive.id);
 
-      set({ projects: projectsList, activeProject: active, isLoading: false });
+        return {
+          projects: data,
+          // إذا كان موجوداً اتركه، وإلا اختر الأول في القائمة
+          activeProject: keepCurrent ? currentActive : (data.length > 0 ? data[0] : null)
+        };
+      });
     } catch (error) {
-      console.error("❌ خطأ في جلب الأوراش:", error);
-      set({ isLoading: false });
+      console.error("Error fetching projects:", error);
     }
   },
 

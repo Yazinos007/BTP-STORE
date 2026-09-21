@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom'; // 🚀 السلاح السري لاختراق الإطارات
+import { createPortal } from 'react-dom';
 import { useOutletContext } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import useProjectStore from '../../store/useProjectStore';
 import { 
   Camera, Video, X, PenTool, Undo, Trash2, FileText, Play,
   PauseCircle, PhoneOff, Lightbulb, RefreshCcw, Loader2, Archive
@@ -17,6 +18,7 @@ export default function ContractorCamera() {
   const [roomId, setRoomId] = useState('');
   const [joinInput, setJoinInput] = useState('');
   const [reports, setReports] = useState([]);
+  const { activeProject } = useProjectStore();
 
   // --- Live Room States ---
   const [isFrozen, setIsFrozen] = useState(false);
@@ -85,20 +87,61 @@ export default function ContractorCamera() {
   };
   const t = translations[language] || translations.ar;
 
+  // 🚀 جلب التقارير الحقيقية الخاصة بالورش النشط فقط
   useEffect(() => {
-    setReports([
-      { id: 1, date: '2026-09-15 10:30', author: 'المهندس كريم', img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500&auto=format' },
-      { id: 2, date: '2026-09-10 14:15', author: 'SouqBTP VIP', img: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=500&auto=format' }
-    ]);
-  }, []);
+    let isMounted = true;
+    
+    const fetchReports = async () => {
+      // إذا لم يكن هناك ورش، لا تجلب شيئاً وقم بتفريغ الكاميرا
+      if (!activeProject) {
+         if (isMounted) setReports([]);
+         return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('site_reports')
+          .select('*')
+          .eq('project_id', activeProject.id) // 🚀 فلتر الكاميرا لتعمل على الورش المفتوح فقط
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        
+        if (data && isMounted) {
+          // تحويل البيانات لتناسب الواجهة
+          const formattedReports = data.map(r => ({
+            id: r.id,
+            date: new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR', {
+              year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+            }),
+            author: r.provider_name || t.souqTeam,
+            img: r.image_url
+          }));
+          setReports(formattedReports);
+        }
+      } catch (err) {
+        console.error("Error fetching reports:", err);
+      }
+    };
+
+    fetchReports();
+
+    return () => { isMounted = false; };
+  }, [activeProject, language]); 
 
   const handleArchiveReport = (id) => {
     setReports(prev => prev.filter(r => r.id !== id));
   };
 
-  const handleDeleteReport = (id) => {
+  // 🚀 حذف التقرير من قاعدة البيانات
+  const handleDeleteReport = async (id) => {
     if(window.confirm(t.confirmDelete)) {
-      setReports(prev => prev.filter(r => r.id !== id));
+      try {
+        await supabase.from('site_reports').delete().eq('id', id);
+        setReports(prev => prev.filter(r => r.id !== id));
+      } catch(err) {
+        console.error("Error deleting report:", err);
+      }
     }
   };
 
