@@ -1087,33 +1087,37 @@ export default function ContractorDashboard() {
       )}
 
       {/* 🖨️ الفاتورة المخفية (Devis) - تظهر حصرياً للطباعة والـ PDF */}
-      {estimateDetails.length > 0 && (
-        <div id="invoice-print" className="hidden" dir={isRtl ? 'rtl' : 'ltr'}>
-          <div className="border-b-4 border-blue-600 pb-6 mb-8 flex justify-between items-end">
+      {estimateDetails && estimateDetails.length > 0 ? (
+        <div id="invoice-print" className="hidden print:block bg-white w-full absolute top-0 left-0 z-50 m-0 p-8 text-black" dir={isRtl ? 'rtl' : 'ltr'}>
+          {/* رأس الفاتورة */}
+          <div className="border-b-4 border-slate-800 pb-6 mb-8 flex justify-between items-start">
             <div>
-              <h1 className="text-4xl font-black text-blue-800 mb-2">{language === 'ar' ? 'تقدير تكلفة المشروع (Devis)' : 'Devis Estimatif du Projet'}</h1>
+              <h1 className="text-4xl font-black text-slate-800 mb-2">{language === 'ar' ? 'تقدير تكلفة المشروع (Devis)' : 'Devis Estimatif'}</h1>
               <p className="text-xl font-bold text-slate-600">{language === 'ar' ? 'الورش:' : 'Chantier:'} {activeProject?.name}</p>
             </div>
             <div className="text-right">
-              <p className="font-bold text-slate-500">{language === 'ar' ? 'التاريخ:' : 'Date:'} {new Date().toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR')}</p>
-              <p className="font-bold text-slate-500">{language === 'ar' ? 'المقاول:' : 'Entrepreneur:'} {profile.store_name || user?.user_metadata?.full_name}</p>
+              <p className="font-bold text-slate-600">{language === 'ar' ? 'التاريخ:' : 'Date:'} {new Date().toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR')}</p>
+              <p className="font-bold text-slate-600">{language === 'ar' ? 'المقاول:' : 'Entrepreneur:'} {profile?.store_name || user?.user_metadata?.full_name}</p>
             </div>
           </div>
           
+          {/* جدول المنتجات والأسعار */}
           <table className="w-full text-left border-collapse mb-8" dir={isRtl ? 'rtl' : 'ltr'}>
             <thead>
-              <tr className="bg-slate-100 text-slate-800 border-b-2 border-slate-300">
-                <th className={`p-3 font-black ${isRtl ? 'text-right' : 'text-left'}`}>{language === 'ar' ? 'الخدمة / المادة' : 'Désignation'}</th>
-                <th className="p-3 font-black text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</th>
-                <th className="p-3 font-black text-center">{language === 'ar' ? 'سعر الوحدة' : 'Prix Unitaire'}</th>
-                <th className="p-3 font-black text-center">{language === 'ar' ? 'الإجمالي' : 'Total HT'}</th>
+              <tr className="bg-slate-100 text-slate-800">
+                <th className={`p-3 font-black border-b-2 border-slate-300 ${isRtl ? 'text-right' : 'text-left'}`}>{language === 'ar' ? 'الخدمة / المادة' : 'Désignation'}</th>
+                <th className="p-3 font-black border-b-2 border-slate-300 text-center">{language === 'ar' ? 'الوحدة' : 'Unité'}</th>
+                <th className="p-3 font-black border-b-2 border-slate-300 text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</th>
+                <th className="p-3 font-black border-b-2 border-slate-300 text-center">{language === 'ar' ? 'سعر الوحدة (HT)' : 'Prix Unitaire (HT)'}</th>
+                <th className="p-3 font-black border-b-2 border-slate-300 text-center">{language === 'ar' ? 'الإجمالي (HT)' : 'Montant (HT)'}</th>
               </tr>
             </thead>
             <tbody>
               {estimateDetails.map((item, idx) => (
                 <tr key={idx} className="border-b border-slate-200">
-                  <td className="p-3 font-bold text-slate-700">{item.name}</td>
-                  <td className="p-3 text-center text-slate-600">{item.quantity} {item.unit}</td>
+                  <td className="p-3 font-bold text-slate-700">{translateDB(item.name)}</td>
+                  <td className="p-3 text-center text-slate-600">{translateDB(item.unit)}</td>
+                  <td className="p-3 text-center text-slate-600">{item.quantity}</td>
                   <td className="p-3 text-center text-slate-600">{item.unitPrice.toLocaleString()}</td>
                   <td className="p-3 text-center font-black text-slate-800">{item.subtotal.toLocaleString()}</td>
                 </tr>
@@ -1121,12 +1125,35 @@ export default function ContractorDashboard() {
             </tbody>
           </table>
           
+          {/* ملخص المجاميع (HT, TVA, TTC) في الأسفل */}
           <div className="flex justify-end mt-8">
-            <div className="w-80 bg-slate-50 p-6 rounded-xl border-2 border-slate-200">
-               <div className="flex justify-between mb-2"><span className="font-bold">{language === 'ar' ? 'المجموع الإجمالي (TTC):' : 'Total (TTC):'}</span> <span className="font-black text-xl text-blue-600">{budget.total.toLocaleString()} MAD</span></div>
-               <div className="flex justify-between text-sm text-slate-500 mt-2"><span className="font-bold">{language === 'ar' ? 'المبلغ المستهلك:' : 'Montant Dépensé:'}</span> <span>{budget.spent.toLocaleString()} MAD</span></div>
+            <div className="w-80 p-0">
+              <table className="w-full text-lg border-collapse">
+                <tbody>
+                  <tr className="border-b border-slate-200">
+                    <td className="py-2 font-bold text-slate-600">{language === 'ar' ? 'المجموع الصافي:' : 'Total HT :'}</td>
+                    <td className="py-2 text-right font-black">
+                      {estimateDetails.reduce((sum, item) => sum + (item.subtotal || 0), 0).toLocaleString()} MAD
+                    </td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="py-2 font-bold text-slate-600">{language === 'ar' ? 'الضريبة (TVA 20%):' : 'TVA (20%) :'}</td>
+                    <td className="py-2 text-right font-black text-slate-500">
+                      {(budget.total - estimateDetails.reduce((sum, item) => sum + (item.subtotal || 0), 0)).toLocaleString()} MAD
+                    </td>
+                  </tr>
+                  <tr className="bg-slate-100 border-b-2 border-slate-300">
+                    <td className="py-3 px-2 font-black text-slate-800">{language === 'ar' ? 'المجموع الشامل:' : 'Total TTC :'}</td>
+                    <td className="py-3 px-2 text-right font-black text-slate-900">{budget.total.toLocaleString()} MAD</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
+        </div>
+      ) : (
+        <div id="invoice-print" className="hidden print:flex items-center justify-center h-screen bg-white text-3xl font-black absolute top-0 left-0 w-full z-50 text-black">
+           {language === 'ar' ? '⚠️ يرجى الدخول للحاسبة الذكية والضغط على "حفظ التقدير" لتوليد الفاتورة.' : '⚠️ Veuillez enregistrer l\'estimation d\'abord.'}
         </div>
       )}
 
