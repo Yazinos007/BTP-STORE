@@ -158,7 +158,6 @@ export default function ProjectPath() {
     "أعمال البناء": { fr: "Gros Œuvres / Maçonnerie", en: "Construction / Masonry" },
     "كهرباء": { fr: "Électricité", en: "Electricity" },
     "سباكة": { fr: "Plomberie", en: "Plumbing" },
-    "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
     "أعمال حجرية": { fr: "Travaux de pierre", en: "Stone works" },
     "أساسات": { fr: "Fondations", en: "Foundations" },
     "طوب": { fr: "Briques", en: "Bricks" },
@@ -172,11 +171,14 @@ export default function ProjectPath() {
     "حفر الأساسات": { fr: "Terrassement", en: "Excavation (Terrassement)" },
     "صب الخرسانة المسلحة (سلعة ويد)": { fr: "Béton armé (Fourniture et Pose)", en: "Reinforced Concrete (Material & Labor)" },
     "بناء الجدران": { fr: "Maçonnerie et Cloisons (Briques)", en: "Wall Construction & Partitioning" },
+     "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
     
     // Stage 3
     "صيانة": { fr: "Entretien et Rénovation", en: "Maintenance & Renovation" },
+     "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
     "جبص": { fr: "Plâtre & Céramique", en: "Plaster & Ceramic" },
     "دهان": { fr: "Peinture et Enduit", en: "Painting & Plastering" },
+    "أعمال الجبس والأسقف": { fr: "Travaux de Plâtre et Plafonds", en: "Plaster & Ceiling Works" },
     "أبواب": { fr: "Portes, fenêtres, cuisines, placards...", en: "Doors, windows, kitchens, closets..." },
     "أرضيات": { fr: "Revêtement sol/mur, marbre, plâtre...", en: "Flooring, marble, ceramic, plaster..." },
     "المرطوب": { fr: "Enduit (Mortier)", en: "Plastering (Enduit)" },
@@ -185,7 +187,6 @@ export default function ProjectPath() {
     "نجارة": { fr: "Menuiserie Bois", en: "Wood Carpentry" },
     "التشطيب النهائي": { fr: "Finitions Finales (Plomberie & Électricité)", en: "Final Touches (Plumbing & Electrical)" },
     "الألمنيوم والزجاج": { fr: "Menuiserie Aluminium et Vitrage", en: "Aluminum and Glass" },
-    "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
     
     // Stage 4
     "شهادة السكنى": { fr: "Permis d'Habiter", en: "Occupancy Permit" },
