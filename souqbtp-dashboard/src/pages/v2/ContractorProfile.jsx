@@ -92,6 +92,9 @@ export default function ContractorProfile() {
   const t = translations[language] || translations.ar;
   const navigate = useNavigate();
 
+  // 🚀 حالة المستخدم
+  const [userObj, setUserObj] = useState(null);
+
   // --- KYC & Store State ---
   const [verificationStatus, setVerificationStatus] = useState('unverified'); 
   const [isSubmittingKYC, setIsSubmittingKYC] = useState(false);
@@ -116,26 +119,53 @@ export default function ContractorProfile() {
     id: null, full_name: '', email: '', password: '', permissions: defaultPermissions
   });
 
+  // 🚀 المعالج السحري: جلب البيانات مباشرة دون انتظار المتاهات
   useEffect(() => {
-    if (supplier) {
-      setStoreData({
-        store_name: supplier.store_name || '',
-        phone: supplier.phone || '',
-        address: supplier.address || ''
-      });
-      fetchTeam();
-    }
-  }, [supplier]);
-
-  const fetchTeam = async () => {
-    setIsTeamLoading(true);
-    try {
-      if(supplier?.id) {
-        const { data, error } = await supabase.from('employees').select('*').eq('supplier_id', supplier.id);
-        if (!error && data) setTeam(data);
+    let isMounted = true;
+    const initializeProfile = async () => {
+      setIsTeamLoading(true); // تبدأ عجلة التحميل
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && isMounted) {
+          setUserObj(user);
+          
+          // 1. جلب بيانات المقاولة مباشرة من قاعدة البيانات
+          const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+          
+          if (profileData) {
+            setStoreData({
+              store_name: profileData.store_name || '',
+              phone: profileData.phone || '',
+              address: profileData.address || ''
+            });
+          } else if (supplier) {
+            setStoreData({
+              store_name: supplier.store_name || '',
+              phone: supplier.phone || '',
+              address: supplier.address || ''
+            });
+          }
+          
+          // 2. جلب الموظفين والصلاحيات
+          const targetId = profileData?.id || user.id;
+          const { data: teamData } = await supabase.from('employees').select('*').eq('supplier_id', targetId);
+          if (teamData) setTeam(teamData);
+        }
+      } catch (err) {
+        console.error("Error loading profile:", err);
+      } finally {
+        if (isMounted) setIsTeamLoading(false); // 🚀 الإغلاق القاطع لعجلة التحميل مهما حصل!
       }
-    } catch (err) { console.error(err); } 
-    finally { setIsTeamLoading(false); }
+    };
+
+    initializeProfile();
+    return () => { isMounted = false; };
+  }, []);
+
+  const refreshTeam = async (uid) => {
+    if (!uid) return;
+    const { data } = await supabase.from('employees').select('*').eq('supplier_id', uid);
+    if (data) setTeam(data);
   };
 
   // --- Handlers: KYC & Store ---
@@ -160,12 +190,15 @@ export default function ContractorProfile() {
   };
 
   const handleSaveStoreInfo = async () => {
+    if (!userObj) return;
     setIsSavingInfo(true);
     try {
       if (updateProfile) {
         await updateProfile(storeData);
-        alert(t.successSave);
+      } else {
+        await supabase.from('profiles').update(storeData).eq('id', userObj.id);
       }
+      alert(t.successSave);
     } catch (err) { alert(t.errorSave); } 
     finally { setIsSavingInfo(false); }
   };
@@ -177,16 +210,17 @@ export default function ContractorProfile() {
 
   const handleSaveUser = async (e) => {
     e.preventDefault();
+    if (!userObj) return;
     setIsSavingUser(true);
     try {
       if (formData.id) {
         await supabase.from('employees').update({ full_name: formData.full_name, email: formData.email, permissions: formData.permissions }).eq('id', formData.id);
       } else {
-        await supabase.from('employees').insert({ supplier_id: supplier.id, full_name: formData.full_name, email: formData.email, role: 'employé', status: 'Actif', permissions: formData.permissions });
+        await supabase.from('employees').insert({ supplier_id: userObj.id, full_name: formData.full_name, email: formData.email, role: 'employé', status: 'Actif', permissions: formData.permissions });
       }
       alert(t.successSave);
       setIsModalOpen(false);
-      fetchTeam();
+      refreshTeam(userObj.id);
     } catch (err) { alert('Error: ' + err.message); } 
     finally { setIsSavingUser(false); }
   };
@@ -195,7 +229,7 @@ export default function ContractorProfile() {
     if (!window.confirm(t.deleteConfirm)) return;
     try {
       await supabase.from('employees').delete().eq('id', id);
-      fetchTeam();
+      if (userObj) refreshTeam(userObj.id);
     } catch (err) { console.error(err); }
   };
 
@@ -312,7 +346,7 @@ export default function ContractorProfile() {
             <div className="flex justify-center mb-6">
               <div className="relative group">
                 <div className={`w-24 h-24 rounded-full border-4 ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-100'} overflow-hidden flex items-center justify-center shadow-lg`}>
-                  {isLoading ? <Loader2 className="w-6 h-6 text-blue-500 animate-spin" /> : supplier?.logo_url ? <img src={supplier.logo_url} alt="Logo" className="w-full h-full object-cover" /> : <span className={`text-3xl font-black ${textMuted}`}>{supplier?.store_name?.charAt(0) || 'C'}</span>}
+                  {isLoading ? <Loader2 className="w-6 h-6 text-blue-500 animate-spin" /> : supplier?.logo_url ? <img src={supplier.logo_url} alt="Logo" className="w-full h-full object-cover" /> : <span className={`text-3xl font-black ${textMuted}`}>{storeData.store_name?.charAt(0) || 'C'}</span>}
                 </div>
                 <label className={`absolute bottom-0 ${isRtl ? 'left-0' : 'right-0'} bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-full cursor-pointer transition-colors shadow-lg border-2 ${isDarkMode ? 'border-slate-900' : 'border-white'}`}>
                   <Camera size={16} />
@@ -339,7 +373,7 @@ export default function ContractorProfile() {
               </button>
 
               <div className={`pt-4 mt-4 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-                <a href={`https://t.me/SouqBTP_Bot?start=${supplier?.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-black rounded-xl transition-all shadow-lg shadow-[#2AABEE]/30">
+                <a href={`https://t.me/SouqBTP_Bot?start=${userObj?.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-black rounded-xl transition-all shadow-lg shadow-[#2AABEE]/30">
                   <MessageCircle size={20} className="fill-current" /> <span>{t.connectTelegram}</span>
                 </a>
               </div>
@@ -376,9 +410,9 @@ export default function ContractorProfile() {
               <tr className={`transition-colors ${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'}`}>
                 <td className="py-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 font-black text-lg">{supplier?.store_name?.charAt(0) || 'C'}</div>
+                    <div className="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 font-black text-lg">{storeData.store_name?.charAt(0) || 'C'}</div>
                     <div>
-                      <p className={`font-black ${textMain}`}>{supplier?.store_name}</p>
+                      <p className={`font-black ${textMain}`}>{storeData.store_name || t.boss}</p>
                       <p className="text-xs text-amber-500 font-black mt-0.5 tracking-widest uppercase">{t.boss}</p>
                     </div>
                   </div>

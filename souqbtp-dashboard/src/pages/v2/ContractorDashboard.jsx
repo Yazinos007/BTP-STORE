@@ -424,6 +424,21 @@ export default function ContractorDashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
+  // 🚀 جلب بيانات المقاول الأساسية بشكل مستقل (تعمل دائماً حتى لو لم يكن هناك ورش)
+  useEffect(() => {
+    let isMounted = true;
+    const fetchBaseData = async () => {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser && isMounted) {
+        setUser(currentUser);
+        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+        if (profileData && isMounted) setProfile(profileData);
+      }
+    };
+    fetchBaseData();
+    return () => { isMounted = false; };
+  }, []);
+
   // 🚀 3. جلب بيانات الورش النشط (Active Project) فقط!
   useEffect(() => {
     let isMounted = true;
@@ -913,11 +928,103 @@ export default function ContractorDashboard() {
                 📦 <span className="sm:hidden">{language === 'ar' ? 'أرشفة الورش' : 'Archiver'}</span>
               </button>
             )}
-
           </div>
         </div>
 
-        {/* 🚀 الشرط الذكي: هل يوجد ورش نشط أم لا؟ */}
+        {/* ==================================================== */}
+        {/* 🚀 القطع الثابتة: تظهر دائماً حتى لو لم يكن هناك ورش */}
+        {/* ==================================================== */}
+        
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className={cardClass}>
+            <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
+            <form onSubmit={handleProfileUpdate} className="space-y-5">
+              <input type="text" placeholder={t.compName} value={profile.store_name || ''} onChange={e => setProfile({...profile, store_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              <input type="tel" placeholder={t.phone} value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              <input type="text" placeholder={language === 'ar' ? 'العنوان' : language === 'fr' ? 'Adresse' : 'Address'} value={profile.address || ''} onChange={e => setProfile({...profile, address: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
+              <button type="submit" disabled={saveStatus === 'loading'} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1">
+                {saveStatus === 'loading' ? '⏳...' : t.saveBtn}
+              </button>
+            </form>
+          </div>
+
+          <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
+              <div>
+                <h2 className="text-xl font-black flex items-center gap-2"><Camera className="text-blue-500" /> {t.camTitle}</h2>
+                <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.camSub}</p>
+              </div>
+              <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all hover:scale-105">
+                <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></span> {t.liveBtn}
+              </button>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar snap-x">
+              {reports.length === 0 ? (
+                <div className={`w-full text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noReports}</div>
+              ) : (
+                reports.map(r => (
+                  <div key={r.id} className={`min-w-[260px] rounded-xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
+                    <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm`}>
+                      <Trash2 size={16}/>
+                    </button>
+                    <div className="relative h-40 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
+                      <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                      <span className={`absolute bottom-2 ${isRtl ? 'right-2' : 'left-2'} text-white text-[11px] font-bold`}>
+                        🕒 {new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                    <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
+                      <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>{r.description || t.interactiveShot}</p>
+                      <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1">👷 {r.provider_name || t.souqTeam}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className={`${cardClass} border-t-4 border-t-blue-500`}>
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
+            <h2 className="text-xl font-black flex items-center gap-2"><MessageCircle className="text-blue-500" /> {t.inboxTitle}</h2>
+            <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/30 px-4 py-1.5 rounded-full">
+              <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> {t.onlineStatus} ({onlineProviders.length}) {t.available}
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            {conversations.length === 0 ? (
+              <div className={`text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noChats}</div>
+            ) : (
+              <table className={`w-full ${isRtl ? 'text-right' : 'text-left'} border-collapse`}>
+                <tbody>
+                  {conversations.map(c => {
+                    const isOnline = onlineProviders.includes(c.partnerId?.toString());
+                    const msgText = c.lastMsg?.content?.startsWith('AUDIO_MSG') ? t.voiceMsg : (c.lastMsg?.content || t.chatStarted);
+                    const token = Array.from(c.id.toString()).map(ch => ch.charCodeAt(0).toString(16)).join('');
+                    return (
+                      <tr key={c.id} className={`border-b transition-colors ${isDarkMode ? 'border-slate-700/50 hover:bg-slate-700/40' : 'border-slate-100 hover:bg-slate-50'} ${c.unread > 0 ? (isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50/70') : ''}`}>
+                        <td className="p-4 font-bold flex items-center gap-3">
+                          <span className={`w-3 h-3 rounded-full ${isOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-slate-300'}`}></span>
+                          {c.icon} {c.partnerName}
+                          {c.unread > 0 && <span className={`bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse shadow-lg ${isRtl ? 'mr-2' : 'ml-2'}`}>{c.unread}</span>}
+                        </td>
+                        <td className={`p-4 text-sm max-w-[200px] truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{msgText}</td>
+                        <td className={`p-4 ${isRtl ? 'text-left' : 'text-right'}`}>
+                          <Link to={`/v2/chat/${token}`} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg hover:shadow-blue-500/30">{t.enterChat}</Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* ==================================================== */}
+        {/* 🚀 الشرط الذكي: القطع المتعلقة بالورش النشط فقط */}
+        {/* ==================================================== */}
         {!activeProject ? (
           <div className={`flex flex-col items-center justify-center py-20 rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-slate-800/50 border-slate-600' : 'bg-white/50 border-slate-300'}`}>
             <FolderOpen size={80} className="text-slate-400 mb-6 opacity-50" />
@@ -940,7 +1047,6 @@ export default function ContractorDashboard() {
               </Link>
             </div>
 
-            {/* 🚀 البطاقات الثلاث الإحصائية في القمة مع العداد المتصاعد */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
                 <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
@@ -956,7 +1062,6 @@ export default function ContractorDashboard() {
               </div>
             </div>
 
-            {/* 🚀 منطقة الإحصائيات التفصيلية (الدوائر الأربع النابضة) تحتها مباشرة */}
             <div className={`${cardClass} mb-6`}>
               <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
               <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
@@ -967,16 +1072,11 @@ export default function ContractorDashboard() {
                     <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
                       {t.stageNames[stage.id]} {stage.icon}
                     </div>
-                    
-                    <div 
-                      className="relative w-32 h-32 rounded-full flex items-center justify-center mb-4 shadow-inner group-hover:shadow-[0_0_20px_rgba(0,0,0,0.1)] transition-shadow duration-500" 
-                      style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}
-                    >
+                    <div className="relative w-32 h-32 rounded-full flex items-center justify-center mb-4 shadow-inner group-hover:shadow-[0_0_20px_rgba(0,0,0,0.1)] transition-shadow duration-500" style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}>
                       <div className={`absolute rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`} style={{ width: '82%', height: '82%' }}>
                         <span className="text-2xl font-black animate-pulse" style={{ color: stage.color }}>{stage.percent}%</span>
                       </div>
                     </div>
-                    
                     <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                       {stage.completed} / {stage.total} {t.taskUnit}
                     </div>
@@ -985,107 +1085,16 @@ export default function ContractorDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <div className={cardClass}>
-                <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
-                <form onSubmit={handleProfileUpdate} className="space-y-5">
-                  <input type="text" placeholder={t.compName} value={profile.store_name || ''} onChange={e => setProfile({...profile, store_name: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                  
-                  <input type="tel" placeholder={t.phone} value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                  
-                  <input type="text" placeholder={language === 'ar' ? 'العنوان' : language === 'fr' ? 'Adresse' : 'Address'} value={profile.address || ''} onChange={e => setProfile({...profile, address: e.target.value})} className={`w-full p-4 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-900/80 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                  
-                  <button type="submit" disabled={saveStatus === 'loading'} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1">
-                    {saveStatus === 'loading' ? '⏳...' : t.saveBtn}
-                  </button>
-                </form>
-              </div>
-
-              <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
-                <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
-                  <div>
-                    <h2 className="text-xl font-black flex items-center gap-2"><Camera className="text-blue-500" /> {t.camTitle}</h2>
-                    <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.camSub}</p>
-                  </div>
-                  <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all hover:scale-105">
-                    <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></span> {t.liveBtn}
-                  </button>
-                </div>
-                
-                <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar snap-x">
-                  {reports.length === 0 ? (
-                    <div className={`w-full text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noReports}</div>
-                  ) : (
-                    reports.map(r => (
-                      <div key={r.id} className={`min-w-[260px] rounded-xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
-                        <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm`}>
-                          <Trash2 size={16}/>
-                        </button>
-                        <div className="relative h-40 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
-                          <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-                          <span className={`absolute bottom-2 ${isRtl ? 'right-2' : 'left-2'} text-white text-[11px] font-bold`}>
-                            🕒 {new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
-                          </span>
-                        </div>
-                        <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
-                          <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>{r.description || t.interactiveShot}</p>
-                          <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1">👷 {r.provider_name || t.souqTeam}</p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className={`${cardClass} border-t-4 border-t-blue-500`}>
-              <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
-                <h2 className="text-xl font-black flex items-center gap-2"><MessageCircle className="text-blue-500" /> {t.inboxTitle}</h2>
-                <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/30 px-4 py-1.5 rounded-full">
-                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> {t.onlineStatus} ({onlineProviders.length}) {t.available}
-                </span>
-              </div>
-              <div className="overflow-x-auto">
-                {conversations.length === 0 ? (
-                  <div className={`text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noChats}</div>
-                ) : (
-                  <table className={`w-full ${isRtl ? 'text-right' : 'text-left'} border-collapse`}>
-                    <tbody>
-                      {conversations.map(c => {
-                        const isOnline = onlineProviders.includes(c.partnerId?.toString());
-                        const msgText = c.lastMsg?.content?.startsWith('AUDIO_MSG') ? t.voiceMsg : (c.lastMsg?.content || t.chatStarted);
-                        const token = Array.from(c.id.toString()).map(ch => ch.charCodeAt(0).toString(16)).join('');
-                        return (
-                          <tr key={c.id} className={`border-b transition-colors ${isDarkMode ? 'border-slate-700/50 hover:bg-slate-700/40' : 'border-slate-100 hover:bg-slate-50'} ${c.unread > 0 ? (isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50/70') : ''}`}>
-                            <td className="p-4 font-bold flex items-center gap-3">
-                              <span className={`w-3 h-3 rounded-full ${isOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-slate-300'}`}></span>
-                              {c.icon} {c.partnerName}
-                              {c.unread > 0 && <span className={`bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse shadow-lg ${isRtl ? 'mr-2' : 'ml-2'}`}>{c.unread}</span>}
-                            </td>
-                            <td className={`p-4 text-sm max-w-[200px] truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{msgText}</td>
-                            <td className={`p-4 ${isRtl ? 'text-left' : 'text-right'}`}>
-                              <Link to={`/v2/chat/${token}`} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg hover:shadow-blue-500/30">{t.enterChat}</Link>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-
             <div className={cardClass}>
               <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
                 <h2 className="text-xl font-black flex items-center gap-2">{t.budgetTitle}</h2>
                 <div className="flex gap-2 flex-wrap">
                   <button onClick={handlePrintPDF} className="bg-[#e74c3c] hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-500/20 transition-all hover:-translate-y-1">
-                <FileText size={18} /> {t.pdfBtn}
-              </button>
-              <button onClick={handleWhatsAppShare} className="bg-[#25D366] hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-green-500/20 transition-all hover:-translate-y-1">
-                📲 {t.waBtn}
-              </button>
+                    <FileText size={18} /> {t.pdfBtn}
+                  </button>
+                  <button onClick={handleWhatsAppShare} className="bg-[#25D366] hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-green-500/20 transition-all hover:-translate-y-1">
+                    📲 {t.waBtn}
+                  </button>
                   <Link to="/v2/cost-calculator" className={`px-5 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-1 ${isDarkMode ? 'border border-slate-600 hover:bg-slate-700 text-slate-200' : 'bg-white border border-slate-200 text-slate-700 shadow-sm'}`}>
                     {t.editBudgetBtn}
                   </Link>
@@ -1107,7 +1116,7 @@ export default function ContractorDashboard() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
               <div className={cardClass}>
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
                   <h2 className="text-xl font-black flex items-center gap-2"><Wallet className="text-blue-500" /> {t.radarTitle}</h2>
@@ -1162,7 +1171,7 @@ export default function ContractorDashboard() {
               </div>
             </div>
 
-            <div className={cardClass}>
+            <div className={`${cardClass} mt-6`}>
               <h2 className="text-xl font-black mb-6 pb-4 border-b border-slate-200/20">👷 {t.teamTitle}</h2>
               {team.length === 0 ? (
                  <p className={`text-center ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.noTeam}</p>
@@ -1181,7 +1190,7 @@ export default function ContractorDashboard() {
               )}
             </div>
 
-            <div className={cardClass}>
+            <div className={`${cardClass} mt-6`}>
               <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
                 <h2 className="text-xl font-black flex items-center gap-2"><FolderOpen className="text-blue-500" /> {t.vaultTitle}</h2>
                 <div className="flex gap-2">
