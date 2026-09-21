@@ -372,52 +372,84 @@ export default function ContractorDashboard() {
       if (currentUser) {
         if (isMounted) setUser(currentUser);
 
-        // 1. أضف استعلام cost_items لجلب الأسعار الأصلية
         const [servicesRes, checklistsRes, progressRes, profileRes, costItemsRes] = await Promise.all([
           supabase.from('services').select('id, stage_id'),
           supabase.from('checklists').select('id, service_id'),
           supabase.from('user_progress').select('task_id').eq('project_id', activeProject.id),
           supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle(),
-          supabase.from('cost_items').select('id, stage_id') // 🚀 جلب عناصر التكلفة لربطها بالمراحل
+          supabase.from('cost_items').select('id, stage_id') 
         ]);
 
         if (profileRes.data && isMounted) setProfile(profileRes.data);
 
-        // ... (كود حساب المهام syncedStages يبقى كما هو لا تلمسه) ...
+        const services = servicesRes.data || [];
+        const checklists = checklistsRes.data || [];
+        
+        // 🚀 إزالة أي تكرار للمهام لضمان الحساب الدقيق
+        const userProgress = [...new Set(progressRes.data?.map(p => p.task_id) || [])];
+
+        syncedStages = [1, 2, 3, 4].map(stageId => {
+          const stageServices = services.filter(s => s.stage_id === stageId).map(s => s.id);
+          const stageTasks = checklists.filter(t => stageServices.includes(t.service_id));
+          const stageTotal = stageTasks.length > 0 ? stageTasks.length : defaultTotals[stageId];
+          
+          const stageTaskIds = stageTasks.map(t => t.id);
+          const stageCompleted = userProgress.filter(id => stageTaskIds.includes(id)).length;
+          
+          return {
+            id: stageId,
+            icon: syncedStages.find(s=>s.id === stageId).icon,
+            color: syncedStages.find(s=>s.id === stageId).color,
+            completed: stageCompleted,
+            total: stageTotal,
+            percent: stageTotal > 0 ? Math.round((stageCompleted / stageTotal) * 100) : 0
+          };
+        });
+
+        // 🚀 توحيد الحساب مع مسار المشروع (يمنع ضياع أي مهمة في الإحصائيات)
+        const totalOverallTasks = checklists.length > 0 ? checklists.length : 28;
+        const totalCompletedTasks = userProgress.length; 
+        
+        syncedStats = {
+          progress: totalOverallTasks > 0 ? Math.round((totalCompletedTasks / totalOverallTasks) * 100) : 0,
+          completed: totalCompletedTasks,
+          remaining: Math.max(0, totalOverallTasks - totalCompletedTasks),
+          total: totalOverallTasks
+        };
 
         const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget, details').eq('project_id', activeProject.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
         
         if (estimate && isMounted) {
-          setEstimateDetails(estimate.details || []); // 🚀 حفظ تفاصيل الميزانية لاستخدامها في PDF
+          setEstimateDetails(estimate.details || []); 
         }
 
         const estBudget = estimate ? parseFloat(estimate.total_cost || estimate.total_budget || 0) : 0;
         
-        // 🚀 2. السحر المالي: حساب الميزانية المستهلكة بناءً على التكلفة الحقيقية لكل مرحلة!
         let dynamicSpent = 0;
         if (estimate && estimate.details && costItemsRes.data) {
            let totalRaw = 0;
            const stageRawBudgets = {1:0, 2:0, 3:0, 4:0};
            
-           // أ. تجميع تكلفة كل مرحلة على حدة من الفاتورة
            estimate.details.forEach(item => {
               const cItem = costItemsRes.data.find(c => c.id === item.itemId);
               if (cItem) {
-                 stageRawBudgets[cItem.stage_id] += item.subtotal;
+                 stageRawBudgets[cItem.stage_id] = (stageRawBudgets[cItem.stage_id] || 0) + item.subtotal;
                  totalRaw += item.subtotal;
               }
            });
            
-           // ب. ضرب ميزانية كل مرحلة في نسبة تقدم تلك المرحلة بالذات (مثلاً: 50,500 × 100%)
            if (totalRaw > 0) {
              syncedStages.forEach(stage => {
-                const stageWeight = stageRawBudgets[stage.id] / totalRaw; 
+                const stageWeight = (stageRawBudgets[stage.id] || 0) / totalRaw; 
                 const stageAllocatedBudget = estBudget * stageWeight; 
                 dynamicSpent += stageAllocatedBudget * (stage.percent / 100); 
              });
+           } else {
+             // 🚀 خطة الطوارئ: تمنع ظهور 0 درهم إذا لم تتطابق البيانات تماماً
+             const progressPercentage = totalOverallTasks > 0 ? (totalCompletedTasks / totalOverallTasks) : 0;
+             dynamicSpent = estBudget * progressPercentage; 
            }
         } else {
-           // حالة الطوارئ إذا لم تتوفر التفاصيل
            const progressPercentage = totalOverallTasks > 0 ? (totalCompletedTasks / totalOverallTasks) : 0;
            dynamicSpent = estBudget * progressPercentage; 
         }
@@ -457,7 +489,6 @@ export default function ContractorDashboard() {
         if (appsData && isMounted) setAppointments(appsData);
         
       } else {
-        // حالة الزائر
         syncedStages = [
           { id: 1, icon: '📝', color: '#3b82f6', percent: 100, completed: 9, total: 9 },
           { id: 2, icon: '🏗️', color: '#f97316', percent: 64, completed: 7, total: 11 },
@@ -477,7 +508,6 @@ export default function ContractorDashboard() {
     } catch (error) {
       console.error("Critical error in fetchDashboardData:", error);
     } finally {
-      // 🚀 إطلاق الأنيميشن في النهاية بأمان
       if (isMounted) {
         setLoading(false);
         setTimeout(() => setStartAnimation(true), 50); 
