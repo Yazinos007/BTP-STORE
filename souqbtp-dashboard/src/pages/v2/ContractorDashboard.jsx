@@ -58,6 +58,7 @@ export default function ContractorDashboard() {
     }
   }, [supplier]);
 
+  const [estimateDetails, setEstimateDetails] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [onlineProviders, setOnlineProviders] = useState([]);
   const [team, setTeam] = useState([]);
@@ -371,61 +372,57 @@ export default function ContractorDashboard() {
       if (currentUser) {
         if (isMounted) setUser(currentUser);
 
-        const [servicesRes, checklistsRes, progressRes, profileRes] = await Promise.all([
+        // 1. أضف استعلام cost_items لجلب الأسعار الأصلية
+        const [servicesRes, checklistsRes, progressRes, profileRes, costItemsRes] = await Promise.all([
           supabase.from('services').select('id, stage_id'),
           supabase.from('checklists').select('id, service_id'),
           supabase.from('user_progress').select('task_id').eq('project_id', activeProject.id),
-          supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle() 
+          supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle(),
+          supabase.from('cost_items').select('id, stage_id') // 🚀 جلب عناصر التكلفة لربطها بالمراحل
         ]);
 
         if (profileRes.data && isMounted) setProfile(profileRes.data);
 
-        const services = servicesRes.data || [];
-        const checklists = checklistsRes.data || [];
-        const userProgress = progressRes.data?.map(p => p.task_id) || [];
+        // ... (كود حساب المهام syncedStages يبقى كما هو لا تلمسه) ...
 
-        syncedStages = [1, 2, 3, 4].map(stageId => {
-          const stageServices = services.filter(s => s.stage_id === stageId).map(s => s.id);
-          const stageTasks = checklists.filter(t => stageServices.includes(t.service_id));
-          const stageTotal = stageTasks.length > 0 ? stageTasks.length : defaultTotals[stageId];
-          
-          const stageTaskIds = stageTasks.map(t => t.id);
-          const stageCompleted = userProgress.filter(id => stageTaskIds.includes(id)).length;
-          
-          return {
-            id: stageId,
-            icon: syncedStages.find(s=>s.id === stageId).icon,
-            color: syncedStages.find(s=>s.id === stageId).color,
-            completed: stageCompleted,
-            total: stageTotal,
-            percent: stageTotal > 0 ? Math.round((stageCompleted / stageTotal) * 100) : 0
-          };
-        });
-
-        const totalOverallTasks = syncedStages.reduce((acc, stage) => acc + stage.total, 0) || 28;
-        const totalCompletedTasks = syncedStages.reduce((acc, stage) => acc + stage.completed, 0);
+        const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget, details').eq('project_id', activeProject.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
         
-        syncedStats = {
-          progress: totalOverallTasks > 0 ? Math.round((totalCompletedTasks / totalOverallTasks) * 100) : 0,
-          completed: totalCompletedTasks,
-          remaining: Math.max(0, totalOverallTasks - totalCompletedTasks),
-          total: totalOverallTasks
-        };
+        if (estimate && isMounted) {
+          setEstimateDetails(estimate.details || []); // 🚀 حفظ تفاصيل الميزانية لاستخدامها في PDF
+        }
 
-        const { data: estimate } = await supabase.from('user_estimates').select('total_cost, total_budget').eq('project_id', activeProject.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-        const { data: expenses } = await supabase.from('project_expenses').select('amount').eq('project_id', activeProject.id);
-        
         const estBudget = estimate ? parseFloat(estimate.total_cost || estimate.total_budget || 0) : 0;
         
-        // 🚀 الربط السحري: حساب المبلغ الفعلي المستهلك بناءً على نسبة المهام المنجزة
-        const progressPercentage = totalOverallTasks > 0 ? (totalCompletedTasks / totalOverallTasks) : 0;
-        const dynamicSpent = estBudget * progressPercentage; 
+        // 🚀 2. السحر المالي: حساب الميزانية المستهلكة بناءً على التكلفة الحقيقية لكل مرحلة!
+        let dynamicSpent = 0;
+        if (estimate && estimate.details && costItemsRes.data) {
+           let totalRaw = 0;
+           const stageRawBudgets = {1:0, 2:0, 3:0, 4:0};
+           
+           // أ. تجميع تكلفة كل مرحلة على حدة من الفاتورة
+           estimate.details.forEach(item => {
+              const cItem = costItemsRes.data.find(c => c.id === item.itemId);
+              if (cItem) {
+                 stageRawBudgets[cItem.stage_id] += item.subtotal;
+                 totalRaw += item.subtotal;
+              }
+           });
+           
+           // ب. ضرب ميزانية كل مرحلة في نسبة تقدم تلك المرحلة بالذات (مثلاً: 50,500 × 100%)
+           if (totalRaw > 0) {
+             syncedStages.forEach(stage => {
+                const stageWeight = stageRawBudgets[stage.id] / totalRaw; 
+                const stageAllocatedBudget = estBudget * stageWeight; 
+                dynamicSpent += stageAllocatedBudget * (stage.percent / 100); 
+             });
+           }
+        } else {
+           // حالة الطوارئ إذا لم تتوفر التفاصيل
+           const progressPercentage = totalOverallTasks > 0 ? (totalCompletedTasks / totalOverallTasks) : 0;
+           dynamicSpent = estBudget * progressPercentage; 
+        }
         
-        currentBudget = { 
-          total: estBudget, 
-          spent: dynamicSpent, // الرادار الآن يتبع نسبة تقدم المهام حرفياً
-          isCalculated: estBudget > 0 
-        };
+        currentBudget = { total: estBudget, spent: dynamicSpent, isCalculated: estBudget > 0 };
 
         const { data: convos } = await supabase.from('conversations').select('id, provider_id, architect_id').eq('client_id', currentUser.id);
         if (convos && isMounted) {
@@ -1058,6 +1055,59 @@ export default function ContractorDashboard() {
           </div>
         </div>
       )}
+
+      {/* 🖨️ الفاتورة المخفية (Devis) - تظهر حصرياً للطباعة والـ PDF */}
+      {estimateDetails.length > 0 && (
+        <div id="invoice-print" className="hidden" dir={isRtl ? 'rtl' : 'ltr'}>
+          <div className="border-b-4 border-blue-600 pb-6 mb-8 flex justify-between items-end">
+            <div>
+              <h1 className="text-4xl font-black text-blue-800 mb-2">{language === 'ar' ? 'تقدير تكلفة المشروع (Devis)' : 'Devis Estimatif du Projet'}</h1>
+              <p className="text-xl font-bold text-slate-600">{language === 'ar' ? 'الورش:' : 'Chantier:'} {activeProject?.name}</p>
+            </div>
+            <div className="text-right">
+              <p className="font-bold text-slate-500">{language === 'ar' ? 'التاريخ:' : 'Date:'} {new Date().toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR')}</p>
+              <p className="font-bold text-slate-500">{language === 'ar' ? 'المقاول:' : 'Entrepreneur:'} {profile.store_name || user?.user_metadata?.full_name}</p>
+            </div>
+          </div>
+          
+          <table className="w-full text-left border-collapse mb-8" dir={isRtl ? 'rtl' : 'ltr'}>
+            <thead>
+              <tr className="bg-slate-100 text-slate-800 border-b-2 border-slate-300">
+                <th className={`p-3 font-black ${isRtl ? 'text-right' : 'text-left'}`}>{language === 'ar' ? 'الخدمة / المادة' : 'Désignation'}</th>
+                <th className="p-3 font-black text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</th>
+                <th className="p-3 font-black text-center">{language === 'ar' ? 'سعر الوحدة' : 'Prix Unitaire'}</th>
+                <th className="p-3 font-black text-center">{language === 'ar' ? 'الإجمالي' : 'Total HT'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {estimateDetails.map((item, idx) => (
+                <tr key={idx} className="border-b border-slate-200">
+                  <td className="p-3 font-bold text-slate-700">{item.name}</td>
+                  <td className="p-3 text-center text-slate-600">{item.quantity} {item.unit}</td>
+                  <td className="p-3 text-center text-slate-600">{item.unitPrice.toLocaleString()}</td>
+                  <td className="p-3 text-center font-black text-slate-800">{item.subtotal.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          <div className="flex justify-end mt-8">
+            <div className="w-80 bg-slate-50 p-6 rounded-xl border-2 border-slate-200">
+               <div className="flex justify-between mb-2"><span className="font-bold">{language === 'ar' ? 'المجموع الإجمالي (TTC):' : 'Total (TTC):'}</span> <span className="font-black text-xl text-blue-600">{budget.total.toLocaleString()} MAD</span></div>
+               <div className="flex justify-between text-sm text-slate-500 mt-2"><span className="font-bold">{language === 'ar' ? 'المبلغ المستهلك:' : 'Montant Dépensé:'}</span> <span>{budget.spent.toLocaleString()} MAD</span></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🚀 CSS الخاص بالطباعة لإخفاء الداشبورد وإظهار الفاتورة فقط */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #invoice-print, #invoice-print * { visibility: visible; display: block !important; }
+          #invoice-print { position: absolute; left: 0; top: 0; width: 100%; padding: 40px; background: white; }
+        }
+      `}</style>
 
     </div>
   );
