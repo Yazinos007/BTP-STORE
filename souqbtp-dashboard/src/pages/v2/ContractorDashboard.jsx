@@ -702,9 +702,113 @@ export default function ContractorDashboard() {
     return days;
   };
 
-  // 🚀 دالة طباعة تقرير الورش (PDF)
+  // 🚀 دالة طباعة تقرير الورش (PDF) - الجيل الجديد
   const handlePrintPDF = () => {
-    window.print();
+    if (!estimateDetails || estimateDetails.length === 0) {
+      alert(language === 'ar' ? 'يرجى حفظ التقديرات في الحاسبة الذكية أولاً!' : 'Veuillez enregistrer l\'estimation d\'abord!');
+      return;
+    }
+
+    // تجهيز صفوف الجدول
+    const rowsHTML = estimateDetails.map(item => `
+      <tr>
+        <td class="font-bold text-slate-700">${translateDB(item.name)}</td>
+        <td class="center text-slate-600">${translateDB(item.unit)}</td>
+        <td class="center text-slate-600">${item.quantity}</td>
+        <td class="center text-slate-600">${item.unitPrice.toLocaleString()}</td>
+        <td class="center font-black text-slate-800">${item.subtotal.toLocaleString()}</td>
+      </tr>
+    `).join('');
+
+    // الحسابات
+    const totalHT = estimateDetails.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+    const totalTTC = budget.total;
+    const totalTVA = totalTTC - totalHT;
+
+    // فتح نافذة طباعة نقية
+    const printWindow = window.open('', '', 'height=800,width=1000');
+    
+    printWindow.document.write(`
+      <html dir="${isRtl ? 'rtl' : 'ltr'}">
+        <head>
+          <title>Devis - ${activeProject?.name}</title>
+          <style>
+            @page { margin: 20mm; }
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 0; margin: 0; color: #334155; }
+            .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 4px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px; }
+            .title { font-size: 32px; font-weight: 900; color: #1e293b; margin: 0 0 8px 0; }
+            .subtitle { font-size: 18px; font-weight: 700; color: #475569; margin: 0; }
+            .info { text-align: ${isRtl ? 'left' : 'right'}; font-size: 16px; font-weight: 600; color: #475569; line-height: 1.5; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            th { background-color: #f1f5f9; color: #1e293b; font-weight: 900; padding: 12px; border-bottom: 2px solid #cbd5e1; text-align: ${isRtl ? 'right' : 'left'}; }
+            th.center { text-align: center; }
+            td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+            td.center { text-align: center; }
+            .font-bold { font-weight: 700; }
+            .font-black { font-weight: 900; color: #0f172a; }
+            .totals-container { display: flex; justify-content: flex-end; page-break-inside: avoid; }
+            .totals-box { width: 350px; background-color: #f8fafc; padding: 20px; border: 2px solid #e2e8f0; border-radius: 12px; }
+            .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 18px; }
+            .border-b { border-bottom: 1px solid #e2e8f0; }
+            .ttc-row { display: flex; justify-content: space-between; padding: 12px 8px; margin-top: 8px; background-color: #f1f5f9; border-radius: 8px; font-weight: 900; color: #0f172a; font-size: 20px; }
+            .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 120px; color: rgba(0,0,0,0.03); z-index: -1; pointer-events: none; white-space: nowrap; font-weight: 900; }
+          </style>
+        </head>
+        <body>
+          <div class="watermark">SouqBTP</div>
+          <div class="header">
+            <div>
+              <h1 class="title">${language === 'ar' ? 'تقدير تكلفة المشروع (Devis)' : 'Devis Estimatif'}</h1>
+              <p class="subtitle">${language === 'ar' ? 'الورش:' : 'Chantier:'} ${activeProject?.name}</p>
+            </div>
+            <div class="info">
+              <div>${language === 'ar' ? 'التاريخ:' : 'Date:'} ${new Date().toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR')}</div>
+              <div>${language === 'ar' ? 'المقاول:' : 'Entrepreneur:'} ${profile?.store_name || user?.user_metadata?.full_name || 'SouqBTP'}</div>
+            </div>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>${language === 'ar' ? 'الخدمة / المادة' : 'Désignation'}</th>
+                <th class="center">${language === 'ar' ? 'الوحدة' : 'Unité'}</th>
+                <th class="center">${language === 'ar' ? 'الكمية' : 'Qté'}</th>
+                <th class="center">${language === 'ar' ? 'سعر الوحدة (HT)' : 'Prix Unitaire (HT)'}</th>
+                <th class="center">${language === 'ar' ? 'الإجمالي (HT)' : 'Montant (HT)'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHTML}
+            </tbody>
+          </table>
+          
+          <div class="totals-container">
+            <div class="totals-box">
+              <div class="total-row border-b">
+                <span class="font-bold">${language === 'ar' ? 'المجموع الصافي:' : 'Total HT :'}</span>
+                <span class="font-black">${totalHT.toLocaleString()} MAD</span>
+              </div>
+              <div class="total-row border-b">
+                <span class="font-bold text-slate-600">${language === 'ar' ? 'الضريبة (TVA 20%):' : 'TVA (20%) :'}</span>
+                <span class="font-black text-slate-600">${totalTVA.toLocaleString()} MAD</span>
+              </div>
+              <div class="ttc-row">
+                <span>${language === 'ar' ? 'المجموع الشامل:' : 'Total TTC :'}</span>
+                <span>${totalTTC.toLocaleString()} MAD</span>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    // إعطاء المتصفح ربع ثانية ليرسم الجدول ثم يطبع
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   };
 
   // 🚀 دالة مشاركة التقرير عبر واتساب
@@ -1166,87 +1270,6 @@ export default function ContractorDashboard() {
           </div>
         </div>
       )}
-
-      {/* 🖨️ الفاتورة المخفية (Devis) - تظهر حصرياً للطباعة والـ PDF */}
-      {estimateDetails && estimateDetails.length > 0 ? (
-        <div id="invoice-print" className="hidden print:block bg-white w-full absolute top-0 left-0 z-50 m-0 p-8 text-black" dir={isRtl ? 'rtl' : 'ltr'}>
-          {/* رأس الفاتورة */}
-          <div className="border-b-4 border-slate-800 pb-6 mb-8 flex justify-between items-start">
-            <div>
-              <h1 className="text-4xl font-black text-slate-800 mb-2">{language === 'ar' ? 'تقدير تكلفة المشروع (Devis)' : 'Devis Estimatif'}</h1>
-              <p className="text-xl font-bold text-slate-600">{language === 'ar' ? 'الورش:' : 'Chantier:'} {activeProject?.name}</p>
-            </div>
-            <div className="text-right">
-              <p className="font-bold text-slate-600">{language === 'ar' ? 'التاريخ:' : 'Date:'} {new Date().toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR')}</p>
-              <p className="font-bold text-slate-600">{language === 'ar' ? 'المقاول:' : 'Entrepreneur:'} {profile?.store_name || user?.user_metadata?.full_name}</p>
-            </div>
-          </div>
-          
-          {/* جدول المنتجات والأسعار */}
-          <table className="w-full text-left border-collapse mb-8" dir={isRtl ? 'rtl' : 'ltr'}>
-            <thead>
-              <tr className="bg-slate-100 text-slate-800">
-                <th className={`p-3 font-black border-b-2 border-slate-300 ${isRtl ? 'text-right' : 'text-left'}`}>{language === 'ar' ? 'الخدمة / المادة' : 'Désignation'}</th>
-                <th className="p-3 font-black border-b-2 border-slate-300 text-center">{language === 'ar' ? 'الوحدة' : 'Unité'}</th>
-                <th className="p-3 font-black border-b-2 border-slate-300 text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</th>
-                <th className="p-3 font-black border-b-2 border-slate-300 text-center">{language === 'ar' ? 'سعر الوحدة (HT)' : 'Prix Unitaire (HT)'}</th>
-                <th className="p-3 font-black border-b-2 border-slate-300 text-center">{language === 'ar' ? 'الإجمالي (HT)' : 'Montant (HT)'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {estimateDetails.map((item, idx) => (
-                <tr key={idx} className="border-b border-slate-200">
-                  <td className="p-3 font-bold text-slate-700">{translateDB(item.name)}</td>
-                  <td className="p-3 text-center text-slate-600">{translateDB(item.unit)}</td>
-                  <td className="p-3 text-center text-slate-600">{item.quantity}</td>
-                  <td className="p-3 text-center text-slate-600">{item.unitPrice.toLocaleString()}</td>
-                  <td className="p-3 text-center font-black text-slate-800">{item.subtotal.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          {/* ملخص المجاميع (HT, TVA, TTC) في الأسفل */}
-          <div className="flex justify-end mt-8">
-            <div className="w-80 p-0">
-              <table className="w-full text-lg border-collapse">
-                <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="py-2 font-bold text-slate-600">{language === 'ar' ? 'المجموع الصافي:' : 'Total HT :'}</td>
-                    <td className="py-2 text-right font-black">
-                      {estimateDetails.reduce((sum, item) => sum + (item.subtotal || 0), 0).toLocaleString()} MAD
-                    </td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="py-2 font-bold text-slate-600">{language === 'ar' ? 'الضريبة (TVA 20%):' : 'TVA (20%) :'}</td>
-                    <td className="py-2 text-right font-black text-slate-500">
-                      {(budget.total - estimateDetails.reduce((sum, item) => sum + (item.subtotal || 0), 0)).toLocaleString()} MAD
-                    </td>
-                  </tr>
-                  <tr className="bg-slate-100 border-b-2 border-slate-300">
-                    <td className="py-3 px-2 font-black text-slate-800">{language === 'ar' ? 'المجموع الشامل:' : 'Total TTC :'}</td>
-                    <td className="py-3 px-2 text-right font-black text-slate-900">{budget.total.toLocaleString()} MAD</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div id="invoice-print" className="hidden print:flex items-center justify-center h-screen bg-white text-3xl font-black absolute top-0 left-0 w-full z-50 text-black">
-           {language === 'ar' ? '⚠️ يرجى الدخول للحاسبة الذكية والضغط على "حفظ التقدير" لتوليد الفاتورة.' : '⚠️ Veuillez enregistrer l\'estimation d\'abord.'}
-        </div>
-      )}
-
-      {/* 🚀 CSS الخاص بالطباعة لإخفاء الداشبورد وإظهار الفاتورة فقط */}
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #invoice-print { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
-          #invoice-print * { visibility: visible; }
-        }
-      `}</style>
-
     </div>
   );
 }
