@@ -335,14 +335,22 @@ export default function ContractorDashboard() {
   };
 
   const translateDB = (text) => {
+    // 🛡️ حماية ضد القيم الفارغة
     if (!text || typeof text !== 'string') return text; 
     if (language === 'ar') return text;
     const clean = text.trim();
-    if (dbTranslations[clean] && dbTranslations[clean][language]) return dbTranslations[clean][language];
-    for (const [arKey, trans] of Object.entries(dbTranslations)) {
-      if (clean.includes(arKey)) return trans[language];
+    // 1. محاولة التطابق التام أولاً (السرعة القصوى)
+    if (dbTranslations[clean] && dbTranslations[clean][language]) {
+      return dbTranslations[clean][language];
     }
-    return text;
+    // 2. السحر الجديد: الترتيب التكتيكي (من الأطول إلى الأقصر)
+    // يمنع الكلمات القصيرة (مثل: يوم، رخصة، كهرباء) من اختطاف الجمل الطويلة
+    const sortedKeys = Object.keys(dbTranslations).sort((a, b) => b.length - a.length);
+    // 3. البحث الذكي الآمن
+    for (const arKey of sortedKeys) {
+      if (clean.includes(arKey)) return dbTranslations[arKey][language];
+    }
+    return text; // إرجاع النص الأصلي إذا لم نجد له ترجمة
   };
 
   const categoryOptions = {
