@@ -264,6 +264,87 @@ export default function ContractorDashboard() {
 
   const t = translations[language] || translations.ar;
 
+  // 🚀 القاموس الذكي للترجمة (لإصلاح الشبح الأزرق في الفاتورة المطبوعة)
+  const dbTranslations = {
+    // المهام
+    "تصميم معماري": { fr: "Conception Architecturale", en: "Architectural Design" },
+    "البلان": { fr: "Conception Architecturale (Plan)", en: "Architectural Design (Plan)" },
+    "هندسة ودراسات": { fr: "Ingénierie et Études", en: "Engineering & Studies" },
+    "خدمات استشارية": { fr: "Services de Conseil", en: "Consulting Services" },
+    "التصاميم الهندسية": { fr: "Conceptions Techniques", en: "Technical Designs" },
+    "التحقق من التصاميم": { fr: "Vérification des Conceptions", en: "Design Verification" },
+    "التوقيع على النسخة": { fr: "Signature Version Finale", en: "Final Design Signature" },
+    "دراسات تقنية": { fr: "Études Techniques", en: "Technical Studies" },
+    "تكاليف هيكلية": { fr: "Calcul des Coûts Structurels", en: "Structural Cost Calculation" },
+    "الوكالة الحضرية": { fr: "Frais d'Agence Urbaine & Protection Civile", en: "Urban Agency & Civil Protection Fees" },
+    "وثائق الملكية": { fr: "Documents de Propriété", en: "Property Documents" },
+    "تكلفة المشروع": { fr: "Coût du Projet", en: "Project Cost" },
+    "عقود المهندسين": { fr: "Contrats d'Ingénieurs", en: "Engineers Contracts" },
+    "طبوغرافي": { fr: "Relevé Topographique", en: "Topographic Survey" },
+    "تربة": { fr: "Étude de Sol (Laboratoire)", en: "Soil Study (Laboratory)" },
+    "أعمال البناء": { fr: "Gros Œuvres / Maçonnerie", en: "Construction / Masonry" },
+    "كهرباء": { fr: "Électricité", en: "Electricity" },
+    "سباكة": { fr: "Plomberie", en: "Plumbing" },
+    "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
+    "حجرية": { fr: "Travaux de pierre", en: "Stone works" },
+    "أساسات": { fr: "Fondations", en: "Foundations" },
+    "طوب": { fr: "Briques", en: "Bricks" },
+    "هيكل خرساني": { fr: "Structure en béton", en: "Concrete structure" },
+    "تركيبات كهربائية": { fr: "Installations électriques", en: "Electrical installations" },
+    "لوحات توزيع": { fr: "Tableaux de distribution", en: "Distribution boards" },
+    "أسلاك وإنارة": { fr: "Câblage et éclairage", en: "Wiring and lighting" },
+    "صرف صحي": { fr: "Assainissement", en: "Sanitation" },
+    "تمديدات مياه": { fr: "Conduites d'eau", en: "Water pipes" },
+    "تركيب حمامات": { fr: "Installation de salles de bain", en: "Bathroom installation" },
+    "حفر الأساسات": { fr: "Terrassement", en: "Excavation (Terrassement)" },
+    "صب الخرسانة": { fr: "Béton armé", en: "Reinforced Concrete" },
+    "بناء الجدران": { fr: "Maçonnerie et Cloisons (Briques)", en: "Wall Construction & Partitioning" },
+    "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
+    "دراسات الخرسانة": { fr: "Études de Béton et Acier", en: "Concrete & Steel Studies" },
+    "رخصة البناء": { fr: "Obtention du Permis de Construire", en: "Building Permit" },
+    "صيانة": { fr: "Entretien et Rénovation", en: "Maintenance & Renovation" },
+    "جبص": { fr: "Plâtre & Céramique", en: "Plaster & Ceramic" },
+    "دهان": { fr: "Peinture et Enduit", en: "Painting & Plastering" },
+    "أبواب": { fr: "Portes, fenêtres, cuisines, placards...", en: "Doors, windows, kitchens, closets..." },
+    "أرضيات": { fr: "Revêtement sol/mur, marbre, plâtre...", en: "Flooring, marble, ceramic, plaster..." },
+    "المرطوب": { fr: "Enduit (Mortier)", en: "Plastering (Enduit)" },
+    "زليج": { fr: "Pose de Céramique et Carrelage", en: "Ceramic & Tiling Installation" },
+    "صباغة": { fr: "Peinture et Façades Extérieures", en: "Painting & Exterior Facades" },
+    "نجارة": { fr: "Menuiserie Bois", en: "Wood Carpentry" },
+    "التشطيب النهائي": { fr: "Finitions Finales (Plomberie & Électricité)", en: "Final Touches (Plumbing & Electrical)" },
+    "شهادة السكنى": { fr: "Permis d'Habiter", en: "Occupancy Permit" },
+    "عداد الكهرباء": { fr: "Compteur Électrique", en: "Electricity Meter" },
+    "ضريبة السكن": { fr: "Taxe d'Habitation", en: "Housing Tax" },
+    "التسجيل العقاري": { fr: "Conservation Foncière", en: "Land Registration" },
+    "تسجيل الوثائق": { fr: "Enregistrement des documents", en: "Document registration" },
+    "التسجيل الجبائي": { fr: "Enregistrement fiscal", en: "Tax registration" },
+    "تحفيظ العقار": { fr: "Immatriculation foncière", en: "Property registration" },
+    "تحيين التصميم": { fr: "Mise à jour du Plan Topographique", en: "Topographic Plan Update" },
+    "الربط بشبكة": { fr: "Raccordement Eau et Électricité", en: "Water & Electricity Connection" },
+    "مصاريف الموثق": { fr: "Frais de Notaire et Conservation", en: "Notary & Land Registry Fees" },
+    
+    // الوحدات (Units)
+    "رخصة": { fr: "Licence", en: "License" },
+    "إجمالي": { fr: "Global", en: "Total" },
+    "طابق": { fr: "Étage", en: "Floor" },
+    "باب": { fr: "Porte", en: "Door" },
+    "عداد": { fr: "Compteur", en: "Meter" },
+    "متر": { fr: "Mètre", en: "Meter" },
+    "متر مربع": { fr: "Mètre Carré", en: "Square Meter" },
+    "يوم": { fr: "Jour", en: "Day" }
+  };
+
+  const translateDB = (text) => {
+    if (!text || typeof text !== 'string') return text; 
+    if (language === 'ar') return text;
+    const clean = text.trim();
+    if (dbTranslations[clean] && dbTranslations[clean][language]) return dbTranslations[clean][language];
+    for (const [arKey, trans] of Object.entries(dbTranslations)) {
+      if (clean.includes(arKey)) return trans[language];
+    }
+    return text;
+  };
+
   const categoryOptions = {
     ar: ['رخصة بناء', 'تصميم هندسي', 'فاتورة / توصيل', 'عقد عمل', 'أخرى'],
     fr: ['Permis de construire', 'Conception architecturale', 'Facture / Livraison', 'Contrat de travail', 'Autre'],
