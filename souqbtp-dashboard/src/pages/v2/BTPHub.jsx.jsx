@@ -1,0 +1,537 @@
+import React, { useState, useEffect } from 'react';
+import { useOutletContext, Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase'; // تأكد من صحة المسار
+import { 
+  Search, Mic, Camera, FileText, MapPin, CheckCircle, Clock, Star, 
+  ShieldCheck, ShoppingCart, Filter, Package, Zap, Droplet, PaintRoller, 
+  Hammer, ArrowRight, Plus, CheckCircle2, TrendingUp, Briefcase,
+  Store, Coins, Globe, Bitcoin, Minus, MessageCircle, X, Trash2
+} from 'lucide-react';
+
+const getCurrencySymbol = (curr) => {
+  const symbols = { MAD: 'MAD', USD: '$', EUR: '€', SAR: 'SAR', AED: 'AED', KWD: 'KWD', CNY: '¥', INR: '₹', CHF: 'CHF', USDT: '₮', BTC: '₿', ETH: '⟠', SOL: '◎', ICX: '🌐', OM: '🏢', BST: '🧱', ALGO: '⚙️', BRICS: '🤝' };
+  return symbols[curr] || curr;
+};
+
+const getCurrencyIcon = (curr) => {
+  if(['BTC', 'ETH', 'SOL', 'ICX', 'OM', 'BST', 'ALGO'].includes(curr)) return <Bitcoin size={16} className="text-amber-500"/>;
+  if(['USDT', 'USDC'].includes(curr)) return <Coins size={16} className="text-emerald-500"/>;
+  if(curr === 'BRICS') return <Globe size={16} className="text-blue-500"/>;
+  if(curr === 'USD') return <span className="font-black text-xs">🇺🇸</span>;
+  if(curr === 'EUR') return <span className="font-black text-xs">🇪🇺</span>;
+  if(curr === 'SAR') return <span className="font-black text-xs">🇸🇦</span>;
+  if(curr === 'AED') return <span className="font-black text-xs">🇦🇪</span>;
+  if(curr === 'KWD') return <span className="font-black text-xs">🇰🇼</span>;
+  if(curr === 'CNY') return <span className="font-black text-xs">🇨🇳</span>;
+  if(curr === 'INR') return <span className="font-black text-xs">🇮🇳</span>;
+  if(curr === 'CHF') return <span className="font-black text-xs">🇨🇭</span>;
+  return <span className="font-black text-xs">🇲🇦</span>;
+};
+
+export default function BTPHub() {
+  const navigate = useNavigate();
+  const context = useOutletContext() || {};
+  const isDarkMode = context.isDarkMode || false;
+  const language = context.language || 'fr'; // جعلنا الفرنسية هي الافتراضية هنا لتناسب التصميم
+  const isRtl = language === 'ar';
+
+  // State for Hub
+  const [activeMode, setActiveMode] = useState('materiaux');
+  
+  // State for Marketplace
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [products, setProducts] = useState([]);
+  
+  // State for Cart
+  const [cart, setCart] = useState([]); 
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [addedItem, setAddedItem] = useState(null);
+
+  const translations = {
+    ar: {
+      searchPlaceholder: "ماذا تحتاج لمشروعك؟ ابحث عن الأسمنت، الحديد، مقاول...", categoriesTitle: "التصنيفات",
+      all: "الكل", cement: "مواد البناء والأسمنت", steel: "الحديد والتسليح", wood: "الخشب والنجارة",
+      plumbing: "السباكة والأنابيب", electrical: "الكهرباء والإنارة", paint: "الصباغة والعزل",
+      addToCart: "أضف للمشروع", retail: "تقسيط:", wholesale: "جملة:",
+      supplier: "المورد:", cartEmpty: "مشروعك فارغ", itemsInCart: "عناصر",
+      checkout: "إتمام الطلب", emptySearch: "لم نجد ما يطابق بحثك.",
+      popular: "الأكثر طلباً", addedSuccess: "تمت الإضافة!", openStore: "فتح متجري",
+      multiCartDesc: "سلة مشروع متعددة الموردين", cartTitle: "سلة المشروع",
+      qty: "الكمية:", total: "المجموع:", orderFrom: "طلب وعروض أسعار",
+      wholesaleActivated: "🎉 تم تفعيل سعر الجملة",
+      modes: { materiaux: "المواد", services: "الخدمات", experts: "الخبراء", machines: "المعدات" }
+    },
+    fr: {
+      searchPlaceholder: "Que recherchez-vous pour votre chantier ?", categoriesTitle: "Catégories",
+      all: "Tout", cement: "Gros œuvre & Ciment", steel: "Acier & Armature", wood: "Bois & Menuiserie",
+      plumbing: "Plomberie & Tuyauterie", electrical: "Électricité & Éclairage", paint: "Peinture & Isolation",
+      addToCart: "Ajouter au projet", retail: "Détail :", wholesale: "Gros :",
+      supplier: "Fournisseur :", cartEmpty: "Projet vide", itemsInCart: "éléments",
+      checkout: "Voir le Projet", emptySearch: "Aucun résultat trouvé.",
+      popular: "Populaire", addedSuccess: "Ajouté !", openStore: "Mon Magasin",
+      multiCartDesc: "Panier de projet multi-fournisseurs", cartTitle: "Panier du Projet",
+      qty: "Qté :", total: "Total :", orderFrom: "Demander devis & Commander",
+      wholesaleActivated: "🎉 Prix de gros activé",
+      modes: { materiaux: "Matériaux", services: "Services", experts: "Experts", machines: "Machines" }
+    }
+  };
+
+  const t = translations[language] || translations.fr;
+  const textTitle = isDarkMode ? 'text-white' : 'text-slate-800';
+  const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
+  const bgMain = isDarkMode ? 'bg-slate-950' : 'bg-gray-50';
+  const bgCard = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-100';
+
+  const modes = [
+    { id: 'materiaux', icon: '🧱', label: t.modes.materiaux },
+    { id: 'services', icon: '👷', label: t.modes.services },
+    { id: 'experts', icon: '📐', label: t.modes.experts },
+    { id: 'machines', icon: '🚜', label: t.modes.machines }
+  ];
+
+  const categories = [
+    { id: 'All', label: t.all, icon: Filter },
+    { id: 'Cement', label: t.cement, icon: Package },
+    { id: 'Steel', label: t.steel, icon: Hammer },
+    { id: 'Wood', label: t.wood, icon: TrendingUp },
+    { id: 'Plumbing', label: t.plumbing, icon: Droplet },
+    { id: 'Electrical', label: t.electrical, icon: Zap },
+    { id: 'Paint', label: t.paint, icon: PaintRoller },
+  ];
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadMarketplace = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('marketplace_products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          if (isMounted) setProducts(data);
+        } else {
+          // Fallback Data
+          if (isMounted) setProducts([
+            { id: 1, name: "Ciment Portland CPJ 45", category: "Cement", price_retail: 75, price_wholesale: 70, min_wholesale_qty: 100, unit: "Sac 50kg", currency: "MAD", supplier: "LafargeHolcim", rating: 4.8, isPopular: true, image_url: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=500&auto=format&fit=crop" },
+            { id: 2, name: "Fer à béton (Ø 12mm)", category: "Steel", price_retail: 9.5, price_wholesale: 8.8, min_wholesale_qty: 500, unit: "Kg", currency: "MAD", supplier: "Sonasid", rating: 4.9, isPopular: true, image_url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=500&auto=format&fit=crop" }
+          ]);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    loadMarketplace();
+    return () => { isMounted = false; };
+  }, []);
+
+  const filteredProducts = products.filter(p => {
+    const matchCat = activeCategory === 'All' || p.category === activeCategory;
+    const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.supplier && p.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchCat && matchSearch;
+  });
+
+  const handleAddToCart = (product) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.product.id === product.id);
+      if (existing) {
+        return prev.map(item => item.product.id === product.id ? { ...item, qty: (parseInt(item.qty) || 0) + 1 } : item);
+      }
+      return [...prev, { product, qty: 1 }];
+    });
+    setAddedItem(product.id);
+    setTimeout(() => setAddedItem(null), 2000);
+  };
+
+  const updateQuantity = (productId, newQty) => {
+    setCart(prev => prev.map(item => item.product.id === productId ? { ...item, qty: newQty } : item));
+  };
+
+  const removeFromCart = (productId) => {
+    setCart(prev => prev.filter(item => item.product.id !== productId));
+  };
+
+  const groupedCart = cart.reduce((groups, item) => {
+    const supplier = item.product.supplier || 'Vendeur Indépendant';
+    if (!groups[supplier]) groups[supplier] = [];
+    groups[supplier].push(item);
+    return groups;
+  }, {});
+
+  return (
+    <div className={`flex h-screen overflow-hidden ${bgMain} font-sans`} dir={isRtl ? 'rtl' : 'ltr'}>
+      
+      {/* Sidebar - Project OS Context */}
+      <aside className={`w-64 flex-shrink-0 ${isDarkMode ? 'bg-slate-900 border-r border-slate-800' : 'bg-slate-900'} text-white p-6 flex flex-col hidden md:flex`}>
+        <div className="text-2xl font-bold text-emerald-400 mb-8">SOUQBTP</div>
+        <div className="bg-slate-800/80 rounded-xl p-4 mb-6 border border-slate-700">
+          <h3 className="text-xs text-gray-400 mb-1 uppercase tracking-wider">Projet Actif</h3>
+          <p className="font-semibold text-lg mb-3">Villa Benali</p>
+          <div className="w-full bg-slate-700 rounded-full h-1.5 mb-2">
+            <div className="bg-emerald-400 h-1.5 rounded-full" style={{ width: '42%' }}></div>
+          </div>
+          <p className="text-xs text-right text-emerald-400 mb-4">42% complété</p>
+          <ul className="space-y-2 text-sm">
+            <li className="flex items-center text-gray-300"><CheckCircle className={`w-4 h-4 text-emerald-400 ${isRtl ? 'ml-2' : 'mr-2'}`} /> Ingénierie</li>
+            <li className="flex items-center text-gray-300"><CheckCircle className={`w-4 h-4 text-emerald-400 ${isRtl ? 'ml-2' : 'mr-2'}`} /> Gros œuvre</li>
+            <li className="flex items-center text-gray-500"><div className={`w-4 h-4 rounded-full border border-gray-500 ${isRtl ? 'ml-2' : 'mr-2'}`}></div> Électricité</li>
+          </ul>
+          <button className="w-full mt-5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm py-2 rounded-lg transition-colors font-bold shadow-lg shadow-emerald-500/20">
+            Gérer le projet
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto relative custom-scrollbar">
+        
+        {/* Top Header & Smart Search */}
+        <header className={`${isDarkMode ? 'bg-slate-900/80 border-b border-slate-800' : 'bg-white/80 border-b border-gray-100'} backdrop-blur-md p-6 sticky top-0 z-10`}>
+          <div className="max-w-4xl mx-auto flex items-center bg-gray-100 dark:bg-slate-800 rounded-full p-2 border border-transparent focus-within:border-emerald-500 transition-colors shadow-sm">
+            <Search className={`w-6 h-6 text-gray-400 ${isRtl ? 'mr-3 ml-2' : 'ml-3 mr-2'}`} />
+            <input 
+              type="text" 
+              placeholder={t.searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-transparent border-none focus:ring-0 text-gray-700 dark:text-gray-200 outline-none placeholder-gray-400 font-medium"
+            />
+            <div className={`flex gap-2 ${isRtl ? 'ml-2' : 'mr-2'}`}>
+              <button className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-full transition-colors">
+                <Mic className="w-5 h-5" />
+              </button>
+              <button className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-full transition-colors">
+                <Camera className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div className="p-6 md:p-8 max-w-7xl mx-auto pb-32">
+          
+          {/* Master Marketplace Switcher */}
+          <div className="flex gap-4 mb-8 overflow-x-auto custom-scrollbar pb-2 snap-x">
+            {modes.map(mode => (
+              <button
+                key={mode.id}
+                onClick={() => setActiveMode(mode.id)}
+                className={`snap-start shrink-0 flex items-center px-6 py-4 rounded-2xl text-lg font-bold transition-all border-2 ${
+                  activeMode === mode.id 
+                    ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30 transform -translate-y-1' 
+                    : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-white text-slate-600'} hover:border-emerald-400 hover:shadow-md`
+                }`}
+              >
+                <span className={`text-2xl ${isRtl ? 'ml-3' : 'mr-3'}`}>{mode.icon}</span>
+                {mode.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 1. MATÉRIAUX MODE (Integration of Legacy Code) */}
+          {activeMode === 'materiaux' && (
+            <div className="animate-fade-in">
+              {/* Legacy Categories */}
+              <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
+                {categories.map(cat => {
+                  const isActive = activeCategory === cat.id;
+                  const Icon = cat.icon;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                        isActive 
+                          ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500' 
+                          : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
+                      }`}
+                    >
+                      <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Legacy Products Grid */}
+              {loading ? (
+                <div className="flex justify-center items-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div></div>
+              ) : filteredProducts.length === 0 ? (
+                <div className={`text-center py-20 rounded-3xl border-2 border-dashed ${isDarkMode ? 'border-slate-700 bg-slate-900/50 text-slate-400' : 'border-slate-300 bg-slate-50 text-slate-500'}`}>
+                  <Package size={48} className="mx-auto mb-4 opacity-20" />
+                  <h3 className="font-black text-xl mb-2">{t.emptySearch}</h3>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredProducts.map(product => (
+                    <div key={product.id} className={`group relative rounded-2xl border transition-all duration-300 hover:-translate-y-1 flex flex-col overflow-hidden ${bgCard} shadow-sm hover:shadow-lg`}>
+                      <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                        <img src={product.image_url || product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                        {product.isPopular && <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg flex items-center gap-1`}><TrendingUp size={12}/> {t.popular}</span>}
+                        <span className={`absolute bottom-3 ${isRtl ? 'right-3' : 'left-3'} text-white font-bold text-sm drop-shadow-md bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm`}>{product.unit}</span>
+                      </div>
+                      
+                      <div className="p-5 flex-1 flex flex-col">
+                        <h3 className={`font-black text-lg leading-tight mb-2 ${textTitle}`}>{product.name}</h3>
+                        <div className="flex items-center gap-1 mb-4">
+                          <Star size={14} className="text-amber-400 fill-amber-400" />
+                          <span className={`text-xs font-bold ${textMuted}`}>{product.rating || '4.5'}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                          <div className={`p-2 rounded-xl border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                            <p className={`text-[10px] font-bold ${textMuted}`}>{t.retail}</p>
+                            <p className="font-black text-blue-500" dir="ltr">{product.price_retail} {getCurrencySymbol(product.currency || 'MAD')}</p>
+                          </div>
+                          <div className={`p-2 rounded-xl border ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'}`}>
+                            <p className="text-[10px] font-bold text-emerald-600">{t.wholesale} <span className="opacity-70">(+{product.min_wholesale_qty})</span></p>
+                            <p className="font-black text-emerald-600" dir="ltr">{product.price_wholesale} {getCurrencySymbol(product.currency || 'MAD')}</p>
+                          </div>
+                        </div>
+                        <div className={`mt-auto pt-4 border-t border-dashed ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                          <p className={`text-xs font-bold mb-3 flex items-center gap-1.5 ${textMuted}`}>
+                            <Briefcase size={14} className="text-emerald-500"/> {t.supplier} <span className={textTitle}>{product.supplier || 'Vendeur Indépendant'}</span>
+                          </p>
+                          <button onClick={() => handleAddToCart(product)} className={`w-full py-2.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${addedItem === product.id ? 'bg-emerald-500 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90'}`}>
+                            {addedItem === product.id ? <><CheckCircle2 size={16}/> {t.addedSuccess}</> : <><Plus size={16}/> {t.addToCart}</>}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 2. SERVICES MODE (New Design) */}
+          {activeMode === 'services' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+              <div className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 bg-slate-200 rounded-full overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=150" alt="Avatar" className="w-full h-full object-cover"/>
+                  </div>
+                  <div>
+                    <h3 className={`font-bold text-lg flex items-center gap-1 ${textTitle}`}>
+                      Ahmed Électricité <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                    </h3>
+                    <p className="text-sm text-emerald-600 font-bold">Électricité bâtiment</p>
+                  </div>
+                </div>
+                <div className="space-y-2 mb-6">
+                  <div className={`flex justify-between text-sm ${textMuted}`}><span >Interventions</span><span className={`font-semibold ${textTitle}`}>127 complétées</span></div>
+                  <div className={`flex justify-between text-sm ${textMuted}`}><span >Réponse</span><span className="font-semibold text-emerald-600">&lt; 15 mins</span></div>
+                  <div className={`flex justify-between text-sm ${textMuted}`}><span >Tarif de base</span><span className={`font-semibold ${textTitle}`}>À partir de 250 MAD</span></div>
+                </div>
+                <div className="flex gap-2">
+                  <button className={`flex-1 border py-2 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}>Voir profil</button>
+                  <button className="flex-1 bg-emerald-500 text-white py-2 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold">Demander devis</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. EXPERTS MODE (New Design) */}
+          {activeMode === 'experts' && (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+               <div className="bg-slate-900 text-white rounded-2xl shadow-lg border border-slate-800 p-6 relative overflow-hidden group hover:-translate-y-1 transition-all">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-bl-full group-hover:scale-110 transition-transform"></div>
+                <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full mb-4">Architecte DPLG</span>
+                <h3 className="font-black text-xl mb-1">Cabinet Yassine Archi</h3>
+                <p className="text-slate-400 text-sm mb-4">12 ans d'expérience</p>
+                <div className="space-y-3 mb-6">
+                  <p className="text-sm flex items-center text-slate-300"><CheckCircle className="w-4 h-4 mr-2 text-emerald-400" /> Conception & Permis</p>
+                  <p className="text-sm flex items-center text-slate-300"><CheckCircle className="w-4 h-4 mr-2 text-emerald-400" /> Suivi de chantier</p>
+                </div>
+                <button className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-lg shadow-emerald-500/20">Prendre rendez-vous</button>
+              </div>
+             </div>
+          )}
+
+          {/* 4. MACHINES MODE (New Design) */}
+          {activeMode === 'machines' && (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
+              <div className={`rounded-2xl border overflow-hidden ${bgCard} shadow-sm hover:shadow-lg transition-all`}>
+                <div className="h-48 bg-slate-200 relative">
+                  <img src="https://images.unsplash.com/photo-1579762699924-a74087cb8916?w=500" alt="Excavatrice" className="w-full h-full object-cover"/>
+                  <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg`}>
+                    <Clock className="w-3 h-3 mr-1" /> Dispo: 25 Sept
+                  </span>
+                </div>
+                <div className="p-5">
+                  <h3 className={`font-black text-lg mb-1 ${textTitle}`}>CAT 320 Excavatrice</h3>
+                  <p className={`text-sm mb-4 ${textMuted}`}>Avec opérateur • Transport (18km)</p>
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                      <p className={`text-xs ${textMuted}`}>Jour</p>
+                      <p className={`font-bold ${textTitle}`}>1,800 MAD</p>
+                    </div>
+                    <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}>
+                      <p className="text-xs text-emerald-600">Semaine</p>
+                      <p className="font-bold text-emerald-600">9,500 MAD</p>
+                    </div>
+                  </div>
+                  <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 transition-opacity font-bold">Réserver</button>
+                </div>
+              </div>
+             </div>
+          )}
+
+          {/* RFQ CTA Section */}
+          <div className="mt-12 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-800 dark:text-emerald-400 mb-2">Je ne trouve pas ce que je cherche</h2>
+              <p className="text-slate-600 dark:text-slate-300">Décrivez votre besoin exact et recevez des offres de nos fournisseurs vérifiés.</p>
+            </div>
+            <button className="bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2 whitespace-nowrap">
+              <FileText className="w-5 h-5" />
+              Décrivez votre besoin
+            </button>
+          </div>
+
+        </div>
+      </main>
+
+      {/* Floating Project Cart Bar */}
+      {cart.length > 0 && !isCartOpen && (
+        <div className={`fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-40 animate-slide-up`}>
+          <div className="bg-slate-900 border border-slate-700 p-4 rounded-2xl shadow-2xl flex items-center gap-4 text-white cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => setIsCartOpen(true)}>
+            <div className="relative">
+              <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-inner">
+                <ShoppingCart size={24} className="text-white" />
+              </div>
+              <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full animate-bounce shadow-lg">
+                {cart.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0)}
+              </span>
+            </div>
+            <div>
+              <p className="font-bold text-sm text-slate-300">{cart.length} {t.itemsInCart} au projet</p>
+              <p className="font-black text-sm text-emerald-400">{t.multiCartDesc}</p>
+            </div>
+            <button className={`ml-4 px-5 py-2.5 bg-white text-slate-900 hover:bg-emerald-50 rounded-xl font-black text-sm transition-colors flex items-center gap-2`}>
+              {t.checkout} <ArrowRight size={16} className={isRtl ? 'rotate-180' : ''} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Split Project Cart Modal */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-end bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}>
+          <div className={`h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col animate-slide-in ${isDarkMode ? 'bg-slate-900 border-l border-slate-800' : 'bg-slate-50 border-l border-slate-200'}`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
+            
+            <div className={`p-6 border-b flex justify-between items-center sticky top-0 z-10 ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-md`}>
+              <div>
+                <h2 className={`text-xl font-black flex items-center gap-2 ${textTitle}`}><ShoppingCart className="text-emerald-500"/> {t.cartTitle}</h2>
+                <p className="text-xs text-slate-500 mt-1">Projet: Villa Benali</p>
+              </div>
+              <button onClick={() => setIsCartOpen(false)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}><X size={20}/></button>
+            </div>
+
+            <div className="p-6 space-y-6 flex-1">
+              {Object.entries(groupedCart).map(([supplierName, items]) => (
+                <div key={supplierName} className={`rounded-2xl border-2 overflow-hidden shadow-sm ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  <div className={`p-4 border-b flex items-center gap-3 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center"><Store size={20}/></div>
+                    <div><p className={`text-xs font-bold ${textMuted}`}>{t.supplier}</p><h3 className={`font-black ${textTitle}`}>{supplierName}</h3></div>
+                  </div>
+
+                  <div className="p-4 space-y-4">
+                    {items.map(item => {
+                      const safeQty = parseInt(item.qty) || 0; 
+                      const isWholesale = safeQty >= item.product.min_wholesale_qty;
+                      const activePrice = isWholesale ? item.product.price_wholesale : item.product.price_retail;
+                      const symbol = getCurrencySymbol(item.product.currency || 'MAD');
+
+                      return (
+                        <div key={item.product.id} className={`p-3 rounded-xl border transition-colors ${isWholesale ? 'border-emerald-500/50 bg-emerald-500/5' : isDarkMode ? 'border-slate-700 bg-slate-900' : 'border-slate-100 bg-white'}`}>
+                          <div className="flex gap-4">
+                            <img src={item.product.image_url || item.product.image} alt={item.product.name} className="w-16 h-16 rounded-xl object-cover" />
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <h4 className={`font-bold text-sm leading-tight ${textTitle}`}>{item.product.name}</h4>
+                                <button onClick={() => removeFromCart(item.product.id)} className="text-red-400 hover:text-red-500 p-1"><Trash2 size={16}/></button>
+                              </div>
+                              <p className={`text-xs mt-1 ${textMuted}`}>{item.product.unit}</p>
+                              
+                              <div className="mt-3 flex items-end justify-between">
+                                <div>
+                                  {isWholesale ? (
+                                    <div className="animate-fade-in">
+                                      <span className="text-[10px] text-slate-400 line-through mr-2" dir="ltr">{item.product.price_retail} {symbol}</span>
+                                      <span className="font-black text-emerald-500" dir="ltr">{activePrice} {symbol}</span>
+                                    </div>
+                                  ) : (
+                                    <span className="font-black text-blue-500" dir="ltr">{activePrice} {symbol}</span>
+                                  )}
+                                </div>
+                                
+                                <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border shadow-inner ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
+                                  <button onClick={() => updateQuantity(item.product.id, safeQty > 1 ? safeQty - 1 : 1)} className="p-1 text-slate-400 hover:text-emerald-500 transition-colors"><Minus size={14}/></button>
+                                  <input 
+                                    type="text" 
+                                    inputMode="numeric"
+                                    value={item.qty} 
+                                    onChange={(e) => {
+                                      const val = e.target.value.replace(/[^0-9]/g, '');
+                                      updateQuantity(item.product.id, val === '' ? '' : parseInt(val));
+                                    }}
+                                    onBlur={() => { if (item.qty === '' || parseInt(item.qty) < 1) updateQuantity(item.product.id, 1); }}
+                                    className={`font-black text-sm w-10 text-center outline-none bg-transparent ${textTitle}`} 
+                                  />
+                                  <button onClick={() => updateQuantity(item.product.id, safeQty + 1)} className="p-1 text-slate-400 hover:text-emerald-500 transition-colors"><Plus size={14}/></button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <div className={`p-4 border-t flex items-center justify-between ${isDarkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                    <div>
+                      <p className={`text-xs font-bold ${textMuted}`}>{t.total}</p>
+                      <p className="font-black text-lg text-emerald-500" dir="ltr">
+                        {items.reduce((sum, item) => {
+                          const q = parseInt(item.qty) || 0;
+                          const p = q >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail;
+                          return sum + (p * q);
+                        }, 0).toLocaleString()} {getCurrencySymbol(items[0].product.currency || 'MAD')}
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                         // Navigation logic here
+                      }}
+                      className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/20"
+                    >
+                      <MessageCircle size={16}/> {t.orderFrom}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide-up { animation: slide-up 0.4s ease-out forwards; }
+        @keyframes slide-in { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        .animate-slide-in { animation: slide-in 0.3s ease-out forwards; }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #334155; }
+      `}</style>
+    </div>
+  );
+}
