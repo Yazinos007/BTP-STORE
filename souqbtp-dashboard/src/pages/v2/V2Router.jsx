@@ -4,7 +4,7 @@ import ContractorDashboard from './ContractorDashboard';
 import CostCalculator from './CostCalculator'; 
 import ProjectPath from './ProjectPath'; 
 import ContractorHR from './ContractorHR'; 
-import ContractorMarketplace from './BTPHub'; 
+import BTPHup from './BTPHub'; 
 import VendorStoreManager from './VendorStoreManager';       
 import ChatRoom from './ChatRoom';
 import ContractorCamera from './ContractorCamera';
