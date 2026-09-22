@@ -4,7 +4,7 @@ import ContractorDashboard from './ContractorDashboard';
 import CostCalculator from './CostCalculator'; 
 import ProjectPath from './ProjectPath'; 
 import ContractorHR from './ContractorHR'; 
-import ContractorMarketplace from './ContractorMarketplace'; 
+import ContractorMarketplace from './BTPHub'; 
 import VendorStoreManager from './VendorStoreManager';       
 import ChatRoom from './ChatRoom';
 import ContractorCamera from './ContractorCamera';
@@ -63,7 +63,7 @@ export default function V2Router({ session, supplier }) {
         
         {/* التواصل والمشتريات */}
         <Route path="messages" element={<ChatRoom />} />
-        <Route path="marketplace" element={<ContractorMarketplace />} />
+        <Route path="marketplace" element={<BTPHub />} />
         <Route path="store-manager" element={<VendorStoreManager />} /> 
         <Route path="tenders" element={<TenderRadar />} />
         <Route path="freight-exchange" element={<FreightExchange />} />
