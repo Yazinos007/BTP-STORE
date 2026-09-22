@@ -398,9 +398,16 @@ export default function ProjectPath() {
 
   const handleAssignSubmit = async () => {
     if (!user) return alert(t.loginRequired);
-    if (!assignForm.name) return;
     if (!activeProject) return alert(language === 'ar' ? 'يرجى اختيار الورش أولاً!' : 'Veuillez sélectionner un chantier !');
-
+    // 🚀 السحر هنا: إذا اختار المقاول الماركت بليس، نأخذه إلى السوق فوراً!
+    if (assignType === 'marketplace') {
+      setIsAssignModalOpen(false); // نغلق النافذة
+      // نوجهه لصفحة السوق (ويمكننا تمرير رقم المرحلة في الرابط مستقبلاً لفلترة الحرفيين)
+      navigate('/v2/market?tab=artisans'); 
+      return;
+    }
+    // أما إذا اختار فريق خاص (إدخال يدوي)، نقوم بالحفظ العادي
+    if (!assignForm.name) return;
     try {
       const { error } = await supabase.from('milestone_assignments').insert([{
         user_id: user.id,
