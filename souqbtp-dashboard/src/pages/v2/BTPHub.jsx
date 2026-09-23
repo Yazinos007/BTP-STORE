@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import SupplierProfile from './SupplierProfile';
 import { 
   Search, Mic, Camera, FileText, MapPin, CheckCircle, Clock, Star, 
   ShieldCheck, ShoppingCart, Filter, Package, Zap, Droplet, PaintRoller, 
@@ -29,6 +30,7 @@ const getCurrencyIcon = (curr) => {
 };
 
 export default function BTPHub() {
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
   const navigate = useNavigate();
   const context = useOutletContext() || {};
   const isDarkMode = context.isDarkMode || false;
@@ -399,7 +401,12 @@ export default function BTPHub() {
               <div className={`flex justify-between text-sm ${textMuted}`}><span >{t.services.basePrice}</span><span className={`font-semibold ${textTitle}`}>{t.services.startingFrom} 250 MAD</span></div>
             </div>
             <div className="flex gap-2">
-              <button className={`flex-1 border py-2 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}>{t.services.viewProfile}</button>
+              <button 
+                onClick={() => setSelectedSupplier(true)} 
+                className={`flex-1 border py-2 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}
+              >
+                {t.services.viewProfile}
+              </button>
               <button className="flex-1 bg-emerald-500 text-white py-2 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold">{t.services.requestQuote}</button>
             </div>
           </div>
@@ -689,6 +696,15 @@ export default function BTPHub() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 🚀 نافذة ملف المورد المنبثقة الجديدة */}
+      {selectedSupplier && (
+        <SupplierProfile 
+          isDarkMode={isDarkMode} 
+          language={language} 
+          onClose={() => setSelectedSupplier(null)} 
+        />
       )}
 
       <style>{`
