@@ -256,13 +256,6 @@ export default function BTPHub() {
     setCart(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const groupedCart = cart.reduce((groups, item) => {
-    const supplier = item.product.supplier || 'Vendeur Indépendant';
-    if (!groups[supplier]) groups[supplier] = [];
-    groups[supplier].push(item);
-    return groups;
-  }, {});
-
   return (
     <div className="animate-fade-in pb-32 max-w-7xl mx-auto w-full" dir={isRtl ? 'rtl' : 'ltr'}>
       
@@ -408,7 +401,12 @@ export default function BTPHub() {
               >
                 {t.services.viewProfile}
               </button>
-              <button className="flex-1 bg-emerald-500 text-white py-2 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold">{t.services.requestQuote}</button>
+              <button 
+                onClick={() => handleAddToCart({ id: 's1', name: 'Installation Électrique', supplier: 'Ahmed Électricité', type: 'service', image_url: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=150' })}
+                className="flex-1 bg-emerald-500 text-white py-2 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold"
+              >
+                {t.services.requestQuote}
+              </button>
             </div>
           </div>
         </div>
@@ -426,7 +424,12 @@ export default function BTPHub() {
               <p className="text-sm flex items-center text-slate-300"><CheckCircle className={`w-4 h-4 text-emerald-400 ${isRtl ? 'ml-2' : 'mr-2'}`} /> {t.experts.skill1}</p>
               <p className="text-sm flex items-center text-slate-300"><CheckCircle className={`w-4 h-4 text-emerald-400 ${isRtl ? 'ml-2' : 'mr-2'}`} /> {t.experts.skill2}</p>
             </div>
-            <button className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-lg shadow-emerald-500/20">{t.experts.book}</button>
+            <button 
+              onClick={() => handleAddToCart({ id: 'e1', name: 'Consultation Architecte', supplier: 'Cabinet Yassine Archi', type: 'expert', image_url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=150' })}
+              className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-lg shadow-emerald-500/20"
+            >
+              {t.experts.book}
+            </button>
           </div>
          </div>
       )}
@@ -454,7 +457,12 @@ export default function BTPHub() {
                   <p className="font-bold text-emerald-600">9,500 MAD</p>
                 </div>
               </div>
-              <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 transition-opacity font-bold">{t.machines.book}</button>
+              <button 
+                onClick={() => handleAddToCart({ id: 'm1', name: 'CAT 320 Excavatrice', supplier: 'Atlas Engins', type: 'rental', price: 1800, duration: 3, dates: '25-27 Sept', transport: 500, image_url: 'https://images.unsplash.com/photo-1579762699924-a74087cb8916?w=150' })}
+                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 transition-opacity font-bold"
+              >
+                {t.machines.book}
+              </button>
             </div>
           </div>
          </div>
@@ -578,29 +586,6 @@ export default function BTPHub() {
               </span>
             </div>
             <div>
-              <p className="font-bold text-sm text-slate-300">{cart.length} {t.itemsInCart} au projet</p>
-              <p className="font-black text-sm text-emerald-400">{t.multiCartDesc}</p>
-            </div>
-            <button className={`ml-4 px-5 py-2.5 bg-white text-slate-900 hover:bg-emerald-50 rounded-xl font-black text-sm transition-colors flex items-center gap-2`}>
-              {t.checkout} <ArrowRight size={16} className={isRtl ? 'rotate-180' : ''} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Project Cart Bar (الشريط العائم أسفل الشاشة) */}
-      {cart.length > 0 && !isCartOpen && (
-        <div className={`fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-40 animate-slide-up`}>
-          <div className="bg-slate-900 border border-slate-700 p-4 rounded-2xl shadow-2xl flex items-center gap-4 text-white cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => setIsCartOpen(true)}>
-            <div className="relative">
-              <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-inner">
-                <ShoppingCart size={24} className="text-white" />
-              </div>
-              <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full animate-bounce shadow-lg">
-                {cart.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0)}
-              </span>
-            </div>
-            <div>
               <p className="font-bold text-sm text-slate-300">{cart.length} {t.itemsInCart}</p>
               <p className="font-black text-sm text-emerald-400">{t.multiCartDesc}</p>
             </div>
@@ -611,12 +596,14 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* 🚀 استدعاء سلة المشروع الذكية الجديدة (التي بنايناها في ملف منفصل) */}
+      {/* 🚀 استدعاء سلة المشروع الذكية الجديدة */}
       {isCartOpen && (
         <ProjectCart 
           isDarkMode={isDarkMode} 
           language={language} 
           onClose={() => setIsCartOpen(false)} 
+          cart={cart} 
+          onRemove={removeFromCart} 
         />
       )}
 
