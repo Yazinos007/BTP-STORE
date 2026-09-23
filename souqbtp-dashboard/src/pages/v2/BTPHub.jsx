@@ -397,12 +397,12 @@ export default function BTPHub() {
       {/* RFQ CTA Section */}
       <div className="mt-12 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
         <div>
-          <h2 className="text-2xl font-black text-slate-800 dark:text-emerald-400 mb-2">Je ne trouve pas ce que je cherche</h2>
-          <p className="text-slate-600 dark:text-slate-300">Décrivez votre besoin exact et recevez des offres de nos fournisseurs vérifiés.</p>
+          <h2 className="text-2xl font-black text-slate-800 dark:text-emerald-400 mb-2">{t.rfq.title}</h2>
+          <p className="text-slate-600 dark:text-slate-300">{t.rfq.desc}</p>
         </div>
         <button className="bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2 whitespace-nowrap">
           <FileText className="w-5 h-5" />
-          Décrivez votre besoin
+          {t.rfq.btn}
         </button>
       </div>
 
