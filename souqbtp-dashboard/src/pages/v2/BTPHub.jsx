@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import SupplierProfile from '../../components/v2/SupplierProfile';
+import ProjectCart from '../../components/v2/ProjectCart';
 import { 
   Search, Mic, Camera, FileText, MapPin, CheckCircle, Clock, Star, 
   ShieldCheck, ShoppingCart, Filter, Package, Zap, Droplet, PaintRoller, 
@@ -587,118 +588,39 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* Split Project Cart Modal */}
-      {isCartOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-end bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}>
-          <div className={`h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col animate-slide-in ${isDarkMode ? 'bg-slate-900 border-l border-slate-800' : 'bg-slate-50 border-l border-slate-200'}`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
-            
-            <div className={`p-6 border-b flex justify-between items-center sticky top-0 z-10 ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-md`}>
-              <div>
-                <h2 className={`text-xl font-black flex items-center gap-2 ${textTitle}`}><ShoppingCart className="text-emerald-500"/> {t.cartTitle}</h2>
-                <p className="text-xs text-slate-500 mt-1">Projet: Villa Benali</p>
+      {/* Floating Project Cart Bar (الشريط العائم أسفل الشاشة) */}
+      {cart.length > 0 && !isCartOpen && (
+        <div className={`fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-40 animate-slide-up`}>
+          <div className="bg-slate-900 border border-slate-700 p-4 rounded-2xl shadow-2xl flex items-center gap-4 text-white cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => setIsCartOpen(true)}>
+            <div className="relative">
+              <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-inner">
+                <ShoppingCart size={24} className="text-white" />
               </div>
-              <button onClick={() => setIsCartOpen(false)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}><X size={20}/></button>
+              <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full animate-bounce shadow-lg">
+                {cart.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0)}
+              </span>
             </div>
-
-            <div className="p-6 space-y-6 flex-1">
-              {Object.entries(groupedCart).map(([supplierName, items]) => (
-                <div key={supplierName} className={`rounded-2xl border-2 overflow-hidden shadow-sm ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-                  <div className={`p-4 border-b flex items-center gap-3 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center"><Store size={20}/></div>
-                    <div><p className={`text-xs font-bold ${textMuted}`}>{t.supplier}</p><h3 className={`font-black ${textTitle}`}>{supplierName}</h3></div>
-                  </div>
-
-                  <div className="p-4 space-y-4">
-                    {items.map(item => {
-                      const safeQty = parseInt(item.qty) || 0; 
-                      const isWholesale = safeQty >= item.product.min_wholesale_qty;
-                      const activePrice = isWholesale ? item.product.price_wholesale : item.product.price_retail;
-                      const symbol = getCurrencySymbol(item.product.currency || 'MAD');
-
-                      return (
-                        <div key={item.product.id} className={`p-3 rounded-xl border transition-colors ${isWholesale ? 'border-emerald-500/50 bg-emerald-500/5' : isDarkMode ? 'border-slate-700 bg-slate-900' : 'border-slate-100 bg-white'}`}>
-                          <div className="flex gap-4">
-                            <img src={item.product.image_url || item.product.image} alt={item.product.name} className="w-16 h-16 rounded-xl object-cover" />
-                            <div className="flex-1">
-                              <div className="flex justify-between items-start">
-                                <h4 className={`font-bold text-sm leading-tight ${textTitle}`}>{item.product.name}</h4>
-                                <button onClick={() => removeFromCart(item.product.id)} className="text-red-400 hover:text-red-500 p-1"><Trash2 size={16}/></button>
-                              </div>
-                              <p className={`text-xs mt-1 ${textMuted}`}>{item.product.unit}</p>
-                              
-                              <div className="mt-3 flex items-end justify-between">
-                                <div>
-                                  {isWholesale ? (
-                                    <div className="animate-fade-in">
-                                      <span className="text-[10px] text-slate-400 line-through mr-2" dir="ltr">{item.product.price_retail} {symbol}</span>
-                                      <span className="font-black text-emerald-500" dir="ltr">{activePrice} {symbol}</span>
-                                    </div>
-                                  ) : (
-                                    <span className="font-black text-blue-500" dir="ltr">{activePrice} {symbol}</span>
-                                  )}
-                                </div>
-                                
-                                <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border shadow-inner ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
-                                  <button onClick={() => updateQuantity(item.product.id, safeQty > 1 ? safeQty - 1 : 1)} className="p-1 text-slate-400 hover:text-emerald-500 transition-colors"><Minus size={14}/></button>
-                                  <input 
-                                    type="text" 
-                                    inputMode="numeric"
-                                    value={item.qty} 
-                                    onChange={(e) => {
-                                      const val = e.target.value.replace(/[^0-9]/g, '');
-                                      updateQuantity(item.product.id, val === '' ? '' : parseInt(val));
-                                    }}
-                                    onBlur={() => { if (item.qty === '' || parseInt(item.qty) < 1) updateQuantity(item.product.id, 1); }}
-                                    className={`font-black text-sm w-10 text-center outline-none bg-transparent ${textTitle}`} 
-                                  />
-                                  <button onClick={() => updateQuantity(item.product.id, safeQty + 1)} className="p-1 text-slate-400 hover:text-emerald-500 transition-colors"><Plus size={14}/></button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  <div className={`p-4 border-t flex items-center justify-between ${isDarkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                    <div>
-                      <p className={`text-xs font-bold ${textMuted}`}>{t.total}</p>
-                      <p className="font-black text-lg text-emerald-500" dir="ltr">
-                        {items.reduce((sum, item) => {
-                          const q = parseInt(item.qty) || 0;
-                          const p = q >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail;
-                          return sum + (p * q);
-                        }, 0).toLocaleString()} {getCurrencySymbol(items[0].product.currency || 'MAD')}
-                      </p>
-                    </div>
-                    <button 
-                      onClick={() => {
-                         const supplierTotal = items.reduce((sum, item) => {
-                          const q = parseInt(item.qty) || 0;
-                          const p = q >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail;
-                          return sum + (p * q);
-                        }, 0);
-                        navigate('/v2/messages', { 
-                          state: { 
-                            cartOrder: { items: items, total: supplierTotal },
-                            supplierName: supplierName 
-                          } 
-                        });
-                      }}
-                      className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/20"
-                    >
-                      <MessageCircle size={16}/> {t.orderFrom}
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div>
+              <p className="font-bold text-sm text-slate-300">{cart.length} {t.itemsInCart}</p>
+              <p className="font-black text-sm text-emerald-400">{t.multiCartDesc}</p>
             </div>
+            <button className={`ml-4 px-5 py-2.5 bg-white text-slate-900 hover:bg-emerald-50 rounded-xl font-black text-sm transition-colors flex items-center gap-2`}>
+              {t.checkout} <ArrowRight size={16} className={isRtl ? 'rotate-180' : ''} />
+            </button>
           </div>
         </div>
       )}
 
-      {/* 🚀 نافذة ملف المورد المنبثقة الجديدة */}
+      {/* 🚀 استدعاء سلة المشروع الذكية الجديدة (التي بنايناها في ملف منفصل) */}
+      {isCartOpen && (
+        <ProjectCart 
+          isDarkMode={isDarkMode} 
+          language={language} 
+          onClose={() => setIsCartOpen(false)} 
+        />
+      )}
+
+      {/* 🚀 استدعاء نافذة ملف المورد المنبثقة */}
       {selectedSupplier && (
         <SupplierProfile 
           isDarkMode={isDarkMode} 
