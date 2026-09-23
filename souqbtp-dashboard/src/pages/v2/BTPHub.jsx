@@ -485,7 +485,12 @@ export default function BTPHub() {
               <div className={`flex justify-between ${textMuted}`}><span>{t.maintenance.type}</span><span className={`font-semibold ${textTitle}`}>Sur chantier</span></div>
               <div className={`flex justify-between ${textMuted}`}><span>{t.maintenance.response}</span><span className="font-semibold text-emerald-600">Sous 2h</span></div>
             </div>
-            <button className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-sm">{t.maintenance.book}</button>
+            <button 
+              onClick={() => handleAddToCart({ id: 'maint1', name: 'Mécanique Engins Lourds', supplier: 'Equipe Atlas Réparation', type: 'service', image_url: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=150' })}
+              className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-sm"
+            >
+              {t.maintenance.book}
+            </button>
           </div>
         </div>
       )}
@@ -506,7 +511,12 @@ export default function BTPHub() {
               <div className={`p-3 rounded-xl text-center border mb-4 ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}>
                 <p className="font-black text-emerald-600">12 {t.transport.price}</p>
               </div>
-              <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 transition-opacity font-bold">{t.transport.book}</button>
+              <button 
+                onClick={() => handleAddToCart({ id: 'trans1', name: 'Semi-remorque Plateau', supplier: 'Transporteurs Express', type: 'rental', price: 1200, duration: 1, transport: 0, image_url: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500' })}
+                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 transition-opacity font-bold"
+              >
+                {t.transport.book}
+              </button>
             </div>
           </div>
         </div>
@@ -525,7 +535,12 @@ export default function BTPHub() {
               <div className={`flex justify-between ${textMuted}`}><span>{t.documents.time}</span><span className={`font-semibold ${textTitle}`}>15-30 Jours</span></div>
               <div className={`flex justify-between ${textMuted}`}><span>{t.documents.type}</span><span className="font-semibold text-blue-500">Administratif</span></div>
             </div>
-            <button className="w-full border-2 border-blue-500 text-blue-500 py-2 rounded-xl hover:bg-blue-50 transition-colors font-bold">{t.documents.request}</button>
+            <button 
+              onClick={() => handleAddToCart({ id: 'doc1', name: 'Permis de Construire', supplier: 'Cabinet Administratif', type: 'service', image_url: 'https://via.placeholder.com/150/3b82f6/ffffff?text=Document' })}
+              className="w-full border-2 border-blue-500 text-blue-500 py-2 rounded-xl hover:bg-blue-50 transition-colors font-bold"
+            >
+              {t.documents.request}
+            </button>
           </div>
         </div>
       )}
@@ -555,7 +570,12 @@ export default function BTPHub() {
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider">9001:2015</p>
               </div>
             </div>
-            <button className="w-full bg-white text-slate-900 py-3 rounded-xl hover:bg-gray-100 transition-colors font-black relative z-10 shadow-lg">{t.companies.contact}</button>
+            <button 
+              onClick={() => handleAddToCart({ id: 'comp1', name: 'Partenariat Global', supplier: 'BTP Maroc SA', type: 'service', image_url: 'https://via.placeholder.com/150/1e293b/ffffff?text=Company' })}
+              className="w-full bg-white text-slate-900 py-3 rounded-xl hover:bg-gray-100 transition-colors font-black relative z-10 shadow-lg"
+            >
+              {t.companies.contact}
+            </button>
             <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors"></div>
           </div>
         </div>

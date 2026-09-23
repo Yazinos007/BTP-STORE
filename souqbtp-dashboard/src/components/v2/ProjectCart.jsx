@@ -5,7 +5,6 @@ import {
   Trash2, ChevronRight, Clock, FileText, CheckCircle2, AlertCircle
 } from 'lucide-react';
 
-// 👈 لاحظ إضافة cart و onRemove هنا
 export default function ProjectCart({ isDarkMode, language, onClose, cart = [], onRemove }) {
   const isRtl = language === 'ar';
 
@@ -42,12 +41,11 @@ export default function ProjectCart({ isDarkMode, language, onClose, cart = [], 
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
   const borderStyle = isDarkMode ? 'border-slate-700' : 'border-slate-200';
 
-  // 👈 تحويل سلة المنصة لتناسب تصميم Project Cart
   const formattedCart = cart.map(item => {
     const p = item.product;
     return {
       id: p.id,
-      type: p.type || 'product', // افتراضياً 'product' للمواد
+      type: p.type || 'product',
       name: p.name,
       supplier: p.supplier || 'Vendeur',
       qty: item.qty || 1,
@@ -69,6 +67,8 @@ export default function ProjectCart({ isDarkMode, language, onClose, cart = [], 
 
   const suppliersCount = new Set(formattedCart.map(i => i.supplier)).size;
   const pendingQuotes = formattedCart.filter(i => i.type === 'service' || i.type === 'expert').length;
+  
+  const completionPercentage = Math.min(10 + (formattedCart.length * 5), 100);
 
   return createPortal(
     <div 
@@ -99,10 +99,13 @@ export default function ProjectCart({ isDarkMode, language, onClose, cart = [], 
           <div>
             <div className="flex justify-between text-xs mb-1.5 font-bold">
               <span className="text-slate-300">{t.completion}</span>
-              <span className="text-emerald-400">42%</span>
+              <span className="text-emerald-400">{completionPercentage}%</span>
             </div>
-            <div className="w-full bg-slate-800 rounded-full h-1.5">
-              <div className="bg-emerald-400 h-1.5 rounded-full" style={{ width: '42%' }}></div>
+            <div className="w-full bg-slate-800 rounded-full h-1.5 transition-all duration-500">
+              <div 
+                className="bg-emerald-400 h-1.5 rounded-full transition-all duration-1000 ease-in-out" 
+                style={{ width: `${completionPercentage}%` }}
+              ></div>
             </div>
           </div>
         </div>
@@ -131,7 +134,6 @@ export default function ProjectCart({ isDarkMode, language, onClose, cart = [], 
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-1">
                       <h4 className={`font-bold text-sm leading-tight ${textTitle}`}>{item.name}</h4>
-                      {/* 👈 زر الحذف الحقيقي */}
                       <button onClick={() => onRemove(item.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1 -mt-1"><Trash2 size={16} /></button>
                     </div>
                     <p className={`text-xs ${textMuted} mb-3`}>{item.supplier}</p>
