@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   ShieldCheck, MapPin, Star, Clock, CheckCircle2, 
   Image as ImageIcon, MessageSquare, Briefcase, 
@@ -128,24 +129,23 @@ export default function SupplierProfile({ isDarkMode, language, onClose }) {
     ]
   };
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-[99999] flex justify-center items-start md:items-center bg-black/70 backdrop-blur-sm overflow-y-auto custom-scrollbar p-0 pt-28 md:p-10 animate-fade-in" 
+      className="fixed inset-0 z-[999999] flex justify-center items-start md:items-center bg-black/70 backdrop-blur-sm overflow-y-auto custom-scrollbar p-0 pt-20 md:p-10 animate-fade-in" 
       dir={isRtl ? 'rtl' : 'ltr'}
       onClick={onClose}
     >
       
-      {/* 🚀 زر الإغلاق: تم نقله للخارج ليصبح عائماً ومستقلاً فوق كل شيء */}
+      {/* الزر الآن حر وعائم فوق كل شيء */}
       <button 
         onClick={onClose} 
-        className={`fixed top-24 md:top-8 ${isRtl ? 'left-6' : 'right-6'} z-[100000] p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)] transition-transform hover:scale-110 flex items-center justify-center`}
+        className={`fixed top-6 ${isRtl ? 'left-6' : 'right-6'} z-[9999999] p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)] transition-transform hover:scale-110 flex items-center justify-center`}
       >
         <X size={24} strokeWidth={3} />
       </button>
 
       <div 
-        // أزلنا الزر القديم من هنا، وجعلنا الزوايا دائرية دائماً
-        className={`relative w-full max-w-5xl rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden ${bgMain} flex flex-col mb-10`}
+        className={`relative w-full max-w-5xl rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden ${bgMain} flex flex-col mb-10 mt-10 md:mt-0`}
         onClick={(e) => e.stopPropagation()} 
       >
         
@@ -329,6 +329,7 @@ export default function SupplierProfile({ isDarkMode, language, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
