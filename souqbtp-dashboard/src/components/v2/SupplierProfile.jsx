@@ -129,25 +129,26 @@ export default function SupplierProfile({ isDarkMode, language, onClose }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex justify-center bg-black/60 backdrop-blur-sm overflow-y-auto custom-scrollbar p-0 pt-20 md:p-6 md:pt-10 animate-fade-in" 
+    <div 
+      className="fixed inset-0 z-[99999] flex justify-center items-start md:items-center bg-black/70 backdrop-blur-sm overflow-y-auto custom-scrollbar p-0 pt-28 md:p-10 animate-fade-in" 
       dir={isRtl ? 'rtl' : 'ltr'}
       onClick={onClose}
     >
+      
+      {/* 🚀 زر الإغلاق: تم نقله للخارج ليصبح عائماً ومستقلاً فوق كل شيء */}
+      <button 
+        onClick={onClose} 
+        className={`fixed top-24 md:top-8 ${isRtl ? 'left-6' : 'right-6'} z-[100000] p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)] transition-transform hover:scale-110 flex items-center justify-center`}
+      >
+        <X size={24} strokeWidth={3} />
+      </button>
+
       <div 
-        // 4. أضفنا e.stopPropagation() لمنع الإغلاق إذا قام المستخدم بالضغط داخل بطاقة المورد نفسها
-        className={`relative w-full max-w-5xl my-auto rounded-none md:rounded-3xl shadow-2xl overflow-hidden ${bgMain} flex flex-col`}
+        // أزلنا الزر القديم من هنا، وجعلنا الزوايا دائرية دائماً
+        className={`relative w-full max-w-5xl rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden ${bgMain} flex flex-col mb-10`}
         onClick={(e) => e.stopPropagation()} 
       >
         
-        {/* زر الإغلاق أصبح الآن ظاهراً بوضوح */}
-        <button 
-          onClick={onClose} 
-          className="absolute top-4 right-4 z-20 p-2.5 bg-black/50 hover:bg-red-500 hover:text-white text-white rounded-full backdrop-blur-md transition-all shadow-lg"
-        >
-          <X size={20} />
-        </button>
-
         {/* --- Header (Cover + Avatar + Basic Info) --- */}
         <div className="relative h-64 md:h-80 w-full bg-slate-800">
           <img src={supplierData.cover} alt="Cover" className="w-full h-full object-cover opacity-80" />
