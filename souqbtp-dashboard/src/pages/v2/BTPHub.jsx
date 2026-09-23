@@ -46,7 +46,8 @@ export default function BTPHub() {
 
   const translations = {
     ar: {
-      searchPlaceholder: "ماذا تحتاج لمشروعك؟ ابحث عن الأسمنت، الحديد، مقاول...", categoriesTitle: "التصنيفات",
+      searchPlaceholder: "ماذا تحتاج لمشروعك؟ ابحث عن الأسمنت، الحديد، مقاول...",
+      categoriesTitle: "التصنيفات",
       all: "الكل", cement: "مواد البناء والأسمنت", steel: "الحديد والتسليح", wood: "الخشب والنجارة",
       plumbing: "السباكة والأنابيب", electrical: "الكهرباء والإنارة", paint: "الصباغة والعزل",
       addToCart: "أضف للمشروع", retail: "تقسيط:", wholesale: "جملة:",
@@ -56,10 +57,33 @@ export default function BTPHub() {
       multiCartDesc: "سلة مشروع متعددة الموردين", cartTitle: "سلة المشروع",
       qty: "الكمية:", total: "المجموع:", orderFrom: "طلب وعروض أسعار",
       wholesaleActivated: "🎉 تم تفعيل سعر الجملة",
-      modes: { materiaux: "المواد", services: "الخدمات", experts: "الخبراء", machines: "المعدات" }
+      modes: { materiaux: "المواد", services: "الخدمات", experts: "الخبراء", machines: "المعدات" },
+      // ترجمات البطاقات الجديدة
+      services: {
+        interventions: "التدخلات", completed: "مكتملة",
+        response: "الاستجابة", responseTime: "< 15 دقيقة",
+        basePrice: "السعر الأساسي", startingFrom: "ابتداءً من",
+        viewProfile: "عرض الملف", requestQuote: "طلب عرض سعر",
+        specialty: "كهرباء المباني"
+      },
+      experts: {
+        experience: "12 سنة من الخبرة",
+        skill1: "تصميم ورخص", skill2: "تتبع الورش",
+        book: "أخذ موعد", badge: "مهندس معماري"
+      },
+      machines: {
+        available: "متاح:", details: "مع مشغل • نقل (18كم)",
+        day: "يوم", week: "أسبوع", book: "حجز"
+      },
+      rfq: {
+        title: "لم أجد ما أبحث عنه",
+        desc: "صف احتياجك بدقة وتلقى عروضاً من موردينا المعتمدين.",
+        btn: "صف احتياجك"
+      }
     },
     fr: {
-      searchPlaceholder: "Que recherchez-vous pour votre chantier ?", categoriesTitle: "Catégories",
+      searchPlaceholder: "Que recherchez-vous pour votre chantier ?", 
+      categoriesTitle: "Catégories",
       all: "Tout", cement: "Gros œuvre & Ciment", steel: "Acier & Armature", wood: "Bois & Menuiserie",
       plumbing: "Plomberie & Tuyauterie", electrical: "Électricité & Éclairage", paint: "Peinture & Isolation",
       addToCart: "Ajouter au projet", retail: "Détail :", wholesale: "Gros :",
@@ -69,7 +93,29 @@ export default function BTPHub() {
       multiCartDesc: "Panier de projet multi-fournisseurs", cartTitle: "Panier du Projet",
       qty: "Qté :", total: "Total :", orderFrom: "Demander devis & Commander",
       wholesaleActivated: "🎉 Prix de gros activé",
-      modes: { materiaux: "Matériaux", services: "Services", experts: "Experts", machines: "Machines" }
+      modes: { materiaux: "Matériaux", services: "Services", experts: "Experts", machines: "Machines" },
+      // ترجمات البطاقات الجديدة
+      services: {
+        interventions: "Interventions", completed: "complétées",
+        response: "Réponse", responseTime: "< 15 mins",
+        basePrice: "Tarif de base", startingFrom: "À partir de",
+        viewProfile: "Voir profil", requestQuote: "Demander devis",
+        specialty: "Électricité bâtiment"
+      },
+      experts: {
+        experience: "12 ans d'expérience",
+        skill1: "Conception & Permis", skill2: "Suivi de chantier",
+        book: "Prendre rendez-vous", badge: "Architecte DPLG"
+      },
+      machines: {
+        available: "Dispo:", details: "Avec opérateur • Transport (18km)",
+        day: "Jour", week: "Semaine", book: "Réserver"
+      },
+      rfq: {
+        title: "Je ne trouve pas ce que je cherche",
+        desc: "Décrivez votre besoin exact et recevez des offres de nos fournisseurs vérifiés.",
+        btn: "Décrivez votre besoin"
+      }
     }
   };
 
@@ -286,17 +332,17 @@ export default function BTPHub() {
                 <h3 className={`font-bold text-lg flex items-center gap-1 ${textTitle}`}>
                   Ahmed Électricité <ShieldCheck className="w-4 h-4 text-emerald-500" />
                 </h3>
-                <p className="text-sm text-emerald-600 font-bold">Électricité bâtiment</p>
+                <p className="text-sm text-emerald-600 font-bold">{t.services.specialty}</p>
               </div>
             </div>
             <div className="space-y-2 mb-6">
-              <div className={`flex justify-between text-sm ${textMuted}`}><span >Interventions</span><span className={`font-semibold ${textTitle}`}>127 complétées</span></div>
-              <div className={`flex justify-between text-sm ${textMuted}`}><span >Réponse</span><span className="font-semibold text-emerald-600">&lt; 15 mins</span></div>
-              <div className={`flex justify-between text-sm ${textMuted}`}><span >Tarif de base</span><span className={`font-semibold ${textTitle}`}>À partir de 250 MAD</span></div>
+              <div className={`flex justify-between text-sm ${textMuted}`}><span >{t.services.interventions}</span><span className={`font-semibold ${textTitle}`}>127 {t.services.completed}</span></div>
+              <div className={`flex justify-between text-sm ${textMuted}`}><span >{t.services.response}</span><span className="font-semibold text-emerald-600">{t.services.responseTime}</span></div>
+              <div className={`flex justify-between text-sm ${textMuted}`}><span >{t.services.basePrice}</span><span className={`font-semibold ${textTitle}`}>{t.services.startingFrom} 250 MAD</span></div>
             </div>
             <div className="flex gap-2">
-              <button className={`flex-1 border py-2 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}>Voir profil</button>
-              <button className="flex-1 bg-emerald-500 text-white py-2 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold">Demander devis</button>
+              <button className={`flex-1 border py-2 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}>{t.services.viewProfile}</button>
+              <button className="flex-1 bg-emerald-500 text-white py-2 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold">{t.services.requestQuote}</button>
             </div>
           </div>
         </div>
@@ -307,14 +353,14 @@ export default function BTPHub() {
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
            <div className="bg-slate-900 text-white rounded-2xl shadow-lg border border-slate-800 p-6 relative overflow-hidden group hover:-translate-y-1 transition-all">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-bl-full group-hover:scale-110 transition-transform"></div>
-            <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full mb-4">Architecte DPLG</span>
+            <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full mb-4">{t.experts.badge}</span>
             <h3 className="font-black text-xl mb-1">Cabinet Yassine Archi</h3>
-            <p className="text-slate-400 text-sm mb-4">12 ans d'expérience</p>
+            <p className="text-slate-400 text-sm mb-4">{t.experts.experience}</p>
             <div className="space-y-3 mb-6">
-              <p className="text-sm flex items-center text-slate-300"><CheckCircle className="w-4 h-4 mr-2 text-emerald-400" /> Conception & Permis</p>
-              <p className="text-sm flex items-center text-slate-300"><CheckCircle className="w-4 h-4 mr-2 text-emerald-400" /> Suivi de chantier</p>
+              <p className="text-sm flex items-center text-slate-300"><CheckCircle className={`w-4 h-4 text-emerald-400 ${isRtl ? 'ml-2' : 'mr-2'}`} /> {t.experts.skill1}</p>
+              <p className="text-sm flex items-center text-slate-300"><CheckCircle className={`w-4 h-4 text-emerald-400 ${isRtl ? 'ml-2' : 'mr-2'}`} /> {t.experts.skill2}</p>
             </div>
-            <button className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-lg shadow-emerald-500/20">Prendre rendez-vous</button>
+            <button className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-lg shadow-emerald-500/20">{t.experts.book}</button>
           </div>
          </div>
       )}
@@ -326,23 +372,23 @@ export default function BTPHub() {
             <div className="h-48 bg-slate-200 relative">
               <img src="https://images.unsplash.com/photo-1579762699924-a74087cb8916?w=500" alt="Excavatrice" className="w-full h-full object-cover"/>
               <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg`}>
-                <Clock className="w-3 h-3 mr-1" /> Dispo: 25 Sept
+                <Clock className="w-3 h-3 mr-1" /> {t.machines.available} 25 Sept
               </span>
             </div>
             <div className="p-5">
               <h3 className={`font-black text-lg mb-1 ${textTitle}`}>CAT 320 Excavatrice</h3>
-              <p className={`text-sm mb-4 ${textMuted}`}>Avec opérateur • Transport (18km)</p>
+              <p className={`text-sm mb-4 ${textMuted}`}>{t.machines.details}</p>
               <div className="grid grid-cols-2 gap-2 mb-4">
                 <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                  <p className={`text-xs ${textMuted}`}>Jour</p>
+                  <p className={`text-xs ${textMuted}`}>{t.machines.day}</p>
                   <p className={`font-bold ${textTitle}`}>1,800 MAD</p>
                 </div>
                 <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}>
-                  <p className="text-xs text-emerald-600">Semaine</p>
+                  <p className="text-xs text-emerald-600">{t.machines.week}</p>
                   <p className="font-bold text-emerald-600">9,500 MAD</p>
                 </div>
               </div>
-              <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 transition-opacity font-bold">Réserver</button>
+              <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 transition-opacity font-bold">{t.machines.book}</button>
             </div>
           </div>
          </div>
