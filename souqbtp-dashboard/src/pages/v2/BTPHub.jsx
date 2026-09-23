@@ -5,7 +5,7 @@ import {
   Search, Mic, Camera, FileText, MapPin, CheckCircle, Clock, Star, 
   ShieldCheck, ShoppingCart, Filter, Package, Zap, Droplet, PaintRoller, 
   Hammer, ArrowRight, Plus, CheckCircle2, TrendingUp, Briefcase,
-  Store, Coins, Globe, Bitcoin, Minus, MessageCircle, X, Trash2
+  Store, Coins, Globe, Bitcoin, Minus, MessageCircle, X, Trash2, Building2
 } from 'lucide-react';
 
 const getCurrencySymbol = (curr) => {
@@ -57,7 +57,10 @@ export default function BTPHub() {
       multiCartDesc: "سلة مشروع متعددة الموردين", cartTitle: "سلة المشروع",
       qty: "الكمية:", total: "المجموع:", orderFrom: "طلب وعروض أسعار",
       wholesaleActivated: "🎉 تم تفعيل سعر الجملة",
-      modes: { materiaux: "المواد", services: "الخدمات", experts: "الخبراء", machines: "المعدات" },
+      modes: { 
+        materiaux: "المواد", services: "الخدمات", experts: "الخبراء", machines: "المعدات",
+        maintenance: "صيانة", transport: "نقل", documents: "وثائق", companies: "شركات"
+      },
       services: {
         interventions: "التدخلات", completed: "مكتملة",
         response: "الاستجابة", responseTime: "< 15 دقيقة",
@@ -74,6 +77,10 @@ export default function BTPHub() {
         available: "متاح:", details: "مع مشغل • نقل (18كم)",
         day: "يوم", week: "أسبوع", book: "حجز"
       },
+      transport: { capacity: "الحمولة:", route: "المسار المتاح:", book: "طلب شاحنة", price: "درهم / كم" },
+      maintenance: { type: "نوع الصيانة:", response: "الاستجابة:", book: "طلب فريق صيانة" },
+      documents: { time: "مدة الإنجاز:", type: "الخدمة:", request: "طلب الوثيقة" },
+      companies: { projects: "مشروع منجز", verify: "شركة معتمدة", contact: "التواصل مع الشركة" },
       rfq: {
         title: "لم أجد ما أبحث عنه",
         desc: "صف احتياجك بدقة وتلقى عروضاً من موردينا المعتمدين.",
@@ -92,7 +99,10 @@ export default function BTPHub() {
       multiCartDesc: "Panier de projet multi-fournisseurs", cartTitle: "Panier du Projet",
       qty: "Qté :", total: "Total :", orderFrom: "Demander devis & Commander",
       wholesaleActivated: "🎉 Prix de gros activé",
-      modes: { materiaux: "Matériaux", services: "Services", experts: "Experts", machines: "Machines" },
+      modes: { 
+        materiaux: "Matériaux", services: "Services", experts: "Experts", machines: "Machines",
+        maintenance: "Maintenance", transport: "Transport", documents: "Documents", companies: "Entreprises"
+      },
       services: {
         interventions: "Interventions", completed: "complétées",
         response: "Réponse", responseTime: "< 15 mins",
@@ -109,6 +119,10 @@ export default function BTPHub() {
         available: "Dispo:", details: "Avec opérateur • Transport (18km)",
         day: "Jour", week: "Semaine", book: "Réserver"
       },
+      transport: { capacity: "Capacité :", route: "Trajet :", book: "Commander Camion", price: "MAD / km" },
+      maintenance: { type: "Type :", response: "Intervention :", book: "Demander Équipe" },
+      documents: { time: "Délai :", type: "Service :", request: "Demander Document" },
+      companies: { projects: "Projets livrés", verify: "Entreprise Vérifiée", contact: "Contacter l'Entreprise" },
       rfq: {
         title: "Je ne trouve pas ce que je cherche",
         desc: "Décrivez votre besoin exact et recevez des offres de nos fournisseurs vérifiés.",
@@ -127,7 +141,10 @@ export default function BTPHub() {
       multiCartDesc: "Multi-supplier project cart", cartTitle: "Project Cart",
       qty: "Qty:", total: "Total:", orderFrom: "Request Quote & Order",
       wholesaleActivated: "🎉 Wholesale price activated",
-      modes: { materiaux: "Materials", services: "Services", experts: "Experts", machines: "Machines" },
+      modes: { 
+        materiaux: "Materials", services: "Services", experts: "Experts", machines: "Machines",
+        maintenance: "Maintenance", transport: "Transport", documents: "Documents", companies: "Companies"
+      },
       services: {
         interventions: "Jobs", completed: "completed",
         response: "Response time", responseTime: "< 15 mins",
@@ -144,6 +161,10 @@ export default function BTPHub() {
         available: "Available:", details: "With operator • Transport (18km)",
         day: "Day", week: "Week", book: "Book"
       },
+      transport: { capacity: "Capacity:", route: "Route:", book: "Request Truck", price: "MAD / km" },
+      maintenance: { type: "Type:", response: "Response:", book: "Request Team" },
+      documents: { time: "Timeframe:", type: "Service:", request: "Request Document" },
+      companies: { projects: "Completed Projects", verify: "Verified Company", contact: "Contact Company" },
       rfq: {
         title: "I can't find what I'm looking for",
         desc: "Describe your exact need and receive offers from our verified suppliers.",
@@ -160,8 +181,12 @@ export default function BTPHub() {
   const modes = [
     { id: 'materiaux', icon: '🧱', label: t.modes.materiaux },
     { id: 'services', icon: '👷', label: t.modes.services },
+    { id: 'machines', icon: '🚜', label: t.modes.machines },
     { id: 'experts', icon: '📐', label: t.modes.experts },
-    { id: 'machines', icon: '🚜', label: t.modes.machines }
+    { id: 'maintenance', icon: '🔧', label: t.modes.maintenance },
+    { id: 'transport', icon: '🚚', label: t.modes.transport },
+    { id: 'documents', icon: '📄', label: t.modes.documents },
+    { id: 'companies', icon: '🏢', label: t.modes.companies }
   ];
 
   const categories = [
@@ -425,6 +450,99 @@ export default function BTPHub() {
             </div>
           </div>
          </div>
+      )}
+
+      {/* 5. MAINTENANCE MODE */}
+      {activeMode === 'maintenance' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+          <div className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-slate-200 rounded-xl overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=150" alt="Maintenance" className="w-full h-full object-cover"/>
+              </div>
+              <div>
+                <h3 className={`font-bold text-lg ${textTitle}`}>Equipe Atlas Réparation</h3>
+                <p className="text-sm text-emerald-600 font-bold">Mécanique Engins Lourds</p>
+              </div>
+            </div>
+            <div className="space-y-2 mb-6 text-sm">
+              <div className={`flex justify-between ${textMuted}`}><span>{t.maintenance.type}</span><span className={`font-semibold ${textTitle}`}>Sur chantier</span></div>
+              <div className={`flex justify-between ${textMuted}`}><span>{t.maintenance.response}</span><span className="font-semibold text-emerald-600">Sous 2h</span></div>
+            </div>
+            <button className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-sm">{t.maintenance.book}</button>
+          </div>
+        </div>
+      )}
+
+      {/* 6. TRANSPORT MODE */}
+      {activeMode === 'transport' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+          <div className={`rounded-2xl border overflow-hidden ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
+            <div className="h-40 bg-slate-200 relative">
+              <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500" alt="Camion" className="w-full h-full object-cover"/>
+            </div>
+            <div className="p-5">
+              <h3 className={`font-black text-lg mb-2 ${textTitle}`}>Semi-remorque Plateau</h3>
+              <div className="space-y-2 mb-4 text-sm">
+                <div className={`flex justify-between ${textMuted}`}><span>{t.transport.capacity}</span><span className={`font-semibold ${textTitle}`}>24 Tonnes</span></div>
+                <div className={`flex justify-between ${textMuted}`}><span>{t.transport.route}</span><span className={`font-semibold ${textTitle}`}>National</span></div>
+              </div>
+              <div className={`p-3 rounded-xl text-center border mb-4 ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}>
+                <p className="font-black text-emerald-600">12 {t.transport.price}</p>
+              </div>
+              <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 transition-opacity font-bold">{t.transport.book}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. DOCUMENTS MODE */}
+      {activeMode === 'documents' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+          <div className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
+            <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4">
+              <FileText size={24} />
+            </div>
+            <h3 className={`font-bold text-lg mb-1 ${textTitle}`}>Permis de Construire</h3>
+            <p className={`text-sm mb-4 line-clamp-2 ${textMuted}`}>Assistance complète pour l'obtention du permis de construire auprès des autorités locales.</p>
+            <div className="space-y-2 mb-6 text-sm">
+              <div className={`flex justify-between ${textMuted}`}><span>{t.documents.time}</span><span className={`font-semibold ${textTitle}`}>15-30 Jours</span></div>
+              <div className={`flex justify-between ${textMuted}`}><span>{t.documents.type}</span><span className="font-semibold text-blue-500">Administratif</span></div>
+            </div>
+            <button className="w-full border-2 border-blue-500 text-blue-500 py-2 rounded-xl hover:bg-blue-50 transition-colors font-bold">{t.documents.request}</button>
+          </div>
+        </div>
+      )}
+
+      {/* 8. COMPANIES MODE */}
+      {activeMode === 'companies' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl shadow-lg border border-slate-700 p-6 relative overflow-hidden group">
+            <div className="flex items-center gap-4 mb-6 relative z-10">
+              <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center p-2 shadow-inner">
+                <Building2 size={32} className="text-slate-800" />
+              </div>
+              <div>
+                <h3 className="font-black text-xl mb-1 flex items-center gap-2">
+                  BTP Maroc SA <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                </h3>
+                <p className="text-emerald-400 text-xs font-bold">{t.companies.verify}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-6 relative z-10">
+              <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 text-center">
+                <p className="text-2xl font-black text-white">45+</p>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wider">{t.companies.projects}</p>
+              </div>
+              <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 text-center">
+                <p className="text-2xl font-black text-white">ISO</p>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wider">9001:2015</p>
+              </div>
+            </div>
+            <button className="w-full bg-white text-slate-900 py-3 rounded-xl hover:bg-gray-100 transition-colors font-black relative z-10 shadow-lg">{t.companies.contact}</button>
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors"></div>
+          </div>
+        </div>
       )}
 
       {/* RFQ CTA Section */}
