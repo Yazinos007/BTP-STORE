@@ -624,6 +624,17 @@ export default function BTPHub() {
           onClose={() => setIsCartOpen(false)} 
           cart={cart} 
           onRemove={removeFromCart} 
+          onUpdateQuantity={updateQuantity} // 👈 دالة تعديل الكمية
+          onNegotiate={() => {
+            // توجيه المستخدم لصفحة الرسائل أو فتح نافذة للتفاوض
+            alert("Redirection vers la salle de négociation...");
+            setIsCartOpen(false);
+          }}
+          onCheckout={() => {
+            // المنطق الذي سيبدأ الـ Automation لاحقاً
+            alert("Validation des commandes déclenchée ! Les fournisseurs recevront une notification automatique.");
+            setIsCartOpen(false);
+          }}
         />
       )}
 
