@@ -144,7 +144,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       ]},
       { category: t.cat2, color: 'emerald', items: [
         { name: t.msg, icon: MessageCircle, path: '/v2/messages' },
-        { name: t.market, icon: Store, path: '/v2/BTPHub' },
+        { name: t.market, icon: Store, path: '/v2/marketplace' },
         { name: t.radar, icon: Radar, path: '/v2/tenders' },
         { name: t.freight, icon: Truck, path: '/v2/freight-exchange' },
         { name: t.liveOrders, icon: Package, path: '/v2/live-orders' },
