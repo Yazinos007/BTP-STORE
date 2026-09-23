@@ -62,7 +62,7 @@ export default function ProjectCart({
       type: p.type || 'product',
       name: p.name,
       supplier: p.supplier || 'Vendeur',
-      qty: parseInt(item.qty) || 1,
+      qty: item.qty === '' ? '' : (parseInt(item.qty) || 1),
       price_retail: p.price_retail || p.price || 0,
       price_wholesale: p.price_wholesale || p.price || 0,
       min_wholesale_qty: p.min_wholesale_qty || 999999, // إذا لم يوجد، نضع رقم كبير
@@ -182,9 +182,13 @@ export default function ProjectCart({
                               value={item.qty} 
                               onChange={(e) => {
                                 const val = e.target.value.replace(/[^0-9]/g, '');
+                                // السماح بالحقل الفارغ مؤقتاً أثناء الكتابة
                                 onUpdateQuantity(item.id, val === '' ? '' : parseInt(val));
                               }}
-                              onBlur={() => { if (!item.qty || item.qty < 1) onUpdateQuantity(item.id, 1); }}
+                              onBlur={() => { 
+                                // إعادة القيمة إلى 1 إذا ترك المستخدم الحقل فارغاً تماماً
+                                if (item.qty === '' || item.qty < 1) onUpdateQuantity(item.id, 1); 
+                              }}
                               className={`font-black text-sm w-12 text-center outline-none bg-transparent ${textTitle}`} 
                             />
                             <button onClick={() => onUpdateQuantity(item.id, item.qty + 1)} className="p-1 text-slate-400 hover:text-emerald-500 transition-colors"><Plus size={14}/></button>
