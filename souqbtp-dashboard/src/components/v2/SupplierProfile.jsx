@@ -129,11 +129,22 @@ export default function SupplierProfile({ isDarkMode, language, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center bg-black/60 backdrop-blur-sm overflow-y-auto custom-scrollbar p-0 md:p-6 animate-fade-in" dir={isRtl ? 'rtl' : 'ltr'}>
-      <div className={`relative w-full max-w-5xl my-auto rounded-none md:rounded-3xl shadow-2xl overflow-hidden ${bgMain} flex flex-col`}>
+    <div
+      className="fixed inset-0 z-[9999] flex justify-center bg-black/60 backdrop-blur-sm overflow-y-auto custom-scrollbar p-0 pt-20 md:p-6 md:pt-10 animate-fade-in" 
+      dir={isRtl ? 'rtl' : 'ltr'}
+      onClick={onClose}
+    >
+      <div 
+        // 4. أضفنا e.stopPropagation() لمنع الإغلاق إذا قام المستخدم بالضغط داخل بطاقة المورد نفسها
+        className={`relative w-full max-w-5xl my-auto rounded-none md:rounded-3xl shadow-2xl overflow-hidden ${bgMain} flex flex-col`}
+        onClick={(e) => e.stopPropagation()} 
+      >
         
-        {/* زر الإغلاق */}
-        <button onClick={onClose} className="absolute top-4 right-4 z-20 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-colors">
+        {/* زر الإغلاق أصبح الآن ظاهراً بوضوح */}
+        <button 
+          onClick={onClose} 
+          className="absolute top-4 right-4 z-20 p-2.5 bg-black/50 hover:bg-red-500 hover:text-white text-white rounded-full backdrop-blur-md transition-all shadow-lg"
+        >
           <X size={20} />
         </button>
 
