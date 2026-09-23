@@ -58,7 +58,6 @@ export default function BTPHub() {
       qty: "الكمية:", total: "المجموع:", orderFrom: "طلب وعروض أسعار",
       wholesaleActivated: "🎉 تم تفعيل سعر الجملة",
       modes: { materiaux: "المواد", services: "الخدمات", experts: "الخبراء", machines: "المعدات" },
-      // ترجمات البطاقات الجديدة
       services: {
         interventions: "التدخلات", completed: "مكتملة",
         response: "الاستجابة", responseTime: "< 15 دقيقة",
@@ -94,7 +93,6 @@ export default function BTPHub() {
       qty: "Qté :", total: "Total :", orderFrom: "Demander devis & Commander",
       wholesaleActivated: "🎉 Prix de gros activé",
       modes: { materiaux: "Matériaux", services: "Services", experts: "Experts", machines: "Machines" },
-      // ترجمات البطاقات الجديدة
       services: {
         interventions: "Interventions", completed: "complétées",
         response: "Réponse", responseTime: "< 15 mins",
@@ -115,6 +113,41 @@ export default function BTPHub() {
         title: "Je ne trouve pas ce que je cherche",
         desc: "Décrivez votre besoin exact et recevez des offres de nos fournisseurs vérifiés.",
         btn: "Décrivez votre besoin"
+      }
+    },
+    en: {
+      searchPlaceholder: "What do you need for your project? Search cement, steel...",
+      categoriesTitle: "Categories",
+      all: "All", cement: "Masonry & Cement", steel: "Steel & Rebar", wood: "Wood & Carpentry",
+      plumbing: "Plumbing & Piping", electrical: "Electrical & Lighting", paint: "Paint & Insulation",
+      addToCart: "Add to Project", retail: "Retail:", wholesale: "Wholesale:",
+      supplier: "Supplier:", cartEmpty: "Project is empty", itemsInCart: "items",
+      checkout: "View Project", emptySearch: "No results found.",
+      popular: "Popular", addedSuccess: "Added!", openStore: "My Store",
+      multiCartDesc: "Multi-supplier project cart", cartTitle: "Project Cart",
+      qty: "Qty:", total: "Total:", orderFrom: "Request Quote & Order",
+      wholesaleActivated: "🎉 Wholesale price activated",
+      modes: { materiaux: "Materials", services: "Services", experts: "Experts", machines: "Machines" },
+      services: {
+        interventions: "Jobs", completed: "completed",
+        response: "Response time", responseTime: "< 15 mins",
+        basePrice: "Base rate", startingFrom: "Starting from",
+        viewProfile: "View Profile", requestQuote: "Request Quote",
+        specialty: "Building Electricity"
+      },
+      experts: {
+        experience: "12 years of experience",
+        skill1: "Design & Permits", skill2: "Site Supervision",
+        book: "Book Appointment", badge: "Certified Architect"
+      },
+      machines: {
+        available: "Available:", details: "With operator • Transport (18km)",
+        day: "Day", week: "Week", book: "Book"
+      },
+      rfq: {
+        title: "I can't find what I'm looking for",
+        desc: "Describe your exact need and receive offers from our verified suppliers.",
+        btn: "Describe your need"
       }
     }
   };
