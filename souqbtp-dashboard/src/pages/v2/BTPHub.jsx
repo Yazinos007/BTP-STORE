@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import SupplierProfile from './SupplierProfile';
+import SupplierProfile from '../../SupplierProfile';
 import { 
   Search, Mic, Camera, FileText, MapPin, CheckCircle, Clock, Star, 
   ShieldCheck, ShoppingCart, Filter, Package, Zap, Droplet, PaintRoller, 
