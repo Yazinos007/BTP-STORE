@@ -320,17 +320,16 @@ export default function ChatRoom() {
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
           
-          {/* 🚀 الحل النهائي والأكيد: إجبار الرسوم على الظهور باللون الأبيض عبر drop-shadow */}
+          {/* 🚀 الحل الجذري الأخير: استخدام صورتين منفصلتين (واحدة للفاتح وأخرى للداكن) */}
           <div 
             className="absolute inset-0 pointer-events-none z-0"
             style={{
-              backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
+              backgroundImage: isDarkMode 
+                ? "url('https://i.imgur.com/rS2Xh9q.png')" // صورة واتساب المخصصة للوضع الداكن (خطوط بيضاء)
+                : "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')", // صورتك الأصلية للوضع الفاتح
               backgroundRepeat: 'repeat',
               backgroundSize: '400px',
-              // شفافية عالية للوضع الفاتح (1) وشفافية خفيفة للداكن (0.15 أو 0.2 حسب رغبتك)
-              opacity: isDarkMode ? 0.2 : 1, 
-              // ✨ السحر هنا: نستخدم invert لقلب الألوان، ثم نستخدم drop-shadow أبيض قوي لفرض الوضوح التام! ✨
-              filter: isDarkMode ? 'invert(1) drop-shadow(0 0 1px rgba(255,255,255,0.8))' : 'none'
+              opacity: isDarkMode ? 0.3 : 0.6 // شفافية بسيطة للوضعين
             }}
           ></div>
           
