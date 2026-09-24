@@ -398,14 +398,17 @@ export default function ChatRoom() {
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
           
+          {/* 🚀 الخلفية السحرية: نعتمد صورتك الأصلية فقط (لا روابط خارجية بعد الآن) */}
           <div 
             className="absolute inset-0 pointer-events-none z-0"
             style={{
               backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
               backgroundRepeat: 'repeat',
               backgroundSize: '400px',
+              // الشفافية 100% للوضع الفاتح ليكون واضحاً، و 80% للوضع الداكن
               opacity: isDarkMode ? 0.8 : 1, 
-              mixBlendMode: isDarkMode ? 'lighten' : 'multiply'
+              // نعكس ألوان الصورة في الوضع الداكن لتصبح الخطوط بيضاء
+              filter: isDarkMode ? 'invert(1)' : 'none'
             }}
           ></div>
           
