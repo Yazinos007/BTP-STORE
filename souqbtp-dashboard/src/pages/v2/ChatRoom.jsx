@@ -109,6 +109,14 @@ export default function ChatRoom() {
     }
   }[language] || t.ar;
 
+  // دالة لتحويل المفاتيح المخزنة في قاعدة البيانات إلى نصوص مترجمة فورياً
+  const renderTranslatedText = (text) => {
+    if (text === 'KEY_SUPPLIER_REPLY_ORDER') return t.supplierReplyOrder;
+    if (text === 'KEY_SYSTEM_ACCEPT') return t.systemAccept;
+    if (text === 'KEY_GENERIC_REPLY') return t.genericReply;
+    return text; // إذا كانت رسالة عادية كتبها المستخدم، يتم عرضها كما هي
+  };
+
   const getTodayDate = () => {
     return new Date().toLocaleDateString(language === 'ar' ? 'ar-EG' : 'fr-FR', { day: 'numeric', month: 'long' });
   };
@@ -231,7 +239,7 @@ export default function ChatRoom() {
     // محاكاة رد المورد
     setIsTyping(true);
     setTimeout(() => {
-      insertMessageToDB(activeChat, 'text', { text: t.genericReply }, 'provider');
+      insertMessageToDB(activeChat, 'text', { text: 'KEY_GENERIC_REPLY' }, 'provider');
       setIsTyping(false);
     }, 2500);
   };
@@ -283,7 +291,7 @@ export default function ChatRoom() {
             setIsTyping(true);
             setTimeout(async () => {
               // 🚀 الرد وعرض السعر باللغة المطلوبة
-              await insertMessageToDB(targetConvId, 'text', { text: t.supplierReplyOrder }, 'provider');
+              await insertMessageToDB(targetConvId, 'text', { text: 'KEY_SUPPLIER_REPLY_ORDER' }, 'provider');
               
               const quotePayload = {
                 quoteStatus: 'pending',
@@ -316,7 +324,7 @@ export default function ChatRoom() {
     await supabase.from('messages').update({ content: updatedContent }).eq('id', msgId);
     
     setTimeout(() => {
-      insertMessageToDB(activeChat, 'system', { text: t.systemAccept }, 'system');
+      insertMessageToDB(activeChat, 'system', { text: 'KEY_SYSTEM_ACCEPT' }, 'system');
     }, 500);
   };
 
@@ -521,7 +529,7 @@ export default function ChatRoom() {
                   <div key={msg.id} className="flex justify-center my-4 w-full animate-fade-in">
                     <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold px-4 py-2.5 rounded-xl text-center shadow-sm max-w-[85%] flex items-center gap-2">
                       <ShieldCheck size={16} className="text-emerald-500"/>
-                      {msg.text}
+                      {renderTranslatedText(msg.text)}
                     </div>
                   </div>
                 );
@@ -547,7 +555,7 @@ export default function ChatRoom() {
                       
                       {(!msg.type || msg.type === 'text') && (
                         <div className={`px-3 py-2 shadow-sm ${msg.isMe ? (isDarkMode ? 'bg-[#005c4b] text-white' : 'bg-[#dcf8c6] text-slate-900') : (isDarkMode ? 'bg-[#202c33] text-white' : 'bg-white text-slate-900')} rounded-2xl ${msg.isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
-                          <p className="text-sm font-medium leading-relaxed" style={{ wordBreak: 'break-word' }}>{msg.text}</p>
+                          <p className="text-sm font-medium leading-relaxed" style={{ wordBreak: 'break-word' }}>{renderTranslatedText(msg.text)}</p>
                           <div className={`flex items-center gap-1 mt-1 justify-end ${msg.isMe ? (isDarkMode ? 'text-teal-200/70' : 'text-teal-700/60') : textMuted}`}>
                             <span className="text-[10px] font-bold">{msg.time}</span>
                             {msg.isMe && <CheckCheck size={14} className={isDarkMode ? 'text-[#53bdeb]' : 'text-[#34b7f1]'} />}
