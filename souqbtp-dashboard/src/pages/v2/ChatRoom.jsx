@@ -16,7 +16,7 @@ export default function ChatRoom() {
   const location = useLocation();
   const { cartOrder } = location.state || {};
 
-  const [activeChat, setActiveChat] = useState(1);
+  const [activeChat, setActiveChat] = useState(null);
   const [newMessage, setNewMessage] = useState('');
   
   const [activeCall, setActiveCall] = useState(null); 
@@ -32,6 +32,12 @@ export default function ChatRoom() {
   const messagesEndRef = useRef(null);
   const imageInputRef = useRef(null);
   const docInputRef = useRef(null);
+
+  const [chats, setChats] = useState([]);
+  const [messages, setMessages] = useState([]);
+
+  // نوع المستخدم الحالي (مثال: client)
+  const CURRENT_USER_TYPE = 'client';
 
   const t = {
     ar: {
@@ -63,152 +69,177 @@ export default function ChatRoom() {
     }
   }[language] || t.ar;
 
-  // 🚀 التخزين المحلي الموحد والمستقر للمحادثات
-  const [chats, setChats] = useState(() => {
-    const savedChats = localStorage.getItem('souqbtp_persistent_chats_v5');
-    if (savedChats) {
-      try { return JSON.parse(savedChats); } catch (e) { return null; }
-    }
-    return [
-      { id: 1, name: "LafargeHolcim (المورد)", avatar: "LH", type: "supplier", unread: 0, status: "online", lastMessage: "متى تريد التوصيل؟" },
-      { id: 2, name: "Sonasid (المورد)", avatar: "SO", type: "supplier", unread: 2, status: "offline", lastMessage: "لقد أرسلت لك عرض السعر الجديد." },
-      { id: 3, name: "المهندس كريم", avatar: "ك", type: "team", unread: 0, status: "online", lastMessage: "تم الانتهاء من صب الأساسات." },
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('souqbtp_persistent_chats_v5', JSON.stringify(chats));
-  }, [chats]);
-
   const getTodayDate = () => {
     return new Date().toLocaleDateString(language === 'ar' ? 'ar-EG' : 'fr-FR', { day: 'numeric', month: 'long' });
   };
 
-  // 🚀 التخزين المحلي الموحد والمستقر للرسائل لضمان عدم ضياعها أبداً
-  const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem('souqbtp_persistent_messages_v5');
-    if (savedMessages) {
-      try { return JSON.parse(savedMessages); } catch (e) { return null; }
-    }
-    return [
-      { id: 1, chatId: 1, senderId: 1, text: "مرحباً بك في شركة لافارچ، كيف يمكننا خدمتك اليوم؟", time: "10:00 AM", date: "13 أبريل", isMe: false },
-      { id: 2, chatId: 1, senderId: 'me', text: "أهلاً، أحتاج إلى عرض سعر لكمية من الإسمنت.", time: "10:05 AM", date: "14 أبريل", isMe: true }
-    ];
-  });
-
+  // 1. جلب المحادثات من Supabase
   useEffect(() => {
-    localStorage.setItem('souqbtp_persistent_messages_v5', JSON.stringify(messages));
-  }, [messages]);
+    const fetchConversations = async () => {
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('*')
+        .order('updated_at', { ascending: false });
 
-  const simulateSupplierReplyForChat = (targetChatId, groupData) => {
-    setIsTyping(true);
-    setTimeout(() => {
-      const textMsg = {
-        id: Date.now() + Math.random(), chatId: targetChatId, senderId: 'supplier', 
-        text: "مرحباً! لقد استلمت طلبيتك من السلة. قمنا بتوفير المواد المطلوبة وحساب تكلفة النقل إلى ورشتك. إليك عرض السعر النهائي:", 
-        type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
-      };
-      setMessages(prev => [...prev, textMsg]);
+      if (data) {
+        const formattedChats = data.map(conv => ({
+          id: conv.id,
+          name: conv.client_name || `محادثة #${conv.id}`,
+          avatar: (conv.client_name || "C").slice(0, 2).toUpperCase(),
+          type: "supplier",
+          unread: 0,
+          status: "online",
+          lastMessage: conv.last_message || "لا توجد رسائل"
+        }));
+        setChats(formattedChats);
+        if (formattedChats.length > 0 && !activeChat && !cartOrder) {
+          setActiveChat(formattedChats[0].id);
+        }
+      }
+    };
+    fetchConversations();
+  }, [cartOrder]);
 
-      setTimeout(() => {
-        const transportCost = 450; 
-        const subtotal = groupData ? groupData.total : 0;
-        const quoteMsg = {
-          id: Date.now() + Math.random() + 1, chatId: targetChatId, senderId: 'supplier', 
-          type: 'quote_card', quoteStatus: 'pending',
-          quoteData: {
-            subtotal: subtotal,
-            transport: transportCost,
-            total: subtotal + transportCost,
-            currency: groupData?.items[0]?.product?.currency || 'MAD'
-          },
-          time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
-        };
-        setMessages(prev => [...prev, quoteMsg]);
-      }, 1500);
+  // 2. جلب الرسائل والتحديث اللحظي
+  useEffect(() => {
+    if (!activeChat) return;
 
-      setIsTyping(false);
-    }, 2500); 
+    const fetchMessages = async () => {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', activeChat)
+        .order('created_at', { ascending: true });
+
+      if (data) {
+        const formattedMessages = data.map(dbMsg => {
+          let parsedData = { type: 'text', text: dbMsg.content };
+          try {
+            if (dbMsg.content && dbMsg.content.startsWith('{')) {
+              parsedData = JSON.parse(dbMsg.content);
+            }
+          } catch (e) { console.error("Error parsing message", e); }
+
+          return {
+            id: dbMsg.id,
+            chatId: dbMsg.conversation_id,
+            senderId: dbMsg.sender_type,
+            isMe: dbMsg.sender_type === CURRENT_USER_TYPE || dbMsg.sender_type === 'architect',
+            time: new Date(dbMsg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            date: new Date(dbMsg.created_at).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'fr-FR', { day: 'numeric', month: 'long' }),
+            ...parsedData
+          };
+        });
+        setMessages(formattedMessages);
+      }
+    };
+
+    fetchMessages();
+
+    const subscription = supabase
+      .channel(`messages_for_chat_${activeChat}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'messages',
+        filter: `conversation_id=eq.${activeChat}`
+      }, (payload) => {
+         fetchMessages(); 
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [activeChat, language]);
+
+  // 3. دالة إرسال الرسائل إلى قاعدة البيانات
+  const insertMessageToDB = async (chatId, type, contentObj, sender = CURRENT_USER_TYPE) => {
+    let finalContent = contentObj.text;
+    if (type !== 'text') {
+      finalContent = JSON.stringify({ type, ...contentObj });
+    }
+
+    const { error } = await supabase.from('messages').insert({
+      conversation_id: chatId,
+      sender_type: sender,
+      content: finalContent,
+      is_read: false
+    });
+
+    if (!error) {
+      await supabase.from('conversations').update({ 
+        last_message: type === 'text' ? finalContent : `[${type}]`,
+        updated_at: new Date()
+      }).eq('id', chatId);
+    } else {
+      console.error("Error sending message:", error);
+    }
   };
 
-  // 🚀 معالجة السلة الذكية: فرز المنتجات لكل مورد بدقة تامة ومنع التكرار
+  const handleSendMessage = async (e) => {
+    e?.preventDefault();
+    if (!newMessage.trim() || !activeChat) return;
+    
+    const textToSend = newMessage;
+    setNewMessage(''); 
+    
+    await insertMessageToDB(activeChat, 'text', { text: textToSend });
+    
+    // محاكاة رد المورد
+    setIsTyping(true);
+    setTimeout(() => {
+      insertMessageToDB(activeChat, 'text', { text: "شكراً لتواصلك! سيتم مراجعة رسالتك." }, 'provider');
+      setIsTyping(false);
+    }, 2500);
+  };
+
+  // 4. معالجة طلبات السلة
   useEffect(() => {
     if (cartOrder && cartOrder.items && cartOrder.items.length > 0) {
-      const supplierGroups = {};
-      
-      cartOrder.items.forEach(item => {
-        const sup = item.product?.supplier || "المورد العام";
-        if (!supplierGroups[sup]) {
-          supplierGroups[sup] = { items: [], total: 0 };
-        }
-        supplierGroups[sup].items.push(item);
-        const p = item.product;
-        const activePrice = item.qty >= (p.min_wholesale_qty || 999999) ? (p.price_wholesale || p.price) : (p.price_retail || p.price);
-        supplierGroups[sup].total += activePrice * item.qty;
-      });
-
-      let firstCreatedChatId = null;
-
-      setChats(prevChats => {
-        let updatedChats = [...prevChats];
-        
-        Object.entries(supplierGroups).forEach(([supName, groupData], index) => {
-          let existingChat = updatedChats.find(c => c.name.toLowerCase().includes(supName.toLowerCase()));
-          let targetChatId;
-
-          if (!existingChat) {
-            targetChatId = Date.now() + index;
-            const newChat = {
-              id: targetChatId,
-              name: supName,
-              avatar: supName.slice(0, 2).toUpperCase(),
-              type: "supplier",
-              unread: 0,
-              status: "online",
-              lastMessage: "طلب تفاوض جديد من السلة"
-            };
-            updatedChats = [newChat, ...updatedChats];
-          } else {
-            targetChatId = existingChat.id;
-          }
-
-          if (index === 0) firstCreatedChatId = targetChatId;
-
-          setMessages(prevMsgs => {
-            const alreadyHasOrder = prevMsgs.some(m => m.chatId === targetChatId && m.type === 'order_card');
-            if (alreadyHasOrder) return prevMsgs;
-
-            const orderMessage = {
-              id: Date.now() + index,
-              chatId: targetChatId,
-              senderId: 'me',
-              isMe: true,
-              type: 'order_card',
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              date: getTodayDate(),
-              orderData: {
-                items: groupData.items,
-                total: groupData.total
-              }
-            };
-
-            setTimeout(() => {
-              simulateSupplierReplyForChat(targetChatId, groupData);
-            }, 1000 + (index * 500));
-
-            return [...prevMsgs, orderMessage];
-          });
+      const processCartToDB = async () => {
+        const supplierGroups = {};
+        cartOrder.items.forEach(item => {
+          const sup = item.product?.supplier || "المورد العام";
+          if (!supplierGroups[sup]) supplierGroups[sup] = { items: [], total: 0 };
+          supplierGroups[sup].items.push(item);
+          const p = item.product;
+          const activePrice = item.qty >= (p.min_wholesale_qty || 999999) ? (p.price_wholesale || p.price) : (p.price_retail || p.price);
+          supplierGroups[sup].total += activePrice * item.qty;
         });
 
-        return updatedChats;
-      });
+        for (const [supName, groupData] of Object.entries(supplierGroups)) {
+          const { data: newConv, error: convError } = await supabase.from('conversations').insert({
+            client_name: supName,
+            status: 'active',
+            project_name: "طلبية من السلة",
+            last_message: "طلب تفاوض جديد"
+          }).select().single();
 
-      if (firstCreatedChatId) {
-        setActiveChat(firstCreatedChatId);
-      }
+          if (newConv) {
+            setActiveChat(newConv.id);
+            await insertMessageToDB(newConv.id, 'order_card', { orderData: groupData }, CURRENT_USER_TYPE);
 
-      // مسح الـ state حتى لا تكرر إرسال السلة عند كل تحديث للصفحة
-      window.history.replaceState({}, document.title);
+            setIsTyping(true);
+            setTimeout(async () => {
+              await insertMessageToDB(newConv.id, 'text', { text: "لقد جهزنا لك عرض السعر النهائي:" }, 'provider');
+              const quotePayload = {
+                quoteStatus: 'pending',
+                quoteData: {
+                  subtotal: groupData.total,
+                  transport: 450,
+                  total: groupData.total + 450,
+                  currency: groupData.items[0]?.product?.currency || 'MAD'
+                }
+              };
+              await insertMessageToDB(newConv.id, 'quote_card', quotePayload, 'provider');
+              setIsTyping(false);
+            }, 3000);
+          }
+        }
+        window.history.replaceState({}, document.title); 
+      };
+      processCartToDB();
     }
   }, [cartOrder]);
 
@@ -216,20 +247,18 @@ export default function ChatRoom() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const handleAcceptQuote = (msgId) => {
-    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, quoteStatus: 'accepted' } : m));
+  const handleAcceptQuote = async (msgId, originalData) => {
+    const updatedContent = JSON.stringify({ ...originalData, quoteStatus: 'accepted' });
+    await supabase.from('messages').update({ content: updatedContent }).eq('id', msgId);
+    
     setTimeout(() => {
-      const systemMsg = {
-        id: Date.now(), chatId: activeChat, senderId: 'system', type: 'system',
-        text: "🎉 تم اعتماد العرض بنجاح! تم تحويل الطلبية إلى قسم [التحضير والتسليم] ويمكنك تتبعها من لوحة القيادة.",
-        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
-      };
-      setMessages(prev => [...prev, systemMsg]);
+      insertMessageToDB(activeChat, 'system', { text: "🎉 تم اعتماد العرض بنجاح! تم تحويل الطلبية للتحضير." }, 'system');
     }, 500);
   };
 
-  const handleRejectQuote = (msgId) => {
-    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, quoteStatus: 'rejected' } : m));
+  const handleRejectQuote = async (msgId, originalData) => {
+    const updatedContent = JSON.stringify({ ...originalData, quoteStatus: 'rejected' });
+    await supabase.from('messages').update({ content: updatedContent }).eq('id', msgId);
     setNewMessage("أريد التفاوض حول هذا العرض.. هل يمكننا تخفيض السعر الإجمالي أو إزالة تكلفة النقل؟");
   };
 
@@ -277,16 +306,12 @@ export default function ChatRoom() {
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType }); 
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
-        reader.onloadend = () => {
+        reader.onloadend = async () => {
           const base64Audio = reader.result;
-          const msg = {
-            id: Date.now(), chatId: activeChat, senderId: 'me', isMe: true, type: 'audio',
+          await insertMessageToDB(activeChat, 'audio', {
             audioUrl: base64Audio,
             duration: formatTime(recordingTime),
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-            date: getTodayDate()
-          };
-          setMessages(prev => [...prev, msg]);
+          });
           audioChunksRef.current = [];
         };
       };
@@ -298,43 +323,34 @@ export default function ChatRoom() {
     }
   };
 
-  const handleSendMessage = (e) => {
-    e?.preventDefault();
-    if (!newMessage.trim()) return;
-    const msg = { id: Date.now(), chatId: activeChat, senderId: 'me', text: newMessage, type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: true };
-    setMessages([...messages, msg]);
-    setNewMessage('');
-  };
-
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onloadend = () => {
-      const msg = { id: Date.now(), chatId: activeChat, senderId: 'me', isMe: true, type: 'image', fileUrl: reader.result, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate() };
-      setMessages(prev => [...prev, msg]);
+    reader.onloadend = async () => {
+      await insertMessageToDB(activeChat, 'image', { fileUrl: reader.result });
     };
   };
 
   const handleDocUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const msg = { id: Date.now(), chatId: activeChat, senderId: 'me', isMe: true, type: 'document', fileName: file.name, fileSize: (file.size / 1024 / 1024).toFixed(2) + " MB", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate() };
-    setMessages([...messages, msg]);
+    insertMessageToDB(activeChat, 'document', { fileName: file.name, fileSize: (file.size / 1024 / 1024).toFixed(2) + " MB" });
   };
 
-  const handleDeleteMessage = (id) => { setMessages(messages.filter(msg => msg.id !== id)); };
+  const handleDeleteMessage = async (id) => { 
+     await supabase.from('messages').delete().eq('id', id);
+  };
   
-  const handleClearChat = () => {
+  const handleClearChat = async () => {
     if (window.confirm("هل أنت متأكد من إفراغ محادثة هذا المورد فقط؟")) {
-      setMessages(messages.filter(msg => msg.chatId !== activeChat)); 
+      await supabase.from('messages').delete().eq('conversation_id', activeChat);
       setShowDropdown(false);
     }
   };
 
-  const activeChatData = chats.find(c => c.id === activeChat) || chats[0];
-  const currentMessages = messages.filter(msg => msg.chatId === activeChat);
+  const activeChatData = chats.find(c => c.id === activeChat) || null;
 
   const mainWrapperBg = isDarkMode ? 'bg-slate-950' : 'bg-emerald-50'; 
   const panelBg = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
@@ -370,7 +386,6 @@ export default function ChatRoom() {
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-baseline mb-1">
                     <h3 className={`font-black text-sm truncate ${textTitle}`}>{chat.name}</h3>
-                    <span className={`text-[10px] font-bold ${textMuted}`}>10:30 AM</span>
                   </div>
                   <p className={`text-xs truncate ${chat.unread > 0 ? (isDarkMode ? 'text-white font-bold' : 'text-slate-900 font-black') : textMuted}`}>{chat.lastMessage}</p>
                 </div>
@@ -383,30 +398,29 @@ export default function ChatRoom() {
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
           
-          {/* 🚀 الخلفية السحرية: نعتمد صورتك الأصلية فقط (لا روابط خارجية بعد الآن) */}
           <div 
             className="absolute inset-0 pointer-events-none z-0"
             style={{
               backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
               backgroundRepeat: 'repeat',
               backgroundSize: '400px',
-              // الشفافية 100% للوضع الفاتح ليكون واضحاً، و 80% للوضع الداكن
               opacity: isDarkMode ? 0.8 : 1, 
-              // نعكس ألوان الصورة في الوضع الداكن لتصبح الخطوط بيضاء
-              filter: isDarkMode ? 'invert(1)' : 'none'
+              mixBlendMode: isDarkMode ? 'lighten' : 'multiply'
             }}
           ></div>
           
+          {activeChatData ? (
+          <>
           {/* Header */}
           <div className={`p-4 border-b flex justify-between items-center relative z-20 ${isDarkMode ? 'bg-[#202c33] border-slate-700/50' : 'bg-[#f0f2f5] border-slate-200'}`}>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-white bg-gradient-to-br from-teal-400 to-teal-600 shadow-md`}>
-                {activeChatData?.avatar}
+                {activeChatData.avatar}
               </div>
               <div>
-                <h3 className={`font-black ${textTitle}`}>{activeChatData?.name}</h3>
-                <p className={`text-xs font-bold flex items-center gap-1 ${activeChatData?.status === 'online' ? 'text-emerald-600 dark:text-emerald-400' : textMuted}`}>
-                  {activeChatData?.status === 'online' ? t.online : t.offline}
+                <h3 className={`font-black ${textTitle}`}>{activeChatData.name}</h3>
+                <p className={`text-xs font-bold flex items-center gap-1 ${activeChatData.status === 'online' ? 'text-emerald-600 dark:text-emerald-400' : textMuted}`}>
+                  {activeChatData.status === 'online' ? t.online : t.offline}
                   {isTyping && <span className="text-teal-500 ml-2 animate-pulse text-[10px]">{t.typing}</span>}
                 </p>
               </div>
@@ -432,8 +446,8 @@ export default function ChatRoom() {
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar relative z-10" onClick={() => setShowDropdown(false)}>
-            {currentMessages.map((msg, index) => {
-              const showDate = index === 0 || msg.date !== currentMessages[index - 1].date;
+            {messages.map((msg, index) => {
+              const showDate = index === 0 || msg.date !== messages[index - 1].date;
               
               if (msg.type === 'system') {
                 return (
@@ -508,7 +522,7 @@ export default function ChatRoom() {
                               <h4 className={`font-black text-sm ${textTitle}`}>{t.orderCardTitle}</h4>
                             </div>
                             <ul className="space-y-2 mb-4">
-                              {msg.orderData.items.map((item, idx) => (
+                              {msg.orderData?.items?.map((item, idx) => (
                                 <li key={idx} className={`text-xs font-bold flex justify-between ${textMuted}`}>
                                   <span>{item.qty}x {item.product.name}</span>
                                   <span dir="ltr">{(item.qty >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail) * item.qty} {item.product.currency || 'MAD'}</span>
@@ -517,7 +531,7 @@ export default function ChatRoom() {
                             </ul>
                             <div className="flex justify-between items-center p-3 rounded-xl bg-teal-500/10 border border-teal-500/20">
                               <span className="text-xs font-black text-teal-700 dark:text-teal-500">{t.total}</span>
-                              <span className="font-black text-teal-700 dark:text-teal-500 text-lg" dir="ltr">{msg.orderData.total.toLocaleString()} {msg.orderData.items[0]?.product?.currency || 'MAD'}</span>
+                              <span className="font-black text-teal-700 dark:text-teal-500 text-lg" dir="ltr">{msg.orderData?.total?.toLocaleString()} MAD</span>
                             </div>
                           </div>
                            <div className="flex items-center gap-1 mt-1 px-1 justify-end">
@@ -535,17 +549,17 @@ export default function ChatRoom() {
                               <h4 className={`font-black text-sm ${textTitle}`}>عرض سعر رسمي (Devis)</h4>
                             </div>
                             <div className="space-y-2 mb-4 text-xs font-bold">
-                              <div className={`flex justify-between ${textMuted}`}><span>المنتجات:</span> <span dir="ltr">{msg.quoteData.subtotal.toLocaleString()} {msg.quoteData.currency}</span></div>
-                              <div className="flex justify-between text-amber-500"><span>تكلفة النقل:</span> <span dir="ltr">+{msg.quoteData.transport.toLocaleString()} {msg.quoteData.currency}</span></div>
+                              <div className={`flex justify-between ${textMuted}`}><span>المنتجات:</span> <span dir="ltr">{msg.quoteData?.subtotal?.toLocaleString()} MAD</span></div>
+                              <div className="flex justify-between text-amber-500"><span>تكلفة النقل:</span> <span dir="ltr">+{msg.quoteData?.transport?.toLocaleString()} MAD</span></div>
                               <div className="flex justify-between border-t border-emerald-500/20 pt-3 mt-2 text-lg font-black text-emerald-500">
-                                <span>الإجمالي:</span> <span dir="ltr">{msg.quoteData.total.toLocaleString()} {msg.quoteData.currency}</span>
+                                <span>الإجمالي:</span> <span dir="ltr">{msg.quoteData?.total?.toLocaleString()} MAD</span>
                               </div>
                             </div>
                             
                             {msg.quoteStatus === 'pending' ? (
                               <div className="flex gap-2 mt-4">
-                                <button onClick={() => handleAcceptQuote(msg.id)} className="flex-1 bg-emerald-500 text-white py-2 rounded-lg font-bold text-xs hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-500/20">✅ قبول واعتماد</button>
-                                <button onClick={() => handleRejectQuote(msg.id)} className="flex-1 bg-red-500/10 text-red-500 py-2 rounded-lg font-bold text-xs hover:bg-red-500/20 transition-colors">❌ رفض وتفاوض</button>
+                                <button onClick={() => handleAcceptQuote(msg.id, {type: msg.type, quoteData: msg.quoteData})} className="flex-1 bg-emerald-500 text-white py-2 rounded-lg font-bold text-xs hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-500/20">✅ قبول واعتماد</button>
+                                <button onClick={() => handleRejectQuote(msg.id, {type: msg.type, quoteData: msg.quoteData})} className="flex-1 bg-red-500/10 text-red-500 py-2 rounded-lg font-bold text-xs hover:bg-red-500/20 transition-colors">❌ رفض وتفاوض</button>
                               </div>
                             ) : msg.quoteStatus === 'accepted' ? (
                               <div className="text-center py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold rounded-lg text-xs mt-2 flex items-center justify-center gap-1">
@@ -619,6 +633,13 @@ export default function ChatRoom() {
               </form>
             )}
           </div>
+          </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center flex-col gap-4 text-slate-400 z-10">
+              <div className="w-24 h-24 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4"><Briefcase size={40}/></div>
+              <h2 className="text-xl font-black">اختر محادثة للبدء</h2>
+            </div>
+          )}
         </div>
       </div>
       {activeCall && (
