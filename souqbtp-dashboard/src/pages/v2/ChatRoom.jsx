@@ -320,34 +320,19 @@ export default function ChatRoom() {
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
           
-          {/* 🚀 الحل الجذري: فصل طبقة الوضع الفاتح عن الداكن تماماً لتجنب تعارض المتصفح */}
-          
-          {/* 1. طبقة الوضع الفاتح (تظهر فقط إذا كان isDarkMode = false) */}
-          {!isDarkMode && (
-            <div 
-              className="absolute inset-0 pointer-events-none z-0"
-              style={{
-                backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
-                backgroundRepeat: 'repeat',
-                backgroundSize: '400px',
-                opacity: 0.5
-              }}
-            ></div>
-          )}
-
-          {/* 2. طبقة الوضع الداكن (تظهر فقط إذا كان isDarkMode = true) */}
-          {isDarkMode && (
-            <div 
-              className="absolute inset-0 pointer-events-none z-0"
-              style={{
-                backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
-                backgroundRepeat: 'repeat',
-                backgroundSize: '400px',
-                opacity: 0.15,
-                filter: 'invert(1) contrast(1.2)'
-              }}
-            ></div>
-          )}
+          {/* 🚀 الحل النهائي والأكيد: إجبار الرسوم على الظهور باللون الأبيض عبر drop-shadow */}
+          <div 
+            className="absolute inset-0 pointer-events-none z-0"
+            style={{
+              backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
+              backgroundRepeat: 'repeat',
+              backgroundSize: '400px',
+              // شفافية عالية للوضع الفاتح (1) وشفافية خفيفة للداكن (0.15 أو 0.2 حسب رغبتك)
+              opacity: isDarkMode ? 0.2 : 1, 
+              // ✨ السحر هنا: نستخدم invert لقلب الألوان، ثم نستخدم drop-shadow أبيض قوي لفرض الوضوح التام! ✨
+              filter: isDarkMode ? 'invert(1) drop-shadow(0 0 1px rgba(255,255,255,0.8))' : 'none'
+            }}
+          ></div>
           
           {/* Header */}
           <div className={`p-4 border-b flex justify-between items-center relative z-20 ${isDarkMode ? 'bg-[#202c33] border-slate-700/50' : 'bg-[#f0f2f5] border-slate-200'}`}>
