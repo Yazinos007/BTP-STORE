@@ -14,7 +14,7 @@ export default function ChatRoom() {
   const isRtl = language === 'ar';
   
   const location = useLocation();
-  const { cartOrder, supplierName } = location.state || {};
+  const { cartOrder } = location.state || {};
 
   const [activeChat, setActiveChat] = useState(1);
   const [newMessage, setNewMessage] = useState('');
@@ -63,34 +63,30 @@ export default function ChatRoom() {
     }
   }[language] || t.ar;
 
-  const [chats, setChats] = useState([]);
-  
+  // 🚀 التخزين المحلي الموحد والمستقر للمحادثات
+  const [chats, setChats] = useState(() => {
+    const savedChats = localStorage.getItem('souqbtp_persistent_chats_v5');
+    if (savedChats) {
+      try { return JSON.parse(savedChats); } catch (e) { return null; }
+    }
+    return [
+      { id: 1, name: "LafargeHolcim (المورد)", avatar: "LH", type: "supplier", unread: 0, status: "online", lastMessage: "متى تريد التوصيل؟" },
+      { id: 2, name: "Sonasid (المورد)", avatar: "SO", type: "supplier", unread: 2, status: "offline", lastMessage: "لقد أرسلت لك عرض السعر الجديد." },
+      { id: 3, name: "المهندس كريم", avatar: "ك", type: "team", unread: 0, status: "online", lastMessage: "تم الانتهاء من صب الأساسات." },
+    ];
+  });
+
   useEffect(() => {
-    let isMounted = true;
-    const loadChats = async () => {
-      try {
-        const { data, error } = await supabase.from('chats').select('*').order('updated_at', { ascending: false });
-        if (!error && data && data.length > 0) {
-           if(isMounted) setChats(data);
-        } else {
-           if(isMounted) setChats([
-              { id: 1, name: "LafargeHolcim (المورد)", avatar: "LH", type: "supplier", unread: 0, status: "online", lastMessage: "متى تريد التوصيل؟" },
-              { id: 2, name: "Sonasid (المورد)", avatar: "SO", type: "supplier", unread: 2, status: "offline", lastMessage: "لقد أرسلت لك عرض السعر الجديد." },
-              { id: 3, name: "المهندس كريم", avatar: "ك", type: "team", unread: 0, status: "online", lastMessage: "تم الانتهاء من صب الأساسات." },
-            ]);
-        }
-      } catch(err) { console.error(err); }
-    };
-    loadChats();
-    return () => { isMounted = false; }
-  }, []);
+    localStorage.setItem('souqbtp_persistent_chats_v5', JSON.stringify(chats));
+  }, [chats]);
 
   const getTodayDate = () => {
     return new Date().toLocaleDateString(language === 'ar' ? 'ar-EG' : 'fr-FR', { day: 'numeric', month: 'long' });
   };
 
+  // 🚀 التخزين المحلي الموحد والمستقر للرسائل لضمان عدم ضياعها أبداً
   const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem('souqbtp_chat_messages_v3');
+    const savedMessages = localStorage.getItem('souqbtp_persistent_messages_v5');
     if (savedMessages) {
       try { return JSON.parse(savedMessages); } catch (e) { return null; }
     }
@@ -101,78 +97,120 @@ export default function ChatRoom() {
   });
 
   useEffect(() => {
-    localStorage.setItem('souqbtp_chat_messages_v3', JSON.stringify(messages));
+    localStorage.setItem('souqbtp_persistent_messages_v5', JSON.stringify(messages));
   }, [messages]);
 
-  const simulateSupplierReply = (targetChatId, type = 'text', orderData = null) => {
+  const simulateSupplierReplyForChat = (targetChatId, groupData) => {
     setIsTyping(true);
     setTimeout(() => {
-      if (type === 'order') {
-        const textMsg = {
-          id: Date.now(), chatId: targetChatId, senderId: 'supplier', 
-          text: "مرحباً! لقد استلمت طلبك من السلة. قمنا بتوفير الكميات وحساب تكلفة النقل إلى موقع ورشتك. إليك عرض السعر النهائي للاعتماد:", 
-          type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
-        };
-        setMessages(prev => [...prev, textMsg]);
+      const textMsg = {
+        id: Date.now() + Math.random(), chatId: targetChatId, senderId: 'supplier', 
+        text: "مرحباً! لقد استلمت طلبيتك من السلة. قمنا بتوفير المواد المطلوبة وحساب تكلفة النقل إلى ورشتك. إليك عرض السعر النهائي:", 
+        type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
+      };
+      setMessages(prev => [...prev, textMsg]);
 
-        setTimeout(() => {
-          const transportCost = 450; 
-          const subtotal = orderData ? orderData.total : 0;
-          const quoteMsg = {
-            id: Date.now() + 1, chatId: targetChatId, senderId: 'supplier', 
-            type: 'quote_card', quoteStatus: 'pending',
-            quoteData: {
-              subtotal: subtotal,
-              transport: transportCost,
-              total: subtotal + transportCost,
-              currency: orderData?.items[0]?.product?.currency || 'MAD'
-            },
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
-          };
-          setMessages(prev => [...prev, quoteMsg]);
-        }, 1500);
-
-      } else {
-        const replyMsg = {
-          id: Date.now(), chatId: targetChatId, senderId: 'supplier', 
-          text: "مرحباً، جاري مراجعة طلبك وسنرد عليك في أقرب وقت ممكن.", 
-          type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
+      setTimeout(() => {
+        const transportCost = 450; 
+        const subtotal = groupData ? groupData.total : 0;
+        const quoteMsg = {
+          id: Date.now() + Math.random() + 1, chatId: targetChatId, senderId: 'supplier', 
+          type: 'quote_card', quoteStatus: 'pending',
+          quoteData: {
+            subtotal: subtotal,
+            transport: transportCost,
+            total: subtotal + transportCost,
+            currency: groupData?.items[0]?.product?.currency || 'MAD'
+          },
+          time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
         };
-        setMessages(prev => [...prev, replyMsg]);
-      }
+        setMessages(prev => [...prev, quoteMsg]);
+      }, 1500);
+
       setIsTyping(false);
-    }, 3000); 
+    }, 2500); 
   };
 
+  // 🚀 معالجة السلة الذكية: فرز المنتجات لكل مورد بدقة تامة ومنع التكرار
   useEffect(() => {
-    if (cartOrder && supplierName) {
-      const existingChat = chats.find(c => c.name.includes(supplierName));
-      let currentChatId = activeChat;
-
-      if (!existingChat) {
-        const newId = Date.now();
-        setChats(prev => [{ id: newId, name: supplierName, avatar: supplierName.slice(0,2).toUpperCase(), type: "supplier", unread: 0, status: "online", lastMessage: "طلب تفاوض جديد" }, ...prev]);
-        currentChatId = newId;
-        setActiveChat(newId);
-      } else {
-        currentChatId = existingChat.id;
-        setActiveChat(existingChat.id);
-      }
-
-      const orderMessage = {
-        id: Date.now(), chatId: currentChatId, senderId: 'me', isMe: true, type: 'order_card',
-        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), orderData: cartOrder
-      };
+    if (cartOrder && cartOrder.items && cartOrder.items.length > 0) {
+      const supplierGroups = {};
       
-      setMessages(prev => {
-        if (prev.some(m => m.type === 'order_card' && m.time === orderMessage.time)) return prev;
-        return [...prev, orderMessage];
+      cartOrder.items.forEach(item => {
+        const sup = item.product?.supplier || "المورد العام";
+        if (!supplierGroups[sup]) {
+          supplierGroups[sup] = { items: [], total: 0 };
+        }
+        supplierGroups[sup].items.push(item);
+        const p = item.product;
+        const activePrice = item.qty >= (p.min_wholesale_qty || 999999) ? (p.price_wholesale || p.price) : (p.price_retail || p.price);
+        supplierGroups[sup].total += activePrice * item.qty;
       });
 
-      simulateSupplierReply(currentChatId, 'order', cartOrder);
+      let firstCreatedChatId = null;
+
+      setChats(prevChats => {
+        let updatedChats = [...prevChats];
+        
+        Object.entries(supplierGroups).forEach(([supName, groupData], index) => {
+          let existingChat = updatedChats.find(c => c.name.toLowerCase().includes(supName.toLowerCase()));
+          let targetChatId;
+
+          if (!existingChat) {
+            targetChatId = Date.now() + index;
+            const newChat = {
+              id: targetChatId,
+              name: supName,
+              avatar: supName.slice(0, 2).toUpperCase(),
+              type: "supplier",
+              unread: 0,
+              status: "online",
+              lastMessage: "طلب تفاوض جديد من السلة"
+            };
+            updatedChats = [newChat, ...updatedChats];
+          } else {
+            targetChatId = existingChat.id;
+          }
+
+          if (index === 0) firstCreatedChatId = targetChatId;
+
+          setMessages(prevMsgs => {
+            const alreadyHasOrder = prevMsgs.some(m => m.chatId === targetChatId && m.type === 'order_card');
+            if (alreadyHasOrder) return prevMsgs;
+
+            const orderMessage = {
+              id: Date.now() + index,
+              chatId: targetChatId,
+              senderId: 'me',
+              isMe: true,
+              type: 'order_card',
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              date: getTodayDate(),
+              orderData: {
+                items: groupData.items,
+                total: groupData.total
+              }
+            };
+
+            setTimeout(() => {
+              simulateSupplierReplyForChat(targetChatId, groupData);
+            }, 1000 + (index * 500));
+
+            return [...prevMsgs, orderMessage];
+          });
+        });
+
+        return updatedChats;
+      });
+
+      if (firstCreatedChatId) {
+        setActiveChat(firstCreatedChatId);
+      }
+
+      // مسح الـ state حتى لا تكرر إرسال السلة عند كل تحديث للصفحة
       window.history.replaceState({}, document.title);
     }
-  }, [cartOrder, supplierName]);
+  }, [cartOrder]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -250,7 +288,6 @@ export default function ChatRoom() {
           };
           setMessages(prev => [...prev, msg]);
           audioChunksRef.current = [];
-          simulateSupplierReply(activeChat, 'text');
         };
       };
       mediaRecorderRef.current.stop();
@@ -267,7 +304,6 @@ export default function ChatRoom() {
     const msg = { id: Date.now(), chatId: activeChat, senderId: 'me', text: newMessage, type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: true };
     setMessages([...messages, msg]);
     setNewMessage('');
-    simulateSupplierReply(activeChat, 'text');
   };
 
   const handleImageUpload = (e) => {
@@ -278,7 +314,6 @@ export default function ChatRoom() {
     reader.onloadend = () => {
       const msg = { id: Date.now(), chatId: activeChat, senderId: 'me', isMe: true, type: 'image', fileUrl: reader.result, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate() };
       setMessages(prev => [...prev, msg]);
-      simulateSupplierReply(activeChat, 'text');
     };
   };
 
@@ -287,7 +322,6 @@ export default function ChatRoom() {
     if (!file) return;
     const msg = { id: Date.now(), chatId: activeChat, senderId: 'me', isMe: true, type: 'document', fileName: file.name, fileSize: (file.size / 1024 / 1024).toFixed(2) + " MB", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate() };
     setMessages([...messages, msg]);
-    simulateSupplierReply(activeChat, 'text');
   };
 
   const handleDeleteMessage = (id) => { setMessages(messages.filter(msg => msg.id !== id)); };
@@ -349,17 +383,14 @@ export default function ChatRoom() {
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
           
-          {/* 🚀 الخلفية السحرية: نعتمد صورتك الأصلية فقط (لا روابط خارجية بعد الآن) */}
           <div 
             className="absolute inset-0 pointer-events-none z-0"
             style={{
               backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
               backgroundRepeat: 'repeat',
               backgroundSize: '400px',
-              // الشفافية 100% للوضع الفاتح ليكون واضحاً، و 80% للوضع الداكن
               opacity: isDarkMode ? 0.8 : 1, 
-              // نعكس ألوان الصورة في الوضع الداكن لتصبح الخطوط بيضاء
-              filter: isDarkMode ? 'invert(1)' : 'none'
+              mixBlendMode: isDarkMode ? 'lighten' : 'multiply'
             }}
           ></div>
           
