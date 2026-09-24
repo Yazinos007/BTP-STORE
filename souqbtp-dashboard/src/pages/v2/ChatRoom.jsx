@@ -3,7 +3,7 @@ import { useOutletContext, useLocation } from 'react-router-dom';
 import { 
   Search, Send, Paperclip, Mic, Phone, Video, 
   MoreVertical, CheckCheck, X, ShoppingCart, 
-  Image as ImageIcon, Briefcase, FileText, Play, Trash2
+  Image as ImageIcon, Briefcase, FileText, Play, Trash2, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase'; 
 
@@ -37,8 +37,8 @@ export default function ChatRoom() {
     ar: {
       title: "صندوق الرسائل", searchPlaceholder: "ابحث في المحادثات...",
       typeMessage: "اكتب رسالة...", online: "متصل الآن", offline: "آخر ظهور منذ ساعتين",
-      orderCardTitle: "طلب عرض سعر (Bon de Commande)", total: "المجموع التقديري:",
-      accept: "قبول العرض", reject: "رفض العرض", negotiate: "قيد التفاوض...",
+      orderCardTitle: "طلب مبدئي من السلة", total: "المجموع المبدئي:",
+      accept: "قبول", reject: "رفض", negotiate: "قيد التفاوض...",
       recording: "جاري التسجيل...", cancel: "إلغاء", send: "إرسال",
       calling: "جاري الاتصال...", endCall: "إنهاء المكالمة",
       clearChat: "إفراغ المحادثة", deleteMsg: "حذف", typing: "يكتب الآن..."
@@ -46,7 +46,7 @@ export default function ChatRoom() {
     fr: {
       title: "Boîte de Réception", searchPlaceholder: "Rechercher...",
       typeMessage: "Écrivez un message...", online: "En ligne", offline: "Vu il y a 2 heures",
-      orderCardTitle: "Demande de Devis (Bon de Commande)", total: "Total Estimé :",
+      orderCardTitle: "Demande depuis le panier", total: "Total Initial :",
       accept: "Accepter", reject: "Refuser", negotiate: "En négociation...",
       recording: "Enregistrement...", cancel: "Annuler", send: "Envoyer",
       calling: "Appel en cours...", endCall: "Raccrocher",
@@ -55,7 +55,7 @@ export default function ChatRoom() {
     en: {
        title: "Inbox", searchPlaceholder: "Search chats...",
       typeMessage: "Type a message...", online: "Online", offline: "Last seen 2 hours ago",
-      orderCardTitle: "Request for Quotation (PO)", total: "Estimated Total:",
+      orderCardTitle: "Initial Cart Request", total: "Initial Total:",
       accept: "Accept", reject: "Reject", negotiate: "In Negotiation...",
       recording: "Recording...", cancel: "Cancel", send: "Send",
       calling: "Calling...", endCall: "End Call",
@@ -69,11 +69,7 @@ export default function ChatRoom() {
     let isMounted = true;
     const loadChats = async () => {
       try {
-        const { data, error } = await supabase
-          .from('chats') 
-          .select('*')
-          .order('updated_at', { ascending: false });
-
+        const { data, error } = await supabase.from('chats').select('*').order('updated_at', { ascending: false });
         if (!error && data && data.length > 0) {
            if(isMounted) setChats(data);
         } else {
@@ -83,9 +79,7 @@ export default function ChatRoom() {
               { id: 3, name: "المهندس كريم", avatar: "ك", type: "team", unread: 0, status: "online", lastMessage: "تم الانتهاء من صب الأساسات." },
             ]);
         }
-      } catch(err) {
-        console.error("Error loading chats", err);
-      }
+      } catch(err) { console.error(err); }
     };
     loadChats();
     return () => { isMounted = false; }
@@ -96,31 +90,58 @@ export default function ChatRoom() {
   };
 
   const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem('souqbtp_chat_messages_v2');
+    const savedMessages = localStorage.getItem('souqbtp_chat_messages_v3');
     if (savedMessages) {
       try { return JSON.parse(savedMessages); } catch (e) { return null; }
     }
     return [
-      { id: 1, chatId: 1, senderId: 1, text: "مرحباً بك في شركة لافارچ، كيف يمكننا خدمتك اليوم؟", time: "10:00", date: "13 أبريل", isMe: false },
-      { id: 2, chatId: 1, senderId: 'me', text: "أهلاً، أحتاج إلى عرض سعر لكمية من الإسمنت.", time: "10:05", date: "14 أبريل", isMe: true }
+      { id: 1, chatId: 1, senderId: 1, text: "مرحباً بك في شركة لافارچ، كيف يمكننا خدمتك اليوم؟", time: "10:00 AM", date: "13 أبريل", isMe: false },
+      { id: 2, chatId: 1, senderId: 'me', text: "أهلاً، أحتاج إلى عرض سعر لكمية من الإسمنت.", time: "10:05 AM", date: "14 أبريل", isMe: true }
     ];
   });
 
   useEffect(() => {
-    localStorage.setItem('souqbtp_chat_messages_v2', JSON.stringify(messages));
+    localStorage.setItem('souqbtp_chat_messages_v3', JSON.stringify(messages));
   }, [messages]);
 
-  const simulateSupplierReply = (targetChatId, type = 'text') => {
+  const simulateSupplierReply = (targetChatId, type = 'text', orderData = null) => {
     setIsTyping(true);
     setTimeout(() => {
-      const replyMsg = {
-        id: Date.now(), chatId: targetChatId, senderId: 'supplier', 
-        text: type === 'order' ? "تم استلام طلب التفاوض الخاص بك! ✅ لقد وافقنا على السعر الإجمالي، وسنقوم بتجهيز الشحنة فوراً. 🚛" : "شكراً لتواصلك، لقد استلمنا رسالتك وسنقوم بالرد في أقرب وقت.", 
-        type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
-      };
-      setMessages(prev => [...prev, replyMsg]);
+      if (type === 'order') {
+        const textMsg = {
+          id: Date.now(), chatId: targetChatId, senderId: 'supplier', 
+          text: "مرحباً! لقد استلمت طلبك من السلة. قمنا بتوفير الكميات وحساب تكلفة النقل إلى موقع ورشتك. إليك عرض السعر النهائي للاعتماد:", 
+          type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
+        };
+        setMessages(prev => [...prev, textMsg]);
+
+        setTimeout(() => {
+          const transportCost = 450; 
+          const subtotal = orderData ? orderData.total : 0;
+          const quoteMsg = {
+            id: Date.now() + 1, chatId: targetChatId, senderId: 'supplier', 
+            type: 'quote_card', quoteStatus: 'pending',
+            quoteData: {
+              subtotal: subtotal,
+              transport: transportCost,
+              total: subtotal + transportCost,
+              currency: orderData?.items[0]?.product?.currency || 'MAD'
+            },
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
+          };
+          setMessages(prev => [...prev, quoteMsg]);
+        }, 1500);
+
+      } else {
+        const replyMsg = {
+          id: Date.now(), chatId: targetChatId, senderId: 'supplier', 
+          text: "مرحباً، جاري مراجعة طلبك وسنرد عليك في أقرب وقت ممكن.", 
+          type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
+        };
+        setMessages(prev => [...prev, replyMsg]);
+      }
       setIsTyping(false);
-    }, 3500); 
+    }, 3000); 
   };
 
   useEffect(() => {
@@ -148,7 +169,7 @@ export default function ChatRoom() {
         return [...prev, orderMessage];
       });
 
-      simulateSupplierReply(currentChatId, 'order');
+      simulateSupplierReply(currentChatId, 'order', cartOrder);
       window.history.replaceState({}, document.title);
     }
   }, [cartOrder, supplierName]);
@@ -156,6 +177,23 @@ export default function ChatRoom() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  const handleAcceptQuote = (msgId) => {
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, quoteStatus: 'accepted' } : m));
+    setTimeout(() => {
+      const systemMsg = {
+        id: Date.now(), chatId: activeChat, senderId: 'system', type: 'system',
+        text: "🎉 تم اعتماد العرض بنجاح! تم تحويل الطلبية إلى قسم [التحضير والتسليم] ويمكنك تتبعها من لوحة القيادة.",
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), date: getTodayDate(), isMe: false
+      };
+      setMessages(prev => [...prev, systemMsg]);
+    }, 500);
+  };
+
+  const handleRejectQuote = (msgId) => {
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, quoteStatus: 'rejected' } : m));
+    setNewMessage("أريد التفاوض حول هذا العرض.. هل يمكننا تخفيض السعر الإجمالي أو إزالة تكلفة النقل؟");
+  };
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -168,19 +206,15 @@ export default function ChatRoom() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
-
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
-
       mediaRecorderRef.current.start();
       setIsRecording(true);
       setRecordingTime(0);
-
       timerIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
-
     } catch (err) {
       alert("يرجى إعطاء صلاحية استخدام الميكروفون للمتصفح 🎙️");
       console.error(err);
@@ -203,7 +237,6 @@ export default function ChatRoom() {
       mediaRecorderRef.current.onstop = () => {
         const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType }); 
-        
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
@@ -220,7 +253,6 @@ export default function ChatRoom() {
           simulateSupplierReply(activeChat, 'text');
         };
       };
-      
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       clearInterval(timerIntervalRef.current);
@@ -270,10 +302,7 @@ export default function ChatRoom() {
   const activeChatData = chats.find(c => c.id === activeChat) || chats[0];
   const currentMessages = messages.filter(msg => msg.chatId === activeChat);
 
-  const mainWrapperBg = isDarkMode 
-    ? 'bg-slate-950' 
-    : 'bg-emerald-50'; 
-  
+  const mainWrapperBg = isDarkMode ? 'bg-slate-950' : 'bg-emerald-50'; 
   const panelBg = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
@@ -320,17 +349,15 @@ export default function ChatRoom() {
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
           
-          {/* 🚀 الخلفية السحرية: نعتمد صورتك الأصلية فقط (لا روابط خارجية بعد الآن) */}
+          {/* 🚀 الحل النهائي والأكثر استقراراً باستخدام mix-blend-mode */}
           <div 
             className="absolute inset-0 pointer-events-none z-0"
             style={{
               backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
               backgroundRepeat: 'repeat',
               backgroundSize: '400px',
-              // الشفافية 100% للوضع الفاتح ليكون واضحاً، و 80% للوضع الداكن
-              opacity: isDarkMode ? 0.8 : 1, 
-              // نعكس ألوان الصورة في الوضع الداكن لتصبح الخطوط بيضاء
-              filter: isDarkMode ? 'invert(1)' : 'none'
+              opacity: isDarkMode ? 0.08 : 0.4, 
+              mixBlendMode: isDarkMode ? 'lighten' : 'multiply'
             }}
           ></div>
           
@@ -352,7 +379,6 @@ export default function ChatRoom() {
             <div className="flex gap-2 items-center">
               <button onClick={() => setActiveCall('voice')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-200'}`}><Phone size={18}/></button>
               <button onClick={() => setActiveCall('video')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-200'}`}><Video size={18}/></button>
-              
               <div className="relative">
                 <button onClick={() => setShowDropdown(!showDropdown)} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-200'}`}>
                   <MoreVertical size={18}/>
@@ -370,15 +396,22 @@ export default function ChatRoom() {
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar relative z-10" onClick={() => setShowDropdown(false)}>
-            
-            {/* خريطة الرسائل مع فواصل التاريخ */}
             {currentMessages.map((msg, index) => {
               const showDate = index === 0 || msg.date !== currentMessages[index - 1].date;
               
+              if (msg.type === 'system') {
+                return (
+                  <div key={msg.id} className="flex justify-center my-4 w-full animate-fade-in">
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold px-4 py-2.5 rounded-xl text-center shadow-sm max-w-[85%] flex items-center gap-2">
+                      <ShieldCheck size={16} className="text-emerald-500"/>
+                      {msg.text}
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <React.Fragment key={msg.id}>
-                  
-                  {/* شارة التاريخ */}
                   {showDate && (
                     <div className="flex justify-center my-4 animate-fade-in">
                       <span className={`px-3 py-1 text-[11px] font-bold rounded-lg shadow-sm ${isDarkMode ? 'bg-[#182229] text-slate-400 border border-slate-700/50' : 'bg-white text-slate-500 border border-slate-100'}`}>
@@ -388,13 +421,11 @@ export default function ChatRoom() {
                   )}
 
                   <div className={`group relative flex ${msg.isMe ? 'justify-end' : 'justify-start'} animate-slide-up items-center gap-3`}>
-                    
                     {msg.isMe && (
                       <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-all">
                         <Trash2 size={16}/>
                       </button>
                     )}
-
                     <div className={`max-w-[85%] md:max-w-[65%] flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
                       
                       {(!msg.type || msg.type === 'text') && (
@@ -459,8 +490,44 @@ export default function ChatRoom() {
                           </div>
                         </div>
                       )}
-                    </div>
 
+                      {msg.type === 'quote_card' && (
+                        <div className={`p-1 shadow-sm border-2 ${isDarkMode ? 'bg-[#202c33] border-emerald-500/30' : 'bg-white border-emerald-500/30'} rounded-2xl ${msg.isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'} w-[280px]`}>
+                          <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-900/60' : 'bg-emerald-50/50'}`}>
+                            <div className="flex items-center gap-2 mb-3 pb-3 border-b border-dashed border-emerald-500/40">
+                              <FileText className="text-emerald-500" size={20}/>
+                              <h4 className={`font-black text-sm ${textTitle}`}>عرض سعر رسمي (Devis)</h4>
+                            </div>
+                            <div className="space-y-2 mb-4 text-xs font-bold">
+                              <div className={`flex justify-between ${textMuted}`}><span>المنتجات:</span> <span dir="ltr">{msg.quoteData.subtotal.toLocaleString()} {msg.quoteData.currency}</span></div>
+                              <div className="flex justify-between text-amber-500"><span>تكلفة النقل:</span> <span dir="ltr">+{msg.quoteData.transport.toLocaleString()} {msg.quoteData.currency}</span></div>
+                              <div className="flex justify-between border-t border-emerald-500/20 pt-3 mt-2 text-lg font-black text-emerald-500">
+                                <span>الإجمالي:</span> <span dir="ltr">{msg.quoteData.total.toLocaleString()} {msg.quoteData.currency}</span>
+                              </div>
+                            </div>
+                            
+                            {msg.quoteStatus === 'pending' ? (
+                              <div className="flex gap-2 mt-4">
+                                <button onClick={() => handleAcceptQuote(msg.id)} className="flex-1 bg-emerald-500 text-white py-2 rounded-lg font-bold text-xs hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-500/20">✅ قبول واعتماد</button>
+                                <button onClick={() => handleRejectQuote(msg.id)} className="flex-1 bg-red-500/10 text-red-500 py-2 rounded-lg font-bold text-xs hover:bg-red-500/20 transition-colors">❌ رفض وتفاوض</button>
+                              </div>
+                            ) : msg.quoteStatus === 'accepted' ? (
+                              <div className="text-center py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold rounded-lg text-xs mt-2 flex items-center justify-center gap-1">
+                                <CheckCheck size={14}/> تم اعتماد العرض
+                              </div>
+                            ) : (
+                              <div className="text-center py-2 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 font-bold rounded-lg text-xs mt-2 flex items-center justify-center gap-1">
+                                <X size={14}/> تم الرفض للتفاوض
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 mt-1 px-1 justify-end">
+                            <span className="text-[10px] font-bold text-slate-500">{msg.time}</span>
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
                     {!msg.isMe && (
                       <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all">
                         <Trash2 size={16}/>
@@ -480,7 +547,6 @@ export default function ChatRoom() {
                 </div>
               </div>
             )}
-            
             <div ref={messagesEndRef} />
           </div>
 
@@ -488,15 +554,11 @@ export default function ChatRoom() {
           <div className={`p-3 relative z-20 ${isDarkMode ? 'bg-[#202c33]' : 'bg-[#f0f2f5]'}`}>
             <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageUpload} className="hidden" />
             <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" ref={docInputRef} onChange={handleDocUpload} className="hidden" />
-
             {isRecording ? (
               <div className={`flex items-center gap-4 p-2 rounded-full animate-pulse ${isDarkMode ? 'bg-red-900/40 border border-red-500/50' : 'bg-white border border-red-200 shadow-sm'}`}>
-                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center shadow-md ml-2">
-                   <Mic className="text-white animate-bounce mt-1" size={20} />
-                </div>
+                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center shadow-md ml-2"><Mic className="text-white animate-bounce mt-1" size={20} /></div>
                 <span className={`font-black text-sm flex-1 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{t.recording}</span>
                 <span className={`font-mono font-black text-lg ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{formatTime(recordingTime)}</span>
-                
                 <button type="button" onClick={cancelRecording} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"><X size={24}/></button>
                 <button type="button" onClick={sendAudioMessage} className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md transition-transform hover:scale-110">
                   <Send size={18} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/>
@@ -508,27 +570,14 @@ export default function ChatRoom() {
                   <button type="button" onClick={() => docInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><Paperclip size={22}/></button>
                   <button type="button" onClick={() => imageInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><ImageIcon size={22}/></button>
                 </div>
-                
                 <div className={`flex-1 relative rounded-2xl overflow-hidden transition-colors ${isDarkMode ? 'bg-[#2a3942]' : 'bg-white shadow-sm'}`}>
-                  <textarea 
-                    value={newMessage} 
-                    onChange={e => setNewMessage(e.target.value)}
-                    onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                    placeholder={t.typeMessage} 
-                    className="w-full max-h-32 p-3 bg-transparent outline-none font-medium resize-none text-sm leading-relaxed custom-scrollbar dark:text-white"
-                    rows="1"
-                  />
+                  <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={t.typeMessage} className="w-full max-h-32 p-3 bg-transparent outline-none font-medium resize-none text-sm leading-relaxed custom-scrollbar dark:text-white" rows="1" />
                 </div>
-                
                 <div className="mb-1">
                   {newMessage.trim() ? (
-                    <button type="submit" className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md">
-                      <Send size={20} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/>
-                    </button>
+                    <button type="submit" className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md"><Send size={20} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/></button>
                   ) : (
-                    <button type="button" onClick={startRecording} className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md">
-                      <Mic size={20} />
-                    </button>
+                    <button type="button" onClick={startRecording} className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md"><Mic size={20} /></button>
                   )}
                 </div>
               </form>
@@ -536,20 +585,16 @@ export default function ChatRoom() {
           </div>
         </div>
       </div>
-
       {activeCall && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-xl animate-fade-in">
           <div className="text-center">
             <div className="relative mb-8 mx-auto w-32 h-32">
               <div className="absolute inset-0 bg-teal-500 rounded-full animate-ping opacity-20"></div>
               <div className="absolute inset-2 bg-teal-500 rounded-full animate-ping opacity-40 animation-delay-300"></div>
-              <div className="relative w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-5xl font-black text-white shadow-2xl shadow-teal-500/50">
-                {activeChatData?.avatar}
-              </div>
+              <div className="relative w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-5xl font-black text-white shadow-2xl shadow-teal-500/50">{activeChatData?.avatar}</div>
             </div>
             <h2 className="text-3xl font-black text-white mb-2">{activeChatData?.name}</h2>
             <p className="text-teal-400 font-bold mb-12 animate-pulse">{t.calling} ({activeCall === 'video' ? 'فيديو' : 'صوت'})</p>
-            
             <div className="flex justify-center gap-6">
               <button className="p-5 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors border border-slate-700"><Mic size={28}/></button>
               {activeCall === 'video' && <button className="p-5 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors border border-slate-700"><Video size={28}/></button>}
