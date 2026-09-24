@@ -592,6 +592,7 @@ export default function ChatRoom() {
                               {msg.orderData?.items?.map((item, idx) => (
                                 <li key={idx} className={`text-xs font-bold flex justify-between ${textMuted}`}>
                                   <span>{item.qty}x {item.product.name}</span>
+                                  <span dir="ltr">{(item.qty >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail) * item.qty} {item.product.currency || 'MAD'}</span>
                                 </li>
                               ))}
                             </ul>
