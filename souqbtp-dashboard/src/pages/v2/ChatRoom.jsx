@@ -91,7 +91,6 @@ export default function ChatRoom() {
     return () => { isMounted = false; }
   }, []);
 
-  // دالة لجلب تاريخ اليوم بصيغة نصية
   const getTodayDate = () => {
     return new Date().toLocaleDateString(language === 'ar' ? 'ar-EG' : 'fr-FR', { day: 'numeric', month: 'long' });
   };
@@ -271,19 +270,14 @@ export default function ChatRoom() {
   const activeChatData = chats.find(c => c.id === activeChat) || chats[0];
   const currentMessages = messages.filter(msg => msg.chatId === activeChat);
 
-  // ألوان الغلاف الخارجي للمكون
   const mainWrapperBg = isDarkMode 
     ? 'bg-slate-950' 
     : 'bg-emerald-50'; 
   
-  // ألوان القائمة الجانبية
   const panelBg = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
   const glassInputBg = isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-100 border-slate-200 text-slate-800';
-
-  // 🚀 خلفية الواتساب (Doodle Pattern)
-  const whatsappPattern = "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')";
 
   return (
     <div className={`h-[82vh] rounded-3xl animate-fade-in overflow-hidden shadow-2xl ${mainWrapperBg} p-2 md:p-0`} dir={isRtl ? 'rtl' : 'ltr'}>
@@ -325,14 +319,20 @@ export default function ChatRoom() {
 
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
-          {/* 🚀 إضافة الخلفية ذات النمط الزخرفي (Doodle) */}
+          
+          {/* 🚀 الخلفية السحرية: تم إضافة filter لمعالجة الشفافية وعكس الألوان في الوضع الداكن */}
           <div 
-            className={`absolute inset-0 pointer-events-none z-0 ${isDarkMode ? 'opacity-[0.06]' : 'opacity-[0.35]'}`}
-            style={{ backgroundImage: whatsappPattern, backgroundRepeat: 'repeat', backgroundSize: '400px' }}
+            className="absolute inset-0 pointer-events-none z-0"
+            style={{ 
+              backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')", 
+              backgroundRepeat: 'repeat', 
+              backgroundSize: '400px',
+              filter: isDarkMode ? 'invert(1) opacity(0.08)' : 'opacity(0.6)'
+            }}
           ></div>
           
           {/* Header */}
-          <div className={`p-4 border-b flex justify-between items-center z-20 ${isDarkMode ? 'bg-[#202c33] border-slate-700/50' : 'bg-[#f0f2f5] border-slate-200'}`}>
+          <div className={`p-4 border-b flex justify-between items-center relative z-20 ${isDarkMode ? 'bg-[#202c33] border-slate-700/50' : 'bg-[#f0f2f5] border-slate-200'}`}>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-white bg-gradient-to-br from-teal-400 to-teal-600 shadow-md`}>
                 {activeChatData?.avatar}
@@ -368,7 +368,7 @@ export default function ChatRoom() {
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar relative z-10" onClick={() => setShowDropdown(false)}>
             
-            {/* 🚀 خريطة الرسائل مع فواصل التاريخ */}
+            {/* خريطة الرسائل مع فواصل التاريخ */}
             {currentMessages.map((msg, index) => {
               const showDate = index === 0 || msg.date !== currentMessages[index - 1].date;
               
@@ -482,7 +482,7 @@ export default function ChatRoom() {
           </div>
 
           {/* Input Area */}
-          <div className={`p-3 z-20 ${isDarkMode ? 'bg-[#202c33]' : 'bg-[#f0f2f5]'}`}>
+          <div className={`p-3 relative z-20 ${isDarkMode ? 'bg-[#202c33]' : 'bg-[#f0f2f5]'}`}>
             <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageUpload} className="hidden" />
             <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" ref={docInputRef} onChange={handleDocUpload} className="hidden" />
 
@@ -536,7 +536,6 @@ export default function ChatRoom() {
 
       {activeCall && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-xl animate-fade-in">
-          {/* كود المكالمات كما هو لم يتغير */}
           <div className="text-center">
             <div className="relative mb-8 mx-auto w-32 h-32">
               <div className="absolute inset-0 bg-teal-500 rounded-full animate-ping opacity-20"></div>
