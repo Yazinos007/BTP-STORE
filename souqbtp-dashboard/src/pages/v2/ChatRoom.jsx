@@ -64,7 +64,9 @@ export default function ChatRoom() {
       quoteRejected: "تم الرفض للتفاوض",
       audioMessage: "رسالة صوتية",
       imageMessage: "صورة مرفقة",
-      documentMessage: "مستند مرفق"
+      documentMessage: "مستند مرفق",
+      confirmClearChat: "هل أنت متأكد من إفراغ محادثة هذا المورد فقط؟",
+      confirmDeleteMsg: "هل أنت متأكد أنك تريد حذف هذه الرسالة؟"
     },
     fr: {
       title: "Boîte de Réception", searchPlaceholder: "Rechercher...",
@@ -89,7 +91,9 @@ export default function ChatRoom() {
       quoteRejected: "Rejeté pour négociation",
       audioMessage: "Message vocal",
       imageMessage: "Image jointe",
-      documentMessage: "Document joint"
+      documentMessage: "Document joint",
+      confirmClearChat: "Êtes-vous sûr de vouloir vider le chat de ce fournisseur uniquement ?",
+      confirmDeleteMsg: "Êtes-vous sûr de vouloir supprimer ce message ?"
     },
     en: {
        title: "Inbox", searchPlaceholder: "Search chats...",
@@ -114,7 +118,9 @@ export default function ChatRoom() {
       quoteRejected: "Rejected for negotiation",
       audioMessage: "Voice message",
       imageMessage: "Attached image",
-      documentMessage: "Attached document"
+      documentMessage: "Attached document",
+      confirmClearChat: "Are you sure you want to clear this supplier's chat only?",
+      confirmDeleteMsg: "Are you sure you want to delete this message?"
     }
   }[language] || t.ar;
 
@@ -438,18 +444,22 @@ export default function ChatRoom() {
     insertMessageToDB(activeChat, 'document', { fileName: file.name, fileSize: (file.size / 1024 / 1024).toFixed(2) + " MB" });
   };
 
-  // 🚀 تفعيل الحذف الفوري للرسالة
+  // 🚀 تفعيل الحذف الفوري للرسالة مع رسالة تأكيد
   const handleDeleteMessage = async (id) => { 
-     const { error } = await supabase.from('messages').delete().eq('id', id);
-     if (!error) {
-       // تحديث الواجهة فوراً دون انتظار WebSocket
-       setMessages(prev => prev.filter(msg => msg.id !== id));
+     // أضفنا رسالة التأكيد هنا
+     if (window.confirm(t.confirmDeleteMsg)) {
+       const { error } = await supabase.from('messages').delete().eq('id', id);
+       if (!error) {
+         // تحديث الواجهة فوراً دون انتظار WebSocket
+         setMessages(prev => prev.filter(msg => msg.id !== id));
+       }
      }
   };
   
-  // 🚀 تفعيل التفريغ الفوري لمحادثة كاملة
+  // 🚀 تفعيل التفريغ الفوري لمحادثة كاملة مع رسالة مترجمة
   const handleClearChat = async () => {
-    if (window.confirm("هل أنت متأكد من إفراغ محادثة هذا المورد فقط؟")) {
+    // استخدمنا الترجمة هنا
+    if (window.confirm(t.confirmClearChat)) {
       const { error } = await supabase.from('messages').delete().eq('conversation_id', activeChat);
       if (!error) {
         setMessages([]); // تحديث الواجهة فوراً
@@ -504,14 +514,18 @@ export default function ChatRoom() {
 
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
+          
+          {/* 🚀 الخلفية السحرية: نعتمد صورتك الأصلية فقط (لا روابط خارجية بعد الآن) */}
           <div 
             className="absolute inset-0 pointer-events-none z-0"
             style={{
               backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
               backgroundRepeat: 'repeat',
               backgroundSize: '400px',
+              // الشفافية 100% للوضع الفاتح ليكون واضحاً، و 80% للوضع الداكن
               opacity: isDarkMode ? 0.8 : 1, 
-              mixBlendMode: isDarkMode ? 'lighten' : 'multiply'
+              // نعكس ألوان الصورة في الوضع الداكن لتصبح الخطوط بيضاء
+              filter: isDarkMode ? 'invert(1)' : 'none'
             }}
           ></div>
           
