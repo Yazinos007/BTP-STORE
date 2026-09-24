@@ -36,57 +36,76 @@ export default function ChatRoom() {
   const [chats, setChats] = useState([]);
   const [messages, setMessages] = useState([]);
 
-  // نوع المستخدم الحالي (مثال: client)
-  const CURRENT_USER_TYPE = 'client';
+  // 🚀 تصحيح: تحديد حساب المستخدم الحالي כـ تاجر تجزئة (retailer)
+  const CURRENT_USER_TYPE = 'retailer';
 
+  // 🚀 قواميس الترجمة الشاملة لجميع أجزاء الدردشة
   const t = {
     ar: {
       title: "صندوق الرسائل", searchPlaceholder: "ابحث في المحادثات...",
       typeMessage: "اكتب رسالة...", online: "متصل الآن", offline: "آخر ظهور منذ ساعتين",
       orderCardTitle: "طلب مبدئي من السلة", total: "المجموع المبدئي:",
-      accept: "قبول", reject: "رفض", negotiate: "قيد التفاوض...",
+      accept: "قبول واعتماد", reject: "رفض وتفاوض", negotiate: "قيد التفاوض...",
       recording: "جاري التسجيل...", cancel: "إلغاء", send: "إرسال",
       calling: "جاري الاتصال...", endCall: "إنهاء المكالمة",
       clearChat: "إفراغ المحادثة", deleteMsg: "حذف", typing: "يكتب الآن...",
-      // 🚀 نصوص الرسائل الآلية
       supplierReplyOrder: "لقد جهزنا لك عرض السعر النهائي:",
       systemAccept: "🎉 تم اعتماد العرض بنجاح! تم تحويل الطلبية للتحضير.",
       negotiateMsg: "أريد التفاوض حول هذا العرض.. هل يمكننا تخفيض السعر الإجمالي أو إزالة تكلفة النقل؟",
       genericReply: "شكراً لتواصلك! سيتم مراجعة رسالتك قريباً.",
       cartOrderTitle: "طلبية من السلة",
-      newNegotiation: "طلب تفاوض جديد"
+      newNegotiation: "طلب تفاوض جديد",
+      selectChatPrompt: "اختر محادثة للبدء",
+      quoteTitle: "عرض سعر رسمي (Devis)",
+      productsTitle: "المنتجات:",
+      transportTitle: "تكلفة النقل:",
+      totalTitle: "الإجمالي:",
+      quoteAccepted: "تم اعتماد العرض",
+      quoteRejected: "تم الرفض للتفاوض"
     },
     fr: {
       title: "Boîte de Réception", searchPlaceholder: "Rechercher...",
       typeMessage: "Écrivez un message...", online: "En ligne", offline: "Vu il y a 2 heures",
       orderCardTitle: "Demande depuis le panier", total: "Total Initial :",
-      accept: "Accepter", reject: "Refuser", negotiate: "En négociation...",
+      accept: "Accepter le Devis", reject: "Refuser et Négocier", negotiate: "En négociation...",
       recording: "Enregistrement...", cancel: "Annuler", send: "Envoyer",
       calling: "Appel en cours...", endCall: "Raccrocher",
       clearChat: "Vider le chat", deleteMsg: "Supprimer", typing: "Entraîne d'écrire...",
-      // 🚀 Textes automatisés
       supplierReplyOrder: "Nous avons préparé votre devis final :",
       systemAccept: "🎉 Devis validé avec succès ! La commande est en préparation.",
       negotiateMsg: "Je souhaite négocier cette offre. Pouvons-nous réduire le prix total ou annuler les frais de livraison ?",
       genericReply: "Merci pour votre message ! Nous allons l'examiner.",
       cartOrderTitle: "Commande du panier",
-      newNegotiation: "Nouvelle demande de négociation"
+      newNegotiation: "Nouvelle demande de négociation",
+      selectChatPrompt: "Sélectionnez un chat pour commencer",
+      quoteTitle: "Devis Officiel",
+      productsTitle: "Produits :",
+      transportTitle: "Transport :",
+      totalTitle: "Total :",
+      quoteAccepted: "Devis accepté",
+      quoteRejected: "Rejeté pour négociation"
     },
     en: {
        title: "Inbox", searchPlaceholder: "Search chats...",
       typeMessage: "Type a message...", online: "Online", offline: "Last seen 2 hours ago",
       orderCardTitle: "Initial Cart Request", total: "Initial Total:",
-      accept: "Accept", reject: "Reject", negotiate: "In Negotiation...",
+      accept: "Accept Quote", reject: "Reject & Negotiate", negotiate: "In Negotiation...",
       recording: "Recording...", cancel: "Cancel", send: "Send",
       calling: "Calling...", endCall: "End Call",
       clearChat: "Clear Chat", deleteMsg: "Delete", typing: "Typing...",
-      // 🚀 Automated texts
       supplierReplyOrder: "We have prepared your final quote:",
       systemAccept: "🎉 Quote successfully accepted! The order is now in preparation.",
       negotiateMsg: "I would like to negotiate this offer. Can we reduce the total price or remove the shipping cost?",
       genericReply: "Thank you for reaching out! Your message will be reviewed.",
       cartOrderTitle: "Cart Order",
-      newNegotiation: "New negotiation request"
+      newNegotiation: "New negotiation request",
+      selectChatPrompt: "Select a chat to start",
+      quoteTitle: "Official Quote",
+      productsTitle: "Products:",
+      transportTitle: "Transport:",
+      totalTitle: "Total:",
+      quoteAccepted: "Quote accepted",
+      quoteRejected: "Rejected for negotiation"
     }
   }[language] || t.ar;
 
@@ -113,7 +132,9 @@ export default function ChatRoom() {
           lastMessage: conv.last_message || "لا توجد رسائل"
         }));
         setChats(formattedChats);
-        if (formattedChats.length > 0 && !activeChat && !cartOrder) {
+        
+        // تعيين أول محادثة كنشطة فقط إذا لم تكن هناك طلبيات سلة قادمة أو شات مفتوح
+        if (formattedChats.length > 0 && !activeChat && (!cartOrder || cartOrder?.items?.length === 0)) {
           setActiveChat(formattedChats[0].id);
         }
       }
@@ -207,13 +228,88 @@ export default function ChatRoom() {
     
     await insertMessageToDB(activeChat, 'text', { text: textToSend });
     
-    // محاكاة رد المورد بلغة المستخدم
+    // محاكاة رد المورد
     setIsTyping(true);
     setTimeout(() => {
       insertMessageToDB(activeChat, 'text', { text: t.genericReply }, 'provider');
       setIsTyping(false);
     }, 2500);
   };
+
+  // 4. معالجة طلبات السلة: تجميع الموردين وتحديث المحادثات
+  useEffect(() => {
+    if (cartOrder && cartOrder.items && cartOrder.items.length > 0) {
+      const processCartToDB = async () => {
+        const supplierGroups = {};
+        
+        // تجميع المنتجات لكل مورد
+        cartOrder.items.forEach(item => {
+          const sup = item.product?.supplier || "المورد العام";
+          if (!supplierGroups[sup]) supplierGroups[sup] = { items: [], total: 0 };
+          supplierGroups[sup].items.push(item);
+          const p = item.product;
+          const activePrice = item.qty >= (p.min_wholesale_qty || 999999) ? (p.price_wholesale || p.price) : (p.price_retail || p.price);
+          supplierGroups[sup].total += activePrice * item.qty;
+        });
+
+        // 🚀 معالجة الموردين الواحد تلو الآخر لمنع التكرار
+        for (const [supName, groupData] of Object.entries(supplierGroups)) {
+          
+          // البحث عما إذا كانت هناك محادثة سابقة مع هذا المورد
+          const { data: existingConvs } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('client_name', supName)
+            .limit(1);
+
+          let targetConvId;
+
+          if (existingConvs && existingConvs.length > 0) {
+            targetConvId = existingConvs[0].id;
+          } else {
+            const { data: newConv } = await supabase.from('conversations').insert({
+              client_name: supName,
+              status: 'active',
+              project_name: t.cartOrderTitle,
+              last_message: t.newNegotiation
+            }).select().single();
+            if (newConv) targetConvId = newConv.id;
+          }
+
+          if (targetConvId) {
+            setActiveChat(targetConvId); // فتح محادثة المورد فوراً
+            await insertMessageToDB(targetConvId, 'order_card', { orderData: groupData }, CURRENT_USER_TYPE);
+
+            setIsTyping(true);
+            setTimeout(async () => {
+              // 🚀 الرد وعرض السعر باللغة المطلوبة
+              await insertMessageToDB(targetConvId, 'text', { text: t.supplierReplyOrder }, 'provider');
+              
+              const quotePayload = {
+                quoteStatus: 'pending',
+                quoteData: {
+                  subtotal: groupData.total,
+                  transport: 450,
+                  total: groupData.total + 450,
+                  currency: groupData.items[0]?.product?.currency || 'MAD'
+                }
+              };
+              await insertMessageToDB(targetConvId, 'quote_card', quotePayload, 'provider');
+              setIsTyping(false);
+            }, 3000);
+          }
+        }
+        // تنظيف الـ History لمنع إعادة المعالجة عند التحديث
+        window.history.replaceState({}, document.title); 
+      };
+      
+      processCartToDB();
+    }
+  }, [cartOrder, t.cartOrderTitle, t.newNegotiation, t.supplierReplyOrder]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
 
   const handleAcceptQuote = async (msgId, originalData) => {
     const updatedContent = JSON.stringify({ ...originalData, quoteStatus: 'accepted' });
@@ -230,65 +326,13 @@ export default function ChatRoom() {
     setNewMessage(t.negotiateMsg);
   };
 
-  // 4. معالجة طلبات السلة
-  useEffect(() => {
-    if (cartOrder && cartOrder.items && cartOrder.items.length > 0) {
-      const processCartToDB = async () => {
-        const supplierGroups = {};
-        cartOrder.items.forEach(item => {
-          const sup = item.product?.supplier || "المورد العام";
-          if (!supplierGroups[sup]) supplierGroups[sup] = { items: [], total: 0 };
-          supplierGroups[sup].items.push(item);
-          const p = item.product;
-          const activePrice = item.qty >= (p.min_wholesale_qty || 999999) ? (p.price_wholesale || p.price) : (p.price_retail || p.price);
-          supplierGroups[sup].total += activePrice * item.qty;
-        });
-
-        for (const [supName, groupData] of Object.entries(supplierGroups)) {
-          const { data: newConv, error: convError } = await supabase.from('conversations').insert({
-            client_name: supName,
-            status: 'active',
-            project_name: "طلبية من السلة",
-            last_message: "طلب تفاوض جديد"
-          }).select().single();
-
-          if (newConv) {
-            setActiveChat(newConv.id);
-            await insertMessageToDB(newConv.id, 'order_card', { orderData: groupData }, CURRENT_USER_TYPE);
-
-            setIsTyping(true);
-            setTimeout(async () => {
-              await insertMessageToDB(newConv.id, 'text', { text: "لقد جهزنا لك عرض السعر النهائي:" }, 'provider');
-              const quotePayload = {
-                quoteStatus: 'pending',
-                quoteData: {
-                  subtotal: groupData.total,
-                  transport: 450,
-                  total: groupData.total + 450,
-                  currency: groupData.items[0]?.product?.currency || 'MAD'
-                }
-              };
-              await insertMessageToDB(newConv.id, 'quote_card', quotePayload, 'provider');
-              setIsTyping(false);
-            }, 3000);
-          }
-        }
-        window.history.replaceState({}, document.title); 
-      };
-      processCartToDB();
-    }
-  }, [cartOrder]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
-
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
   };
 
+  // دوال التسجيل والرفع
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -410,7 +454,6 @@ export default function ChatRoom() {
                   </div>
                   <p className={`text-xs truncate ${chat.unread > 0 ? (isDarkMode ? 'text-white font-bold' : 'text-slate-900 font-black') : textMuted}`}>{chat.lastMessage}</p>
                 </div>
-                {chat.unread > 0 && <span className="w-5 h-5 bg-teal-500 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-md">{chat.unread}</span>}
               </div>
             ))}
           </div>
@@ -549,7 +592,6 @@ export default function ChatRoom() {
                               {msg.orderData?.items?.map((item, idx) => (
                                 <li key={idx} className={`text-xs font-bold flex justify-between ${textMuted}`}>
                                   <span>{item.qty}x {item.product.name}</span>
-                                  <span dir="ltr">{(item.qty >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail) * item.qty} {item.product.currency || 'MAD'}</span>
                                 </li>
                               ))}
                             </ul>
@@ -557,10 +599,6 @@ export default function ChatRoom() {
                               <span className="text-xs font-black text-teal-700 dark:text-teal-500">{t.total}</span>
                               <span className="font-black text-teal-700 dark:text-teal-500 text-lg" dir="ltr">{msg.orderData?.total?.toLocaleString()} MAD</span>
                             </div>
-                          </div>
-                           <div className="flex items-center gap-1 mt-1 px-1 justify-end">
-                            <span className="text-[10px] font-bold text-slate-500">{msg.time}</span>
-                            {msg.isMe && <CheckCheck size={14} className={isDarkMode ? 'text-[#53bdeb]' : 'text-[#34b7f1]'} />}
                           </div>
                         </div>
                       )}
@@ -570,28 +608,28 @@ export default function ChatRoom() {
                           <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-900/60' : 'bg-emerald-50/50'}`}>
                             <div className="flex items-center gap-2 mb-3 pb-3 border-b border-dashed border-emerald-500/40">
                               <FileText className="text-emerald-500" size={20}/>
-                              <h4 className={`font-black text-sm ${textTitle}`}>عرض سعر رسمي (Devis)</h4>
+                              <h4 className={`font-black text-sm ${textTitle}`}>{t.quoteTitle}</h4>
                             </div>
                             <div className="space-y-2 mb-4 text-xs font-bold">
-                              <div className={`flex justify-between ${textMuted}`}><span>المنتجات:</span> <span dir="ltr">{msg.quoteData?.subtotal?.toLocaleString()} MAD</span></div>
-                              <div className="flex justify-between text-amber-500"><span>تكلفة النقل:</span> <span dir="ltr">+{msg.quoteData?.transport?.toLocaleString()} MAD</span></div>
+                              <div className={`flex justify-between ${textMuted}`}><span>{t.productsTitle}</span> <span dir="ltr">{msg.quoteData?.subtotal?.toLocaleString()} MAD</span></div>
+                              <div className="flex justify-between text-amber-500"><span>{t.transportTitle}</span> <span dir="ltr">+{msg.quoteData?.transport?.toLocaleString()} MAD</span></div>
                               <div className="flex justify-between border-t border-emerald-500/20 pt-3 mt-2 text-lg font-black text-emerald-500">
-                                <span>الإجمالي:</span> <span dir="ltr">{msg.quoteData?.total?.toLocaleString()} MAD</span>
+                                <span>{t.totalTitle}</span> <span dir="ltr">{msg.quoteData?.total?.toLocaleString()} MAD</span>
                               </div>
                             </div>
                             
                             {msg.quoteStatus === 'pending' ? (
                               <div className="flex gap-2 mt-4">
-                                <button onClick={() => handleAcceptQuote(msg.id, {type: msg.type, quoteData: msg.quoteData})} className="flex-1 bg-emerald-500 text-white py-2 rounded-lg font-bold text-xs hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-500/20">✅ قبول واعتماد</button>
-                                <button onClick={() => handleRejectQuote(msg.id, {type: msg.type, quoteData: msg.quoteData})} className="flex-1 bg-red-500/10 text-red-500 py-2 rounded-lg font-bold text-xs hover:bg-red-500/20 transition-colors">❌ رفض وتفاوض</button>
+                                <button onClick={() => handleAcceptQuote(msg.id, {type: msg.type, quoteData: msg.quoteData})} className="flex-1 bg-emerald-500 text-white py-2 rounded-lg font-bold text-xs hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-500/20">✅ {t.accept}</button>
+                                <button onClick={() => handleRejectQuote(msg.id, {type: msg.type, quoteData: msg.quoteData})} className="flex-1 bg-red-500/10 text-red-500 py-2 rounded-lg font-bold text-xs hover:bg-red-500/20 transition-colors">❌ {t.reject}</button>
                               </div>
                             ) : msg.quoteStatus === 'accepted' ? (
                               <div className="text-center py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold rounded-lg text-xs mt-2 flex items-center justify-center gap-1">
-                                <CheckCheck size={14}/> تم اعتماد العرض
+                                <CheckCheck size={14}/> {t.quoteAccepted}
                               </div>
                             ) : (
                               <div className="text-center py-2 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 font-bold rounded-lg text-xs mt-2 flex items-center justify-center gap-1">
-                                <X size={14}/> تم الرفض للتفاوض
+                                <X size={14}/> {t.quoteRejected}
                               </div>
                             )}
                           </div>
@@ -626,64 +664,34 @@ export default function ChatRoom() {
 
           {/* Input Area */}
           <div className={`p-3 relative z-20 ${isDarkMode ? 'bg-[#202c33]' : 'bg-[#f0f2f5]'}`}>
-            <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageUpload} className="hidden" />
-            <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" ref={docInputRef} onChange={handleDocUpload} className="hidden" />
-            {isRecording ? (
-              <div className={`flex items-center gap-4 p-2 rounded-full animate-pulse ${isDarkMode ? 'bg-red-900/40 border border-red-500/50' : 'bg-white border border-red-200 shadow-sm'}`}>
-                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center shadow-md ml-2"><Mic className="text-white animate-bounce mt-1" size={20} /></div>
-                <span className={`font-black text-sm flex-1 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{t.recording}</span>
-                <span className={`font-mono font-black text-lg ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{formatTime(recordingTime)}</span>
-                <button type="button" onClick={cancelRecording} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"><X size={24}/></button>
-                <button type="button" onClick={sendAudioMessage} className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md transition-transform hover:scale-110">
-                  <Send size={18} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/>
-                </button>
+            <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+              <div className="flex gap-1 mb-1">
+                <button type="button" onClick={() => docInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><Paperclip size={22}/></button>
+                <button type="button" onClick={() => imageInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><ImageIcon size={22}/></button>
               </div>
-            ) : (
-              <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-                <div className="flex gap-1 mb-1">
-                  <button type="button" onClick={() => docInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><Paperclip size={22}/></button>
-                  <button type="button" onClick={() => imageInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><ImageIcon size={22}/></button>
-                </div>
-                <div className={`flex-1 relative rounded-2xl overflow-hidden transition-colors ${isDarkMode ? 'bg-[#2a3942]' : 'bg-white shadow-sm'}`}>
-                  <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={t.typeMessage} className="w-full max-h-32 p-3 bg-transparent outline-none font-medium resize-none text-sm leading-relaxed custom-scrollbar dark:text-white" rows="1" />
-                </div>
-                <div className="mb-1">
-                  {newMessage.trim() ? (
-                    <button type="submit" className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md"><Send size={20} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/></button>
-                  ) : (
-                    <button type="button" onClick={startRecording} className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md"><Mic size={20} /></button>
-                  )}
-                </div>
-              </form>
-            )}
+              <div className={`flex-1 relative rounded-2xl overflow-hidden transition-colors ${isDarkMode ? 'bg-[#2a3942]' : 'bg-white shadow-sm'}`}>
+                <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={t.typeMessage} className="w-full max-h-32 p-3 bg-transparent outline-none font-medium resize-none text-sm leading-relaxed custom-scrollbar dark:text-white" rows="1" />
+              </div>
+              <div className="mb-1">
+                {newMessage.trim() ? (
+                  <button type="submit" className={`p-3 text-white rounded-full transition-transform shadow-md ${newMessage.trim() ? 'bg-teal-500 hover:bg-teal-600 hover:scale-105' : 'bg-teal-500/50 cursor-not-allowed'}`} disabled={!newMessage.trim()}>
+                    <Send size={20} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/>
+                  </button>
+                ) : (
+                  <button type="button" onClick={startRecording} className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md"><Mic size={20} /></button>
+                )}
+              </div>
+            </form>
           </div>
           </>
           ) : (
             <div className="flex-1 flex items-center justify-center flex-col gap-4 text-slate-400 z-10">
               <div className="w-24 h-24 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4"><Briefcase size={40}/></div>
-              <h2 className="text-xl font-black">اختر محادثة للبدء</h2>
+              <h2 className="text-xl font-black">{t.selectChatPrompt}</h2>
             </div>
           )}
         </div>
       </div>
-      {activeCall && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-xl animate-fade-in">
-          <div className="text-center">
-            <div className="relative mb-8 mx-auto w-32 h-32">
-              <div className="absolute inset-0 bg-teal-500 rounded-full animate-ping opacity-20"></div>
-              <div className="absolute inset-2 bg-teal-500 rounded-full animate-ping opacity-40 animation-delay-300"></div>
-              <div className="relative w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-5xl font-black text-white shadow-2xl shadow-teal-500/50">{activeChatData?.avatar}</div>
-            </div>
-            <h2 className="text-3xl font-black text-white mb-2">{activeChatData?.name}</h2>
-            <p className="text-teal-400 font-bold mb-12 animate-pulse">{t.calling} ({activeCall === 'video' ? 'فيديو' : 'صوت'})</p>
-            <div className="flex justify-center gap-6">
-              <button className="p-5 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors border border-slate-700"><Mic size={28}/></button>
-              {activeCall === 'video' && <button className="p-5 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors border border-slate-700"><Video size={28}/></button>}
-              <button onClick={() => setActiveCall(null)} className="p-5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-110 shadow-lg shadow-red-500/30"><Phone size={28} className="rotate-[135deg]"/></button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
