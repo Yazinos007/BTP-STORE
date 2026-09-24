@@ -320,17 +320,17 @@ export default function ChatRoom() {
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
           
-          {/* 🚀 الخلفية السحرية: تم الإصلاح لتصبح الرسوم بيضاء ناصعة في الوضع الداكن */}
+          {/* 🚀 الخلفية السحرية: تم ضبطها بدقة للوضعين الفاتح والداكن */}
           <div 
             className="absolute inset-0 pointer-events-none z-0"
             style={{
               backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
               backgroundRepeat: 'repeat',
               backgroundSize: '400px',
-              // شفافية 25% ممتازة للوضع الداكن لكي لا تزعج العين، و 50% للوضع الفاتح
-              opacity: isDarkMode ? 0.25 : 0.5,
-              // السر هنا: عكسنا الألوان + حولناها لرمادي + ضاعفنا الإضاءة لتصبح بيضاء تماماً
-              filter: isDarkMode ? 'invert(1) grayscale(100%) brightness(200%)' : 'none'
+              // في الوضع الفاتح نتركها 100% طبيعية كما في تطبيق واتساب، وفي الداكن نقللها لتندمج مع الأسود
+              opacity: isDarkMode ? 0.08 : 1, 
+              // نعكس الألوان في الوضع الداكن فقط ونزيد التباين قليلاً لتظهر الرسوم البيضاء
+              filter: isDarkMode ? 'invert(1) contrast(1.2)' : 'none' 
             }}
           ></div>
           
