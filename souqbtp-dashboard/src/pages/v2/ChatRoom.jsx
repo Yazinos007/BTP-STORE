@@ -102,8 +102,8 @@ export default function ChatRoom() {
       try { return JSON.parse(savedMessages); } catch (e) { return null; }
     }
     return [
-      { id: 1, chatId: 1, senderId: 1, text: "مرحباً بك في شركة لافارچ، كيف يمكننا خدمتك اليوم؟", time: "10:00 AM", date: "13 أبريل", isMe: false },
-      { id: 2, chatId: 1, senderId: 'me', text: "أهلاً، أحتاج إلى عرض سعر لكمية من الإسمنت.", time: "10:05 AM", date: "14 أبريل", isMe: true }
+      { id: 1, chatId: 1, senderId: 1, text: "مرحباً بك في شركة لافارچ، كيف يمكننا خدمتك اليوم؟", time: "10:00", date: "13 أبريل", isMe: false },
+      { id: 2, chatId: 1, senderId: 'me', text: "أهلاً، أحتاج إلى عرض سعر لكمية من الإسمنت.", time: "10:05", date: "14 أبريل", isMe: true }
     ];
   });
 
@@ -271,16 +271,18 @@ export default function ChatRoom() {
   const activeChatData = chats.find(c => c.id === activeChat) || chats[0];
   const currentMessages = messages.filter(msg => msg.chatId === activeChat);
 
+  // ألوان الغلاف الخارجي للمكون
   const mainWrapperBg = isDarkMode 
     ? 'bg-slate-950' 
     : 'bg-emerald-50'; 
   
+  // ألوان القائمة الجانبية
   const panelBg = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
-  const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-600';
+  const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
   const glassInputBg = isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-100 border-slate-200 text-slate-800';
 
-  // 🚀 خلفية الواتساب (Doodle Pattern) مع التكيف للوضع الليلي/النهاري
+  // 🚀 خلفية الواتساب (Doodle Pattern)
   const whatsappPattern = "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')";
 
   return (
@@ -288,8 +290,8 @@ export default function ChatRoom() {
       <div className={`flex h-full rounded-3xl border ${panelBg} overflow-hidden`}>
         
         {/* Inbox Sidebar */}
-        <div className={`w-full md:w-80 flex-shrink-0 flex flex-col border-r ${isRtl ? 'border-l border-r-0' : 'border-r'} ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
-          <div className={`p-5 border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+        <div className={`w-full md:w-80 flex-shrink-0 flex flex-col border-r relative z-20 ${isRtl ? 'border-l border-r-0' : 'border-r'} ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white'}`}>
+          <div className={`p-5 border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
             <h2 className={`text-xl md:text-2xl font-black mb-4 flex items-center gap-2 ${textTitle}`}>
               <Briefcase className="text-teal-600 dark:text-teal-500" /> {t.title}
             </h2>
@@ -301,7 +303,7 @@ export default function ChatRoom() {
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {chats.map(chat => (
-              <div key={chat.id} onClick={() => setActiveChat(chat.id)} className={`p-4 border-b cursor-pointer transition-colors flex items-center gap-3 ${isDarkMode ? 'border-slate-800 hover:bg-slate-800/80' : 'border-slate-200 hover:bg-white'} ${activeChat === chat.id ? (isDarkMode ? 'bg-slate-800 border-l-4 border-l-teal-500' : 'bg-white border-l-4 border-l-teal-600 shadow-sm') : 'border-l-4 border-l-transparent'}`}>
+              <div key={chat.id} onClick={() => setActiveChat(chat.id)} className={`p-4 border-b cursor-pointer transition-colors flex items-center gap-3 ${isDarkMode ? 'border-slate-800 hover:bg-slate-800/80' : 'border-slate-100 hover:bg-slate-50'} ${activeChat === chat.id ? (isDarkMode ? 'bg-slate-800 border-l-4 border-l-teal-500' : 'bg-emerald-50/50 border-l-4 border-l-teal-600 shadow-sm') : 'border-l-4 border-l-transparent'}`}>
                 <div className="relative">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${activeChat === chat.id ? 'bg-teal-500 text-white shadow-md' : isDarkMode ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}>
                     {chat.avatar}
@@ -315,20 +317,21 @@ export default function ChatRoom() {
                   </div>
                   <p className={`text-xs truncate ${chat.unread > 0 ? (isDarkMode ? 'text-white font-bold' : 'text-slate-900 font-black') : textMuted}`}>{chat.lastMessage}</p>
                 </div>
-                {chat.unread > 0 && <span className="w-5 h-5 bg-pink-500 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-md">{chat.unread}</span>}
+                {chat.unread > 0 && <span className="w-5 h-5 bg-teal-500 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-md">{chat.unread}</span>}
               </div>
             ))}
           </div>
         </div>
 
         {/* Chat Window */}
-        <div className={`hidden md:flex flex-1 flex-col relative ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
+        <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
           {/* 🚀 إضافة الخلفية ذات النمط الزخرفي (Doodle) */}
           <div 
-            className={`absolute inset-0 pointer-events-none ${isDarkMode ? 'opacity-[0.15]' : 'opacity-[0.4]'}`}
+            className={`absolute inset-0 pointer-events-none z-0 ${isDarkMode ? 'opacity-[0.06]' : 'opacity-[0.35]'}`}
             style={{ backgroundImage: whatsappPattern, backgroundRepeat: 'repeat', backgroundSize: '400px' }}
           ></div>
           
+          {/* Header */}
           <div className={`p-4 border-b flex justify-between items-center z-20 ${isDarkMode ? 'bg-[#202c33] border-slate-700/50' : 'bg-[#f0f2f5] border-slate-200'}`}>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-white bg-gradient-to-br from-teal-400 to-teal-600 shadow-md`}>
@@ -352,7 +355,7 @@ export default function ChatRoom() {
                   <MoreVertical size={18}/>
                 </button>
                 {showDropdown && (
-                  <div className={`absolute top-full ${isRtl ? 'left-0' : 'right-0'} mt-2 w-48 rounded-2xl shadow-xl border overflow-hidden z-50 animate-fade-in ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  <div className={`absolute top-full ${isRtl ? 'left-0' : 'right-0'} mt-2 w-48 rounded-2xl shadow-xl border overflow-hidden z-50 animate-fade-in ${isDarkMode ? 'bg-[#202c33] border-slate-700' : 'bg-white border-slate-200'}`}>
                     <button onClick={handleClearChat} className="w-full px-4 py-3 flex items-center gap-3 text-red-500 hover:bg-red-500/10 font-bold text-sm transition-colors">
                       <Trash2 size={16}/> {t.clearChat}
                     </button>
@@ -362,7 +365,8 @@ export default function ChatRoom() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar relative z-10" onClick={() => setShowDropdown(false)}>
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar relative z-10" onClick={() => setShowDropdown(false)}>
             
             {/* 🚀 خريطة الرسائل مع فواصل التاريخ */}
             {currentMessages.map((msg, index) => {
@@ -373,8 +377,8 @@ export default function ChatRoom() {
                   
                   {/* شارة التاريخ */}
                   {showDate && (
-                    <div className="flex justify-center my-6 animate-fade-in">
-                      <span className={`px-4 py-1.5 text-xs font-black rounded-full shadow-sm ${isDarkMode ? 'bg-[#202c33] text-slate-300 border border-slate-700' : 'bg-white text-slate-500 border border-slate-200'}`}>
+                    <div className="flex justify-center my-4 animate-fade-in">
+                      <span className={`px-3 py-1 text-[11px] font-bold rounded-lg shadow-sm ${isDarkMode ? 'bg-[#182229] text-slate-400 border border-slate-700/50' : 'bg-white text-slate-500 border border-slate-100'}`}>
                         {msg.date || "اليوم"}
                       </span>
                     </div>
@@ -391,20 +395,28 @@ export default function ChatRoom() {
                     <div className={`max-w-[85%] md:max-w-[65%] flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
                       
                       {(!msg.type || msg.type === 'text') && (
-                        <div className={`px-4 py-3 shadow-sm ${msg.isMe ? 'bg-[#005c4b] text-white rounded-2xl rounded-tr-sm' : isDarkMode ? 'bg-[#202c33] text-white rounded-2xl rounded-tl-sm' : 'bg-white text-slate-800 rounded-2xl rounded-tl-sm'}`}>
-                          <p className="text-sm font-bold leading-relaxed">{msg.text}</p>
+                        <div className={`px-3 py-2 shadow-sm ${msg.isMe ? (isDarkMode ? 'bg-[#005c4b] text-white' : 'bg-[#dcf8c6] text-slate-900') : (isDarkMode ? 'bg-[#202c33] text-white' : 'bg-white text-slate-900')} rounded-2xl ${msg.isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
+                          <p className="text-sm font-medium leading-relaxed" style={{ wordBreak: 'break-word' }}>{msg.text}</p>
+                          <div className={`flex items-center gap-1 mt-1 justify-end ${msg.isMe ? (isDarkMode ? 'text-teal-200/70' : 'text-teal-700/60') : textMuted}`}>
+                            <span className="text-[10px] font-bold">{msg.time}</span>
+                            {msg.isMe && <CheckCheck size={14} className={isDarkMode ? 'text-[#53bdeb]' : 'text-[#34b7f1]'} />}
+                          </div>
                         </div>
                       )}
 
                       {msg.type === 'image' && (
-                        <div className={`p-1.5 shadow-sm ${msg.isMe ? 'bg-[#005c4b] rounded-2xl rounded-tr-sm' : isDarkMode ? 'bg-[#202c33] rounded-2xl rounded-tl-sm' : 'bg-white rounded-2xl rounded-tl-sm'}`}>
+                        <div className={`p-1 shadow-sm ${msg.isMe ? (isDarkMode ? 'bg-[#005c4b]' : 'bg-[#dcf8c6]') : (isDarkMode ? 'bg-[#202c33]' : 'bg-white')} rounded-2xl ${msg.isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
                           <img src={msg.fileUrl} alt="attachment" className="max-w-[250px] rounded-xl object-cover" />
+                           <div className="flex items-center gap-1 mt-1 px-1 justify-end">
+                            <span className="text-[10px] font-bold text-slate-500">{msg.time}</span>
+                            {msg.isMe && <CheckCheck size={14} className={isDarkMode ? 'text-[#53bdeb]' : 'text-[#34b7f1]'} />}
+                          </div>
                         </div>
                       )}
 
                       {msg.type === 'document' && (
-                        <div className={`p-4 shadow-sm flex items-center gap-3 ${msg.isMe ? 'bg-[#005c4b] text-white rounded-2xl rounded-tr-sm' : isDarkMode ? 'bg-[#202c33] text-white rounded-2xl rounded-tl-sm' : 'bg-white text-slate-800 rounded-2xl rounded-tl-sm'}`}>
-                          <div className="p-3 bg-black/10 dark:bg-white/10 rounded-xl"><FileText size={24}/></div>
+                        <div className={`p-3 shadow-sm flex items-center gap-3 ${msg.isMe ? (isDarkMode ? 'bg-[#005c4b] text-white' : 'bg-[#dcf8c6] text-slate-900') : (isDarkMode ? 'bg-[#202c33] text-white' : 'bg-white text-slate-900')} rounded-2xl ${msg.isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
+                          <div className="p-2 bg-black/5 dark:bg-white/10 rounded-xl"><FileText size={24}/></div>
                           <div>
                             <p className="text-sm font-black">{msg.fileName}</p>
                             <p className="text-xs opacity-80">{msg.fileSize}</p>
@@ -413,15 +425,15 @@ export default function ChatRoom() {
                       )}
 
                       {msg.type === 'audio' && (
-                        <div className={`p-2 shadow-sm flex items-center gap-2 ${msg.isMe ? 'bg-[#005c4b] text-white rounded-2xl rounded-tr-sm' : isDarkMode ? 'bg-[#202c33] text-white rounded-2xl rounded-tl-sm' : 'bg-white text-slate-800 rounded-2xl rounded-tl-sm'}`}>
+                        <div className={`p-1.5 shadow-sm flex items-center gap-2 ${msg.isMe ? (isDarkMode ? 'bg-[#005c4b] text-white' : 'bg-[#dcf8c6] text-slate-900') : (isDarkMode ? 'bg-[#202c33] text-white' : 'bg-white text-slate-900')} rounded-2xl ${msg.isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
                           <audio controls src={msg.audioUrl} className="h-10 w-[240px] outline-none rounded-full" />
                         </div>
                       )}
 
                       {msg.type === 'order_card' && (
-                        <div className={`p-1 shadow-sm border-2 ${msg.isMe ? 'bg-[#005c4b]/20 border-[#005c4b]/40 rounded-2xl rounded-tr-sm' : isDarkMode ? 'bg-[#202c33] border-slate-700/50 rounded-2xl rounded-tl-sm' : 'bg-white border-slate-200 rounded-2xl rounded-tl-sm'}`}>
-                          <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-900/80' : 'bg-white/90'}`}>
-                            <div className={`flex items-center gap-2 mb-3 pb-3 border-b border-dashed ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                        <div className={`p-1 shadow-sm border ${msg.isMe ? (isDarkMode ? 'bg-[#005c4b]/30 border-[#005c4b]/50' : 'bg-teal-50 border-teal-200') : (isDarkMode ? 'bg-[#202c33] border-slate-700/50' : 'bg-white border-slate-200')} rounded-2xl ${msg.isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
+                          <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-900/60' : 'bg-white/60'}`}>
+                            <div className={`flex items-center gap-2 mb-3 pb-3 border-b border-dashed ${isDarkMode ? 'border-slate-700/50' : 'border-slate-300'}`}>
                               <ShoppingCart className="text-teal-600 dark:text-teal-500" size={20}/>
                               <h4 className={`font-black text-sm ${textTitle}`}>{t.orderCardTitle}</h4>
                             </div>
@@ -438,13 +450,12 @@ export default function ChatRoom() {
                               <span className="font-black text-teal-700 dark:text-teal-500 text-lg" dir="ltr">{msg.orderData.total.toLocaleString()} {msg.orderData.items[0]?.product?.currency || 'MAD'}</span>
                             </div>
                           </div>
+                           <div className="flex items-center gap-1 mt-1 px-1 justify-end">
+                            <span className="text-[10px] font-bold text-slate-500">{msg.time}</span>
+                            {msg.isMe && <CheckCheck size={14} className={isDarkMode ? 'text-[#53bdeb]' : 'text-[#34b7f1]'} />}
+                          </div>
                         </div>
                       )}
-
-                      <div className={`flex items-center gap-1 mt-1 px-1 ${msg.isMe ? (isDarkMode ? 'text-teal-500' : 'text-slate-500') : textMuted}`}>
-                        <span className="text-[10px] font-bold">{msg.time}</span>
-                        {msg.isMe && <CheckCheck size={14} className={isDarkMode ? 'text-teal-400' : 'text-teal-600'} />}
-                      </div>
                     </div>
 
                     {!msg.isMe && (
@@ -459,7 +470,7 @@ export default function ChatRoom() {
             
             {isTyping && (
               <div className="flex justify-start animate-fade-in">
-                <div className={`p-4 shadow-sm flex items-center gap-2 ${isDarkMode ? 'bg-[#202c33] text-slate-300 rounded-2xl rounded-tl-sm' : 'bg-white text-slate-500 rounded-2xl rounded-tl-sm'}`}>
+                <div className={`p-3 shadow-sm flex items-center gap-2 ${isDarkMode ? 'bg-[#202c33] text-slate-300' : 'bg-white text-slate-500'} rounded-2xl rounded-tl-sm`}>
                   <span className="w-2 h-2 rounded-full bg-teal-500 animate-bounce" style={{animationDelay: '0ms'}}></span>
                   <span className="w-2 h-2 rounded-full bg-teal-500 animate-bounce" style={{animationDelay: '150ms'}}></span>
                   <span className="w-2 h-2 rounded-full bg-teal-500 animate-bounce" style={{animationDelay: '300ms'}}></span>
@@ -470,13 +481,14 @@ export default function ChatRoom() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className={`p-4 z-20 ${isDarkMode ? 'bg-[#202c33] border-t border-slate-700/50' : 'bg-[#f0f2f5] border-t border-slate-200'}`}>
+          {/* Input Area */}
+          <div className={`p-3 z-20 ${isDarkMode ? 'bg-[#202c33]' : 'bg-[#f0f2f5]'}`}>
             <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageUpload} className="hidden" />
             <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" ref={docInputRef} onChange={handleDocUpload} className="hidden" />
 
             {isRecording ? (
-              <div className={`flex items-center gap-4 p-3 rounded-full animate-pulse ${isDarkMode ? 'bg-red-900/40 border border-red-500/50' : 'bg-white border border-red-200 shadow-sm'}`}>
-                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center shadow-md">
+              <div className={`flex items-center gap-4 p-2 rounded-full animate-pulse ${isDarkMode ? 'bg-red-900/40 border border-red-500/50' : 'bg-white border border-red-200 shadow-sm'}`}>
+                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center shadow-md ml-2">
                    <Mic className="text-white animate-bounce mt-1" size={20} />
                 </div>
                 <span className={`font-black text-sm flex-1 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{t.recording}</span>
@@ -490,8 +502,8 @@ export default function ChatRoom() {
             ) : (
               <form onSubmit={handleSendMessage} className="flex items-end gap-2">
                 <div className="flex gap-1 mb-1">
-                  <button type="button" onClick={() => docInputRef.current.click()} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><Paperclip size={22}/></button>
-                  <button type="button" onClick={() => imageInputRef.current.click()} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><ImageIcon size={22}/></button>
+                  <button type="button" onClick={() => docInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><Paperclip size={22}/></button>
+                  <button type="button" onClick={() => imageInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><ImageIcon size={22}/></button>
                 </div>
                 
                 <div className={`flex-1 relative rounded-2xl overflow-hidden transition-colors ${isDarkMode ? 'bg-[#2a3942]' : 'bg-white shadow-sm'}`}>
@@ -500,18 +512,18 @@ export default function ChatRoom() {
                     onChange={e => setNewMessage(e.target.value)}
                     onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                     placeholder={t.typeMessage} 
-                    className="w-full max-h-32 p-3 bg-transparent outline-none font-bold resize-none text-sm leading-relaxed custom-scrollbar dark:text-white"
+                    className="w-full max-h-32 p-3 bg-transparent outline-none font-medium resize-none text-sm leading-relaxed custom-scrollbar dark:text-white"
                     rows="1"
                   />
                 </div>
                 
                 <div className="mb-1">
                   {newMessage.trim() ? (
-                    <button type="submit" className="p-3.5 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md">
+                    <button type="submit" className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md">
                       <Send size={20} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/>
                     </button>
                   ) : (
-                    <button type="button" onClick={startRecording} className="p-3.5 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md">
+                    <button type="button" onClick={startRecording} className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md">
                       <Mic size={20} />
                     </button>
                   )}
@@ -524,6 +536,7 @@ export default function ChatRoom() {
 
       {activeCall && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-xl animate-fade-in">
+          {/* كود المكالمات كما هو لم يتغير */}
           <div className="text-center">
             <div className="relative mb-8 mx-auto w-32 h-32">
               <div className="absolute inset-0 bg-teal-500 rounded-full animate-ping opacity-20"></div>
