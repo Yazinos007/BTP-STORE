@@ -628,15 +628,40 @@ export default function BTPHub() {
           onClose={() => setIsCartOpen(false)} 
           cart={cart} 
           onRemove={removeFromCart} 
-          onUpdateQuantity={updateQuantity} // 👈 دالة تعديل الكمية
+          onUpdateQuantity={updateQuantity}
+          
+          // 🚀 الكود الجديد لزر التفاوض
           onNegotiate={() => {
-            // توجيه المستخدم لصفحة الرسائل أو فتح نافذة للتفاوض
-            alert("Redirection vers la salle de négociation...");
-            setIsCartOpen(false);
+            setIsCartOpen(false); // إغلاق السلة أولاً
+            
+            // 1. حساب المجموع الكلي للسلة بدقة (بما فيها سعر الجملة)
+            const totalAmount = cart.reduce((sum, item) => {
+              const p = item.product;
+              const activePrice = item.qty >= (p.min_wholesale_qty || 999999) ? (p.price_wholesale || p.price) : (p.price_retail || p.price);
+              return sum + (activePrice * item.qty);
+            }, 0);
+
+            // 2. تجهيز هيكل الطلبية لإرساله للشات
+            const orderPayload = {
+              items: cart,
+              total: totalAmount
+            };
+
+            // 3. جلب اسم المورد (نأخذ مورد أول منتج كمثال)
+            const supplier = cart[0]?.product?.supplier || "المورد";
+
+            // 4. التوجيه الفعلي لصفحة الشات مع تمرير البيانات في الـ State
+            // ملاحظة: تأكد أن '/messages' هو الرابط الصحيح لصفحة الشات في الـ Router الخاص بك
+            navigate('/messages', {
+              state: {
+                cartOrder: orderPayload,
+                supplierName: supplier
+              }
+            });
           }}
+          
           onCheckout={() => {
-            // المنطق الذي سيبدأ الـ Automation لاحقاً
-            alert("Validation des commandes déclenchée ! Les fournisseurs recevront une notification automatique.");
+            alert("Validation des commandes déclenchée !");
             setIsCartOpen(false);
           }}
         />
