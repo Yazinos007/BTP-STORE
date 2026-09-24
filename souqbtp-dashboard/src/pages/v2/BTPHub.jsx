@@ -650,9 +650,7 @@ export default function BTPHub() {
             // 3. جلب اسم المورد (نأخذ مورد أول منتج كمثال)
             const supplier = cart[0]?.product?.supplier || "المورد";
 
-            // 4. التوجيه الفعلي لصفحة الشات مع تمرير البيانات في الـ State
-            // ملاحظة: تأكد أن '/messages' هو الرابط الصحيح لصفحة الشات في الـ Router الخاص بك
-            navigate('/messages', {
+            navigate('./ChatRoom', {
               state: {
                 cartOrder: orderPayload,
                 supplierName: supplier
