@@ -650,7 +650,7 @@ export default function BTPHub() {
             // 3. جلب اسم المورد (نأخذ مورد أول منتج كمثال)
             const supplier = cart[0]?.product?.supplier || "المورد";
 
-            navigate('/ChatRoom', {
+            navigate('v2/messages', {
               state: {
                 cartOrder: orderPayload,
                 supplierName: supplier
