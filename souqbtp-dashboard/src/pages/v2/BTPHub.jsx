@@ -587,8 +587,12 @@ export default function BTPHub() {
           <h2 className="text-2xl font-black text-slate-800 dark:text-emerald-400 mb-2">{t.rfq.title}</h2>
           <p className="text-slate-600 dark:text-slate-300">{t.rfq.desc}</p>
         </div>
-        <button className="bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2 whitespace-nowrap">
-          <FileText className="w-5 h-5" />
+        
+        <button 
+          onClick={() => alert("نافذة الطلبات المخصصة قيد التطوير... ستتوفر قريباً!")} 
+          className="bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2 whitespace-nowrap"
+        >
+        <FileText className="w-5 h-5" />
           {t.rfq.btn}
         </button>
       </div>
