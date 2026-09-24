@@ -47,7 +47,14 @@ export default function ChatRoom() {
       accept: "قبول", reject: "رفض", negotiate: "قيد التفاوض...",
       recording: "جاري التسجيل...", cancel: "إلغاء", send: "إرسال",
       calling: "جاري الاتصال...", endCall: "إنهاء المكالمة",
-      clearChat: "إفراغ المحادثة", deleteMsg: "حذف", typing: "يكتب الآن..."
+      clearChat: "إفراغ المحادثة", deleteMsg: "حذف", typing: "يكتب الآن...",
+      // 🚀 نصوص الرسائل الآلية
+      supplierReplyOrder: "لقد جهزنا لك عرض السعر النهائي:",
+      systemAccept: "🎉 تم اعتماد العرض بنجاح! تم تحويل الطلبية للتحضير.",
+      negotiateMsg: "أريد التفاوض حول هذا العرض.. هل يمكننا تخفيض السعر الإجمالي أو إزالة تكلفة النقل؟",
+      genericReply: "شكراً لتواصلك! سيتم مراجعة رسالتك قريباً.",
+      cartOrderTitle: "طلبية من السلة",
+      newNegotiation: "طلب تفاوض جديد"
     },
     fr: {
       title: "Boîte de Réception", searchPlaceholder: "Rechercher...",
@@ -56,7 +63,14 @@ export default function ChatRoom() {
       accept: "Accepter", reject: "Refuser", negotiate: "En négociation...",
       recording: "Enregistrement...", cancel: "Annuler", send: "Envoyer",
       calling: "Appel en cours...", endCall: "Raccrocher",
-      clearChat: "Vider le chat", deleteMsg: "Supprimer", typing: "Entraîne d'écrire..."
+      clearChat: "Vider le chat", deleteMsg: "Supprimer", typing: "Entraîne d'écrire...",
+      // 🚀 Textes automatisés
+      supplierReplyOrder: "Nous avons préparé votre devis final :",
+      systemAccept: "🎉 Devis validé avec succès ! La commande est en préparation.",
+      negotiateMsg: "Je souhaite négocier cette offre. Pouvons-nous réduire le prix total ou annuler les frais de livraison ?",
+      genericReply: "Merci pour votre message ! Nous allons l'examiner.",
+      cartOrderTitle: "Commande du panier",
+      newNegotiation: "Nouvelle demande de négociation"
     },
     en: {
        title: "Inbox", searchPlaceholder: "Search chats...",
@@ -65,7 +79,14 @@ export default function ChatRoom() {
       accept: "Accept", reject: "Reject", negotiate: "In Negotiation...",
       recording: "Recording...", cancel: "Cancel", send: "Send",
       calling: "Calling...", endCall: "End Call",
-      clearChat: "Clear Chat", deleteMsg: "Delete", typing: "Typing..."
+      clearChat: "Clear Chat", deleteMsg: "Delete", typing: "Typing...",
+      // 🚀 Automated texts
+      supplierReplyOrder: "We have prepared your final quote:",
+      systemAccept: "🎉 Quote successfully accepted! The order is now in preparation.",
+      negotiateMsg: "I would like to negotiate this offer. Can we reduce the total price or remove the shipping cost?",
+      genericReply: "Thank you for reaching out! Your message will be reviewed.",
+      cartOrderTitle: "Cart Order",
+      newNegotiation: "New negotiation request"
     }
   }[language] || t.ar;
 
@@ -186,12 +207,27 @@ export default function ChatRoom() {
     
     await insertMessageToDB(activeChat, 'text', { text: textToSend });
     
-    // محاكاة رد المورد
+    // محاكاة رد المورد بلغة المستخدم
     setIsTyping(true);
     setTimeout(() => {
-      insertMessageToDB(activeChat, 'text', { text: "شكراً لتواصلك! سيتم مراجعة رسالتك." }, 'provider');
+      insertMessageToDB(activeChat, 'text', { text: t.genericReply }, 'provider');
       setIsTyping(false);
     }, 2500);
+  };
+
+  const handleAcceptQuote = async (msgId, originalData) => {
+    const updatedContent = JSON.stringify({ ...originalData, quoteStatus: 'accepted' });
+    await supabase.from('messages').update({ content: updatedContent }).eq('id', msgId);
+    
+    setTimeout(() => {
+      insertMessageToDB(activeChat, 'system', { text: t.systemAccept }, 'system');
+    }, 500);
+  };
+
+  const handleRejectQuote = async (msgId, originalData) => {
+    const updatedContent = JSON.stringify({ ...originalData, quoteStatus: 'rejected' });
+    await supabase.from('messages').update({ content: updatedContent }).eq('id', msgId);
+    setNewMessage(t.negotiateMsg);
   };
 
   // 4. معالجة طلبات السلة
@@ -246,21 +282,6 @@ export default function ChatRoom() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
-
-  const handleAcceptQuote = async (msgId, originalData) => {
-    const updatedContent = JSON.stringify({ ...originalData, quoteStatus: 'accepted' });
-    await supabase.from('messages').update({ content: updatedContent }).eq('id', msgId);
-    
-    setTimeout(() => {
-      insertMessageToDB(activeChat, 'system', { text: "🎉 تم اعتماد العرض بنجاح! تم تحويل الطلبية للتحضير." }, 'system');
-    }, 500);
-  };
-
-  const handleRejectQuote = async (msgId, originalData) => {
-    const updatedContent = JSON.stringify({ ...originalData, quoteStatus: 'rejected' });
-    await supabase.from('messages').update({ content: updatedContent }).eq('id', msgId);
-    setNewMessage("أريد التفاوض حول هذا العرض.. هل يمكننا تخفيض السعر الإجمالي أو إزالة تكلفة النقل؟");
-  };
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
