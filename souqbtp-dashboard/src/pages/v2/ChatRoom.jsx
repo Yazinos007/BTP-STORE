@@ -320,14 +320,15 @@ export default function ChatRoom() {
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
           
-          {/* 🚀 الخلفية السحرية: تم إضافة filter لمعالجة الشفافية وعكس الألوان في الوضع الداكن */}
+          {/* 🚀 الخلفية تم إصلاحها بالكامل لتعمل بكفاءة في الوضعين */}
           <div 
             className="absolute inset-0 pointer-events-none z-0"
             style={{ 
               backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')", 
               backgroundRepeat: 'repeat', 
               backgroundSize: '400px',
-              filter: isDarkMode ? 'invert(1) opacity(0.08)' : 'opacity(0.6)'
+              opacity: isDarkMode ? 0.15 : 1, // تم رفعها لـ 1 في الوضع الفاتح، و 0.15 في الداكن
+              filter: isDarkMode ? 'invert(1)' : 'none' // عكس ألوان الخطوط في الوضع الداكن فقط
             }}
           ></div>
           
