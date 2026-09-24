@@ -245,12 +245,17 @@ export default function ChatRoom() {
   };
 
   // 4. معالجة طلبات السلة: تجميع الموردين وتحديث المحادثات
+  // 🚀 الحل: استخدام useRef لمنع إعادة الإرسال عند تغيير اللغة
+  const hasProcessedCart = useRef(false);
+
   useEffect(() => {
-    if (cartOrder && cartOrder.items && cartOrder.items.length > 0) {
+    // نتحقق من وجود طلب، ونتأكد أنه لم تتم معالجته مسبقاً في هذه الجلسة
+    if (cartOrder && cartOrder.items && cartOrder.items.length > 0 && !hasProcessedCart.current) {
       const processCartToDB = async () => {
+        hasProcessedCart.current = true; // علامة لمنع التكرار نهائياً
+
         const supplierGroups = {};
         
-        // تجميع المنتجات لكل مورد
         cartOrder.items.forEach(item => {
           const sup = item.product?.supplier || "المورد العام";
           if (!supplierGroups[sup]) supplierGroups[sup] = { items: [], total: 0 };
@@ -260,10 +265,7 @@ export default function ChatRoom() {
           supplierGroups[sup].total += activePrice * item.qty;
         });
 
-        // 🚀 معالجة الموردين الواحد تلو الآخر لمنع التكرار
         for (const [supName, groupData] of Object.entries(supplierGroups)) {
-          
-          // البحث عما إذا كانت هناك محادثة سابقة مع هذا المورد
           const { data: existingConvs } = await supabase
             .from('conversations')
             .select('id')
@@ -275,22 +277,23 @@ export default function ChatRoom() {
           if (existingConvs && existingConvs.length > 0) {
             targetConvId = existingConvs[0].id;
           } else {
+            // 🚀 استخدام المفاتيح الثابتة (Keys) بدلاً من الترجمة المباشرة لمنع أخطاء اللغة
             const { data: newConv } = await supabase.from('conversations').insert({
               client_name: supName,
               status: 'active',
-              project_name: t.cartOrderTitle,
-              last_message: t.newNegotiation
+              project_name: 'KEY_CART_ORDER_TITLE', 
+              last_message: 'KEY_NEW_NEGOTIATION'
             }).select().single();
             if (newConv) targetConvId = newConv.id;
           }
 
           if (targetConvId) {
-            setActiveChat(targetConvId); // فتح محادثة المورد فوراً
+            setActiveChat(targetConvId); 
             await insertMessageToDB(targetConvId, 'order_card', { orderData: groupData }, CURRENT_USER_TYPE);
 
             setIsTyping(true);
             setTimeout(async () => {
-              // 🚀 الرد وعرض السعر باللغة المطلوبة
+              // 🚀 استخدام المفتاح الثابت للرد الآلي
               await insertMessageToDB(targetConvId, 'text', { text: 'KEY_SUPPLIER_REPLY_ORDER' }, 'provider');
               
               const quotePayload = {
@@ -307,13 +310,13 @@ export default function ChatRoom() {
             }, 3000);
           }
         }
-        // تنظيف الـ History لمنع إعادة المعالجة عند التحديث
         window.history.replaceState({}, document.title); 
       };
       
       processCartToDB();
     }
-  }, [cartOrder, t.cartOrderTitle, t.newNegotiation, t.supplierReplyOrder]);
+  // 🚀 إزالة مراقبات الترجمة (t.xxx) تماماً لمنع إعادة التشغيل عند تغيير اللغة
+  }, [cartOrder]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
