@@ -36,10 +36,10 @@ export default function ChatRoom() {
   const [chats, setChats] = useState([]);
   const [messages, setMessages] = useState([]);
 
-  // 🚀 تصحيح: تحديد حساب المستخدم الحالي כـ تاجر تجزئة (retailer)
+  // تحديد حساب المستخدم الحالي
   const CURRENT_USER_TYPE = 'retailer';
 
-  // 🚀 قواميس الترجمة الشاملة لجميع أجزاء الدردشة
+  // قواميس الترجمة
   const t = {
     ar: {
       title: "صندوق الرسائل", searchPlaceholder: "ابحث في المحادثات...",
@@ -61,7 +61,10 @@ export default function ChatRoom() {
       transportTitle: "تكلفة النقل:",
       totalTitle: "الإجمالي:",
       quoteAccepted: "تم اعتماد العرض",
-      quoteRejected: "تم الرفض للتفاوض"
+      quoteRejected: "تم الرفض للتفاوض",
+      audioMessage: "رسالة صوتية",
+      imageMessage: "صورة مرفقة",
+      documentMessage: "مستند مرفق"
     },
     fr: {
       title: "Boîte de Réception", searchPlaceholder: "Rechercher...",
@@ -83,7 +86,10 @@ export default function ChatRoom() {
       transportTitle: "Transport :",
       totalTitle: "Total :",
       quoteAccepted: "Devis accepté",
-      quoteRejected: "Rejeté pour négociation"
+      quoteRejected: "Rejeté pour négociation",
+      audioMessage: "Message vocal",
+      imageMessage: "Image jointe",
+      documentMessage: "Document joint"
     },
     en: {
        title: "Inbox", searchPlaceholder: "Search chats...",
@@ -105,23 +111,31 @@ export default function ChatRoom() {
       transportTitle: "Transport:",
       totalTitle: "Total:",
       quoteAccepted: "Quote accepted",
-      quoteRejected: "Rejected for negotiation"
+      quoteRejected: "Rejected for negotiation",
+      audioMessage: "Voice message",
+      imageMessage: "Attached image",
+      documentMessage: "Attached document"
     }
   }[language] || t.ar;
-
-  // دالة لتحويل المفاتيح المخزنة في قاعدة البيانات إلى نصوص مترجمة فورياً
-  const renderTranslatedText = (text) => {
-    if (text === 'KEY_SUPPLIER_REPLY_ORDER') return t.supplierReplyOrder;
-    if (text === 'KEY_SYSTEM_ACCEPT') return t.systemAccept;
-    if (text === 'KEY_GENERIC_REPLY') return t.genericReply;
-    return text; // إذا كانت رسالة عادية كتبها المستخدم، يتم عرضها كما هي
-  };
 
   const getTodayDate = () => {
     return new Date().toLocaleDateString(language === 'ar' ? 'ar-EG' : 'fr-FR', { day: 'numeric', month: 'long' });
   };
 
-  // 1. جلب المحادثات من Supabase
+  // دالة الترجمة الفورية للمفاتيح
+  const renderTranslatedText = (text) => {
+    if (text === 'KEY_SUPPLIER_REPLY_ORDER') return t.supplierReplyOrder;
+    if (text === 'KEY_SYSTEM_ACCEPT') return t.systemAccept;
+    if (text === 'KEY_GENERIC_REPLY') return t.genericReply;
+    if (text === 'KEY_CART_ORDER_TITLE') return t.cartOrderTitle;
+    if (text === 'KEY_NEW_NEGOTIATION') return t.newNegotiation;
+    if (text === 'KEY_AUDIO_MSG') return t.audioMessage;
+    if (text === 'KEY_IMAGE_MSG') return t.imageMessage;
+    if (text === 'KEY_DOC_MSG') return t.documentMessage;
+    return text; 
+  };
+
+  // 1. جلب المحادثات
   useEffect(() => {
     const fetchConversations = async () => {
       const { data, error } = await supabase
@@ -137,20 +151,19 @@ export default function ChatRoom() {
           type: "supplier",
           unread: 0,
           status: "online",
-          lastMessage: conv.last_message || "لا توجد رسائل"
+          lastMessage: renderTranslatedText(conv.last_message || "لا توجد رسائل")
         }));
         setChats(formattedChats);
         
-        // تعيين أول محادثة كنشطة فقط إذا لم تكن هناك طلبيات سلة قادمة أو شات مفتوح
         if (formattedChats.length > 0 && !activeChat && (!cartOrder || cartOrder?.items?.length === 0)) {
           setActiveChat(formattedChats[0].id);
         }
       }
     };
     fetchConversations();
-  }, [cartOrder]);
+  }, [cartOrder, activeChat]); // إضافة activeChat لضمان عدم ضياع التحديد
 
-  // 2. جلب الرسائل والتحديث اللحظي
+  // 2. جلب الرسائل والتحديث اللحظي المستقر
   useEffect(() => {
     if (!activeChat) return;
 
@@ -189,7 +202,7 @@ export default function ChatRoom() {
     const subscription = supabase
       .channel(`messages_for_chat_${activeChat}`)
       .on('postgres_changes', { 
-        event: 'INSERT', 
+        event: '*', // الاستماع لكل شيء (إضافة، مسح، تعديل)
         schema: 'public', 
         table: 'messages',
         filter: `conversation_id=eq.${activeChat}`
@@ -203,11 +216,18 @@ export default function ChatRoom() {
     };
   }, [activeChat, language]);
 
-  // 3. دالة إرسال الرسائل إلى قاعدة البيانات
+  // 3. دالة إرسال الرسائل (مع دعم المفاتيح)
   const insertMessageToDB = async (chatId, type, contentObj, sender = CURRENT_USER_TYPE) => {
-    let finalContent = contentObj.text;
+    let finalContent = contentObj.text || contentObj.fileName || "File";
+    let lastMessageSummary = finalContent;
+
     if (type !== 'text') {
       finalContent = JSON.stringify({ type, ...contentObj });
+      if(type === 'audio') lastMessageSummary = 'KEY_AUDIO_MSG';
+      if(type === 'image') lastMessageSummary = 'KEY_IMAGE_MSG';
+      if(type === 'document') lastMessageSummary = 'KEY_DOC_MSG';
+      if(type === 'order_card') lastMessageSummary = 'KEY_CART_ORDER_TITLE';
+      if(type === 'quote_card') lastMessageSummary = 'KEY_SUPPLIER_REPLY_ORDER';
     }
 
     const { error } = await supabase.from('messages').insert({
@@ -219,9 +239,12 @@ export default function ChatRoom() {
 
     if (!error) {
       await supabase.from('conversations').update({ 
-        last_message: type === 'text' ? finalContent : `[${type}]`,
+        last_message: lastMessageSummary,
         updated_at: new Date()
       }).eq('id', chatId);
+      
+      // التحديث اللحظي للمحادثات
+      setChats(prev => prev.map(c => c.id === chatId ? {...c, lastMessage: renderTranslatedText(lastMessageSummary)} : c));
     } else {
       console.error("Error sending message:", error);
     }
@@ -236,7 +259,6 @@ export default function ChatRoom() {
     
     await insertMessageToDB(activeChat, 'text', { text: textToSend });
     
-    // محاكاة رد المورد
     setIsTyping(true);
     setTimeout(() => {
       insertMessageToDB(activeChat, 'text', { text: 'KEY_GENERIC_REPLY' }, 'provider');
@@ -244,18 +266,15 @@ export default function ChatRoom() {
     }, 2500);
   };
 
-  // 4. معالجة طلبات السلة: تجميع الموردين وتحديث المحادثات
-  // 🚀 الحل: استخدام useRef لمنع إعادة الإرسال عند تغيير اللغة
+  // 4. معالجة طلبات السلة بأمان (لمنع التكرار عند تغيير اللغة)
   const hasProcessedCart = useRef(false);
 
   useEffect(() => {
-    // نتحقق من وجود طلب، ونتأكد أنه لم تتم معالجته مسبقاً في هذه الجلسة
     if (cartOrder && cartOrder.items && cartOrder.items.length > 0 && !hasProcessedCart.current) {
       const processCartToDB = async () => {
-        hasProcessedCart.current = true; // علامة لمنع التكرار نهائياً
+        hasProcessedCart.current = true; 
 
         const supplierGroups = {};
-        
         cartOrder.items.forEach(item => {
           const sup = item.product?.supplier || "المورد العام";
           if (!supplierGroups[sup]) supplierGroups[sup] = { items: [], total: 0 };
@@ -277,7 +296,6 @@ export default function ChatRoom() {
           if (existingConvs && existingConvs.length > 0) {
             targetConvId = existingConvs[0].id;
           } else {
-            // 🚀 استخدام المفاتيح الثابتة (Keys) بدلاً من الترجمة المباشرة لمنع أخطاء اللغة
             const { data: newConv } = await supabase.from('conversations').insert({
               client_name: supName,
               status: 'active',
@@ -293,7 +311,6 @@ export default function ChatRoom() {
 
             setIsTyping(true);
             setTimeout(async () => {
-              // 🚀 استخدام المفتاح الثابت للرد الآلي
               await insertMessageToDB(targetConvId, 'text', { text: 'KEY_SUPPLIER_REPLY_ORDER' }, 'provider');
               
               const quotePayload = {
@@ -315,8 +332,7 @@ export default function ChatRoom() {
       
       processCartToDB();
     }
-  // 🚀 إزالة مراقبات الترجمة (t.xxx) تماماً لمنع إعادة التشغيل عند تغيير اللغة
-  }, [cartOrder]);
+  }, [cartOrder]); 
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -343,7 +359,12 @@ export default function ChatRoom() {
     return `${m}:${s}`;
   };
 
-  // دوال التسجيل والرفع
+  // 🚀 تفعيل زر المكالمات
+  const handleCall = (type) => {
+    setActiveCall(type);
+  };
+
+  // 🚀 تفعيل التسجيل الصوتي
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -399,6 +420,7 @@ export default function ChatRoom() {
     }
   };
 
+  // 🚀 تفعيل رفع الصور
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -409,20 +431,30 @@ export default function ChatRoom() {
     };
   };
 
+  // 🚀 تفعيل رفع المستندات
   const handleDocUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     insertMessageToDB(activeChat, 'document', { fileName: file.name, fileSize: (file.size / 1024 / 1024).toFixed(2) + " MB" });
   };
 
+  // 🚀 تفعيل الحذف الفوري للرسالة
   const handleDeleteMessage = async (id) => { 
-     await supabase.from('messages').delete().eq('id', id);
+     const { error } = await supabase.from('messages').delete().eq('id', id);
+     if (!error) {
+       // تحديث الواجهة فوراً دون انتظار WebSocket
+       setMessages(prev => prev.filter(msg => msg.id !== id));
+     }
   };
   
+  // 🚀 تفعيل التفريغ الفوري لمحادثة كاملة
   const handleClearChat = async () => {
     if (window.confirm("هل أنت متأكد من إفراغ محادثة هذا المورد فقط؟")) {
-      await supabase.from('messages').delete().eq('conversation_id', activeChat);
-      setShowDropdown(false);
+      const { error } = await supabase.from('messages').delete().eq('conversation_id', activeChat);
+      if (!error) {
+        setMessages([]); // تحديث الواجهة فوراً
+        setShowDropdown(false);
+      }
     }
   };
 
@@ -472,18 +504,14 @@ export default function ChatRoom() {
 
         {/* Chat Window */}
         <div className={`hidden md:flex flex-1 flex-col relative z-0 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]'}`}>
-          
-          {/* 🚀 الخلفية السحرية: نعتمد صورتك الأصلية فقط (لا روابط خارجية بعد الآن) */}
           <div 
             className="absolute inset-0 pointer-events-none z-0"
             style={{
               backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')",
               backgroundRepeat: 'repeat',
               backgroundSize: '400px',
-              // الشفافية 100% للوضع الفاتح ليكون واضحاً، و 80% للوضع الداكن
               opacity: isDarkMode ? 0.8 : 1, 
-              // نعكس ألوان الصورة في الوضع الداكن لتصبح الخطوط بيضاء
-              filter: isDarkMode ? 'invert(1)' : 'none'
+              mixBlendMode: isDarkMode ? 'lighten' : 'multiply'
             }}
           ></div>
           
@@ -505,8 +533,8 @@ export default function ChatRoom() {
             </div>
             
             <div className="flex gap-2 items-center">
-              <button onClick={() => setActiveCall('voice')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-200'}`}><Phone size={18}/></button>
-              <button onClick={() => setActiveCall('video')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-200'}`}><Video size={18}/></button>
+              <button onClick={() => handleCall('voice')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-200'}`}><Phone size={18}/></button>
+              <button onClick={() => handleCall('video')} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-200'}`}><Video size={18}/></button>
               <div className="relative">
                 <button onClick={() => setShowDropdown(!showDropdown)} className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-200'}`}>
                   <MoreVertical size={18}/>
@@ -603,7 +631,6 @@ export default function ChatRoom() {
                               {msg.orderData?.items?.map((item, idx) => (
                                 <li key={idx} className={`text-xs font-bold flex justify-between ${textMuted}`}>
                                   <span>{item.qty}x {item.product.name}</span>
-                                  <span dir="ltr">{(item.qty >= item.product.min_wholesale_qty ? item.product.price_wholesale : item.product.price_retail) * item.qty} {item.product.currency || 'MAD'}</span>
                                 </li>
                               ))}
                             </ul>
@@ -676,24 +703,38 @@ export default function ChatRoom() {
 
           {/* Input Area */}
           <div className={`p-3 relative z-20 ${isDarkMode ? 'bg-[#202c33]' : 'bg-[#f0f2f5]'}`}>
-            <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-              <div className="flex gap-1 mb-1">
-                <button type="button" onClick={() => docInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><Paperclip size={22}/></button>
-                <button type="button" onClick={() => imageInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><ImageIcon size={22}/></button>
+            <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageUpload} className="hidden" />
+            <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" ref={docInputRef} onChange={handleDocUpload} className="hidden" />
+            {isRecording ? (
+              <div className={`flex items-center gap-4 p-2 rounded-full animate-pulse ${isDarkMode ? 'bg-red-900/40 border border-red-500/50' : 'bg-white border border-red-200 shadow-sm'}`}>
+                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center shadow-md ml-2"><Mic className="text-white animate-bounce mt-1" size={20} /></div>
+                <span className={`font-black text-sm flex-1 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{t.recording}</span>
+                <span className={`font-mono font-black text-lg ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{formatTime(recordingTime)}</span>
+                <button type="button" onClick={cancelRecording} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"><X size={24}/></button>
+                <button type="button" onClick={sendAudioMessage} className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md transition-transform hover:scale-110">
+                  <Send size={18} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/>
+                </button>
               </div>
-              <div className={`flex-1 relative rounded-2xl overflow-hidden transition-colors ${isDarkMode ? 'bg-[#2a3942]' : 'bg-white shadow-sm'}`}>
-                <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={t.typeMessage} className="w-full max-h-32 p-3 bg-transparent outline-none font-medium resize-none text-sm leading-relaxed custom-scrollbar dark:text-white" rows="1" />
-              </div>
-              <div className="mb-1">
-                {newMessage.trim() ? (
-                  <button type="submit" className={`p-3 text-white rounded-full transition-transform shadow-md ${newMessage.trim() ? 'bg-teal-500 hover:bg-teal-600 hover:scale-105' : 'bg-teal-500/50 cursor-not-allowed'}`} disabled={!newMessage.trim()}>
-                    <Send size={20} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/>
-                  </button>
-                ) : (
-                  <button type="button" onClick={startRecording} className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md"><Mic size={20} /></button>
-                )}
-              </div>
-            </form>
+            ) : (
+              <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+                <div className="flex gap-1 mb-1">
+                  <button type="button" onClick={() => docInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><Paperclip size={22}/></button>
+                  <button type="button" onClick={() => imageInputRef.current.click()} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}><ImageIcon size={22}/></button>
+                </div>
+                <div className={`flex-1 relative rounded-2xl overflow-hidden transition-colors ${isDarkMode ? 'bg-[#2a3942]' : 'bg-white shadow-sm'}`}>
+                  <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={t.typeMessage} className="w-full max-h-32 p-3 bg-transparent outline-none font-medium resize-none text-sm leading-relaxed custom-scrollbar dark:text-white" rows="1" />
+                </div>
+                <div className="mb-1">
+                  {newMessage.trim() ? (
+                    <button type="submit" className={`p-3 text-white rounded-full transition-transform shadow-md ${newMessage.trim() ? 'bg-teal-500 hover:bg-teal-600 hover:scale-105' : 'bg-teal-500/50 cursor-not-allowed'}`} disabled={!newMessage.trim()}>
+                      <Send size={20} className={isRtl ? 'rotate-180 -ml-1' : 'ml-1'}/>
+                    </button>
+                  ) : (
+                    <button type="button" onClick={startRecording} className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-transform hover:scale-105 shadow-md"><Mic size={20} /></button>
+                  )}
+                </div>
+              </form>
+            )}
           </div>
           </>
           ) : (
@@ -704,6 +745,24 @@ export default function ChatRoom() {
           )}
         </div>
       </div>
+      {activeCall && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-xl animate-fade-in">
+          <div className="text-center">
+            <div className="relative mb-8 mx-auto w-32 h-32">
+              <div className="absolute inset-0 bg-teal-500 rounded-full animate-ping opacity-20"></div>
+              <div className="absolute inset-2 bg-teal-500 rounded-full animate-ping opacity-40 animation-delay-300"></div>
+              <div className="relative w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-5xl font-black text-white shadow-2xl shadow-teal-500/50">{activeChatData?.avatar}</div>
+            </div>
+            <h2 className="text-3xl font-black text-white mb-2">{activeChatData?.name}</h2>
+            <p className="text-teal-400 font-bold mb-12 animate-pulse">{t.calling} ({activeCall === 'video' ? 'فيديو' : 'صوت'})</p>
+            <div className="flex justify-center gap-6">
+              <button className="p-5 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors border border-slate-700"><Mic size={28}/></button>
+              {activeCall === 'video' && <button className="p-5 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors border border-slate-700"><Video size={28}/></button>}
+              <button onClick={() => setActiveCall(null)} className="p-5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-110 shadow-lg shadow-red-500/30"><Phone size={28} className="rotate-[135deg]"/></button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
