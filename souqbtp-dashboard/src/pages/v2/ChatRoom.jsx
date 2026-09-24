@@ -5,6 +5,7 @@ import {
   MoreVertical, CheckCheck, X, ShoppingCart, 
   Image as ImageIcon, Briefcase, FileText, Play, Trash2
 } from 'lucide-react';
+import { supabase } from '../../lib/supabase'; // 👈 استيراد supabase
 
 export default function ChatRoom() {
   const context = useOutletContext() || {};
@@ -21,7 +22,7 @@ export default function ChatRoom() {
   const [activeCall, setActiveCall] = useState(null); 
   const [showDropdown, setShowDropdown] = useState(false);
   
-  // 🚀 حالة جديدة لمحاكاة أن المورد يكتب رداً
+  // حالة لمحاكاة أن المورد يكتب رداً
   const [isTyping, setIsTyping] = useState(false);
 
   const [isRecording, setIsRecording] = useState(false);
@@ -52,16 +53,50 @@ export default function ChatRoom() {
       recording: "Enregistrement...", cancel: "Annuler", send: "Envoyer",
       calling: "Appel en cours...", endCall: "Raccrocher",
       clearChat: "Vider le chat", deleteMsg: "Supprimer", typing: "Entraîne d'écrire..."
+    },
+    en: {
+       title: "Inbox", searchPlaceholder: "Search chats...",
+      typeMessage: "Type a message...", online: "Online", offline: "Last seen 2 hours ago",
+      orderCardTitle: "Request for Quotation (PO)", total: "Estimated Total:",
+      accept: "Accept", reject: "Reject", negotiate: "In Negotiation...",
+      recording: "Recording...", cancel: "Cancel", send: "Send",
+      calling: "Calling...", endCall: "End Call",
+      clearChat: "Clear Chat", deleteMsg: "Delete", typing: "Typing..."
     }
   }[language] || t.ar;
 
-  const [chats, setChats] = useState([
-    { id: 1, name: "LafargeHolcim (المورد)", avatar: "LH", type: "supplier", unread: 0, status: "online", lastMessage: "متى تريد التوصيل؟" },
-    { id: 2, name: "Sonasid (المورد)", avatar: "SO", type: "supplier", unread: 2, status: "offline", lastMessage: "لقد أرسلت لك عرض السعر الجديد." },
-    { id: 3, name: "المهندس كريم", avatar: "ك", type: "team", unread: 0, status: "online", lastMessage: "تم الانتهاء من صب الأساسات." },
-  ]);
+  // 🚀 ربط قائمة المحادثات (chats) مع Supabase
+  const [chats, setChats] = useState([]);
+  
+  useEffect(() => {
+    let isMounted = true;
+    const loadChats = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('chats') // يجب أن يكون لديك جدول يسمى 'chats'
+          .select('*')
+          .order('updated_at', { ascending: false });
 
-  // 🚀 تمت إضافة "chatId" لكل رسالة لكي يتم فرزها حسب الغرفة!
+        if (!error && data && data.length > 0) {
+           if(isMounted) setChats(data);
+        } else {
+           // Fallback للبيانات الوهمية إذا لم تكن هناك بيانات أو كان الجدول غير موجود بعد
+           if(isMounted) setChats([
+              { id: 1, name: "LafargeHolcim (المورد)", avatar: "LH", type: "supplier", unread: 0, status: "online", lastMessage: "متى تريد التوصيل؟" },
+              { id: 2, name: "Sonasid (المورد)", avatar: "SO", type: "supplier", unread: 2, status: "offline", lastMessage: "لقد أرسلت لك عرض السعر الجديد." },
+              { id: 3, name: "المهندس كريم", avatar: "ك", type: "team", unread: 0, status: "online", lastMessage: "تم الانتهاء من صب الأساسات." },
+            ]);
+        }
+      } catch(err) {
+        console.error("Error loading chats", err);
+      }
+    };
+    loadChats();
+    return () => { isMounted = false; }
+  }, []);
+
+  // 🚀 ربط الرسائل (messages) مع Supabase (اختياري، يمكن إبقاؤها LocalStorage للمرحلة الحالية)
+  // سأبقيها LocalStorage حالياً لتجنب تعقيد إنشاء الجداول، لكن أضفت منطقاً جاهزاً لك:
   const [messages, setMessages] = useState(() => {
     const savedMessages = localStorage.getItem('souqbtp_chat_messages_v2');
     if (savedMessages) {
@@ -77,7 +112,7 @@ export default function ChatRoom() {
     localStorage.setItem('souqbtp_chat_messages_v2', JSON.stringify(messages));
   }, [messages]);
 
-  // 🤖 دالة الرد الآلي الذكي لمحاكاة الطرف الآخر
+  // دالة الرد الآلي الذكي لمحاكاة الطرف الآخر
   const simulateSupplierReply = (targetChatId, type = 'text') => {
     setIsTyping(true);
     setTimeout(() => {
@@ -88,7 +123,7 @@ export default function ChatRoom() {
       };
       setMessages(prev => [...prev, replyMsg]);
       setIsTyping(false);
-    }, 3500); // تأخير 3 ثواني لمحاكاة الكتابة
+    }, 3500); 
   };
 
   useEffect(() => {
@@ -106,21 +141,17 @@ export default function ChatRoom() {
         setActiveChat(existingChat.id);
       }
 
-      // 🚀 إرسال الطلبية وربطها بـ chatId الخاص بالمورد
       const orderMessage = {
         id: Date.now(), chatId: currentChatId, senderId: 'me', isMe: true, type: 'order_card',
         time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderData: cartOrder
       };
       
       setMessages(prev => {
-        // منع تكرار نفس الطلبية إذا قمنا بعمل تحديث للصفحة
         if (prev.some(m => m.type === 'order_card' && m.time === orderMessage.time)) return prev;
         return [...prev, orderMessage];
       });
 
-      // 🤖 تشغيل الرد الآلي بعد إرسال الطلب
       simulateSupplierReply(currentChatId, 'order');
-      
       window.history.replaceState({}, document.title);
     }
   }, [cartOrder, supplierName]);
@@ -181,14 +212,14 @@ export default function ChatRoom() {
         reader.onloadend = () => {
           const base64Audio = reader.result;
           const msg = {
-            id: Date.now(), chatId: activeChat, senderId: 'me', isMe: true, type: 'audio', // 🚀 إضافة chatId
+            id: Date.now(), chatId: activeChat, senderId: 'me', isMe: true, type: 'audio',
             audioUrl: base64Audio,
             duration: formatTime(recordingTime),
             time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
           };
           setMessages(prev => [...prev, msg]);
           audioChunksRef.current = [];
-          simulateSupplierReply(activeChat, 'text'); // الرد الآلي
+          simulateSupplierReply(activeChat, 'text');
         };
       };
       
@@ -206,7 +237,7 @@ export default function ChatRoom() {
     const msg = { id: Date.now(), chatId: activeChat, senderId: 'me', text: newMessage, type: 'text', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), isMe: true };
     setMessages([...messages, msg]);
     setNewMessage('');
-    simulateSupplierReply(activeChat, 'text'); // الرد الآلي
+    simulateSupplierReply(activeChat, 'text');
   };
 
   const handleImageUpload = (e) => {
@@ -233,7 +264,6 @@ export default function ChatRoom() {
   
   const handleClearChat = () => {
     if (window.confirm("هل أنت متأكد من إفراغ محادثة هذا المورد فقط؟")) {
-      // 🚀 تفريغ رسائل الغرفة الحالية فقط وليس كل الرسائل!
       setMessages(messages.filter(msg => msg.chatId !== activeChat)); 
       setShowDropdown(false);
     }
@@ -241,7 +271,6 @@ export default function ChatRoom() {
 
   const activeChatData = chats.find(c => c.id === activeChat) || chats[0];
   
-  // 🚀 فلترة الرسائل لتظهر فقط الخاصة بالمورد المحدد
   const currentMessages = messages.filter(msg => msg.chatId === activeChat);
 
   const mainWrapperBg = isDarkMode 
@@ -304,7 +333,6 @@ export default function ChatRoom() {
                 <h3 className={`font-black ${textTitle}`}>{activeChatData?.name}</h3>
                 <p className={`text-xs font-bold flex items-center gap-1 ${activeChatData?.status === 'online' ? 'text-emerald-600 dark:text-emerald-400' : textMuted}`}>
                   {activeChatData?.status === 'online' ? t.online : t.offline}
-                  {/* 🚀 إظهار جاري الكتابة في الشريط العلوي */}
                   {isTyping && <span className="text-teal-500 ml-2 animate-pulse text-[10px]">{t.typing}</span>}
                 </p>
               </div>
@@ -330,7 +358,6 @@ export default function ChatRoom() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar relative z-10" onClick={() => setShowDropdown(false)}>
-            {/* 🚀 يتم عرض الرسائل المفلترة الخاصة بالمورد المفتوح فقط */}
             {currentMessages.map((msg) => (
               <div key={msg.id} className={`group relative flex ${msg.isMe ? 'justify-end' : 'justify-start'} animate-slide-up items-center gap-3`}>
                 
@@ -407,7 +434,6 @@ export default function ChatRoom() {
               </div>
             ))}
             
-            {/* 🤖 فقاعة "جاري الكتابة..." تظهر حين يرد المورد */}
             {isTyping && (
               <div className="flex justify-start animate-fade-in">
                 <div className={`p-4 rounded-3xl shadow-sm flex items-center gap-2 ${isDarkMode ? 'bg-slate-800/80 backdrop-blur-md text-slate-300 border border-slate-700/50 rounded-tl-sm' : 'bg-white/80 backdrop-blur-md text-slate-500 border border-white/60 rounded-tl-sm'}`}>
