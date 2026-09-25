@@ -66,6 +66,14 @@ export default function LiveOrders() {
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'supply_requests' }, (payload) => {
         setRequests((current) => current.map(req => req.id === payload.new.id ? payload.new : req));
+        
+        // 🚀 تحديث بيانات الغرفة المفتوحة حالياً إذا كانت هي نفس الطلبية التي تم تحديثها
+        setTrackingOrder(currentTracked => {
+          if (currentTracked && currentTracked.id === payload.new.id) {
+             return payload.new;
+          }
+          return currentTracked;
+        });
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'supply_requests' }, (payload) => {
         setRequests((current) => current.filter(req => req.id !== payload.old.id));
@@ -154,34 +162,40 @@ export default function LiveOrders() {
 
   const [isDelivered, setIsDelivered] = useState(false); // حالة جديدة لمعرفة هل تم التوصيل
 
+  // حركة الشاحنة الواقعية (تتوقف عند 90% في انتظار العميل)
   useEffect(() => {
     let interval;
     if (trackingOrder) {
-      setTruckProgress(0); // تبدأ من الصفر
-      setIsDelivered(false);
-      
-      interval = setInterval(() => { 
-        setTruckProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          // زيادة عشوائية لجعل الحركة واقعية (بين 2 و 8 بالمئة)
-          const increment = Math.floor(Math.random() * 7) + 2;
-          return prev + increment > 100 ? 100 : prev + increment;
-        }); 
-      }, 800); // تحديث كل 800 جزء من الثانية
+      // إذا كانت الطلبية قد سُلمت بالفعل، اجعلها 100% فوراً
+      if (trackingOrder.status === 'delivered') {
+        setTruckProgress(100);
+      } else {
+        // إذا لم تسلم، اجعلها تمشي وتتوقف عند 90%
+        setTruckProgress(10); 
+        setIsDelivered(false);
+        interval = setInterval(() => { 
+          setTruckProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(interval);
+              return 90; // تتوقف هنا في انتظار تأكيد العميل
+            }
+            const increment = Math.floor(Math.random() * 5) + 1;
+            return prev + increment > 90 ? 90 : prev + increment;
+          }); 
+        }, 1000);
+      }
     }
     return () => clearInterval(interval);
-  }, [trackingOrder]);
+  }, [trackingOrder?.id]); // تعاد فقط عند فتح طلبية جديدة
 
-  // مراقبة وصول الشاحنة لإطلاق الاحتفالات
+  // 🚀 مراقبة الحالة: عندما يضغط العميل وتتحدث القاعدة، تنطلق الاحتفالات
   useEffect(() => {
-    if (truckProgress === 100 && !isDelivered && trackingOrder) {
+    if (trackingOrder && trackingOrder.status === 'delivered' && !isDelivered) {
+      setTruckProgress(100);
       setIsDelivered(true);
       triggerCelebration();
     }
-  }, [truckProgress, isDelivered, trackingOrder]);
+  }, [trackingOrder?.status, isDelivered]); // نراقب تغيير الحالة (status)
 
   // 🚀 دالة الاحتفال والألعاب النارية
   const triggerCelebration = () => {
