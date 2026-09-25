@@ -6,7 +6,8 @@ import {
   AlertCircle, Phone, FileSignature, Truck, MapPin, X, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import useSettingsStore from '../../store/useSettingsStore';
+// تأكد من مسار store الخاص بك
+import useSettingsStore from '../../store/useSettingsStore'; 
 
 export default function LiveOrders() {
   const context = useOutletContext() || {};
@@ -55,20 +56,28 @@ export default function LiveOrders() {
 
   useEffect(() => {
     fetchRequests();
-    // 🌟 تفعيل الرادار اللحظي مع Supabase
-    const channel = supabase.channel('supply-updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'supply_requests' }, (payload) => {
-      setRequests((current) => [payload.new, ...current]);
-      fetchMerchantData(payload.new.merchant_id);
-      // محاولة تشغيل صوت، قد يفشل إذا لم يتفاعل المستخدم مع الصفحة
-      try { new Audio('/notification.mp3').play(); } catch(e) { console.warn("Audio blocked by browser."); }
-    }).subscribe();
+    
+    // 🌟 تفعيل الرادار اللحظي بذكاء
+    const channel = supabase.channel('supply-updates')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'supply_requests' }, (payload) => {
+        setRequests((current) => [payload.new, ...current]);
+        fetchMerchantData(payload.new.merchant_id);
+        try { new Audio('/notification.mp3').play(); } catch(e) {}
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'supply_requests' }, (payload) => {
+        setRequests((current) => current.map(req => req.id === payload.new.id ? payload.new : req));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'supply_requests' }, (payload) => {
+        setRequests((current) => current.filter(req => req.id !== payload.old.id));
+      })
+      .subscribe();
+      
     return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchRequests = async () => {
     setIsLoading(true);
     try {
-      // 🚀 جلب البيانات الحقيقية من Supabase
       const { data, error } = await supabase
         .from('supply_requests')
         .select('*')
@@ -82,16 +91,14 @@ export default function LiveOrders() {
         const merchantIds = [...new Set(data.map(req => req.merchant_id))];
         merchantIds.forEach(id => fetchMerchantData(id));
       } else {
-        // Fallback للـ UI في حال كانت الداتابيز فارغة (للتجربة)
+        // Fallback آمن للتجربة البصرية
         setRequests([
-          { id: '1a2b3c4d', status: 'pending', total_amount: 45000, created_at: new Date().toISOString(), items: [{name: 'إسمنت بورتلاند', quantity: 50}], merchant_id: 'm1' },
-          { id: 'e5f6g7h8', status: 'waiting_signature', total_amount: 12500, created_at: new Date().toISOString(), items: [{name: 'حديد تسليح 12mm', quantity: 200}], merchant_id: 'm2' },
-          { id: 'i9j0k1l2', status: 'signed', total_amount: 85000, created_at: new Date().toISOString(), items: [{name: 'زليج إسباني', quantity: 600}], merchant_id: 'm3' }
+          { id: '1a2b3c4d', status: 'pending', total_amount: 45000, created_at: new Date().toISOString(), items: [{name: 'إسمنت بورتلاند', quantity: 50}], merchant_id: 'DetailAlpha' },
+          { id: 'e5f6g7h8', status: 'waiting_signature', total_amount: 12500, created_at: new Date().toISOString(), items: [{name: 'حديد تسليح 12mm', quantity: 200}], merchant_id: 'm2' }
         ]);
         setMerchants({
-          'm1': { store_name: 'مواد البناء الشرق', phone: '0612345678' },
-          'm2': { store_name: 'أشغال سوس', phone: '0687654321' },
-          'm3': { store_name: 'تجزئة الأندلس', phone: '0600112233' }
+          'DetailAlpha': { store_name: 'DetailAlpha (تاجر التجزئة)', phone: '0612345678' },
+          'm2': { store_name: 'أشغال سوس', phone: '0687654321' }
         });
       }
     } catch (err) { 
@@ -103,18 +110,24 @@ export default function LiveOrders() {
 
   const fetchMerchantData = async (id) => {
     if (!id || merchants[id]) return;
-    const { data } = await supabase.from('suppliers').select('store_name, phone').eq('id', id).single();
-    if (data) setMerchants(prev => ({ ...prev, [id]: data }));
+    try {
+      const { data, error } = await supabase.from('suppliers').select('store_name, phone').eq('id', id).single();
+      if (data) {
+        setMerchants(prev => ({ ...prev, [id]: data }));
+      } else {
+        // Fallback إذا كان المعرف اسماً وليس UUID (مثل DetailAlpha)
+        setMerchants(prev => ({ ...prev, [id]: { store_name: id, phone: '---' } }));
+      }
+    } catch (e) {
+      setMerchants(prev => ({ ...prev, [id]: { store_name: id, phone: '---' } }));
+    }
   };
 
-  // 🚀 تحديث قاعدة البيانات عند الموافقة وإرسال العقد
   const handleApproveAndSendContract = async (id) => {
     setProcessingId(id);
     try {
       const { error } = await supabase.from('supply_requests').update({ status: 'waiting_signature' }).eq('id', id);
-      if (error) {
-          console.warn("Could not update Supabase. Updating local state only.");
-      }
+      if (error) console.warn("Supabase update failed, updating UI locally");
       setRequests(requests.map(req => req.id === id ? { ...req, status: 'waiting_signature' } : req));
     } catch (err) {
       console.error(err);
@@ -123,14 +136,11 @@ export default function LiveOrders() {
     }
   };
 
-  // 🚀 حذف من قاعدة البيانات عند الرفض
   const handleRejectOrder = async (id) => {
     if (!window.confirm(t.confirmReject)) return;
     try {
       const { error } = await supabase.from('supply_requests').delete().eq('id', id);
-       if (error) {
-          console.warn("Could not delete from Supabase. Updating local state only.");
-      }
+       if (error) console.warn("Supabase delete failed, updating UI locally");
       setRequests(requests.filter(req => req.id !== id));
     } catch (err) {
       console.error(err);
@@ -202,9 +212,8 @@ export default function LiveOrders() {
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {requests.map((req) => {
-            const merchantInfo = merchants[req.merchant_id] || { store_name: t.loading, phone: '' };
+            const merchantInfo = merchants[req.merchant_id] || { store_name: req.merchant_id || t.loading, phone: '' };
             const statusStyle = getStatusColor(req.status);
-            // 🚀 إصلاح المشكلة البصرية في الـ ID
             const shortId = req.id ? String(req.id).substring(0, 8).toUpperCase() : 'UNKNOWN';
             
             return (
@@ -286,7 +295,7 @@ export default function LiveOrders() {
       )}
 
       {trackingOrder && createPortal(
-        <div className={`fixed inset-0 z-[9999] ${modalBg} backdrop-blur-xl flex justify-center items-center p-4 animate-fade-in font-cairo`} dir={isRtl ? 'rtl' : 'ltr'}>
+        <div className={`fixed inset-0 z-[9999] ${modalBg} backdrop-blur-xl flex justify-center items-center p-4 animate-fade-in`} dir={isRtl ? 'rtl' : 'ltr'}>
           <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} border-2 w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden relative`}>
             <div className={`p-5 border-b flex justify-between items-center ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
               <div className="flex items-center gap-3">
