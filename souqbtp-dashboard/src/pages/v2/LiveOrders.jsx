@@ -31,7 +31,12 @@ export default function LiveOrders() {
       client: 'العميل (التاجر)', totalAmount: 'القيمة الإجمالية', currency: 'MAD', requestedItems: 'السلع المطلوبة', units: 'وحدة',
       gps: 'موقع التاجر', rejectTitle: 'رفض', acceptInit: 'موافقة وإرسال العقد', trackOrder: 'تتبع التوصيل 📍',
       confirmReject: 'هل أنت متأكد من رفض الطلب؟', loading: 'جاري التحميل...',
-      trackingRoom: 'غرفة تتبع الطلبية', signedContract: 'العقد موقّع رقمياً', route: 'في الطريق إلى العميل...', close: 'إغلاق', error: 'خطأ: '
+      trackingRoom: 'غرفة تتبع الطلبية', signedContract: 'العقد موقّع رقمياً', route: 'في الطريق إلى العميل...', close: 'إغلاق', error: 'خطأ: ',
+      warehouse: 'المخزن (المورد)', 
+      retailer: 'التاجر (العميل)',
+      deliveredStatus: 'تم تسليم الطلبية بنجاح! 🎉',
+      deliveryCompleted: 'تم التوصيل ✅',
+      gpsTracking: 'تتبع مباشر GPS'
     },
     fr: {
       title: 'Radar des Commandes (B2B)', subtitle: 'Recevez les commandes, envoyez les contrats et suivez la livraison.',
@@ -40,7 +45,12 @@ export default function LiveOrders() {
       client: 'Client (Détaillant)', totalAmount: 'Montant Total', currency: 'MAD', requestedItems: 'Articles Demandés', units: 'Unités',
       gps: 'Position', rejectTitle: 'Refuser', acceptInit: 'Approuver & Envoyer Contrat', trackOrder: 'Suivi Livraison 📍',
       confirmReject: 'Refuser cette commande ?', loading: 'Chargement...',
-      trackingRoom: 'Salle de Suivi', signedContract: 'Contrat signé numériquement', route: 'En route vers le client...', close: 'Fermer', error: 'Erreur: '
+      trackingRoom: 'Salle de Suivi', signedContract: 'Contrat signé numériquement', route: 'En route vers le client...', close: 'Fermer', error: 'Erreur: ',
+      warehouse: 'Entrepôt (Fournisseur)', 
+      retailer: 'Client (Détaillant)',
+      deliveredStatus: 'Commande livrée avec succès ! 🎉',
+      deliveryCompleted: 'Livraison Terminée ✅',
+      gpsTracking: 'Suivi GPS en direct'
     },
     en: {
       title: 'Live Orders Radar (B2B)', subtitle: 'Receive orders, send contracts, and track deliveries.',
@@ -49,7 +59,12 @@ export default function LiveOrders() {
       client: 'Client (Retailer)', totalAmount: 'Total Amount', currency: 'MAD', requestedItems: 'Requested Items', units: 'Units',
       gps: 'Location', rejectTitle: 'Reject', acceptInit: 'Approve & Send Contract', trackOrder: 'Track Delivery 📍',
       confirmReject: 'Reject this order?', loading: 'Loading...',
-      trackingRoom: 'Order Tracking Room', signedContract: 'Digitally Signed Contract', route: 'En route to client...', close: 'Close', error: 'Error: '
+      trackingRoom: 'Order Tracking Room', signedContract: 'Digitally Signed Contract', route: 'En route to client...', close: 'Close', error: 'Error: ',
+      warehouse: 'Warehouse (Supplier)', 
+      retailer: 'Client (Retailer)',
+      deliveredStatus: 'Order delivered successfully! 🎉',
+      deliveryCompleted: 'Delivery Completed ✅',
+      gpsTracking: 'Live GPS Tracking'
     }
   };
   const t = translations[language] || translations.ar;
@@ -399,12 +414,12 @@ export default function LiveOrders() {
                 <div className="flex justify-between items-center mb-6">
                   <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1.5 ${isDelivered ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30' : 'text-blue-500 bg-blue-500/10 border-blue-500/30'}`}>
                     {!isDelivered && <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>}
-                    {isDelivered ? 'Livraison Terminée ✅' : 'GPS Live Tracking'}
+                    {/* 🚀 استخدام الترجمة هنا */}
+                    {isDelivered ? t.deliveryCompleted : t.gpsTracking}
                   </span>
                   <span className="font-black text-xl">{truckProgress}%</span>
                 </div>
 
-                {/* 🚀 شريط التتبع المطور */}
                 <div className={`relative py-6 px-4 my-2 rounded-xl border ${isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                   {/* خط المسار */}
                   <div className={`h-4 w-full rounded-full relative overflow-hidden ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>
@@ -421,17 +436,20 @@ export default function LiveOrders() {
                   <div className={`flex justify-between text-xs font-black mt-6 ${textMuted}`}>
                     <div className="flex flex-col items-center gap-1">
                       <span className="w-3 h-3 rounded-full bg-slate-400"></span>
-                      <span>المخزن (المورد)</span>
+                      {/* 🚀 استخدام الترجمة هنا */}
+                      <span>{t.warehouse}</span>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       <span className={`w-4 h-4 rounded-full border-4 ${isDelivered ? 'bg-emerald-500 border-emerald-200' : 'bg-slate-200 border-slate-400'}`}></span>
-                      <span className={isDelivered ? 'text-emerald-500' : ''}>التاجر (العميل)</span>
+                      {/* 🚀 استخدام الترجمة هنا */}
+                      <span className={isDelivered ? 'text-emerald-500' : ''}>{t.retailer}</span>
                     </div>
                   </div>
                 </div>
 
+                {/* 🚀 استخدام الترجمة هنا */}
                 <p className={`text-center text-lg font-black mt-4 ${isDelivered ? 'text-emerald-500 animate-pulse' : 'text-blue-500'}`}>
-                  {isDelivered ? 'تم تسليم الطلبية بنجاح! 🎉' : t.route}
+                  {isDelivered ? t.deliveredStatus : t.route}
                 </p>
               </div>
 
