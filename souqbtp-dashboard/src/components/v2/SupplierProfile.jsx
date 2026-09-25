@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { 
-  ShieldCheck, MapPin, Star, Clock, CheckCircle2, 
+  ShieldCheck, MapPin, Star, CheckCircle2, 
   Image as ImageIcon, MessageSquare, Briefcase, 
-  Award, Phone, FileText, X, ThumbsUp, Edit, Save, Plus, Trash2, Loader2
+  Award, FileText, X, ThumbsUp, Edit, Save, Plus, Trash2, Loader2, Phone, Camera
 } from 'lucide-react';
 
 export default function SupplierProfile({ isDarkMode = false, language = 'ar', onClose }) {
   const { id } = useParams(); 
   const navigate = useNavigate();
-  const location = useLocation();
   const isRtl = language === 'ar';
   
   const [activeTab, setActiveTab] = useState('services');
@@ -21,8 +20,11 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
   const [currentUserId, setCurrentUserId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [newService, setNewService] = useState({ service_name: '', description: '', starting_price: '' });
+  
+  // حالات لرفع الصور
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
 
-  // قاموس الترجمات الخاص بملف المورد
   const t = {
     ar: {
       trustPassport: "جواز الثقة", level: "مستوى التحقق:", businessVerified: "شركة معتمدة",
@@ -31,7 +33,11 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       stats: { completed: "مشروع منجز", responseRate: "معدل الاستجابة", responseTime: "وقت الرد", memberSince: "عضو منذ" },
       tabs: { services: "الخدمات والأسعار", portfolio: "معرض الأعمال", reviews: "التقييمات" },
       actions: { quote: "طلب عرض سعر", contact: "مراسلة", close: "إغلاق", edit: "تعديل البروفايل", save: "حفظ التغييرات" },
-      about: "نبذة عن الشركة", portfolioEmpty: "لا توجد صور حالياً.", reviewsTitle: "آراء المقاولين"
+      about: "نبذة عن الشركة", portfolioEmpty: "لا توجد صور حالياً.", reviewsTitle: "آراء المقاولين",
+      addService: "إضافة خدمة جديدة", serviceNamePlaceholder: "اسم الخدمة (مثال: تركيب كهرباء)",
+      pricePlaceholder: "السعر المبدئي (MAD)", descPlaceholder: "وصف قصير للخدمة...",
+      saveServiceBtn: "حفظ الخدمة", emptyServices: "لا توجد خدمات مضافة حتى الآن.",
+      startingFrom: "ابتداءً من"
     },
     fr: {
       trustPassport: "Passeport de Confiance", level: "Niveau :", businessVerified: "Entreprise Vérifiée",
@@ -40,7 +46,11 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       stats: { completed: "Chantiers", responseRate: "Taux de réponse", responseTime: "Temps de réponse", memberSince: "Membre depuis" },
       tabs: { services: "Services & Tarifs", portfolio: "Réalisations", reviews: "Avis clients" },
       actions: { quote: "Demander un devis", contact: "Contacter", close: "Fermer", edit: "Modifier profil", save: "Enregistrer" },
-      about: "À propos", portfolioEmpty: "Aucune photo pour le moment.", reviewsTitle: "Avis des entrepreneurs"
+      about: "À propos", portfolioEmpty: "Aucune photo pour le moment.", reviewsTitle: "Avis des entrepreneurs",
+      addService: "Ajouter un nouveau service", serviceNamePlaceholder: "Nom du service (ex: Installation)",
+      pricePlaceholder: "Prix de départ (MAD)", descPlaceholder: "Brève description...",
+      saveServiceBtn: "Enregistrer le service", emptyServices: "Aucun service ajouté pour le moment.",
+      startingFrom: "À partir de"
     },
     en: {
       trustPassport: "Trust Passport", level: "Level:", businessVerified: "Verified Business",
@@ -49,11 +59,14 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       stats: { completed: "Completed Jobs", responseRate: "Response Rate", responseTime: "Response Time", memberSince: "Member Since" },
       tabs: { services: "Services & Pricing", portfolio: "Portfolio", reviews: "Reviews" },
       actions: { quote: "Request Quote", contact: "Contact", close: "Close", edit: "Edit Profile", save: "Save Changes" },
-      about: "About", portfolioEmpty: "No photos available yet.", reviewsTitle: "Contractor Reviews"
+      about: "About", portfolioEmpty: "No photos available yet.", reviewsTitle: "Contractor Reviews",
+      addService: "Add new service", serviceNamePlaceholder: "Service name (e.g. Electrical work)",
+      pricePlaceholder: "Starting price (MAD)", descPlaceholder: "Short description...",
+      saveServiceBtn: "Save Service", emptyServices: "No services added yet.",
+      startingFrom: "Starting from"
     }
   }[language] || {};
 
-  // جلب البيانات الديناميكية
   useEffect(() => {
     const fetchProfileData = async () => {
       setIsLoading(true);
@@ -61,7 +74,6 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       const loggedInUserId = user ? user.id : '9e85d1a0-918f-4c26-a78a-42ad05186b51'; 
       setCurrentUserId(loggedInUserId);
 
-      // إذا كان هناك ID في الرابط نستخدمه، وإلا نستخدم ID المستخدم الحالي
       const profileId = id || loggedInUserId; 
 
       const { data: artisanData } = await supabase.from('suppliers').select('*').eq('id', profileId).single();
@@ -89,9 +101,12 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
   };
 
   const handleAddService = async () => {
-    if (!newService.service_name || !newService.starting_price) return alert("يرجى إدخال اسم الخدمة والسعر");
+    if (!newService.service_name || !newService.starting_price) return alert("Please fill all required fields");
     const { data, error } = await supabase.from('provider_services').insert({
-      provider_id: artisan.id, service_name: newService.service_name, description: newService.description, starting_price: newService.starting_price
+      provider_id: artisan.id, 
+      service_name: newService.service_name, 
+      description: newService.description, 
+      starting_price: newService.starting_price
     }).select().single();
 
     if (data) {
@@ -101,7 +116,7 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
   };
 
   const handleDeleteService = async (serviceId) => {
-    if (window.confirm("هل تريد حذف هذه الخدمة؟")) {
+    if (window.confirm("Are you sure you want to delete this service?")) {
       await supabase.from('provider_services').delete().eq('id', serviceId);
       setServices(services.filter(s => s.id !== serviceId));
     }
@@ -111,8 +126,8 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
     const requestPayload = {
       items: [{
         product: {
-          name: service ? service.service_name : "طلب عرض سعر عام",
-          supplier: artisan.store_name || "مورد",
+          name: service ? service.service_name : "General Quote Request",
+          supplier: artisan.store_name || "Supplier",
           price: service ? service.starting_price : 0,
           currency: 'MAD'
         },
@@ -121,7 +136,42 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       isServiceRequest: true,
       artisanId: artisan.id
     };
-    navigate('/messages', { state: { cartOrder: requestPayload } });
+    navigate('/v2/messages', { state: { cartOrder: requestPayload } });
+  };
+
+  // دوال رفع الصور
+  const handleUploadImage = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (type === 'logo') setIsUploadingLogo(true);
+    else setIsUploadingCover(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${artisan.id}/${type}/${fileName}`;
+
+      // نفترض وجود bucket باسم 'supplier-images'
+      let { error: uploadError } = await supabase.storage.from('supplier-images').upload(filePath, file);
+
+      if (!uploadError) {
+        const { data } = supabase.storage.from('supplier-images').getPublicUrl(filePath);
+        if (data && data.publicUrl) {
+           const updateField = type === 'logo' ? { logo_url: data.publicUrl } : { cover_url: data.publicUrl }; // يجب إضافة cover_url لقاعدة البيانات
+           await supabase.from('suppliers').update(updateField).eq('id', artisan.id);
+           setArtisan(prev => ({ ...prev, ...updateField }));
+        }
+      } else {
+          console.warn("Upload failed, you might need to create 'supplier-images' bucket and set RLS to public.", uploadError);
+          alert("خطأ في رفع الصورة. يرجى التأكد من إعدادات Storage في Supabase.");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      if (type === 'logo') setIsUploadingLogo(false);
+      else setIsUploadingCover(false);
+    }
   };
 
   const isOwner = currentUserId === artisan.id;
@@ -130,21 +180,26 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
 
-  // صور افتراضية في حال لم يقم الحرفي برفعها بعد
-  const defaultCover = "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=1200";
-  const defaultAvatar = artisan.store_name ? `https://ui-avatars.com/api/?name=${artisan.store_name}&background=10b981&color=fff` : "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400";
+  const defaultCover = artisan.cover_url || "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=1200";
+  const defaultAvatar = artisan.logo_url || (artisan.store_name ? `https://ui-avatars.com/api/?name=${artisan.store_name}&background=10b981&color=fff` : "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400");
 
   if (isLoading) return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin text-emerald-500" size={50} /></div>;
 
   return (
-    <div className={`w-full max-w-6xl mx-auto shadow-2xl overflow-hidden ${bgMain} flex flex-col my-10 rounded-3xl animate-fade-in`} dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className={`w-full max-w-6xl mx-auto shadow-2xl overflow-hidden ${bgMain} flex flex-col my-10 rounded-3xl animate-fade-in relative z-[999999]`} dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* --- Header (Cover + Avatar + Basic Info) --- */}
-      <div className="relative h-64 md:h-80 w-full bg-slate-800">
+      {/* --- Header --- */}
+      <div className="relative h-64 md:h-80 w-full bg-slate-800 group">
         <img src={defaultCover} alt="Cover" className="w-full h-full object-cover opacity-80" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
         
-        {/* زر التعديل لصاحب الحساب يظهر فوق الغلاف */}
+        {isOwner && isEditing && (
+            <label className="absolute top-6 left-6 z-50 bg-black/50 text-white p-3 rounded-full cursor-pointer hover:bg-black/70 transition">
+                {isUploadingCover ? <Loader2 className="animate-spin" size={20}/> : <Camera size={20} />}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'cover')} />
+            </label>
+        )}
+
         {isOwner && (
           <div className={`absolute top-6 ${isRtl ? 'left-6' : 'right-6'} z-50`}>
             {isEditing ? (
@@ -159,7 +214,6 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
           </div>
         )}
 
-        {/* زر الإغلاق إذا تم فتحه كـ Modal */}
         {onClose && !isOwner && (
           <button onClick={onClose} className={`absolute top-6 ${isRtl ? 'left-6' : 'right-6'} z-50 p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-transform hover:scale-110`}>
             <X size={24} />
@@ -167,8 +221,16 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
         )}
         
         <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 flex items-end gap-6">
-          <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white p-1 shrink-0 shadow-xl z-10 relative">
-            <img src={artisan.logo_url || defaultAvatar} alt={artisan.store_name} className="w-full h-full rounded-xl object-cover" />
+          <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white p-1 shrink-0 shadow-xl z-10 group/avatar">
+            <img src={defaultAvatar} alt={artisan.store_name} className="w-full h-full rounded-xl object-cover" />
+            
+            {isOwner && isEditing && (
+                 <label className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                     {isUploadingLogo ? <Loader2 className="animate-spin text-white" size={24}/> : <Camera className="text-white" size={24} />}
+                     <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'logo')} />
+                 </label>
+            )}
+
             {(artisan.tier === 'pro' || artisan.tier === 'business') && (
               <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white dark:border-slate-800">
                 <ShieldCheck size={20} />
@@ -179,7 +241,7 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
           <div className="flex-1 pb-2">
             <div className="flex flex-wrap items-center gap-3 mb-1">
               {isEditing ? (
-                <input type="text" value={artisan.store_name || ''} onChange={e => setArtisan({...artisan, store_name: e.target.value})} className="bg-slate-900/80 border border-slate-600 rounded px-3 py-1 text-2xl font-black text-white outline-none focus:border-emerald-500" placeholder="اسم الشركة أو الحرفي" />
+                <input type="text" value={artisan.store_name || ''} onChange={e => setArtisan({...artisan, store_name: e.target.value})} className="bg-slate-900/80 border border-slate-600 rounded px-3 py-1 text-2xl font-black text-white outline-none focus:border-emerald-500" />
               ) : (
                 <h1 className="text-2xl md:text-3xl font-black text-white">{artisan.store_name || 'اسم الحرفي'}</h1>
               )}
@@ -190,14 +252,14 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
             </div>
             
             {isEditing ? (
-              <input type="text" value={artisan.category || ''} onChange={e => setArtisan({...artisan, category: e.target.value})} className="bg-slate-900/80 border border-slate-600 rounded px-3 py-1 mb-2 text-sm text-emerald-400 outline-none focus:border-emerald-500 block w-64" placeholder="فئة العمل (مثال: كهربائي)" />
+              <input type="text" value={artisan.category || ''} onChange={e => setArtisan({...artisan, category: e.target.value})} className="bg-slate-900/80 border border-slate-600 rounded px-3 py-1 mb-2 text-sm text-emerald-400 outline-none focus:border-emerald-500 block w-64" />
             ) : (
               <p className="text-emerald-400 font-bold text-sm md:text-base mb-2">{artisan.category || 'فئة غير محددة'}</p>
             )}
 
             <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
               {isEditing ? (
-                <input type="text" value={artisan.address || ''} onChange={e => setArtisan({...artisan, address: e.target.value})} className="bg-slate-900/80 border border-slate-600 rounded px-3 py-1 text-white outline-none focus:border-emerald-500" placeholder="العنوان أو المدينة" />
+                <input type="text" value={artisan.address || ''} onChange={e => setArtisan({...artisan, address: e.target.value})} className="bg-slate-900/80 border border-slate-600 rounded px-3 py-1 text-white outline-none focus:border-emerald-500" />
               ) : (
                 <span className="flex items-center gap-1"><MapPin size={16} /> {artisan.address || 'العنوان غير محدد'}</span>
               )}
@@ -207,15 +269,15 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
         </div>
       </div>
 
-      {/* --- Main Content Layout --- */}
-      <div className="flex flex-col lg:flex-row p-6 md:p-8 gap-8">
+      {/* --- Main Layout --- */}
+      <div className="flex flex-col lg:flex-row p-6 md:p-8 gap-8 bg-[#E6F4EA] dark:bg-slate-950">
         
-        {/* Left Sidebar (Trust Passport & Stats) */}
+        {/* Left Sidebar */}
         <div className="w-full lg:w-1/3 space-y-6">
           
-          {/* Quick Actions (يظهر للزبون فقط وليس لصاحب الحساب) */}
+          {/* Quick Actions (الستايل الأول الممتاز) */}
           {!isOwner && !isEditing && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm">
               <button onClick={() => handleRequestQuote()} className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
                 <FileText size={18} /> {t.actions.quote}
               </button>
@@ -261,10 +323,10 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
           </div>
         </div>
 
-        {/* Right Content Area (Tabs: Services, Portfolio, Reviews) */}
-        <div className="flex-1 flex flex-col">
+        {/* Right Content */}
+        <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
           
-          {/* Tabs Navigation */}
+          {/* Tabs */}
           <div className={`flex overflow-x-auto custom-scrollbar gap-2 mb-6 p-1 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-200'}`}>
             {[
               { id: 'services', label: t.tabs.services, icon: Briefcase },
@@ -275,9 +337,7 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-6 py-3 font-bold text-sm transition-all whitespace-nowrap border-b-2 ${
-                  activeTab === tab.id 
-                    ? 'border-emerald-500 text-emerald-500' 
-                    : `border-transparent ${textMuted} hover:${textTitle}`
+                  activeTab === tab.id ? 'border-emerald-500 text-emerald-500' : `border-transparent ${textMuted} hover:${textTitle}`
                 }`}
               >
                 <tab.icon size={16} /> {tab.label}
@@ -285,37 +345,32 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
             ))}
           </div>
 
-          {/* Tab Content */}
           <div className="flex-1">
             
-            {/* SERVICES TAB */}
             {activeTab === 'services' && (
               <div className="animate-fade-in space-y-6">
-                
-                {/* About Section */}
                 <div>
                   <h3 className={`font-black text-lg mb-2 ${textTitle}`}>{t.about}</h3>
                   {isEditing ? (
-                    <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className={`w-full ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'} border rounded-xl p-3 h-32 outline-none focus:border-emerald-500`} placeholder="اكتب نبذة عن خبرتك وعملك..."></textarea>
+                    <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className={`w-full ${bgCard} border rounded-xl p-3 h-32 outline-none focus:border-emerald-500 text-sm`} />
                   ) : (
                     <p className={`text-sm leading-relaxed ${textMuted}`}>{artisan.about_text || 'لا يتوفر وصف حالياً.'}</p>
                   )}
                 </div>
                 
-                {/* إضافة خدمة جديدة (في وضع التعديل) */}
                 {isEditing && (
                   <div className={`p-5 rounded-2xl border-2 border-dashed ${isDarkMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-300 bg-slate-50'}`}>
-                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2"><Plus size={16}/> إضافة خدمة جديدة</h4>
+                    <h4 className={`font-bold text-sm mb-3 flex items-center gap-2 ${textTitle}`}><Plus size={16}/> {t.addService}</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                      <input type="text" placeholder="اسم الخدمة" value={newService.service_name} onChange={e => setNewService({...newService, service_name: e.target.value})} className={`border rounded-lg p-2 text-sm outline-none focus:border-emerald-500 ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'}`} />
-                      <input type="number" placeholder="السعر المبدئي (MAD)" value={newService.starting_price} onChange={e => setNewService({...newService, starting_price: e.target.value})} className={`border rounded-lg p-2 text-sm outline-none focus:border-emerald-500 ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'}`} dir="rtl" />
+                      <input type="text" placeholder={t.serviceNamePlaceholder} value={newService.service_name} onChange={e => setNewService({...newService, service_name: e.target.value})} className={`border rounded-lg p-2 text-sm outline-none focus:border-emerald-500 ${bgCard} ${textTitle}`} />
+                      <input type="number" placeholder={t.pricePlaceholder} value={newService.starting_price} onChange={e => setNewService({...newService, starting_price: e.target.value})} className={`border rounded-lg p-2 text-sm outline-none focus:border-emerald-500 ${bgCard} ${textTitle}`} dir="ltr" />
                     </div>
-                    <input type="text" placeholder="وصف قصير..." value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} className={`border rounded-lg p-2 text-sm w-full mb-3 outline-none focus:border-emerald-500 ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'}`} />
-                    <button onClick={handleAddService} className="w-full bg-emerald-500 text-white rounded-lg py-2 text-sm font-bold hover:bg-emerald-600">حفظ الخدمة</button>
+                    <input type="text" placeholder={t.descPlaceholder} value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} className={`border rounded-lg p-2 text-sm w-full mb-3 outline-none focus:border-emerald-500 ${bgCard} ${textTitle}`} />
+                    {/* هنا أصلحنا مشكلة عدم عمل الزر بإضافة type="button" */}
+                    <button type="button" onClick={handleAddService} className="w-full bg-emerald-500 text-white rounded-lg py-2 text-sm font-bold hover:bg-emerald-600">{t.saveServiceBtn}</button>
                   </div>
                 )}
 
-                {/* قائمة الخدمات */}
                 {services.length > 0 ? (
                   <div className="space-y-4">
                     {services.map(service => (
@@ -323,14 +378,13 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
                         <div className="flex-1">
                           <h4 className={`font-bold text-lg mb-1 ${textTitle}`}>{service.service_name}</h4>
                           <p className={`text-sm ${textMuted} mb-2`}>{service.description}</p>
-                          <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${isDarkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>À partir de {service.starting_price} MAD</span>
+                          <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${isDarkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t.startingFrom} {service.starting_price} MAD</span>
                         </div>
-                        
                         <div className="flex gap-2 w-full sm:w-auto">
                           {isEditing ? (
-                            <button onClick={() => handleDeleteService(service.id)} className="w-full sm:w-auto bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2.5 rounded-xl transition-colors"><Trash2 size={18}/></button>
+                            <button type="button" onClick={() => handleDeleteService(service.id)} className="w-full sm:w-auto bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2.5 rounded-xl transition-colors"><Trash2 size={18}/></button>
                           ) : !isOwner && (
-                            <button onClick={() => handleRequestQuote(service)} className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-md shadow-emerald-500/20">
+                            <button type="button" onClick={() => handleRequestQuote(service)} className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-md shadow-emerald-500/20">
                               {t.actions.quote}
                             </button>
                           )}
@@ -339,16 +393,8 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
                     ))}
                   </div>
                 ) : (
-                  <p className={`text-sm ${textMuted} p-4 text-center border rounded-xl border-dashed`}>لا توجد خدمات مضافة حتى الآن.</p>
+                  <p className={`text-sm ${textMuted} p-4 text-center border rounded-xl border-dashed`}>{t.emptyServices}</p>
                 )}
-              </div>
-            )}
-
-            {/* PORTFOLIO TAB */}
-            {activeTab === 'portfolio' && (
-              <div className="animate-fade-in text-center p-10">
-                <ImageIcon size={48} className={`mx-auto mb-4 opacity-20 ${textMuted}`} />
-                <p className={`${textMuted} font-bold`}>{t.portfolioEmpty}</p>
               </div>
             )}
 
@@ -356,7 +402,11 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
             {activeTab === 'reviews' && (
               <div className="animate-fade-in text-center p-10">
                 <Star size={48} className={`mx-auto mb-4 opacity-20 ${textMuted}`} />
-                <p className={`${textMuted} font-bold`}>لا توجد تقييمات حتى الآن.</p>
+                <p className={`${textMuted} font-bold mb-4`}>لا توجد تقييمات حتى الآن.</p>
+                {/* ربطنا الزر بصفحة التقييمات */}
+                <button onClick={() => navigate('/v2/reviews')} className="bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold text-sm hover:bg-emerald-600">
+                  الانتقال لصفحة التقييمات
+                </button>
               </div>
             )}
 
