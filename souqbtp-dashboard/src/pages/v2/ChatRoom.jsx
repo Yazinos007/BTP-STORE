@@ -213,20 +213,23 @@ export default function ChatRoom() {
 
     fetchMessages();
 
+    // ❌ الخطأ كان هنا: useEffect داخل useEffect
+    /*
     useEffect(() => {
-  const getUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setCurrentUserId(user.id);
-    }
-  };
-  getUser();
-}, []);
+      const getUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setCurrentUserId(user.id);
+        }
+      };
+      getUser();
+    }, []);
+    */
 
     const subscription = supabase
       .channel(`messages_for_chat_${activeChat}`)
       .on('postgres_changes', { 
-        event: '*', // الاستماع لكل شيء (إضافة، مسح، تعديل)
+        event: '*', 
         schema: 'public', 
         table: 'messages',
         filter: `conversation_id=eq.${activeChat}`
