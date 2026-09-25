@@ -276,11 +276,23 @@ export default function LiveOrders() {
                         </button>
                       </>
                     )}
+
                     {req.status === 'waiting_signature' && (
-                      <button disabled className="flex-[2] py-3.5 bg-slate-500/10 border-2 border-slate-500/20 text-slate-500 rounded-xl font-black flex justify-center items-center gap-2 cursor-not-allowed">
-                        <Loader2 size={18} className="animate-spin"/> {t.waiting}
+                      <button 
+                        onClick={async () => {
+                          // محاكاة توقيع التاجر: تحديث الحالة إلى signed في قاعدة البيانات
+                          const { error } = await supabase.from('supply_requests').update({ status: 'signed' }).eq('id', req.id);
+                          if (!error) {
+                            setRequests(requests.map(r => r.id === req.id ? { ...r, status: 'signed' } : r));
+                          }
+                        }} 
+                        className="flex-[2] py-3.5 bg-blue-500/10 border-2 border-blue-500 hover:bg-blue-500 hover:text-white text-blue-500 rounded-xl font-black flex justify-center items-center gap-2 transition-all cursor-pointer group"
+                      >
+                         <span className="group-hover:hidden flex items-center gap-2"><Loader2 size={18} className="animate-spin"/> {t.waiting}</span>
+                         <span className="hidden group-hover:flex items-center gap-2">محاكاة توقيع التاجر ✍️</span>
                       </button>
                     )}
+
                     {req.status === 'signed' && (
                       <button onClick={() => handleOpenTracking(req)} className="flex-[2] py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex justify-center items-center gap-2 transition-all shadow-lg shadow-emerald-500/20">
                         {t.trackOrder}
