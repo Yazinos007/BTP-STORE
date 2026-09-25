@@ -16,6 +16,8 @@ export default function ChatRoom() {
   const location = useLocation();
   const { cartOrder } = location.state || {};
 
+  const [currentUserId, setCurrentUserId] = useState(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeChat, setActiveChat] = useState(null);
   const [newMessage, setNewMessage] = useState('');
@@ -211,6 +213,16 @@ export default function ChatRoom() {
 
     fetchMessages();
 
+    useEffect(() => {
+  const getUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+    }
+  };
+  getUser();
+}, []);
+
     const subscription = supabase
       .channel(`messages_for_chat_${activeChat}`)
       .on('postgres_changes', { 
@@ -362,29 +374,31 @@ export default function ChatRoom() {
         ? orderMsg.orderData.items.map(item => ({ name: item.product?.name || item.name, quantity: item.qty || item.quantity }))
         : [{ name: 'مواد بناء (طلبية من التفاوض)', quantity: 1 }];
 
-      // 3. 🚀 إرسال الطلبية للرادار (جدول supply_requests)
+      // 3. جلب المعرف الحقيقي للمستخدم الحالي (UUID) لتجنب خطأ عدم التطابق
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const currentMerchantId = user ? user.id : '9e85d1a0-918f-4c26-a78a-42ad05186b51'; // UUID احتياطي للتجربة
+
+      // 4. إرسال الطلبية للرادار (جدول supply_requests)
       const { error: insertError } = await supabase.from('supply_requests').insert({
-        merchant_id: 'DetailAlpha', // اسم التاجر
-        status: 'pending',          // الحالة المبدئية
+        merchant_id: currentMerchantId,  
+        status: 'pending',               
         total_amount: originalData.quoteData?.total || 0,
         items: orderItems,
-        location_data: { lat: 32.5985, lng: -6.2658 }, // إحداثيات (يمكن تغييرها لاحقاً لتأخذ موقع التاجر الحقيقي)
+        location_data: { lat: 32.5985, lng: -6.2658 }, 
         created_at: new Date().toISOString()
       });
 
-      // 🚨 التحقق من نجاح العملية
+      // التحقق من نجاح العملية
       if (insertError) {
         console.error("Supabase Insert Error:", insertError);
-        alert("❌ خطأ: لم يتم إرسال الطلبية للرادار! يرجى التأكد من إيقاف (RLS) لجدول supply_requests.");
+        alert("❌ خطأ أثناء إرسال الطلبية للرادار: " + insertError.message);
       } else {
         console.log("✅ تم إرسال الطلبية للرادار بنجاح!");
+        // إرسال رسالة التأكيد الخضراء في الشات
+        setTimeout(() => {
+          insertMessageToDB(activeChat, 'system', { text: 'KEY_SYSTEM_ACCEPT' }, 'system');
+        }, 500);
       }
-
-      // 4. إرسال رسالة التأكيد الخضراء في الشات
-      setTimeout(() => {
-        insertMessageToDB(activeChat, 'system', { text: 'KEY_SYSTEM_ACCEPT' }, 'system');
-      }, 500);
-
     } catch (err) {
       console.error("Error in handleAcceptQuote:", err);
     }
