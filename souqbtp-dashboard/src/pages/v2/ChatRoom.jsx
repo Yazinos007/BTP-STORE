@@ -16,6 +16,7 @@ export default function ChatRoom() {
   const location = useLocation();
   const { cartOrder } = location.state || {};
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [activeChat, setActiveChat] = useState(null);
   const [newMessage, setNewMessage] = useState('');
   
@@ -123,6 +124,11 @@ export default function ChatRoom() {
       confirmDeleteMsg: "Are you sure you want to delete this message?"
     }
   }[language] || t.ar;
+
+  // فلترة المحادثات بناءً على كلمة البحث (البحث في اسم المحادثة)
+  const filteredChats = chats.filter(chat => 
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const getTodayDate = () => {
     return new Date().toLocaleDateString(language === 'ar' ? 'ar-EG' : 'fr-FR', { day: 'numeric', month: 'long' });
@@ -488,13 +494,22 @@ export default function ChatRoom() {
             </h2>
             <div className="relative">
               <Search size={18} className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'right-3' : 'left-3'} text-slate-500`} />
-              <input type="text" placeholder={t.searchPlaceholder} className={`w-full py-2.5 rounded-xl text-sm font-bold outline-none transition-all ${isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'} ${glassInputBg} focus:border-teal-600 border placeholder-slate-500`} />
+              <input 
+                type="text" 
+                placeholder={t.searchPlaceholder} 
+                // 🚀 ربط الحقل بـ State البحث
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full py-2.5 rounded-xl text-sm font-bold outline-none transition-all ${isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'} ${glassInputBg} focus:border-teal-600 border placeholder-slate-500`} 
+              />
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            {chats.map(chat => (
+            {/* 🚀 استخدام المصفوفة المفلترة بدلاً من chats */}
+            {filteredChats.map(chat => (
               <div key={chat.id} onClick={() => setActiveChat(chat.id)} className={`p-4 border-b cursor-pointer transition-colors flex items-center gap-3 ${isDarkMode ? 'border-slate-800 hover:bg-slate-800/80' : 'border-slate-100 hover:bg-slate-50'} ${activeChat === chat.id ? (isDarkMode ? 'bg-slate-800 border-l-4 border-l-teal-500' : 'bg-emerald-50/50 border-l-4 border-l-teal-600 shadow-sm') : 'border-l-4 border-l-transparent'}`}>
+                {/* ... باقي كود عرض المحادثة (الصورة، الاسم، الرسالة الأخيرة) كما هو ... */}
                 <div className="relative">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${activeChat === chat.id ? 'bg-teal-500 text-white shadow-md' : isDarkMode ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}>
                     {chat.avatar}
@@ -509,6 +524,13 @@ export default function ChatRoom() {
                 </div>
               </div>
             ))}
+            
+            {/* 🚀 رسالة اختيارية في حال لم يتم العثور على نتائج */}
+            {filteredChats.length === 0 && (
+                <div className="p-4 text-center text-sm font-bold text-slate-500">
+                    لا توجد نتائج للبحث
+                </div>
+            )}
           </div>
         </div>
 
