@@ -6,8 +6,8 @@ import {
   AlertCircle, Phone, FileSignature, Truck, MapPin, X, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-// تأكد من مسار store الخاص بك
 import useSettingsStore from '../../store/useSettingsStore'; 
+import confetti from 'canvas-confetti';
 
 export default function LiveOrders() {
   const context = useOutletContext() || {};
@@ -152,15 +152,66 @@ export default function LiveOrders() {
     setTruckProgress(15); 
   };
 
+  const [isDelivered, setIsDelivered] = useState(false); // حالة جديدة لمعرفة هل تم التوصيل
+
   useEffect(() => {
     let interval;
     if (trackingOrder) {
+      setTruckProgress(0); // تبدأ من الصفر
+      setIsDelivered(false);
+      
       interval = setInterval(() => { 
-        setTruckProgress(prev => prev >= 95 ? 95 : prev + 10); 
-      }, 1000);
+        setTruckProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          // زيادة عشوائية لجعل الحركة واقعية (بين 2 و 8 بالمئة)
+          const increment = Math.floor(Math.random() * 7) + 2;
+          return prev + increment > 100 ? 100 : prev + increment;
+        }); 
+      }, 800); // تحديث كل 800 جزء من الثانية
     }
     return () => clearInterval(interval);
   }, [trackingOrder]);
+
+  // مراقبة وصول الشاحنة لإطلاق الاحتفالات
+  useEffect(() => {
+    if (truckProgress === 100 && !isDelivered && trackingOrder) {
+      setIsDelivered(true);
+      triggerCelebration();
+    }
+  }, [truckProgress, isDelivered, trackingOrder]);
+
+  // 🚀 دالة الاحتفال والألعاب النارية
+  const triggerCelebration = () => {
+    // تشغيل صوت الاحتفال (تأكد من وجود ملف صوتي أو استخدم هذا الرابط المؤقت)
+    try { 
+      const audio = new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=success-1-6297.mp3');
+      audio.play(); 
+    } catch(e) { console.warn("Audio blocked"); }
+
+    // إطلاق الألعاب النارية من الجانبين
+    const duration = 3 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
+
+    const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+    const interval = setInterval(function() {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      // إطلاق من اليسار
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+      // إطلاق من اليمين
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+    }, 250);
+  };
 
   const openGoogleMaps = (location) => {
     if (location && location.lat) {
@@ -307,7 +358,7 @@ export default function LiveOrders() {
       )}
 
       {trackingOrder && createPortal(
-        <div className={`fixed inset-0 z-[9999] ${modalBg} backdrop-blur-xl flex justify-center items-center p-4 animate-fade-in`} dir={isRtl ? 'rtl' : 'ltr'}>
+        <div className={`fixed inset-0 z-[9999] ${modalBg} backdrop-blur-xl flex justify-center items-center p-4 animate-fade-in font-cairo`} dir={isRtl ? 'rtl' : 'ltr'}>
           <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} border-2 w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden relative`}>
             <div className={`p-5 border-b flex justify-between items-center ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
               <div className="flex items-center gap-3">
@@ -323,33 +374,53 @@ export default function LiveOrders() {
                 <X size={20} />
               </button>
             </div>
+            
             <div className="p-8 space-y-6">
               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-center gap-3">
                 <ShieldCheck className="text-emerald-500" size={24}/>
                 <span className="text-emerald-500 font-black">{t.signedContract}</span>
               </div>
+
               <div className={`${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} border-2 rounded-2xl p-6 relative overflow-hidden shadow-inner`}>
                 <div className="flex justify-between items-center mb-6">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-500 bg-blue-500/10 border border-blue-500/30 px-3 py-1 rounded-full flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span> GPS Live Tracking
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1.5 ${isDelivered ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30' : 'text-blue-500 bg-blue-500/10 border-blue-500/30'}`}>
+                    {!isDelivered && <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>}
+                    {isDelivered ? 'Livraison Terminée ✅' : 'GPS Live Tracking'}
                   </span>
+                  <span className="font-black text-xl">{truckProgress}%</span>
                 </div>
+
+                {/* 🚀 شريط التتبع المطور */}
                 <div className={`relative py-6 px-4 my-2 rounded-xl border ${isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  <div className={`h-3 w-full rounded-full relative overflow-hidden ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                    <div className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${truckProgress}%` }}></div>
+                  {/* خط المسار */}
+                  <div className={`h-4 w-full rounded-full relative overflow-hidden ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                    <div className={`h-full rounded-full transition-all duration-700 ease-out ${isDelivered ? 'bg-emerald-500 shadow-[0_0_15px_#10b981]' : 'bg-gradient-to-r from-blue-500 to-cyan-400'}`} style={{ width: `${truckProgress}%` }}></div>
                   </div>
-                  <div className="absolute top-1/2 -translate-y-1/2 transition-all duration-1000 -ml-4" style={{ [isRtl ? 'right' : 'left']: `${truckProgress}%` }}>
-                    <div className="p-2.5 bg-blue-500 text-white rounded-xl shadow-[0_0_20px_#3b82f6] animate-pulse">
-                      <Truck size={24} />
+                  
+                  {/* الشاحنة المتحركة */}
+                  <div className="absolute top-1/2 -translate-y-1/2 transition-all duration-700 ease-out -ml-6" style={{ [isRtl ? 'right' : 'left']: `${truckProgress}%` }}>
+                    <div className={`p-3 rounded-2xl shadow-2xl flex items-center justify-center transform transition-transform ${isDelivered ? 'bg-emerald-500 text-white scale-110 rotate-[-5deg]' : 'bg-blue-500 text-white animate-bounce'}`}>
+                      {isDelivered ? <CheckCircle size={28} /> : <Truck size={28} className={isRtl ? 'scale-x-[-1]' : ''} />}
                     </div>
                   </div>
-                  <div className={`flex justify-between text-xs font-black mt-4 ${textMuted}`}>
-                    <span>المخزن (المورد)</span>
-                    <span>التاجر (العميل)</span>
+
+                  <div className={`flex justify-between text-xs font-black mt-6 ${textMuted}`}>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="w-3 h-3 rounded-full bg-slate-400"></span>
+                      <span>المخزن (المورد)</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className={`w-4 h-4 rounded-full border-4 ${isDelivered ? 'bg-emerald-500 border-emerald-200' : 'bg-slate-200 border-slate-400'}`}></span>
+                      <span className={isDelivered ? 'text-emerald-500' : ''}>التاجر (العميل)</span>
+                    </div>
                   </div>
                 </div>
-                <p className="text-center text-sm font-black text-blue-500 mt-4 animate-pulse">{t.route}</p>
+
+                <p className={`text-center text-lg font-black mt-4 ${isDelivered ? 'text-emerald-500 animate-pulse' : 'text-blue-500'}`}>
+                  {isDelivered ? 'تم تسليم الطلبية بنجاح! 🎉' : t.route}
+                </p>
               </div>
+
               <button onClick={() => setTrackingOrder(null)} className={`w-full font-bold py-4 rounded-2xl transition-colors ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'}`}>
                 {t.close}
               </button>
