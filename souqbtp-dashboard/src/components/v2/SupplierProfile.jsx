@@ -1,335 +1,226 @@
-import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { 
-  ShieldCheck, MapPin, Star, Clock, CheckCircle2, 
-  Image as ImageIcon, MessageSquare, Briefcase, 
-  Award, Phone, FileText, ChevronRight, X, ThumbsUp
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase'; // تأكد من مسار supabase
+import { ShieldCheck, MessageSquare, PhoneCall, Edit, Save, Plus, Trash2, Loader2 } from 'lucide-react';
 
-export default function SupplierProfile({ isDarkMode, language, onClose }) {
-  const isRtl = language === 'ar';
-  const [activeTab, setActiveTab] = useState('services');
+// لاحظ أن اسم المكون أصبح SupplierProfile ليتطابق مع اسم الملف الخاص بك
+export default function SupplierProfile() {
+  const { id } = useParams(); 
+  const navigate = useNavigate();
+  
+  const [artisan, setArtisan] = useState({});
+  const [services, setServices] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // قاموس الترجمات الخاص بملف المورد
-  const t = {
-    ar: {
-      trustPassport: "جواز الثقة",
-      level: "مستوى التحقق:",
-      businessVerified: "شركة معتمدة",
-      verifiedId: "هوية موثقة",
-      verifiedBiz: "سجل تجاري موثق",
-      verifiedPhone: "رقم هاتف موثق",
-      verifiedAddress: "عنوان موثق",
-      verifiedPortfolio: "أعمال سابقة موثقة",
-      stats: {
-        completed: "مشروع منجز",
-        responseRate: "معدل الاستجابة",
-        responseTime: "وقت الرد",
-        memberSince: "عضو منذ"
-      },
-      tabs: {
-        services: "الخدمات والأسعار",
-        portfolio: "معرض الأعمال",
-        reviews: "التقييمات"
-      },
-      actions: {
-        quote: "طلب عرض سعر",
-        contact: "مراسلة",
-        close: "إغلاق"
-      },
-      about: "نبذة عن الشركة",
-      portfolioEmpty: "لا توجد صور حالياً.",
-      reviewsTitle: "آراء المقاولين"
-    },
-    fr: {
-      trustPassport: "Passeport de Confiance",
-      level: "Niveau :",
-      businessVerified: "Entreprise Vérifiée",
-      verifiedId: "Identité vérifiée",
-      verifiedBiz: "RC vérifié",
-      verifiedPhone: "Téléphone vérifié",
-      verifiedAddress: "Adresse vérifiée",
-      verifiedPortfolio: "Réalisations vérifiées",
-      stats: {
-        completed: "Chantiers",
-        responseRate: "Taux de réponse",
-        responseTime: "Temps de réponse",
-        memberSince: "Membre depuis"
-      },
-      tabs: {
-        services: "Services & Tarifs",
-        portfolio: "Réalisations",
-        reviews: "Avis clients"
-      },
-      actions: {
-        quote: "Demander un devis",
-        contact: "Contacter",
-        close: "Fermer"
-      },
-      about: "À propos",
-      portfolioEmpty: "Aucune photo pour le moment.",
-      reviewsTitle: "Avis des entrepreneurs"
-    },
-    en: {
-      trustPassport: "Trust Passport",
-      level: "Level:",
-      businessVerified: "Verified Business",
-      verifiedId: "Verified ID",
-      verifiedBiz: "Verified Business Reg.",
-      verifiedPhone: "Verified Phone",
-      verifiedAddress: "Verified Address",
-      verifiedPortfolio: "Verified Portfolio",
-      stats: {
-        completed: "Completed Jobs",
-        responseRate: "Response Rate",
-        responseTime: "Response Time",
-        memberSince: "Member Since"
-      },
-      tabs: {
-        services: "Services & Pricing",
-        portfolio: "Portfolio",
-        reviews: "Reviews"
-      },
-      actions: {
-        quote: "Request Quote",
-        contact: "Contact",
-        close: "Close"
-      },
-      about: "About",
-      portfolioEmpty: "No photos available yet.",
-      reviewsTitle: "Contractor Reviews"
-    }
-  }[language] || {};
+  const [newService, setNewService] = useState({ service_name: '', description: '', starting_price: '' });
 
-  // ألوان وتنسيقات ديناميكية حسب الوضع الليلي
-  const bgMain = isDarkMode ? 'bg-slate-900' : 'bg-gray-50';
-  const bgCard = isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200';
-  const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
-  const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
+  useEffect(() => {
+    fetchProfileData();
+  }, [id]);
 
-  // بيانات وهمية للمورد (يتم جلبها لاحقاً من قاعدة البيانات)
-  const supplierData = {
-    name: "Ahmed Électricité",
-    category: "Électricité bâtiment",
-    location: "Béni Mellal, Maroc",
-    rating: 4.8,
-    reviewsCount: 84,
-    completedJobs: 127,
-    responseRate: "98%",
-    responseTime: "< 15 mins",
-    memberSince: "2023",
-    about: "Nous sommes spécialisés dans l'installation électrique résidentielle et industrielle. Avec plus de 10 ans d'expérience, nous garantissons un travail aux normes de sécurité en vigueur.",
-    avatar: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400",
-    cover: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=1200",
-    trustLevel: "business", // 'basic', 'pro', 'business'
-    portfolio: [
-      "https://images.unsplash.com/photo-1558611848-73f7eb4001a1?w=400",
-      "https://images.unsplash.com/photo-1544724569-5f546fd6f2b6?w=400",
-      "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=400"
-    ]
+  const fetchProfileData = async () => {
+    setIsLoading(true);
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    const loggedInUserId = user ? user.id : '9e85d1a0-918f-4c26-a78a-42ad05186b51'; 
+    setCurrentUserId(loggedInUserId);
+
+    const profileId = id || loggedInUserId; 
+
+    const { data: artisanData } = await supabase.from('suppliers').select('*').eq('id', profileId).single();
+    if (artisanData) setArtisan(artisanData);
+
+    const { data: servicesData } = await supabase.from('provider_services').select('*').eq('provider_id', profileId);
+    if (servicesData) setServices(servicesData);
+
+    setIsLoading(false);
   };
 
-  return createPortal(
-    <div 
-      className="fixed inset-0 z-[999999] flex justify-center items-start md:items-center bg-black/70 backdrop-blur-sm overflow-y-auto custom-scrollbar p-0 pt-20 md:p-10 animate-fade-in" 
-      dir={isRtl ? 'rtl' : 'ltr'}
-      onClick={onClose}
-    >
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    const { error } = await supabase.from('suppliers').update({
+      store_name: artisan.store_name,
+      category: artisan.category,
+      address: artisan.address,
+      about_text: artisan.about_text
+    }).eq('id', artisan.id);
+
+    if (!error) setIsEditing(false);
+    setIsSaving(false);
+  };
+
+  const handleAddService = async () => {
+    if (!newService.service_name || !newService.starting_price) return alert("يرجى إدخال اسم الخدمة والسعر");
+    
+    const { data, error } = await supabase.from('provider_services').insert({
+      provider_id: artisan.id,
+      service_name: newService.service_name,
+      description: newService.description,
+      starting_price: newService.starting_price
+    }).select().single();
+
+    if (data) {
+      setServices([...services, data]);
+      setNewService({ service_name: '', description: '', starting_price: '' }); 
+    }
+  };
+
+  const handleDeleteService = async (serviceId) => {
+    if (window.confirm("هل تريد حذف هذه الخدمة؟")) {
+      await supabase.from('provider_services').delete().eq('id', serviceId);
+      setServices(services.filter(s => s.id !== serviceId));
+    }
+  };
+
+  const handleRequestQuote = (service = null) => {
+    const requestPayload = {
+      items: [{
+        product: {
+          name: service ? service.service_name : "طلب عرض سعر عام",
+          supplier: artisan.store_name || "مورد",
+          price: service ? service.starting_price : 0,
+          currency: 'MAD'
+        },
+        qty: 1
+      }],
+      isServiceRequest: true,
+      artisanId: artisan.id
+    };
+    navigate('/messages', { state: { cartOrder: requestPayload } });
+  };
+
+  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>;
+
+  const isOwner = currentUserId === artisan.id;
+
+  return (
+    <div className="max-w-5xl mx-auto p-4 animate-fade-in" dir="rtl">
       
-      {/* الزر الآن حر وعائم فوق كل شيء */}
-      <button 
-        onClick={onClose} 
-        className={`fixed top-6 ${isRtl ? 'left-6' : 'right-6'} z-[9999999] p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)] transition-transform hover:scale-110 flex items-center justify-center`}
-      >
-        <X size={24} strokeWidth={3} />
-      </button>
+      <div className="bg-slate-900 rounded-3xl p-8 flex flex-col md:flex-row justify-between items-start md:items-center text-white mb-6 relative overflow-hidden">
+        <div className="flex items-center gap-6 relative z-10">
+          <img src={artisan.logo_url || 'https://ui-avatars.com/api/?name='+artisan.store_name+'&background=0D8ABC&color=fff'} alt="logo" className="w-24 h-24 rounded-full bg-white object-cover border-4 border-slate-700" />
+          <div>
+            {isEditing ? (
+               <input type="text" value={artisan.store_name || ''} onChange={e => setArtisan({...artisan, store_name: e.target.value})} className="bg-slate-800 border border-slate-600 rounded px-2 py-1 mb-2 text-xl font-black text-white w-full" placeholder="اسم الشركة أو الحرفي" />
+            ) : (
+              <h1 className="text-3xl font-black flex items-center gap-2">
+                {artisan.store_name || 'اسم الحرفي'}
+                {artisan.tier === 'pro' && <ShieldCheck className="text-emerald-500" size={24} title="موثق" />}
+              </h1>
+            )}
+            
+            {isEditing ? (
+               <input type="text" value={artisan.category || ''} onChange={e => setArtisan({...artisan, category: e.target.value})} className="bg-slate-800 border border-slate-600 rounded px-2 py-1 mb-1 text-sm text-emerald-400 w-full" placeholder="فئة العمل (مثال: كهربائي)" />
+            ) : (
+              <p className="text-emerald-400 font-bold">{artisan.category || 'فئة غير محددة'}</p>
+            )}
 
-      <div 
-        className={`relative w-full max-w-5xl rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden ${bgMain} flex flex-col mb-10 mt-10 md:mt-0`}
-        onClick={(e) => e.stopPropagation()} 
-      >
+            <div className="flex gap-4 mt-2 text-sm text-slate-400 font-bold">
+              {isEditing ? (
+                 <input type="text" value={artisan.address || ''} onChange={e => setArtisan({...artisan, address: e.target.value})} className="bg-slate-800 border border-slate-600 rounded px-2 py-1 w-full" placeholder="العنوان أو المدينة" />
+              ) : (
+                 <span>📍 {artisan.address || 'لم يتم تحديد العنوان'}</span>
+              )}
+              {!isEditing && <span>⭐ {artisan.rating || '5.0'} ({artisan.reviews_count || 12} تقييم)</span>}
+            </div>
+          </div>
+        </div>
         
-        {/* --- Header (Cover + Avatar + Basic Info) --- */}
-        <div className="relative h-64 md:h-80 w-full bg-slate-800">
-          <img src={supplierData.cover} alt="Cover" className="w-full h-full object-cover opacity-80" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
-          
-          <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 flex items-end gap-6">
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white p-1 shrink-0 shadow-xl z-10 relative">
-              <img src={supplierData.avatar} alt={supplierData.name} className="w-full h-full rounded-xl object-cover" />
-              <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white dark:border-slate-800">
-                <ShieldCheck size={20} />
-              </div>
-            </div>
-            
-            <div className="flex-1 pb-2">
-              <div className="flex flex-wrap items-center gap-3 mb-1">
-                <h1 className="text-2xl md:text-3xl font-black text-white">{supplierData.name}</h1>
-                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Award size={14} /> {t.businessVerified}
-                </span>
-              </div>
-              <p className="text-emerald-400 font-bold text-sm md:text-base mb-2">{supplierData.category}</p>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
-                <span className="flex items-center gap-1"><MapPin size={16} /> {supplierData.location}</span>
-                <span className="flex items-center gap-1 text-amber-400"><Star size={16} className="fill-current" /> {supplierData.rating} ({supplierData.reviewsCount} avis)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* --- Main Content Layout --- */}
-        <div className="flex flex-col lg:flex-row p-6 md:p-8 gap-8">
-          
-          {/* Left Sidebar (Trust Passport & Stats) */}
-          <div className="w-full lg:w-1/3 space-y-6">
-            
-            {/* Quick Actions (Mobile mainly, but good on desktop too) */}
-            <div className="flex flex-col gap-3">
-              <button className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
-                <FileText size={18} /> {t.actions.quote}
+        {isOwner && (
+          <div className="mt-4 md:mt-0 relative z-10">
+            {isEditing ? (
+              <button onClick={handleSaveProfile} disabled={isSaving} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-xl flex items-center gap-2">
+                {isSaving ? <Loader2 className="animate-spin" size={18}/> : <Save size={18} />} حفظ التغييرات
               </button>
-              <button className={`w-full py-3.5 rounded-xl font-bold transition-colors border-2 flex items-center justify-center gap-2 ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-800'}`}>
-                <MessageSquare size={18} /> {t.actions.contact}
+            ) : (
+              <button onClick={() => setIsEditing(true)} className="bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 font-bold py-2 px-6 rounded-xl flex items-center gap-2">
+                <Edit size={18} /> تعديل البروفايل
               </button>
-            </div>
-
-            {/* TRUST PASSPORT */}
-            <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm`}>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                  <ShieldCheck size={24} />
-                </div>
-                <div>
-                  <h3 className={`font-black text-lg ${textTitle}`}>{t.trustPassport}</h3>
-                  <p className={`text-xs ${textMuted}`}>{t.level} <span className="text-emerald-500 font-bold">{t.businessVerified}</span></p>
-                </div>
-              </div>
-              
-              <ul className="space-y-4 text-sm">
-                <li className={`flex items-center gap-3 ${textTitle}`}><CheckCircle2 size={18} className="text-emerald-500" /> {t.verifiedId}</li>
-                <li className={`flex items-center gap-3 ${textTitle}`}><CheckCircle2 size={18} className="text-emerald-500" /> {t.verifiedBiz}</li>
-                <li className={`flex items-center gap-3 ${textTitle}`}><CheckCircle2 size={18} className="text-emerald-500" /> {t.verifiedPhone}</li>
-                <li className={`flex items-center gap-3 ${textTitle}`}><CheckCircle2 size={18} className="text-emerald-500" /> {t.verifiedAddress}</li>
-                <li className={`flex items-center gap-3 ${textTitle}`}><CheckCircle2 size={18} className="text-emerald-500" /> {t.verifiedPortfolio}</li>
-              </ul>
-            </div>
-
-            {/* STATS */}
-            <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm grid grid-cols-2 gap-4`}>
-              <div>
-                <p className={`text-xs ${textMuted} mb-1`}>{t.stats.completed}</p>
-                <p className={`font-black text-xl ${textTitle}`}>{supplierData.completedJobs}</p>
-              </div>
-              <div>
-                <p className={`text-xs ${textMuted} mb-1`}>{t.stats.responseRate}</p>
-                <p className={`font-black text-xl text-emerald-500`}>{supplierData.responseRate}</p>
-              </div>
-              <div>
-                <p className={`text-xs ${textMuted} mb-1`}>{t.stats.responseTime}</p>
-                <p className={`font-black text-xl ${textTitle}`}>{supplierData.responseTime}</p>
-              </div>
-              <div>
-                <p className={`text-xs ${textMuted} mb-1`}>{t.stats.memberSince}</p>
-                <p className={`font-black text-xl ${textTitle}`}>{supplierData.memberSince}</p>
-              </div>
-            </div>
-
+            )}
           </div>
-
-          {/* Right Content Area (Tabs: Services, Portfolio, Reviews) */}
-          <div className="flex-1 flex flex-col">
-            
-            {/* Tabs Navigation */}
-            <div className={`flex overflow-x-auto custom-scrollbar gap-2 mb-6 p-1 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-200'}`}>
-              {[
-                { id: 'services', label: t.tabs.services, icon: Briefcase },
-                { id: 'portfolio', label: t.tabs.portfolio, icon: ImageIcon },
-                { id: 'reviews', label: t.tabs.reviews, icon: Star }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-3 font-bold text-sm transition-all whitespace-nowrap border-b-2 ${
-                    activeTab === tab.id 
-                      ? 'border-emerald-500 text-emerald-500' 
-                      : `border-transparent ${textMuted} hover:${textTitle}`
-                  }`}
-                >
-                  <tab.icon size={16} /> {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Tab Content */}
-            <div className="flex-1">
-              
-              {/* SERVICES TAB */}
-              {activeTab === 'services' && (
-                <div className="animate-fade-in space-y-6">
-                  {/* About Section */}
-                  <div>
-                    <h3 className={`font-black text-lg mb-2 ${textTitle}`}>{t.about}</h3>
-                    <p className={`text-sm leading-relaxed ${textMuted}`}>{supplierData.about}</p>
-                  </div>
-                  
-                  {/* Sample Service Item (Reusing the visual language) */}
-                  <div className={`p-5 rounded-2xl border ${bgCard} hover:shadow-md transition-shadow flex flex-col sm:flex-row items-center justify-between gap-4`}>
-                    <div className="flex-1">
-                      <h4 className={`font-bold text-lg mb-1 ${textTitle}`}>Installation Électrique Résidentielle</h4>
-                      <p className={`text-sm ${textMuted} mb-2`}>Câblage complet, tableaux électriques, mise aux normes.</p>
-                      <span className="inline-block bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-3 py-1 rounded-full">À partir de 250 MAD / m²</span>
-                    </div>
-                    <button className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors">
-                      {t.actions.quote}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* PORTFOLIO TAB */}
-              {activeTab === 'portfolio' && (
-                <div className="animate-fade-in">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {supplierData.portfolio.map((img, idx) => (
-                      <div key={idx} className="aspect-square rounded-xl overflow-hidden bg-slate-200 group cursor-pointer relative">
-                        <img src={img} alt={`Portfolio ${idx}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                          <ImageIcon className="text-white opacity-0 group-hover:opacity-100 transition-opacity" size={24} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* REVIEWS TAB */}
-              {activeTab === 'reviews' && (
-                <div className="animate-fade-in space-y-4">
-                  <div className={`p-4 rounded-xl border ${bgCard} flex items-start gap-4`}>
-                    <div className="w-10 h-10 rounded-full bg-slate-200 shrink-0"></div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-1">
-                        <h5 className={`font-bold text-sm ${textTitle}`}>Entreprise Bâtir Plus</h5>
-                        <span className="text-xs text-slate-400">Il y a 2 semaines</span>
-                      </div>
-                      <div className="flex text-amber-400 mb-2">
-                        <Star size={12} className="fill-current"/><Star size={12} className="fill-current"/><Star size={12} className="fill-current"/><Star size={12} className="fill-current"/><Star size={12} className="fill-current"/>
-                      </div>
-                      <p className={`text-sm ${textMuted}`}>Excellente prestation. L'équipe d'Ahmed est très professionnelle et respecte les délais. Le travail est propre et conforme aux plans.</p>
-                      <button className="mt-3 flex items-center gap-1 text-xs text-slate-400 hover:text-emerald-500 transition-colors">
-                        <ThumbsUp size={14} /> Utile (3)
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
-        </div>
+        )}
       </div>
-    </div>,
-    document.body
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <div className="md:col-span-2 space-y-6">
+          <div className="bg-white border rounded-3xl p-6 shadow-sm">
+            <h2 className="font-black text-xl mb-3">حول الحرفي (À propos)</h2>
+            {isEditing ? (
+              <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className="w-full bg-slate-50 border rounded-xl p-3 h-32 outline-none focus:border-emerald-500" placeholder="اكتب نبذة عن خبرتك وعملك..."></textarea>
+            ) : (
+              <p className="text-slate-600 leading-relaxed font-medium">{artisan.about_text || 'لا يتوفر وصف حالياً.'}</p>
+            )}
+          </div>
+
+          <div className="bg-white border rounded-3xl p-6 shadow-sm">
+            <h2 className="font-black text-xl mb-4">الخدمات والأسعار</h2>
+            
+            {isEditing && (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6">
+                <h4 className="font-bold text-sm mb-3 flex items-center gap-2"><Plus size={16}/> إضافة خدمة جديدة</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                  <input type="text" placeholder="اسم الخدمة (مثال: تركيب كهرباء)" value={newService.service_name} onChange={e => setNewService({...newService, service_name: e.target.value})} className="border rounded-lg p-2 text-sm outline-none focus:border-emerald-500" />
+                  <input type="number" placeholder="السعر المبدئي (MAD)" value={newService.starting_price} onChange={e => setNewService({...newService, starting_price: e.target.value})} className="border rounded-lg p-2 text-sm outline-none focus:border-emerald-500" dir="rtl" />
+                </div>
+                <input type="text" placeholder="وصف قصير للخدمة..." value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} className="border rounded-lg p-2 text-sm w-full mb-3 outline-none focus:border-emerald-500" />
+                <button onClick={handleAddService} className="w-full bg-slate-800 text-white rounded-lg py-2 text-sm font-bold hover:bg-slate-700">إضافة للقائمة</button>
+              </div>
+            )}
+
+            {services.length > 0 ? (
+              <div className="space-y-3">
+                {services.map(service => (
+                  <div key={service.id} className="border border-slate-100 bg-slate-50/50 rounded-2xl p-4 flex justify-between items-center group hover:border-emerald-200 transition-colors">
+                    <div>
+                      <h4 className="font-black text-lg text-slate-800">{service.service_name}</h4>
+                      <p className="text-sm text-slate-500 mb-2 font-medium">{service.description}</p>
+                      <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">ابتداءً من {service.starting_price} MAD</span>
+                    </div>
+                    <div className="flex gap-2">
+                      {isEditing ? (
+                        <button onClick={() => handleDeleteService(service.id)} className="bg-red-50 text-red-500 p-3 rounded-xl hover:bg-red-100 transition-colors"><Trash2 size={18}/></button>
+                      ) : (
+                        <button onClick={() => handleRequestQuote(service)} className="bg-emerald-500 text-white px-5 py-3 rounded-xl font-bold text-sm hover:bg-emerald-600 transition-all hover:scale-105 shadow-md shadow-emerald-500/20">طلب عرض</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500 text-center py-6 font-bold bg-slate-50 rounded-xl">لا توجد خدمات مضافة حتى الآن.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {!isEditing && !isOwner && (
+            <>
+              <button onClick={() => handleRequestQuote()} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl flex justify-center items-center gap-2 transition-transform hover:scale-[1.02] shadow-xl shadow-blue-500/20">
+                <MessageSquare size={20} /> طلب عرض سعر عام
+              </button>
+              <button className="w-full bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-4 rounded-2xl flex justify-center items-center gap-2 transition-colors">
+                <PhoneCall size={20} /> تواصل هاتفي
+              </button>
+            </>
+          )}
+
+          <div className="bg-white border rounded-3xl p-6 mt-6 shadow-sm">
+            <h3 className="font-black text-lg mb-4 flex items-center gap-2">
+              <ShieldCheck className="text-emerald-500" /> جواز الثقة
+            </h3>
+            <ul className="space-y-3 text-sm font-bold text-slate-600">
+              <li className="flex gap-3 items-center"><span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> الهوية موثقة</li>
+              <li className="flex gap-3 items-center"><span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> السجل التجاري موثق</li>
+              <li className="flex gap-3 items-center"><span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> الهاتف موثق</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 }
