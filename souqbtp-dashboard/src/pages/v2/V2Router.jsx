@@ -19,6 +19,7 @@ import ContractorAccounting from './ContractorAccounting';
 import AIAudit from './AIAudit';
 import ContractorProfile from './ContractorProfile';
 import ContractorSubscription from './ContractorSubscription';
+import ArtisanProfile from './path/to/ArtisanProfile';
 
 // استيراد صفحات الهبوط (المغناطيس)
 import EmpireLanding from '../../landing-pages/EmpireLanding';
@@ -80,6 +81,7 @@ export default function V2Router({ session, supplier }) {
         
         {/* الإعدادات */}
         <Route path="profile" element={<ContractorProfile />} />
+        <Route path="/artisan/:id" element={<ArtisanProfile />} />
         <Route path="subscription" element={<ContractorSubscription />} />
 
         {/* 🚨 التوجيه التلقائي للمسارات المجهولة داخل v2 */}
