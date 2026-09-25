@@ -351,30 +351,43 @@ export default function ChatRoom() {
   }, [messages, isTyping]);
 
   const handleAcceptQuote = async (msgId, originalData) => {
-    // 1. تحديث حالة عرض السعر في الشات إلى "مقبول"
-    const updatedContent = JSON.stringify({ ...originalData, quoteStatus: 'accepted' });
-    await supabase.from('messages').update({ content: updatedContent }).eq('id', msgId);
-    
-    // 2. 🚀 الأتمتة: البحث عن تفاصيل السلة في المحادثة الحالية لإرسالها للرادار
-    const orderMsg = messages.slice().reverse().find(m => m.type === 'order_card' && m.chatId === activeChat);
-    const orderItems = orderMsg && orderMsg.orderData 
-      ? orderMsg.orderData.items.map(item => ({ name: item.product?.name || item.name, quantity: item.qty || item.quantity }))
-      : [{ name: 'مواد بناء (طلبية مخصصة من التفاوض)', quantity: 1 }];
+    try {
+      // 1. تحديث حالة عرض السعر في الشات إلى "مقبول"
+      const updatedContent = JSON.stringify({ ...originalData, quoteStatus: 'accepted' });
+      await supabase.from('messages').update({ content: updatedContent }).eq('id', msgId);
+      
+      // 2. البحث عن تفاصيل السلة التي تخص هذه المحادثة
+      const orderMsg = messages.slice().reverse().find(m => m.type === 'order_card' && m.chatId === activeChat);
+      const orderItems = orderMsg && orderMsg.orderData && orderMsg.orderData.items
+        ? orderMsg.orderData.items.map(item => ({ name: item.product?.name || item.name, quantity: item.qty || item.quantity }))
+        : [{ name: 'مواد بناء (طلبية من التفاوض)', quantity: 1 }];
 
-    // 3. 🚀 إنشاء الطلبية في قاعدة البيانات لتظهر في Live Orders فوراً
-    await supabase.from('supply_requests').insert({
-      merchant_id: 'DetailAlpha', // معرّف التاجر الحالي
-      status: 'pending', // تظهر في الرادار كـ "مراجعة مبدئية"
-      total_amount: originalData.quoteData.total,
-      items: orderItems,
-      location_data: { lat: 32.5985, lng: -6.2658 }, // إحداثيات افتراضية (قصبة تادلة/بني ملال)
-      created_at: new Date().toISOString()
-    });
+      // 3. 🚀 إرسال الطلبية للرادار (جدول supply_requests)
+      const { error: insertError } = await supabase.from('supply_requests').insert({
+        merchant_id: 'DetailAlpha', // اسم التاجر
+        status: 'pending',          // الحالة المبدئية
+        total_amount: originalData.quoteData?.total || 0,
+        items: orderItems,
+        location_data: { lat: 32.5985, lng: -6.2658 }, // إحداثيات (يمكن تغييرها لاحقاً لتأخذ موقع التاجر الحقيقي)
+        created_at: new Date().toISOString()
+      });
 
-    // 4. إرسال رسالة التأكيد الخضراء في الشات
-    setTimeout(() => {
-      insertMessageToDB(activeChat, 'system', { text: 'KEY_SYSTEM_ACCEPT' }, 'system');
-    }, 500);
+      // 🚨 التحقق من نجاح العملية
+      if (insertError) {
+        console.error("Supabase Insert Error:", insertError);
+        alert("❌ خطأ: لم يتم إرسال الطلبية للرادار! يرجى التأكد من إيقاف (RLS) لجدول supply_requests.");
+      } else {
+        console.log("✅ تم إرسال الطلبية للرادار بنجاح!");
+      }
+
+      // 4. إرسال رسالة التأكيد الخضراء في الشات
+      setTimeout(() => {
+        insertMessageToDB(activeChat, 'system', { text: 'KEY_SYSTEM_ACCEPT' }, 'system');
+      }, 500);
+
+    } catch (err) {
+      console.error("Error in handleAcceptQuote:", err);
+    }
   };
 
   const handleRejectQuote = async (msgId, originalData) => {
