@@ -18,7 +18,6 @@ import Taxes from './Taxes';
 import ContractorAccounting from './ContractorAccounting';
 import AIAudit from './AIAudit';
 import ContractorProfile from './ContractorProfile';
-import ArtisanProfile from './ArtisanProfile';
 import ContractorSubscription from './ContractorSubscription';
 
 // استيراد صفحات الهبوط (المغناطيس)
@@ -81,7 +80,6 @@ export default function V2Router({ session, supplier }) {
         
         {/* الإعدادات */}
         <Route path="profile" element={<ContractorProfile />} />
-        <Route path="/artisan/:id" element={<ArtisanProfile />} />
         <Route path="subscription" element={<ContractorSubscription />} />
 
         {/* 🚨 التوجيه التلقائي للمسارات المجهولة داخل v2 */}
