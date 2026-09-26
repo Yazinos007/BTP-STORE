@@ -4,72 +4,71 @@ import { supabase } from '../../lib/supabase';
 import { 
   ShieldCheck, MapPin, Star, CheckCircle2, 
   Image as ImageIcon, MessageSquare, Briefcase, 
-  Award, FileText, X, ThumbsUp, Edit, Save, Plus, Trash2, Loader2, Phone, Camera
+  Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud
 } from 'lucide-react';
 
 export default function SupplierProfile({ isDarkMode = false, language = 'ar', onClose }) {
   const { id } = useParams(); 
   const navigate = useNavigate();
-  const location = useLocation();
   const isRtl = language === 'ar';
   
   const [activeTab, setActiveTab] = useState('services');
   const [artisan, setArtisan] = useState({});
   const [services, setServices] = useState([]);
+  const [portfolio, setPortfolio] = useState([]); // 🚀 حالة معرض الأعمال
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   
-  // حالة الخدمة الجديدة
   const [newService, setNewService] = useState({ service_name: '', description: '', starting_price: '' });
-  const [isAddingService, setIsAddingService] = useState(false); // زر لإظهار/إخفاء فورم الإضافة
+  const [isAddingService, setIsAddingService] = useState(false);
   
-  // حالات لرفع الصور
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingPortfolio, setIsUploadingPortfolio] = useState(false); // 🚀 حالة رفع صور المعرض
 
   const t = {
     ar: {
       trustPassport: "جواز الثقة", level: "مستوى التحقق:", businessVerified: "شركة معتمدة",
       verifiedId: "هوية موثقة", verifiedBiz: "سجل تجاري موثق", verifiedPhone: "رقم هاتف موثق",
       verifiedAddress: "عنوان موثق", verifiedPortfolio: "أعمال سابقة موثقة",
-      stats: { completed: "مشروع منجز", responseRate: "معدل الاستجابة", responseTime: "وقت الرد", memberSince: "عضو منذ" },
+      stats: { completed: "مشروع منجز", responseRate: "معدل الاستجابة", responseTime: "وقت الرد" },
       tabs: { services: "الخدمات والأسعار", portfolio: "معرض الأعمال", reviews: "التقييمات" },
       actions: { quote: "طلب عرض سعر", contact: "مراسلة", close: "إغلاق", edit: "تعديل البروفايل", save: "حفظ التغييرات" },
-      about: "نبذة عن الشركة", portfolioEmpty: "لا توجد صور حالياً.", reviewsTitle: "آراء المقاولين",
+      about: "نبذة عن الشركة", portfolioEmpty: "لا توجد صور في معرض الأعمال حالياً.", reviewsTitle: "آراء المقاولين",
       addService: "إضافة خدمة جديدة", serviceNamePlaceholder: "اسم الخدمة (مثال: تركيب كهرباء)",
       pricePlaceholder: "السعر المبدئي (MAD)", descPlaceholder: "وصف قصير للخدمة...",
       saveServiceBtn: "حفظ الخدمة", cancel: "إلغاء", emptyServices: "لا توجد خدمات مضافة حتى الآن.",
-      startingFrom: "ابتداءً من", toReviews: "الانتقال لصفحة التقييمات"
+      startingFrom: "ابتداءً من", toReviews: "الانتقال لصفحة التقييمات",
+      placeholders: {
+        name: "✍️ أدخل اسم الشركة أو الحرفي هنا...",
+        category: "✍️ حدد تخصصك (مثال: كهربائي، صباغ)...",
+        address: "✍️ أدخل المدينة أو العنوان السطحي..."
+      },
+      addPhoto: "إضافة صورة للمعرض"
     },
     fr: {
       trustPassport: "Passeport de Confiance", level: "Niveau :", businessVerified: "Entreprise Vérifiée",
       verifiedId: "Identité vérifiée", verifiedBiz: "RC vérifié", verifiedPhone: "Téléphone vérifié",
       verifiedAddress: "Adresse vérifiée", verifiedPortfolio: "Réalisations vérifiées",
-      stats: { completed: "Chantiers", responseRate: "Taux de réponse", responseTime: "Temps de réponse", memberSince: "Membre depuis" },
+      stats: { completed: "Chantiers", responseRate: "Taux de réponse", responseTime: "Temps de réponse" },
       tabs: { services: "Services & Tarifs", portfolio: "Réalisations", reviews: "Avis clients" },
       actions: { quote: "Demander un devis", contact: "Contacter", close: "Fermer", edit: "Modifier profil", save: "Enregistrer" },
       about: "À propos", portfolioEmpty: "Aucune photo pour le moment.", reviewsTitle: "Avis des entrepreneurs",
       addService: "Ajouter un nouveau service", serviceNamePlaceholder: "Nom du service (ex: Installation)",
       pricePlaceholder: "Prix de départ (MAD)", descPlaceholder: "Brève description...",
       saveServiceBtn: "Enregistrer le service", cancel: "Annuler", emptyServices: "Aucun service ajouté pour le moment.",
-      startingFrom: "À partir de", toReviews: "Aller à la page des avis"
-    },
-    en: {
-      trustPassport: "Trust Passport", level: "Level:", businessVerified: "Verified Business",
-      verifiedId: "Verified ID", verifiedBiz: "Verified Business Reg.", verifiedPhone: "Verified Phone",
-      verifiedAddress: "Verified Address", verifiedPortfolio: "Verified Portfolio",
-      stats: { completed: "Completed Jobs", responseRate: "Response Rate", responseTime: "Response Time", memberSince: "Member Since" },
-      tabs: { services: "Services & Pricing", portfolio: "Portfolio", reviews: "Reviews" },
-      actions: { quote: "Request Quote", contact: "Contact", close: "Close", edit: "Edit Profile", save: "Save Changes" },
-      about: "About", portfolioEmpty: "No photos available yet.", reviewsTitle: "Contractor Reviews",
-      addService: "Add new service", serviceNamePlaceholder: "Service name (e.g. Electrical work)",
-      pricePlaceholder: "Starting price (MAD)", descPlaceholder: "Short description...",
-      saveServiceBtn: "Save Service", cancel: "Cancel", emptyServices: "No services added yet.",
-      startingFrom: "Starting from", toReviews: "Go to reviews page"
+      startingFrom: "À partir de", toReviews: "Aller à la page des avis",
+      placeholders: {
+        name: "✍️ Entrez le nom de l'entreprise...",
+        category: "✍️ Spécialité (ex: Électricien)...",
+        address: "✍️ Entrez l'adresse ou la ville..."
+      },
+      addPhoto: "Ajouter une photo"
     }
-  }[language] || {};
+  }[language] || t.ar;
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -86,6 +85,10 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       const { data: servicesData } = await supabase.from('provider_services').select('*').eq('provider_id', profileId);
       if (servicesData) setServices(servicesData);
 
+      // 🚀 جلب صور معرض الأعمال
+      const { data: portfolioData } = await supabase.from('provider_portfolio').select('*').eq('provider_id', profileId);
+      if (portfolioData) setPortfolio(portfolioData);
+
       setIsLoading(false);
     };
     fetchProfileData();
@@ -97,7 +100,11 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       store_name: artisan.store_name,
       category: artisan.category,
       address: artisan.address,
-      about_text: artisan.about_text
+      about_text: artisan.about_text,
+      // 🚀 حفظ الإحصائيات أيضاً
+      completed_projects: artisan.completed_projects,
+      response_rate: artisan.response_rate,
+      response_time: artisan.response_time
     }).eq('id', artisan.id);
 
     if (!error) setIsEditing(false);
@@ -105,28 +112,20 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
   };
 
   const handleAddService = async () => {
-    if (!newService.service_name || !newService.starting_price) {
-      alert(language === 'ar' ? "يرجى إدخال اسم الخدمة والسعر" : "Veuillez entrer le nom et le prix du service");
-      return;
-    }
-    const { data, error } = await supabase.from('provider_services').insert({
-      provider_id: artisan.id, 
-      service_name: newService.service_name, 
-      description: newService.description, 
-      starting_price: newService.starting_price
+    if (!newService.service_name || !newService.starting_price) return;
+    const { data } = await supabase.from('provider_services').insert({
+      provider_id: artisan.id, service_name: newService.service_name, description: newService.description, starting_price: newService.starting_price
     }).select().single();
 
     if (data) {
       setServices([...services, data]);
       setNewService({ service_name: '', description: '', starting_price: '' }); 
-      setIsAddingService(false); // إغلاق الفورم بعد الحفظ
-    } else {
-      console.error("Error adding service:", error);
+      setIsAddingService(false); 
     }
   };
 
   const handleDeleteService = async (serviceId) => {
-    if (window.confirm("Are you sure you want to delete this service?")) {
+    if (window.confirm("Are you sure?")) {
       await supabase.from('provider_services').delete().eq('id', serviceId);
       setServices(services.filter(s => s.id !== serviceId));
     }
@@ -149,12 +148,14 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
     navigate('/v2/messages', { state: { cartOrder: requestPayload } });
   };
 
+  // 🚀 دالة رفع الصورة (لوغو أو غلاف أو معرض أعمال)
   const handleUploadImage = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
 
     if (type === 'logo') setIsUploadingLogo(true);
-    else setIsUploadingCover(true);
+    else if (type === 'cover') setIsUploadingCover(true);
+    else setIsUploadingPortfolio(true);
 
     try {
       const fileExt = file.name.split('.').pop();
@@ -166,16 +167,31 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       if (!uploadError) {
         const { data } = supabase.storage.from('supplier-images').getPublicUrl(filePath);
         if (data && data.publicUrl) {
-           const updateField = type === 'logo' ? { logo_url: data.publicUrl } : { cover_url: data.publicUrl };
-           await supabase.from('suppliers').update(updateField).eq('id', artisan.id);
-           setArtisan(prev => ({ ...prev, ...updateField }));
+           if (type === 'portfolio') {
+             // إضافة الصورة لجدول معرض الأعمال
+             const { data: newPortfolioItem } = await supabase.from('provider_portfolio').insert({
+               provider_id: artisan.id, image_url: data.publicUrl
+             }).select().single();
+             if (newPortfolioItem) setPortfolio([...portfolio, newPortfolioItem]);
+           } else {
+             // تحديث اللوغو أو الغلاف
+             const updateField = type === 'logo' ? { logo_url: data.publicUrl } : { cover_url: data.publicUrl };
+             await supabase.from('suppliers').update(updateField).eq('id', artisan.id);
+             setArtisan(prev => ({ ...prev, ...updateField }));
+           }
         }
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      if (type === 'logo') setIsUploadingLogo(false);
-      else setIsUploadingCover(false);
+    } catch (err) { console.error(err); } 
+    finally {
+      setIsUploadingLogo(false); setIsUploadingCover(false); setIsUploadingPortfolio(false);
+    }
+  };
+
+  // 🚀 دالة حذف صورة من المعرض
+  const handleDeletePortfolioImage = async (imageId) => {
+    if (window.confirm("حذف هذه الصورة من معرض الأعمال؟")) {
+      await supabase.from('provider_portfolio').delete().eq('id', imageId);
+      setPortfolio(portfolio.filter(p => p.id !== imageId));
     }
   };
 
@@ -199,7 +215,7 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
         
         {isOwner && isEditing && (
-            <label className="absolute top-6 left-6 z-50 bg-black/50 text-white p-3 rounded-full cursor-pointer hover:bg-black/70 transition">
+            <label className="absolute top-6 left-6 z-50 bg-black/50 text-white p-3 rounded-full cursor-pointer hover:bg-black/70 transition" title="تغيير الغلاف">
                 {isUploadingCover ? <Loader2 className="animate-spin" size={20}/> : <Camera size={20} />}
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'cover')} />
             </label>
@@ -230,7 +246,7 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
             <img src={defaultAvatar} alt={artisan.store_name} className="w-full h-full rounded-xl object-cover" />
             
             {isOwner && isEditing && (
-                 <label className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                 <label className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity" title="تغيير الشعار">
                      {isUploadingLogo ? <Loader2 className="animate-spin text-white" size={24}/> : <Camera className="text-white" size={24} />}
                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'logo')} />
                  </label>
@@ -246,25 +262,28 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
           <div className="flex-1 pb-2">
             <div className="flex flex-wrap items-center gap-3 mb-1">
               {isEditing ? (
-                <input type="text" value={artisan.store_name || ''} onChange={e => setArtisan({...artisan, store_name: e.target.value})} className="bg-slate-900/80 border border-slate-600 rounded px-3 py-1 text-2xl font-black text-white outline-none focus:border-emerald-500" />
+                // 🚀 تحسين الإرشادات هنا (Placeholders)
+                <input type="text" placeholder={t.placeholders.name} value={artisan.store_name || ''} onChange={e => setArtisan({...artisan, store_name: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 text-2xl font-black text-white outline-none focus:border-emerald-500 placeholder-slate-400 w-full md:w-96" />
               ) : (
                 <h1 className="text-2xl md:text-3xl font-black text-white">{artisan.store_name || 'اسم الحرفي'}</h1>
               )}
               
-              <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                <Award size={14} /> {t.businessVerified}
-              </span>
+              {!isEditing && (
+                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                  <Award size={14} /> {t.businessVerified}
+                </span>
+              )}
             </div>
             
             {isEditing ? (
-              <input type="text" value={artisan.category || ''} onChange={e => setArtisan({...artisan, category: e.target.value})} className="bg-slate-900/80 border border-slate-600 rounded px-3 py-1 mb-2 text-sm text-emerald-400 outline-none focus:border-emerald-500 block w-64" />
+              <input type="text" placeholder={t.placeholders.category} value={artisan.category || ''} onChange={e => setArtisan({...artisan, category: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 mb-2 text-sm text-emerald-400 outline-none focus:border-emerald-500 block w-full md:w-80 placeholder-slate-400" />
             ) : (
               <p className="text-emerald-400 font-bold text-sm md:text-base mb-2">{artisan.category || 'فئة غير محددة'}</p>
             )}
 
             <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
               {isEditing ? (
-                <input type="text" value={artisan.address || ''} onChange={e => setArtisan({...artisan, address: e.target.value})} className="bg-slate-900/80 border border-slate-600 rounded px-3 py-1 text-white outline-none focus:border-emerald-500" />
+                <input type="text" placeholder={t.placeholders.address} value={artisan.address || ''} onChange={e => setArtisan({...artisan, address: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 text-white outline-none focus:border-emerald-500 w-full md:w-80 placeholder-slate-400" />
               ) : (
                 <span className="flex items-center gap-1"><MapPin size={16} /> {artisan.address || 'العنوان غير محدد'}</span>
               )}
@@ -280,15 +299,19 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
         {/* Left Sidebar */}
         <div className="w-full lg:w-1/3 space-y-6">
           
-          {/* Quick Actions (الستايل الأول الممتاز - الآن يظهر دائماً) */}
-          <div className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm">
-            <button onClick={() => handleRequestQuote()} className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-lg">
-              <FileText size={20} /> {t.actions.quote}
-            </button>
-            <button className={`w-full py-3.5 rounded-xl font-bold transition-colors border-2 flex items-center justify-center gap-2 text-lg ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-800'}`}>
-              <MessageSquare size={20} /> {t.actions.contact}
-            </button>
-          </div>
+          {/* 🚀 تفعيل أزرار الاتصال وطلب العرض لتظهر للزبون دائماً */}
+          {!isOwner && !isEditing && (
+            <div className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm">
+              {/* طلب عرض سعر عام */}
+              <button onClick={() => handleRequestQuote(null)} className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-lg">
+                <FileText size={20} /> {t.actions.quote}
+              </button>
+              {/* زر الاتصال / محادثة عامة */}
+              <button onClick={() => navigate('/v2/messages')} className={`w-full py-3.5 rounded-xl font-bold transition-colors border-2 flex items-center justify-center gap-2 text-lg ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-800'}`}>
+                <MessageSquare size={20} /> {t.actions.contact}
+              </button>
+            </div>
+          )}
 
           {/* TRUST PASSPORT */}
           <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm`}>
@@ -306,22 +329,37 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
               <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedId}</li>
               <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedBiz}</li>
               <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedPhone}</li>
+              {/* 🚀 الإضافات الجديدة لجواز الثقة */}
+              <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedAddress}</li>
+              <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedPortfolio}</li>
             </ul>
           </div>
 
-          {/* STATS */}
+          {/* 🚀 STATS (قابلة للتعديل في وضع التعديل) */}
           <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm grid grid-cols-2 gap-4`}>
             <div>
               <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.completed}</p>
-              <p className={`font-black text-xl ${textTitle}`}>{artisan.completed_projects || 12}</p>
+              {isEditing ? (
+                 <input type="number" value={artisan.completed_projects || ''} onChange={e => setArtisan({...artisan, completed_projects: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} />
+              ) : (
+                <p className={`font-black text-xl ${textTitle}`}>{artisan.completed_projects || 12}</p>
+              )}
             </div>
             <div>
               <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseRate}</p>
-              <p className={`font-black text-xl text-emerald-500`}>{artisan.response_rate || '95'}%</p>
+              {isEditing ? (
+                 <input type="number" value={artisan.response_rate || ''} onChange={e => setArtisan({...artisan, response_rate: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder="%" />
+              ) : (
+                <p className={`font-black text-xl text-emerald-500`}>{artisan.response_rate || '95'}%</p>
+              )}
             </div>
-            <div>
+            <div className="col-span-2">
               <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseTime}</p>
-              <p className={`font-black text-xl ${textTitle}`}>{artisan.response_time || '< 30 mins'}</p>
+              {isEditing ? (
+                 <input type="text" value={artisan.response_time || ''} onChange={e => setArtisan({...artisan, response_time: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder="مثال: < 30 mins" />
+              ) : (
+                <p className={`font-black text-xl ${textTitle}`}>{artisan.response_time || '< 30 mins'}</p>
+              )}
             </div>
           </div>
         </div>
@@ -356,13 +394,12 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
                 <div>
                   <h3 className={`font-black text-lg mb-2 ${textTitle}`}>{t.about}</h3>
                   {isEditing ? (
-                    <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className={`w-full ${bgCard} border rounded-xl p-3 h-32 outline-none focus:border-emerald-500 text-sm font-medium`} />
+                    <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className={`w-full ${bgCard} border rounded-xl p-3 h-32 outline-none focus:border-emerald-500 text-sm font-medium`} placeholder="اكتب نبذة عن الشركة هنا..." />
                   ) : (
                     <p className={`text-sm leading-relaxed ${textMuted} font-medium`}>{artisan.about_text || 'لا يتوفر وصف حالياً.'}</p>
                   )}
                 </div>
                 
-                {/* قسم إضافة الخدمة */}
                 {isEditing && (
                   <div className="mb-6">
                     {!isAddingService ? (
@@ -386,7 +423,6 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
                   </div>
                 )}
 
-                {/* قائمة الخدمات */}
                 {services.length > 0 ? (
                   <div className="space-y-4">
                     {services.map(service => (
@@ -414,11 +450,36 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
               </div>
             )}
 
-            {/* PORTFOLIO TAB */}
+            {/* 🚀 PORTFOLIO TAB (نظام رفع وعرض الصور) */}
             {activeTab === 'portfolio' && (
-              <div className="animate-fade-in text-center p-10">
-                <ImageIcon size={48} className={`mx-auto mb-4 opacity-20 ${textMuted}`} />
-                <p className={`${textMuted} font-bold`}>{t.portfolioEmpty}</p>
+              <div className="animate-fade-in space-y-6">
+                {isEditing && (
+                  <label className="w-full border-2 border-dashed border-emerald-500/50 bg-emerald-50/30 dark:bg-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-emerald-50/80 transition-colors">
+                     {isUploadingPortfolio ? <Loader2 className="animate-spin text-emerald-500" size={32}/> : <UploadCloud className="text-emerald-500" size={32}/>}
+                     <span className="font-bold text-emerald-600">{t.addPhoto}</span>
+                     <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'portfolio')} disabled={isUploadingPortfolio} />
+                  </label>
+                )}
+
+                {portfolio.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {portfolio.map(img => (
+                      <div key={img.id} className="aspect-square rounded-2xl overflow-hidden bg-slate-200 group relative border shadow-sm">
+                        <img src={img.image_url} alt="Portfolio" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        {isEditing && (
+                          <button onClick={() => handleDeletePortfolioImage(img.id)} className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center p-10">
+                    <ImageIcon size={48} className={`mx-auto mb-4 opacity-20 ${textMuted}`} />
+                    <p className={`${textMuted} font-bold`}>{t.portfolioEmpty}</p>
+                  </div>
+                )}
               </div>
             )}
 
