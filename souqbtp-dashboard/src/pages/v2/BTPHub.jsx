@@ -47,6 +47,23 @@ export default function BTPHub() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedItem, setAddedItem] = useState(null);
 
+  // 1. إضافة متغير لتخزين الحرفيين
+  const [artisans, setArtisans] = useState([]);
+  // 2. جلب البيانات عند تحميل الصفحة
+  useEffect(() => {
+    const fetchArtisans = async () => {
+      // نجلب الحرفيين ومعهم أسعار خدماتهم لحساب "التعريفة الأساسية"
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*, provider_services(starting_price)');
+        
+      if (data) {
+        setArtisans(data);
+      }
+    };
+    fetchArtisans();
+  }, []);
+
   const translations = {
     ar: {
       searchPlaceholder: "ماذا تحتاج لمشروعك؟ ابحث عن الأسمنت، الحديد، مقاول...",
@@ -377,38 +394,76 @@ export default function BTPHub() {
       {/* 2. SERVICES MODE */}
       {activeMode === 'services' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-          <div className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-slate-200 rounded-full overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=150" alt="Avatar" className="w-full h-full object-cover"/>
+          {artisans.map((artisan) => {
+            // حساب السعر الأدنى من الخدمات المربوطة بالحرفي (إذا كان لديه خدمات)
+            const minPrice = artisan.provider_services && artisan.provider_services.length > 0
+              ? Math.min(...artisan.provider_services.map(s => Number(s.starting_price)))
+              : 0;
+
+            return (
+              <div key={artisan.id} className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 bg-slate-200 rounded-full overflow-hidden">
+                    <img 
+                      src={artisan.logo_url || `https://ui-avatars.com/api/?name=${artisan.store_name}&background=10b981&color=fff`} 
+                      alt={artisan.store_name} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h3 className={`font-bold text-lg flex items-center gap-1 ${textTitle}`}>
+                      {artisan.store_name || 'اسم الحرفي'} 
+                      {(artisan.tier === 'pro' || artisan.tier === 'business') && <ShieldCheck className="w-4 h-4 text-emerald-500" />}
+                    </h3>
+                    <p className="text-sm text-emerald-600 font-bold">{artisan.category || t.services.specialty}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mb-6">
+                  {/* التدخلات المنجزة الحقيقية */}
+                  <div className={`flex justify-between text-sm ${textMuted}`}>
+                    <span>{t.services.interventions}</span>
+                    <span className={`font-semibold ${textTitle}`}>{artisan.completed_projects || 0} {t.services.completed}</span>
+                  </div>
+                  {/* وقت الاستجابة الحقيقي */}
+                  <div className={`flex justify-between text-sm ${textMuted}`}>
+                    <span>{t.services.response}</span>
+                    <span className="font-semibold text-emerald-600">{artisan.response_time || '< 30 mins'}</span>
+                  </div>
+                  {/* السعر الأساسي الحقيقي */}
+                  <div className={`flex justify-between text-sm ${textMuted}`}>
+                    <span>{t.services.basePrice}</span>
+                    <span className={`font-semibold ${textTitle}`}>
+                      {minPrice > 0 ? `${t.services.startingFrom} ${minPrice} MAD` : 'غير متوفر'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button 
+                    // إذا كنت تستخدم نافذة منبثقة (Modal) مرر الحرفي هكذا: setSelectedSupplier(artisan)
+                    // أو استخدم navigate('/v2/artisan/' + artisan.id) للانتقال للصفحة
+                    onClick={() => setSelectedSupplier(artisan)} 
+                    className={`flex-1 border py-2 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}
+                  >
+                    {t.services.viewProfile}
+                  </button>
+                  <button 
+                    onClick={() => handleAddToCart({ 
+                      id: artisan.id, 
+                      name: 'طلب عرض سعر عام', 
+                      supplier: artisan.store_name, 
+                      type: 'service', 
+                      image_url: artisan.logo_url 
+                    })}
+                    className="flex-1 bg-emerald-500 text-white py-2 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold"
+                  >
+                    {t.services.requestQuote}
+                  </button>
+                </div>
               </div>
-              <div>
-                <h3 className={`font-bold text-lg flex items-center gap-1 ${textTitle}`}>
-                  Ahmed Électricité <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                </h3>
-                <p className="text-sm text-emerald-600 font-bold">{t.services.specialty}</p>
-              </div>
-            </div>
-            <div className="space-y-2 mb-6">
-              <div className={`flex justify-between text-sm ${textMuted}`}><span >{t.services.interventions}</span><span className={`font-semibold ${textTitle}`}>127 {t.services.completed}</span></div>
-              <div className={`flex justify-between text-sm ${textMuted}`}><span >{t.services.response}</span><span className="font-semibold text-emerald-600">{t.services.responseTime}</span></div>
-              <div className={`flex justify-between text-sm ${textMuted}`}><span >{t.services.basePrice}</span><span className={`font-semibold ${textTitle}`}>{t.services.startingFrom} 250 MAD</span></div>
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setSelectedSupplier(true)} 
-                className={`flex-1 border py-2 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}
-              >
-                {t.services.viewProfile}
-              </button>
-              <button 
-                onClick={() => handleAddToCart({ id: 's1', name: 'Installation Électrique', supplier: 'Ahmed Électricité', type: 'service', image_url: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=150' })}
-                className="flex-1 bg-emerald-500 text-white py-2 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold"
-              >
-                {t.services.requestQuote}
-              </button>
-            </div>
-          </div>
+            );
+          })}
         </div>
       )}
 

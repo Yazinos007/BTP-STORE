@@ -335,39 +335,25 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
             </ul>
           </div>
 
-          {/* 🚀 STATS (قابلة للتعديل في وضع التعديل) */}
+          {/* 🚀 إحصائيات المنصة (للقراءة فقط - لا يمكن للحرفي تعديلها) */}
           <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm grid grid-cols-2 gap-4`}>
             <div>
               <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.completed}</p>
-              {isEditing ? (
-                 <input type="number" value={artisan.completed_projects || ''} onChange={e => setArtisan({...artisan, completed_projects: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} />
-              ) : (
-                <p className={`font-black text-xl ${textTitle}`}>{artisan.completed_projects || 12}</p>
-              )}
+              <p className={`font-black text-xl ${textTitle}`}>{artisan.completed_projects || 0}</p>
             </div>
             <div>
               <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseRate}</p>
-              {isEditing ? (
-                 <input type="number" value={artisan.response_rate || ''} onChange={e => setArtisan({...artisan, response_rate: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder="%" />
-              ) : (
-                <p className={`font-black text-xl text-emerald-500`}>{artisan.response_rate || '95'}%</p>
-              )}
+              <p className={`font-black text-xl text-emerald-500`}>{artisan.response_rate || '100'}%</p>
             </div>
             <div className="col-span-2">
               <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseTime}</p>
-              {isEditing ? (
-                 <input type="text" value={artisan.response_time || ''} onChange={e => setArtisan({...artisan, response_time: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder="مثال: < 30 mins" />
-              ) : (
-                <p className={`font-black text-xl ${textTitle}`}>{artisan.response_time || '< 30 mins'}</p>
-              )}
+              <p className={`font-black text-xl ${textTitle}`}>{artisan.response_time || 'يتم الحساب...'}</p>
             </div>
           </div>
         </div>
 
-        {/* Right Content */}
         <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
           
-          {/* Tabs */}
           <div className={`flex overflow-x-auto custom-scrollbar gap-2 mb-6 p-1 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-200'}`}>
             {[
               { id: 'services', label: t.tabs.services, icon: Briefcase },
@@ -388,7 +374,6 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
 
           <div className="flex-1">
             
-            {/* SERVICES TAB */}
             {activeTab === 'services' && (
               <div className="animate-fade-in space-y-6">
                 <div>
@@ -450,7 +435,6 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
               </div>
             )}
 
-            {/* 🚀 PORTFOLIO TAB (نظام رفع وعرض الصور) */}
             {activeTab === 'portfolio' && (
               <div className="animate-fade-in space-y-6">
                 {isEditing && (
@@ -483,7 +467,6 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
               </div>
             )}
 
-            {/* REVIEWS TAB */}
             {activeTab === 'reviews' && (
               <div className="animate-fade-in text-center p-10 flex flex-col items-center justify-center">
                 <Star size={48} className={`mb-4 opacity-20 ${textMuted}`} />
