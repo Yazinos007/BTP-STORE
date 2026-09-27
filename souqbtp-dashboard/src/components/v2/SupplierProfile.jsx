@@ -7,7 +7,8 @@ import {
   Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud
 } from 'lucide-react';
 
-export default function SupplierProfile({ isDarkMode = false, language = 'ar', onClose }) {
+// أضفنا artisanId كـ Prop لاستقباله من الـ BTPHub
+export default function SupplierProfile({ artisanId, isDarkMode = false, language = 'ar', onClose }) {
   const { id } = useParams(); 
   const navigate = useNavigate();
   const isRtl = language === 'ar';
@@ -15,7 +16,7 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
   const [activeTab, setActiveTab] = useState('services');
   const [artisan, setArtisan] = useState({});
   const [services, setServices] = useState([]);
-  const [portfolio, setPortfolio] = useState([]); // 🚀 حالة معرض الأعمال
+  const [portfolio, setPortfolio] = useState([]); 
   
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -27,7 +28,7 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
   
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [isUploadingPortfolio, setIsUploadingPortfolio] = useState(false); // 🚀 حالة رفع صور المعرض
+  const [isUploadingPortfolio, setIsUploadingPortfolio] = useState(false); 
 
   const t = {
     ar: {
@@ -77,7 +78,8 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       const loggedInUserId = user ? user.id : '9e85d1a0-918f-4c26-a78a-42ad05186b51'; 
       setCurrentUserId(loggedInUserId);
 
-      const profileId = id || loggedInUserId; 
+      // هنا يتم تحديد الحرفي الصحيح بناءً على ما تم الضغط عليه (artisanId)
+      const profileId = artisanId || id || loggedInUserId; 
 
       const { data: artisanData } = await supabase.from('suppliers').select('*').eq('id', profileId).single();
       if (artisanData) setArtisan(artisanData);
@@ -85,14 +87,13 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       const { data: servicesData } = await supabase.from('provider_services').select('*').eq('provider_id', profileId);
       if (servicesData) setServices(servicesData);
 
-      // 🚀 جلب صور معرض الأعمال
       const { data: portfolioData } = await supabase.from('provider_portfolio').select('*').eq('provider_id', profileId);
       if (portfolioData) setPortfolio(portfolioData);
 
       setIsLoading(false);
     };
     fetchProfileData();
-  }, [id]);
+  }, [id, artisanId]); // أضفنا artisanId هنا ليتم تحديث البيانات عند تغييره
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -101,7 +102,6 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
       category: artisan.category,
       address: artisan.address,
       about_text: artisan.about_text,
-      // 🚀 حفظ الإحصائيات أيضاً
       completed_projects: artisan.completed_projects,
       response_rate: artisan.response_rate,
       response_time: artisan.response_time
@@ -148,7 +148,6 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
     navigate('/v2/messages', { state: { cartOrder: requestPayload } });
   };
 
-  // 🚀 دالة رفع الصورة (لوغو أو غلاف أو معرض أعمال)
   const handleUploadImage = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -168,13 +167,11 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
         const { data } = supabase.storage.from('supplier-images').getPublicUrl(filePath);
         if (data && data.publicUrl) {
            if (type === 'portfolio') {
-             // إضافة الصورة لجدول معرض الأعمال
              const { data: newPortfolioItem } = await supabase.from('provider_portfolio').insert({
                provider_id: artisan.id, image_url: data.publicUrl
              }).select().single();
              if (newPortfolioItem) setPortfolio([...portfolio, newPortfolioItem]);
            } else {
-             // تحديث اللوغو أو الغلاف
              const updateField = type === 'logo' ? { logo_url: data.publicUrl } : { cover_url: data.publicUrl };
              await supabase.from('suppliers').update(updateField).eq('id', artisan.id);
              setArtisan(prev => ({ ...prev, ...updateField }));
@@ -187,7 +184,6 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
     }
   };
 
-  // 🚀 دالة حذف صورة من المعرض
   const handleDeletePortfolioImage = async (imageId) => {
     if (window.confirm("حذف هذه الصورة من معرض الأعمال؟")) {
       await supabase.from('provider_portfolio').delete().eq('id', imageId);
@@ -207,276 +203,285 @@ export default function SupplierProfile({ isDarkMode = false, language = 'ar', o
   if (isLoading) return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin text-emerald-500" size={50} /></div>;
 
   return (
-    <div className={`w-full max-w-6xl mx-auto shadow-2xl overflow-hidden ${bgMain} flex flex-col my-10 rounded-3xl animate-fade-in relative z-[999999]`} dir={isRtl ? 'rtl' : 'ltr'}>
-      
-      {/* --- Header --- */}
-      <div className="relative h-64 md:h-80 w-full bg-slate-800 group">
-        <img src={defaultCover} alt="Cover" className="w-full h-full object-cover opacity-80" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+    // الغلاف الشفاف الأسود الذي يطفو فوق السلة وكل محتويات الصفحة (z-[9999999])
+    <div className="fixed inset-0 z-[9999999] bg-black/60 backdrop-blur-sm flex justify-center items-start overflow-y-auto p-4 md:p-10" onClick={onClose}>
+      <div 
+        className={`w-full max-w-6xl mx-auto shadow-2xl overflow-hidden ${bgMain} flex flex-col rounded-3xl animate-fade-in relative`} 
+        dir={isRtl ? 'rtl' : 'ltr'}
+        onClick={e => e.stopPropagation()} // منع إغلاق النافذة عند الضغط بداخلها
+      >
         
-        {isOwner && isEditing && (
-            <label className="absolute top-6 left-6 z-50 bg-black/50 text-white p-3 rounded-full cursor-pointer hover:bg-black/70 transition" title="تغيير الغلاف">
-                {isUploadingCover ? <Loader2 className="animate-spin" size={20}/> : <Camera size={20} />}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'cover')} />
-            </label>
-        )}
-
-        {isOwner && (
-          <div className={`absolute top-6 ${isRtl ? 'left-6' : 'right-6'} z-50`}>
-            {isEditing ? (
-              <button onClick={handleSaveProfile} disabled={isSaving} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded-xl flex items-center gap-2 shadow-lg">
-                {isSaving ? <Loader2 className="animate-spin" size={18}/> : <Save size={18} />} {t.actions.save}
-              </button>
-            ) : (
-              <button onClick={() => setIsEditing(true)} className="bg-slate-900/80 backdrop-blur border border-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-xl flex items-center gap-2 shadow-lg">
-                <Edit size={18} /> {t.actions.edit}
-              </button>
-            )}
-          </div>
-        )}
-
-        {onClose && !isOwner && (
-          <button onClick={onClose} className={`absolute top-6 ${isRtl ? 'left-6' : 'right-6'} z-50 p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-transform hover:scale-110`}>
-            <X size={24} />
-          </button>
-        )}
-        
-        <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 flex items-end gap-6">
-          <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white p-1 shrink-0 shadow-xl z-10 group/avatar">
-            <img src={defaultAvatar} alt={artisan.store_name} className="w-full h-full rounded-xl object-cover" />
-            
-            {isOwner && isEditing && (
-                 <label className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity" title="تغيير الشعار">
-                     {isUploadingLogo ? <Loader2 className="animate-spin text-white" size={24}/> : <Camera className="text-white" size={24} />}
-                     <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'logo')} />
-                 </label>
-            )}
-
-            {(artisan.tier === 'pro' || artisan.tier === 'business') && (
-              <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white dark:border-slate-800">
-                <ShieldCheck size={20} />
-              </div>
-            )}
-          </div>
+        <div className="relative h-64 md:h-80 w-full bg-slate-800 group">
+          <img src={defaultCover} alt="Cover" className="w-full h-full object-cover opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
           
-          <div className="flex-1 pb-2">
-            <div className="flex flex-wrap items-center gap-3 mb-1">
-              {isEditing ? (
-                // 🚀 تحسين الإرشادات هنا (Placeholders)
-                <input type="text" placeholder={t.placeholders.name} value={artisan.store_name || ''} onChange={e => setArtisan({...artisan, store_name: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 text-2xl font-black text-white outline-none focus:border-emerald-500 placeholder-slate-400 w-full md:w-96" />
-              ) : (
-                <h1 className="text-2xl md:text-3xl font-black text-white">{artisan.store_name || 'اسم الحرفي'}</h1>
-              )}
-              
-              {!isEditing && (
-                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Award size={14} /> {t.businessVerified}
-                </span>
-              )}
-            </div>
-            
-            {isEditing ? (
-              <input type="text" placeholder={t.placeholders.category} value={artisan.category || ''} onChange={e => setArtisan({...artisan, category: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 mb-2 text-sm text-emerald-400 outline-none focus:border-emerald-500 block w-full md:w-80 placeholder-slate-400" />
-            ) : (
-              <p className="text-emerald-400 font-bold text-sm md:text-base mb-2">{artisan.category || 'فئة غير محددة'}</p>
-            )}
+          {isOwner && isEditing && (
+              <label className="absolute top-6 left-6 z-50 bg-black/50 text-white p-3 rounded-full cursor-pointer hover:bg-black/70 transition" title="تغيير الغلاف">
+                  {isUploadingCover ? <Loader2 className="animate-spin" size={20}/> : <Camera size={20} />}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'cover')} />
+              </label>
+          )}
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
+          {isOwner && (
+            <div className={`absolute top-6 ${isRtl ? 'left-6' : 'right-6'} z-50`}>
               {isEditing ? (
-                <input type="text" placeholder={t.placeholders.address} value={artisan.address || ''} onChange={e => setArtisan({...artisan, address: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 text-white outline-none focus:border-emerald-500 w-full md:w-80 placeholder-slate-400" />
+                <button onClick={handleSaveProfile} disabled={isSaving} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded-xl flex items-center gap-2 shadow-lg">
+                  {isSaving ? <Loader2 className="animate-spin" size={18}/> : <Save size={18} />} {t.actions.save}
+                </button>
               ) : (
-                <span className="flex items-center gap-1"><MapPin size={16} /> {artisan.address || 'العنوان غير محدد'}</span>
+                <button onClick={() => setIsEditing(true)} className="bg-slate-900/80 backdrop-blur border border-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-xl flex items-center gap-2 shadow-lg">
+                  <Edit size={18} /> {t.actions.edit}
+                </button>
               )}
-              {!isEditing && <span className="flex items-center gap-1 text-amber-400"><Star size={16} className="fill-current" /> {artisan.rating || '5.0'} ({artisan.reviews_count || 0} avis)</span>}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* --- Main Layout --- */}
-      <div className="flex flex-col lg:flex-row p-6 md:p-8 gap-8 bg-[#E6F4EA] dark:bg-slate-950">
-        
-        {/* Left Sidebar */}
-        <div className="w-full lg:w-1/3 space-y-6">
-          
-          {/* 🚀 تفعيل أزرار الاتصال وطلب العرض لتظهر للزبون دائماً */}
-          {!isOwner && !isEditing && (
-            <div className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm">
-              {/* طلب عرض سعر عام */}
-              <button onClick={() => handleRequestQuote(null)} className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-lg">
-                <FileText size={20} /> {t.actions.quote}
-              </button>
-              {/* زر الاتصال / محادثة عامة */}
-              <button onClick={() => navigate('/v2/messages')} className={`w-full py-3.5 rounded-xl font-bold transition-colors border-2 flex items-center justify-center gap-2 text-lg ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-800'}`}>
-                <MessageSquare size={20} /> {t.actions.contact}
-              </button>
             </div>
           )}
 
-          {/* TRUST PASSPORT */}
-          <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm`}>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                <ShieldCheck size={24} />
-              </div>
-              <div>
-                <h3 className={`font-black text-lg ${textTitle}`}>{t.trustPassport}</h3>
-                <p className={`text-xs ${textMuted}`}>{t.level} <span className="text-emerald-500 font-bold">{t.businessVerified}</span></p>
-              </div>
+          {onClose && (
+            <button onClick={onClose} className={`absolute top-6 ${isRtl ? 'left-6' : 'right-6'} z-50 p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-transform hover:scale-110`}>
+              <X size={24} />
+            </button>
+          )}
+          
+          <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 flex items-end gap-6">
+            <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white p-1 shrink-0 shadow-xl z-10 group/avatar">
+              <img src={defaultAvatar} alt={artisan.store_name} className="w-full h-full rounded-xl object-cover" />
+              
+              {isOwner && isEditing && (
+                   <label className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity" title="تغيير الشعار">
+                       {isUploadingLogo ? <Loader2 className="animate-spin text-white" size={24}/> : <Camera className="text-white" size={24} />}
+                       <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'logo')} />
+                   </label>
+              )}
+
+              {(artisan.tier === 'pro' || artisan.tier === 'business') && (
+                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white dark:border-slate-800">
+                  <ShieldCheck size={20} />
+                </div>
+              )}
             </div>
             
-            <ul className="space-y-4 text-sm font-bold">
-              <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedId}</li>
-              <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedBiz}</li>
-              <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedPhone}</li>
-              {/* 🚀 الإضافات الجديدة لجواز الثقة */}
-              <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedAddress}</li>
-              <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedPortfolio}</li>
-            </ul>
-          </div>
+            <div className="flex-1 pb-2">
+              <div className="flex flex-wrap items-center gap-3 mb-1">
+                {isEditing ? (
+                  <input type="text" placeholder={t.placeholders.name} value={artisan.store_name || ''} onChange={e => setArtisan({...artisan, store_name: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 text-2xl font-black text-white outline-none focus:border-emerald-500 placeholder-slate-400 w-full md:w-96" />
+                ) : (
+                  <h1 className="text-2xl md:text-3xl font-black text-white">{artisan.store_name || 'اسم الحرفي'}</h1>
+                )}
+                
+                {!isEditing && (
+                  <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                    <Award size={14} /> {t.businessVerified}
+                  </span>
+                )}
+              </div>
+              
+              {isEditing ? (
+                <input type="text" placeholder={t.placeholders.category} value={artisan.category || ''} onChange={e => setArtisan({...artisan, category: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 mb-2 text-sm text-emerald-400 outline-none focus:border-emerald-500 block w-full md:w-80 placeholder-slate-400" />
+              ) : (
+                <p className="text-emerald-400 font-bold text-sm md:text-base mb-2">{artisan.category || 'فئة غير محددة'}</p>
+              )}
 
-          {/* 🚀 إحصائيات المنصة (للقراءة فقط - لا يمكن للحرفي تعديلها) */}
-          <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm grid grid-cols-2 gap-4`}>
-            <div>
-              <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.completed}</p>
-              <p className={`font-black text-xl ${textTitle}`}>{artisan.completed_projects || 0}</p>
-            </div>
-            <div>
-              <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseRate}</p>
-              <p className={`font-black text-xl text-emerald-500`}>{artisan.response_rate || '100'}%</p>
-            </div>
-            <div className="col-span-2">
-              <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseTime}</p>
-              <p className={`font-black text-xl ${textTitle}`}>{artisan.response_time || 'يتم الحساب...'}</p>
+              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
+                {isEditing ? (
+                  <input type="text" placeholder={t.placeholders.address} value={artisan.address || ''} onChange={e => setArtisan({...artisan, address: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 text-white outline-none focus:border-emerald-500 w-full md:w-80 placeholder-slate-400" />
+                ) : (
+                  <span className="flex items-center gap-1"><MapPin size={16} /> {artisan.address || 'العنوان غير محدد'}</span>
+                )}
+                {!isEditing && <span className="flex items-center gap-1 text-amber-400"><Star size={16} className="fill-current" /> {artisan.rating || '5.0'} ({artisan.reviews_count || 0} avis)</span>}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row p-6 md:p-8 gap-8 bg-[#E6F4EA] dark:bg-slate-950">
           
-          <div className={`flex overflow-x-auto custom-scrollbar gap-2 mb-6 p-1 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-200'}`}>
-            {[
-              { id: 'services', label: t.tabs.services, icon: Briefcase },
-              { id: 'portfolio', label: t.tabs.portfolio, icon: ImageIcon },
-              { id: 'reviews', label: t.tabs.reviews, icon: Star }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-3 font-bold text-sm transition-all whitespace-nowrap border-b-2 ${
-                  activeTab === tab.id ? 'border-emerald-500 text-emerald-500' : `border-transparent ${textMuted} hover:${textTitle}`
-                }`}
-              >
-                <tab.icon size={16} /> {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex-1">
+          <div className="w-full lg:w-1/3 space-y-6">
             
-            {activeTab === 'services' && (
-              <div className="animate-fade-in space-y-6">
-                <div>
-                  <h3 className={`font-black text-lg mb-2 ${textTitle}`}>{t.about}</h3>
-                  {isEditing ? (
-                    <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className={`w-full ${bgCard} border rounded-xl p-3 h-32 outline-none focus:border-emerald-500 text-sm font-medium`} placeholder="اكتب نبذة عن الشركة هنا..." />
-                  ) : (
-                    <p className={`text-sm leading-relaxed ${textMuted} font-medium`}>{artisan.about_text || 'لا يتوفر وصف حالياً.'}</p>
-                  )}
-                </div>
-                
-                {isEditing && (
-                  <div className="mb-6">
-                    {!isAddingService ? (
-                      <button type="button" onClick={() => setIsAddingService(true)} className="w-full border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-4 text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors flex items-center justify-center gap-2 font-bold">
-                        <Plus size={20} /> {t.addService}
-                      </button>
-                    ) : (
-                      <div className={`p-5 rounded-2xl border-2 border-emerald-500/50 ${isDarkMode ? 'bg-slate-800' : 'bg-emerald-50/50'}`}>
-                        <h4 className={`font-bold text-sm mb-4 flex items-center gap-2 ${textTitle}`}><Plus size={16}/> {t.addService}</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <input type="text" placeholder={t.serviceNamePlaceholder} value={newService.service_name} onChange={e => setNewService({...newService, service_name: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
-                          <input type="number" placeholder={t.pricePlaceholder} value={newService.starting_price} onChange={e => setNewService({...newService, starting_price: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} dir="ltr" />
-                        </div>
-                        <input type="text" placeholder={t.descPlaceholder} value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} className={`border rounded-xl p-3 text-sm w-full mb-4 outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
-                        <div className="flex gap-3">
-                          <button type="button" onClick={handleAddService} className="flex-1 bg-emerald-500 text-white rounded-xl py-3 text-sm font-bold hover:bg-emerald-600">{t.saveServiceBtn}</button>
-                          <button type="button" onClick={() => setIsAddingService(false)} className={`flex-1 rounded-xl py-3 text-sm font-bold ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'}`}>{t.cancel}</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {services.length > 0 ? (
-                  <div className="space-y-4">
-                    {services.map(service => (
-                      <div key={service.id} className={`p-5 rounded-2xl border ${bgCard} hover:shadow-md transition-shadow flex flex-col sm:flex-row items-center justify-between gap-4 group`}>
-                        <div className="flex-1">
-                          <h4 className={`font-bold text-lg mb-1 ${textTitle}`}>{service.service_name}</h4>
-                          <p className={`text-sm ${textMuted} mb-3 font-medium`}>{service.description}</p>
-                          <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${isDarkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t.startingFrom} {service.starting_price} MAD</span>
-                        </div>
-                        <div className="flex gap-2 w-full sm:w-auto">
-                          {isEditing ? (
-                            <button type="button" onClick={() => handleDeleteService(service.id)} className="w-full sm:w-auto bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2.5 rounded-xl transition-colors"><Trash2 size={18}/></button>
-                          ) : (
-                            <button type="button" onClick={() => handleRequestQuote(service)} className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-md shadow-emerald-500/20">
-                              {t.actions.quote}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className={`text-sm ${textMuted} p-6 text-center border rounded-xl border-dashed font-bold`}>{t.emptyServices}</p>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'portfolio' && (
-              <div className="animate-fade-in space-y-6">
-                {isEditing && (
-                  <label className="w-full border-2 border-dashed border-emerald-500/50 bg-emerald-50/30 dark:bg-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-emerald-50/80 transition-colors">
-                     {isUploadingPortfolio ? <Loader2 className="animate-spin text-emerald-500" size={32}/> : <UploadCloud className="text-emerald-500" size={32}/>}
-                     <span className="font-bold text-emerald-600">{t.addPhoto}</span>
-                     <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'portfolio')} disabled={isUploadingPortfolio} />
-                  </label>
-                )}
-
-                {portfolio.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {portfolio.map(img => (
-                      <div key={img.id} className="aspect-square rounded-2xl overflow-hidden bg-slate-200 group relative border shadow-sm">
-                        <img src={img.image_url} alt="Portfolio" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                        {isEditing && (
-                          <button onClick={() => handleDeletePortfolioImage(img.id)} className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center p-10">
-                    <ImageIcon size={48} className={`mx-auto mb-4 opacity-20 ${textMuted}`} />
-                    <p className={`${textMuted} font-bold`}>{t.portfolioEmpty}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'reviews' && (
-              <div className="animate-fade-in text-center p-10 flex flex-col items-center justify-center">
-                <Star size={48} className={`mb-4 opacity-20 ${textMuted}`} />
-                <p className={`${textMuted} font-bold mb-6`}>{t.reviewsTitle} فارغة حالياً.</p>
-                <button onClick={() => navigate('/v2/reviews')} className="bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-emerald-600 shadow-md transition-transform hover:scale-105">
-                  {t.toReviews}
+            {!isOwner && !isEditing && (
+              <div className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm">
+                <button onClick={() => handleRequestQuote(null)} className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-lg">
+                  <FileText size={20} /> {t.actions.quote}
+                </button>
+                <button onClick={() => navigate('/v2/messages')} className={`w-full py-3.5 rounded-xl font-bold transition-colors border-2 flex items-center justify-center gap-2 text-lg ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-800'}`}>
+                  <MessageSquare size={20} /> {t.actions.contact}
                 </button>
               </div>
             )}
 
+            <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm`}>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                  <ShieldCheck size={24} />
+                </div>
+                <div>
+                  <h3 className={`font-black text-lg ${textTitle}`}>{t.trustPassport}</h3>
+                  <p className={`text-xs ${textMuted}`}>{t.level} <span className="text-emerald-500 font-bold">{t.businessVerified}</span></p>
+                </div>
+              </div>
+              
+              <ul className="space-y-4 text-sm font-bold">
+                <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedId}</li>
+                <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedBiz}</li>
+                <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedPhone}</li>
+                <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedAddress}</li>
+                <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedPortfolio}</li>
+              </ul>
+            </div>
+
+            <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm grid grid-cols-2 gap-4`}>
+              <div>
+                <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.completed}</p>
+                {isEditing ? (
+                   <input type="number" value={artisan.completed_projects || ''} onChange={e => setArtisan({...artisan, completed_projects: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} />
+                ) : (
+                  <p className={`font-black text-xl ${textTitle}`}>{artisan.completed_projects || 0}</p>
+                )}
+              </div>
+              <div>
+                <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseRate}</p>
+                {isEditing ? (
+                   <input type="number" value={artisan.response_rate || ''} onChange={e => setArtisan({...artisan, response_rate: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder="%" />
+                ) : (
+                  <p className={`font-black text-xl text-emerald-500`}>{artisan.response_rate || '100'}%</p>
+                )}
+              </div>
+              <div className="col-span-2">
+                <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseTime}</p>
+                {isEditing ? (
+                   <input type="text" value={artisan.response_time || ''} onChange={e => setArtisan({...artisan, response_time: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder="مثال: < 30 mins" />
+                ) : (
+                  <p className={`font-black text-xl ${textTitle}`}>{artisan.response_time || 'غير محدد'}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
+            
+            <div className={`flex overflow-x-auto custom-scrollbar gap-2 mb-6 p-1 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-200'}`}>
+              {[
+                { id: 'services', label: t.tabs.services, icon: Briefcase },
+                { id: 'portfolio', label: t.tabs.portfolio, icon: ImageIcon },
+                { id: 'reviews', label: t.tabs.reviews, icon: Star }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-6 py-3 font-bold text-sm transition-all whitespace-nowrap border-b-2 ${
+                    activeTab === tab.id ? 'border-emerald-500 text-emerald-500' : `border-transparent ${textMuted} hover:${textTitle}`
+                  }`}
+                >
+                  <tab.icon size={16} /> {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1">
+              
+              {activeTab === 'services' && (
+                <div className="animate-fade-in space-y-6">
+                  <div>
+                    <h3 className={`font-black text-lg mb-2 ${textTitle}`}>{t.about}</h3>
+                    {isEditing ? (
+                      <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className={`w-full ${bgCard} border rounded-xl p-3 h-32 outline-none focus:border-emerald-500 text-sm font-medium`} placeholder="اكتب نبذة عن الشركة هنا..." />
+                    ) : (
+                      <p className={`text-sm leading-relaxed ${textMuted} font-medium`}>{artisan.about_text || 'لا يتوفر وصف حالياً.'}</p>
+                    )}
+                  </div>
+                  
+                  {isEditing && (
+                    <div className="mb-6">
+                      {!isAddingService ? (
+                        <button type="button" onClick={() => setIsAddingService(true)} className="w-full border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-4 text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors flex items-center justify-center gap-2 font-bold">
+                          <Plus size={20} /> {t.addService}
+                        </button>
+                      ) : (
+                        <div className={`p-5 rounded-2xl border-2 border-emerald-500/50 ${isDarkMode ? 'bg-slate-800' : 'bg-emerald-50/50'}`}>
+                          <h4 className={`font-bold text-sm mb-4 flex items-center gap-2 ${textTitle}`}><Plus size={16}/> {t.addService}</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <input type="text" placeholder={t.serviceNamePlaceholder} value={newService.service_name} onChange={e => setNewService({...newService, service_name: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
+                            <input type="number" placeholder={t.pricePlaceholder} value={newService.starting_price} onChange={e => setNewService({...newService, starting_price: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} dir="ltr" />
+                          </div>
+                          <input type="text" placeholder={t.descPlaceholder} value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} className={`border rounded-xl p-3 text-sm w-full mb-4 outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
+                          <div className="flex gap-3">
+                            <button type="button" onClick={handleAddService} className="flex-1 bg-emerald-500 text-white rounded-xl py-3 text-sm font-bold hover:bg-emerald-600">{t.saveServiceBtn}</button>
+                            <button type="button" onClick={() => setIsAddingService(false)} className={`flex-1 rounded-xl py-3 text-sm font-bold ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'}`}>{t.cancel}</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {services.length > 0 ? (
+                    <div className="space-y-4">
+                      {services.map(service => (
+                        <div key={service.id} className={`p-5 rounded-2xl border ${bgCard} hover:shadow-md transition-shadow flex flex-col sm:flex-row items-center justify-between gap-4 group`}>
+                          <div className="flex-1">
+                            <h4 className={`font-bold text-lg mb-1 ${textTitle}`}>{service.service_name}</h4>
+                            <p className={`text-sm ${textMuted} mb-3 font-medium`}>{service.description}</p>
+                            <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${isDarkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t.startingFrom} {service.starting_price} MAD</span>
+                          </div>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            {isEditing ? (
+                              <button type="button" onClick={() => handleDeleteService(service.id)} className="w-full sm:w-auto bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2.5 rounded-xl transition-colors"><Trash2 size={18}/></button>
+                            ) : (
+                              <button type="button" onClick={() => handleRequestQuote(service)} className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-md shadow-emerald-500/20">
+                                {t.actions.quote}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={`text-sm ${textMuted} p-6 text-center border rounded-xl border-dashed font-bold`}>{t.emptyServices}</p>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'portfolio' && (
+                <div className="animate-fade-in space-y-6">
+                  {isEditing && (
+                    <label className="w-full border-2 border-dashed border-emerald-500/50 bg-emerald-50/30 dark:bg-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-emerald-50/80 transition-colors">
+                       {isUploadingPortfolio ? <Loader2 className="animate-spin text-emerald-500" size={32}/> : <UploadCloud className="text-emerald-500" size={32}/>}
+                       <span className="font-bold text-emerald-600">{t.addPhoto}</span>
+                       <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'portfolio')} disabled={isUploadingPortfolio} />
+                    </label>
+                  )}
+
+                  {portfolio.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {portfolio.map(img => (
+                        <div key={img.id} className="aspect-square rounded-2xl overflow-hidden bg-slate-200 group relative border shadow-sm">
+                          <img src={img.image_url} alt="Portfolio" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                          {isEditing && (
+                            <button onClick={() => handleDeletePortfolioImage(img.id)} className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center p-10">
+                      <ImageIcon size={48} className={`mx-auto mb-4 opacity-20 ${textMuted}`} />
+                      <p className={`${textMuted} font-bold`}>{t.portfolioEmpty}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'reviews' && (
+                <div className="animate-fade-in text-center p-10 flex flex-col items-center justify-center">
+                  <Star size={48} className={`mb-4 opacity-20 ${textMuted}`} />
+                  <p className={`${textMuted} font-bold mb-6`}>{t.reviewsTitle} فارغة حالياً.</p>
+                  <button onClick={() => navigate('/v2/reviews')} className="bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-emerald-600 shadow-md transition-transform hover:scale-105">
+                    {t.toReviews}
+                  </button>
+                </div>
+              )}
+
+            </div>
           </div>
         </div>
       </div>

@@ -720,11 +720,10 @@ export default function BTPHub() {
         />
       )}
 
-      {/* 🚀 استدعاء نافذة ملف المورد المنبثقة */}
+      {/* في مكان استدعاء النافذة المنبثقة داخل BTPHub.jsx */}
       {selectedSupplier && (
         <SupplierProfile 
-          isDarkMode={isDarkMode} 
-          language={language} 
+          artisanId={selectedSupplier.id} 
           onClose={() => setSelectedSupplier(null)} 
         />
       )}
