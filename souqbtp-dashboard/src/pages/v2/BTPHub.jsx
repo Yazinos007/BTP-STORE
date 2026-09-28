@@ -83,34 +83,30 @@ export default function BTPHub() {
   // 1. إضافة متغير لتخزين الحرفيين
   const [artisans, setArtisans] = useState([]);
 
-  // 2. جلب البيانات عند تحميل الصفحة (كود مضاد للانهيار)
+  // 2. جلب البيانات عند تحميل الصفحة
   useEffect(() => {
     const fetchArtisans = async () => {
       try {
-        // المحاولة الأولى: جلب كل شيء (الموردين + الخدمات + شرائح التسعير)
+        // المحاولة الأولى: جلب الموردين + الخدمات + شرائح التسعير
         const { data, error } = await supabase
           .from('suppliers')
           .select('*, provider_services(*, service_pricing_tiers(*))');
           
         if (error) {
-          console.error("❌ خطأ في الاستعلام المتقدم من Supabase:", error.message);
-          
-          // خطة الطوارئ (Fallback): جلب البيانات العادية بدون جدول الشرائح لكي لا تختفي البطاقات
+          console.warn("⚠️ تنبيه: لم يتمكن من جلب شرائح التسعير. يتم الآن جلب البيانات الأساسية...", error.message);
+          // خطة الطوارئ: جلب الموردين والخدمات فقط (في حال فشل الربط الجديد)
           const fallback = await supabase.from('suppliers').select('*, provider_services(*)');
           if (fallback.data) {
             setArtisans(fallback.data);
           }
-          return;
-        }
-
-        if (data) {
+        } else if (data) {
+          console.log("✅ تم جلب الحرفيين بنجاح:", data);
           setArtisans(data);
         }
       } catch (err) {
-        console.error("❌ خطأ غير متوقع:", err);
+        console.error("❌ خطأ غير متوقع أثناء الجلب:", err);
       }
     };
-    
     fetchArtisans();
   }, []);
 
