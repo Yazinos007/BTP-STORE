@@ -82,18 +82,35 @@ export default function BTPHub() {
 
   // 1. إضافة متغير لتخزين الحرفيين
   const [artisans, setArtisans] = useState([]);
-  // 2. جلب البيانات عند تحميل الصفحة
+
+  // 2. جلب البيانات عند تحميل الصفحة (كود مضاد للانهيار)
   useEffect(() => {
     const fetchArtisans = async () => {
-      // 🚀 التعديل هنا: جلب كل تفاصيل الخدمات وجدول شرائح التسعير المرتبط بها
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('*, provider_services(*, service_pricing_tiers(*))');
-        
-      if (data) {
-        setArtisans(data);
+      try {
+        // المحاولة الأولى: جلب كل شيء (الموردين + الخدمات + شرائح التسعير)
+        const { data, error } = await supabase
+          .from('suppliers')
+          .select('*, provider_services(*, service_pricing_tiers(*))');
+          
+        if (error) {
+          console.error("❌ خطأ في الاستعلام المتقدم من Supabase:", error.message);
+          
+          // خطة الطوارئ (Fallback): جلب البيانات العادية بدون جدول الشرائح لكي لا تختفي البطاقات
+          const fallback = await supabase.from('suppliers').select('*, provider_services(*)');
+          if (fallback.data) {
+            setArtisans(fallback.data);
+          }
+          return;
+        }
+
+        if (data) {
+          setArtisans(data);
+        }
+      } catch (err) {
+        console.error("❌ خطأ غير متوقع:", err);
       }
     };
+    
     fetchArtisans();
   }, []);
 
