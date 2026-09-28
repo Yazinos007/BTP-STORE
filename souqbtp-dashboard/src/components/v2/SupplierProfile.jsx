@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { 
   ShieldCheck, MapPin, Star, CheckCircle2, 
   Image as ImageIcon, MessageSquare, Briefcase, 
-  Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud
+  Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud, ThumbsUp
 } from 'lucide-react';
 
 export default function SupplierProfile({ artisanId, isDarkMode = false, language = 'ar', onClose }) {
@@ -12,6 +12,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   const navigate = useNavigate();
   const isRtl = language === 'ar';
   
+  // --- الحالات الأساسية للبروفايل ---
   const [activeTab, setActiveTab] = useState('services');
   const [artisan, setArtisan] = useState({});
   const [services, setServices] = useState([]);
@@ -29,6 +30,17 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingPortfolio, setIsUploadingPortfolio] = useState(false); 
 
+  // --- حالات التقييمات (الميزة الجديدة) ---
+  const [reviewsList, setReviewsList] = useState([]);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [reviewVotesMap, setReviewVotesMap] = useState({});
+  const [userVotedReviews, setUserVotedReviews] = useState(new Set());
+
+  // --- قاموس الترجمة الشامل ---
   const t = {
     ar: {
       trustPassport: "جواز الثقة", level: "مستوى التحقق:", businessVerified: "شركة معتمدة",
@@ -58,7 +70,20 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       notDetermined: "غير محدد",
       deleteConfirmService: "هل أنت متأكد من حذف هذه الخدمة؟",
       deleteConfirmPhoto: "حذف هذه الصورة من معرض الأعمال؟",
-      generalQuote: "طلب عرض سعر عام"
+      generalQuote: "طلب عرض سعر عام",
+      reviewForm: {
+        title: "📝 إضافة تقييم وتجربة",
+        alreadyReviewed: "✅ لقد قمت بتقييم هذا الحرفي مسبقاً. شكراً لمساهمتك!",
+        howDoYouRate: "كيف تقيّم الخدمة؟",
+        commentPlaceholder: "شاركنا تفاصيل تجربتك مع هذا الحرفي...",
+        submitBtn: "نشر التقييم",
+        loginRequired: "يجب تسجيل الدخول لإضافة تقييم",
+        selfReview: "لا يمكنك تقييم نفسك!",
+        submitError: "حدث خطأ أثناء حفظ التقييم",
+        submitSuccess: "شكراً لك! تم نشر تقييمك بنجاح.",
+        submitWarning: "تم تسجيل تقييمك. نظراً لتقييمك المنخفض، تم إرسال تنبيه للإدارة لمراجعة الجودة."
+      },
+      helpful: "مفيد"
     },
     fr: {
       trustPassport: "Passeport de Confiance", level: "Niveau :", businessVerified: "Entreprise Vérifiée",
@@ -88,7 +113,20 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       notDetermined: "Non défini",
       deleteConfirmService: "Êtes-vous sûr de vouloir supprimer ce service ?",
       deleteConfirmPhoto: "Supprimer cette photo du portfolio ?",
-      generalQuote: "Demande de devis général"
+      generalQuote: "Demande de devis général",
+      reviewForm: {
+        title: "📝 Laisser un avis",
+        alreadyReviewed: "✅ Vous avez déjà évalué cet artisan. Merci pour votre avis !",
+        howDoYouRate: "Notez la prestation :",
+        commentPlaceholder: "Partagez votre expérience avec cet artisan...",
+        submitBtn: "Publier l'avis",
+        loginRequired: "Veuillez vous connecter pour laisser un avis",
+        selfReview: "Vous ne pouvez pas vous évaluer vous-même !",
+        submitError: "Une erreur s'est produite lors de l'enregistrement de l'avis",
+        submitSuccess: "Merci ! Votre avis a été publié avec succès.",
+        submitWarning: "Avis enregistré. Un signalement a été transmis à l'administration."
+      },
+      helpful: "Utile"
     },
     en: {
       trustPassport: "Trust Passport", level: "Level:", businessVerified: "Verified Business",
@@ -118,10 +156,64 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       notDetermined: "Not determined",
       deleteConfirmService: "Are you sure you want to delete this service?",
       deleteConfirmPhoto: "Delete this photo from portfolio?",
-      generalQuote: "General Quote Request"
+      generalQuote: "General Quote Request",
+      reviewForm: {
+        title: "📝 Leave a Review",
+        alreadyReviewed: "✅ You have already reviewed this artisan. Thank you!",
+        howDoYouRate: "Rate the service:",
+        commentPlaceholder: "Share details about your experience...",
+        submitBtn: "Submit Review",
+        loginRequired: "You must log in to submit a review",
+        selfReview: "You cannot review yourself!",
+        submitError: "An error occurred while saving the review",
+        submitSuccess: "Thank you! Your review was successfully published.",
+        submitWarning: "Review recorded. Due to low rating, an alert was sent to admin."
+      },
+      helpful: "Helpful"
     }
   }[language] || t.ar;
 
+  // --- دالة جلب التقييمات ---
+  const fetchReviews = async (providerId, userId) => {
+    try {
+      const { data: reviews, error } = await supabase
+        .from('reviews')
+        .select('*, profiles(full_name)')
+        .eq('provider_id', providerId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setReviewsList(reviews || []);
+
+      if (userId && reviews) {
+        const userReview = reviews.find(r => r.user_id === userId);
+        setHasReviewed(!!userReview);
+
+        const reviewIds = reviews.map(r => r.id);
+        if (reviewIds.length > 0) {
+          const { data: votes } = await supabase
+            .from('review_votes')
+            .select('*')
+            .in('review_id', reviewIds);
+
+          if (votes) {
+            const counts = {};
+            const userVotes = new Set();
+            votes.forEach(v => {
+              counts[v.review_id] = (counts[v.review_id] || 0) + 1;
+              if (v.user_id === userId) userVotes.add(v.review_id);
+            });
+            setReviewVotesMap(counts);
+            setUserVotedReviews(userVotes);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+    }
+  };
+
+  // --- التأثير الأساسي لجلب البيانات ---
   useEffect(() => {
     const fetchProfileData = async () => {
       setIsLoading(true);
@@ -140,11 +232,15 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       const { data: portfolioData } = await supabase.from('provider_portfolio').select('*').eq('provider_id', profileId);
       if (portfolioData) setPortfolio(portfolioData);
 
+      // جلب التقييمات
+      fetchReviews(profileId, loggedInUserId);
+
       setIsLoading(false);
     };
     fetchProfileData();
   }, [id, artisanId]); 
 
+  // --- دوال البروفايل الأساسية ---
   const handleSaveProfile = async () => {
     setIsSaving(true);
     const { error } = await supabase.from('suppliers').update({
@@ -241,6 +337,107 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
     }
   };
 
+  // --- دوال التقييمات ---
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (selectedRating === 0) return;
+
+    setIsSubmittingReview(true);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert(t.reviewForm.loginRequired);
+      setIsSubmittingReview(false);
+      return;
+    }
+
+    if (user.id === artisan.id) {
+      alert(t.reviewForm.selfReview);
+      setIsSubmittingReview(false);
+      return;
+    }
+
+    try {
+      const { data: newRev, error } = await supabase.from('reviews').insert({
+        provider_id: artisan.id,
+        user_id: user.id,
+        rating: selectedRating,
+        comment: reviewComment.trim() || null
+      }).select().single();
+
+      if (error) {
+        if (error.code === '23505') {
+          alert(t.reviewForm.alreadyReviewed);
+        } else {
+          throw error;
+        }
+        setIsSubmittingReview(false);
+        return;
+      }
+
+      if (selectedRating <= 2) {
+        await supabase.from('admin_alerts').insert({
+          review_id: newRev ? newRev.id : null,
+          provider_id: artisan.id,
+          user_id: user.id,
+          issue_type: 'تقييم منخفض جداً',
+          details: `تقييم بـ ${selectedRating} نجوم. التعليق: ${reviewComment || 'بدون تعليق'}`,
+          status: 'pending'
+        });
+      }
+
+      const updatedReviews = [newRev, ...reviewsList];
+      const avgRating = (updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length).toFixed(1);
+      
+      await supabase.from('suppliers').update({
+        rating: parseFloat(avgRating),
+        reviews_count: updatedReviews.length
+      }).eq('id', artisan.id);
+
+      setArtisan(prev => ({ ...prev, rating: avgRating, reviews_count: updatedReviews.length }));
+      setReviewComment('');
+      setSelectedRating(0);
+      setHasReviewed(true);
+      fetchReviews(artisan.id, user.id);
+
+      alert(selectedRating <= 2 ? t.reviewForm.submitWarning : t.reviewForm.submitSuccess);
+
+    } catch (err) {
+      console.error("Error submitting review:", err);
+      alert(t.reviewForm.submitError + ": " + err.message);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const handleToggleHelpful = async (reviewId) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert(t.reviewForm.loginRequired);
+      return;
+    }
+
+    const hasVoted = userVotedReviews.has(reviewId);
+
+    try {
+      if (hasVoted) {
+        await supabase.from('review_votes').delete().eq('review_id', reviewId).eq('user_id', user.id);
+        setUserVotedReviews(prev => {
+          const next = new Set(prev);
+          next.delete(reviewId);
+          return next;
+        });
+        setReviewVotesMap(prev => ({ ...prev, [reviewId]: Math.max(0, (prev[reviewId] || 1) - 1) }));
+      } else {
+        await supabase.from('review_votes').insert({ review_id: reviewId, user_id: user.id, is_helpful: true });
+        setUserVotedReviews(prev => new Set(prev).add(reviewId));
+        setReviewVotesMap(prev => ({ ...prev, [reviewId]: (prev[reviewId] || 0) + 1 }));
+      }
+    } catch (err) {
+      console.error("Error toggling vote:", err);
+    }
+  };
+
   const isOwner = currentUserId === artisan.id;
   const bgMain = isDarkMode ? 'bg-slate-900' : 'bg-gray-50';
   const bgCard = isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200';
@@ -277,7 +474,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                   {isSaving ? <Loader2 className="animate-spin" size={18}/> : <Save size={18} />} {t.actions.save}
                 </button>
               ) : (
-                <button onClick={() => setIsEditing(true)} className="bg-slate-900/80 backdrop-blur border border-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-xl flex items-center gap-2 shadow-lg">
+                <button onClick={() => setIsEditing(true)} className="bg-slate-900/80 backdrop-blur border-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-xl flex items-center gap-2 shadow-lg">
                   <Edit size={18} /> {t.actions.edit}
                 </button>
               )}
@@ -520,12 +717,113 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
               )}
 
               {activeTab === 'reviews' && (
-                <div className="animate-fade-in text-center p-10 flex flex-col items-center justify-center">
-                  <Star size={48} className={`mb-4 opacity-20 ${textMuted}`} />
-                  <p className={`${textMuted} font-bold mb-6`}>{t.reviewsTitle} {t.emptyReviews}</p>
-                  <button onClick={() => navigate('/v2/reviews')} className="bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-emerald-600 shadow-md transition-transform hover:scale-105">
-                    {t.toReviews}
-                  </button>
+                <div className="animate-fade-in space-y-6">
+                  
+                  {!isOwner && (
+                    <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm`}>
+                      <h3 className={`font-black text-lg mb-3 ${textTitle}`}>{t.reviewForm.title}</h3>
+
+                      {hasReviewed ? (
+                        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 p-4 rounded-xl text-sm font-bold">
+                          {t.reviewForm.alreadyReviewed}
+                        </div>
+                      ) : (
+                        <form onSubmit={handleSubmitReview} className="space-y-4">
+                          <div>
+                            <p className={`text-sm font-bold mb-2 ${textMuted}`}>{t.reviewForm.howDoYouRate}</p>
+                            <div className="flex items-center gap-2">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  type="button"
+                                  key={star}
+                                  onClick={() => setSelectedRating(star)}
+                                  onMouseEnter={() => setHoverRating(star)}
+                                  onMouseLeave={() => setHoverRating(0)}
+                                  className="p-1 transition-transform hover:scale-125 focus:outline-none"
+                                >
+                                  <Star size={28} className={`${(hoverRating || selectedRating) >= star ? 'text-amber-400 fill-amber-400' : 'text-slate-300 dark:text-slate-600'} transition-colors`} />
+                                </button>
+                              ))}
+                              {selectedRating > 0 && <span className="text-sm font-bold text-amber-500 mr-2">({selectedRating} / 5)</span>}
+                            </div>
+                          </div>
+
+                          <div>
+                            <textarea
+                              value={reviewComment}
+                              onChange={(e) => setReviewComment(e.target.value)}
+                              placeholder={t.reviewForm.commentPlaceholder}
+                              className={`w-full p-3 rounded-xl border text-sm outline-none focus:border-emerald-500 ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`}
+                              rows={3}
+                            />
+                          </div>
+
+                          <button type="submit" disabled={isSubmittingReview || selectedRating === 0} className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-md shadow-emerald-500/20 transition-all">
+                            {isSubmittingReview ? <Loader2 size={18} className="animate-spin" /> : `✅ ${t.reviewForm.submitBtn}`}
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <h3 className={`font-black text-lg ${textTitle}`}>
+                      {t.reviewsTitle} ({reviewsList.length})
+                    </h3>
+
+                    {reviewsList.length > 0 ? (
+                      reviewsList.map((review) => {
+                        const reviewerName = review.profiles?.full_name || (language === 'ar' ? 'مستخدم SouqBTP' : 'SouqBTP User');
+                        const reviewDate = new Date(review.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : 'en-US');
+                        const helpfulVotes = reviewVotesMap[review.id] || 0;
+                        const hasVoted = userVotedReviews.has(review.id);
+
+                        return (
+                          <div key={review.id} className={`p-5 rounded-2xl border ${bgCard} shadow-sm space-y-3`}>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className={`font-bold text-sm ${textTitle}`}>{reviewerName}</h4>
+                                <div className="flex items-center gap-1 mt-1 text-amber-400">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star key={i} size={14} className={i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-700'} />
+                                  ))}
+                                </div>
+                              </div>
+                              <span className="text-xs text-slate-400">{reviewDate}</span>
+                            </div>
+
+                            {review.comment ? (
+                              <p className={`text-sm leading-relaxed ${textMuted} bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800`}>
+                                "{review.comment}"
+                              </p>
+                            ) : (
+                              <p className="text-xs italic text-slate-400">
+                                {language === 'ar' ? 'تقييم بالنجوم فقط بدون تعليق' : 'Star rating only, no comment'}
+                              </p>
+                            )}
+
+                            <div className="pt-2">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleHelpful(review.id)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+                                  hasVoted ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-transparent text-slate-500 hover:text-emerald-500 border-slate-200 dark:border-slate-700'
+                                }`}
+                              >
+                                <ThumbsUp size={13} />
+                                {t.helpful} {helpfulVotes > 0 && `(${helpfulVotes})`}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-10">
+                        <Star size={48} className="mx-auto mb-3 opacity-20 text-slate-400" />
+                        <p className={`${textMuted} font-bold`}>{t.emptyReviews}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
