@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { 
   ShieldCheck, MapPin, Star, CheckCircle2, 
   Image as ImageIcon, MessageSquare, Briefcase, 
-  Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud, ThumbsUp, Lock
+  Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud, ThumbsUp, Lock, Navigation
 } from 'lucide-react';
 
 export default function SupplierProfile({ artisanId, isDarkMode = false, language = 'ar', onClose }) {
@@ -95,7 +95,8 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
         submitSuccess: "شكراً لك! تم نشر تقييمك بنجاح.",
         submitWarning: "تم تسجيل تقييمك. نظراً لتقييمك المنخفض، تم إرسال تنبيه للإدارة لمراجعة الجودة."
       },
-      helpful: "مفيد"
+      helpful: "مفيد",
+      gpsBtn: "تحديد موقع المستودع (GPS)", gpsSuccess: "تم التقاط الإحداثيات بنجاح!", gpsError: "يرجى تفعيل الـ GPS في المتصفح أو الهاتف."
     },
     fr: {
       trustPassport: "Passeport de Confiance", 
@@ -150,7 +151,8 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
         submitSuccess: "Merci ! Votre avis a été publié avec succès.",
         submitWarning: "Avis enregistré. Un signalement a été transmis à l'administration."
       },
-      helpful: "Utile"
+      helpful: "Utile",
+      gpsBtn: "Détecter la position (GPS)", gpsSuccess: "Coordonnées enregistrées avec succès !", gpsError: "Veuillez activer le GPS de votre appareil."
     },
     en: {
       trustPassport: "Trust Passport", 
@@ -205,7 +207,8 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
         submitSuccess: "Thank you! Your review was successfully published.",
         submitWarning: "Review recorded. Due to low rating, an alert was sent to admin."
       },
-      helpful: "Helpful"
+      helpful: "Helpful",
+      gpsBtn: "Detect Location (GPS)", gpsSuccess: "Coordinates saved successfully!", gpsError: "Please enable GPS on your device."
     }
   }[language] || t.ar;
 
@@ -276,6 +279,27 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
     fetchProfileData();
   }, [id, artisanId]); 
 
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setArtisan(prev => ({
+            ...prev,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          }));
+          alert(t.gpsSuccess);
+        },
+        (error) => {
+          alert(t.gpsError);
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      alert(t.gpsError);
+    }
+  };
+
   // --- دوال البروفايل الأساسية ---
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -284,6 +308,8 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       category: artisan.category,
       address: artisan.address,
       about_text: artisan.about_text,
+      latitude: artisan.latitude,  
+      longitude: artisan.longitude 
     }).eq('id', artisan.id);
 
     if (!error) setIsEditing(false);
@@ -501,7 +527,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   const isIdVerified = artisan.is_id_verified || false; 
   const isBizVerified = artisan.is_biz_verified || false;
   const isPhoneVerified = artisan.phone ? true : false; // مجرد مثال، يُفضل حقل صريح
-  const isAddressVerified = artisan.address ? true : false;
+  const isAddressVerified = artisan.address || artisan.latitude ? true : false;
   const isPortfolioVerified = portfolio.length > 0;
   
   // معايير جديدة مبنية على الأداء
@@ -600,10 +626,21 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
               ) : (
                 <p className="text-emerald-400 font-bold text-sm md:text-base mb-2">{artisan.category || t.unspecified}</p>
               )}
-
-              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
+                <div className="flex flex-wrap items-start gap-4 text-sm text-slate-300 mt-2">
                 {isEditing ? (
-                  <input type="text" placeholder={t.placeholders.address} value={artisan.address || ''} onChange={e => setArtisan({...artisan, address: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 text-white outline-none focus:border-emerald-500 w-full md:w-80 placeholder-slate-400" />
+                  <div className="flex flex-col gap-2 w-full md:w-80">
+                    <input type="text" placeholder={t.placeholders.address} value={artisan.address || ''} onChange={e => setArtisan({...artisan, address: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 text-white outline-none focus:border-emerald-500 placeholder-slate-400" />
+                    
+                    {/* زر تحديد الموقع الجديد (GPS) */}
+                    <button type="button" onClick={handleGetLocation} className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/30 rounded px-3 py-2 text-xs font-bold transition-colors shadow-sm">
+                       <Navigation size={14} /> {t.gpsBtn}
+                    </button>
+                    
+                    {/* رسالة نجاح التقاط الإحداثيات */}
+                    {artisan.latitude && artisan.longitude && (
+                       <span className="text-emerald-400 text-[10px] font-bold">✓ تم تسجيل الإحداثيات ({artisan.latitude.toFixed(4)}, {artisan.longitude.toFixed(4)})</span>
+                    )}
+                  </div>
                 ) : (
                   <span className="flex items-center gap-1"><MapPin size={16} /> {artisan.address || t.noAddress}</span>
                 )}
