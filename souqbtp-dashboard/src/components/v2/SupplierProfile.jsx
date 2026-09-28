@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { 
   ShieldCheck, MapPin, Star, CheckCircle2, 
   Image as ImageIcon, MessageSquare, Briefcase, 
-  Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud, ThumbsUp
+  Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud, ThumbsUp, Lock
 } from 'lucide-react';
 
 export default function SupplierProfile({ artisanId, isDarkMode = false, language = 'ar', onClose }) {
@@ -30,7 +30,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingPortfolio, setIsUploadingPortfolio] = useState(false); 
 
-  // --- حالات التقييمات (الميزة الجديدة) ---
+  // --- حالات التقييمات ---
   const [reviewsList, setReviewsList] = useState([]);
   const [selectedRating, setSelectedRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -43,9 +43,21 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   // --- قاموس الترجمة الشامل ---
   const t = {
     ar: {
-      trustPassport: "جواز الثقة", level: "مستوى التحقق:", businessVerified: "شركة معتمدة",
-      verifiedId: "هوية موثقة", verifiedBiz: "سجل تجاري موثق", verifiedPhone: "رقم هاتف موثق",
-      verifiedAddress: "عنوان موثق", verifiedPortfolio: "أعمال سابقة موثقة",
+      trustPassport: "جواز الثقة", 
+      level: "مستوى التحقق:", 
+      levels: {
+        basic: "أساسي",
+        pro: "محترف",
+        business: "شركة معتمدة"
+      },
+      verifiedId: "هوية موثقة", 
+      verifiedBiz: "سجل تجاري موثق", 
+      verifiedPhone: "رقم هاتف موثق",
+      verifiedAddress: "عنوان موثق", 
+      verifiedPortfolio: "أعمال سابقة موثقة",
+      positiveReviews: "تقييمات إيجابية",
+      completedProjects: "مشاريع منجزة",
+      completionRate: "معدل إتمام الطلبات",
       stats: { completed: "مشروع منجز", responseRate: "معدل الاستجابة", responseTime: "وقت الرد" },
       tabs: { services: "الخدمات والأسعار", portfolio: "معرض الأعمال", reviews: "التقييمات" },
       actions: { quote: "طلب عرض سعر", contact: "مراسلة", close: "إغلاق", edit: "تعديل البروفايل", save: "حفظ التغييرات" },
@@ -86,9 +98,21 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       helpful: "مفيد"
     },
     fr: {
-      trustPassport: "Passeport de Confiance", level: "Niveau :", businessVerified: "Entreprise Vérifiée",
-      verifiedId: "Identité vérifiée", verifiedBiz: "RC vérifié", verifiedPhone: "Téléphone vérifié",
-      verifiedAddress: "Adresse vérifiée", verifiedPortfolio: "Réalisations vérifiées",
+      trustPassport: "Passeport de Confiance", 
+      level: "Niveau :", 
+      levels: {
+        basic: "Basique",
+        pro: "Professionnel",
+        business: "Entreprise Vérifiée"
+      },
+      verifiedId: "Identité vérifiée", 
+      verifiedBiz: "RC vérifié", 
+      verifiedPhone: "Téléphone vérifié",
+      verifiedAddress: "Adresse vérifiée", 
+      verifiedPortfolio: "Réalisations vérifiées",
+      positiveReviews: "Avis positifs",
+      completedProjects: "Projets terminés",
+      completionRate: "Taux de réussite",
       stats: { completed: "Chantiers", responseRate: "Taux de réponse", responseTime: "Temps de réponse" },
       tabs: { services: "Services & Tarifs", portfolio: "Réalisations", reviews: "Avis clients" },
       actions: { quote: "Demander un devis", contact: "Contacter", close: "Fermer", edit: "Modifier profil", save: "Enregistrer" },
@@ -129,9 +153,21 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       helpful: "Utile"
     },
     en: {
-      trustPassport: "Trust Passport", level: "Level:", businessVerified: "Verified Business",
-      verifiedId: "Verified ID", verifiedBiz: "Verified Business Reg.", verifiedPhone: "Verified Phone",
-      verifiedAddress: "Verified Address", verifiedPortfolio: "Verified Portfolio",
+      trustPassport: "Trust Passport", 
+      level: "Level:", 
+      levels: {
+        basic: "Basic",
+        pro: "Professional",
+        business: "Verified Business"
+      },
+      verifiedId: "Verified ID", 
+      verifiedBiz: "Verified Business Reg.", 
+      verifiedPhone: "Verified Phone",
+      verifiedAddress: "Verified Address", 
+      verifiedPortfolio: "Verified Portfolio",
+      positiveReviews: "Positive Reviews",
+      completedProjects: "Completed Projects",
+      completionRate: "Completion Rate",
       stats: { completed: "Completed Jobs", responseRate: "Response Rate", responseTime: "Response Time" },
       tabs: { services: "Services & Pricing", portfolio: "Portfolio", reviews: "Reviews" },
       actions: { quote: "Request Quote", contact: "Contact", close: "Close", edit: "Edit Profile", save: "Save Changes" },
@@ -248,9 +284,6 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       category: artisan.category,
       address: artisan.address,
       about_text: artisan.about_text,
-      completed_projects: artisan.completed_projects,
-      response_rate: artisan.response_rate,
-      response_time: artisan.response_time
     }).eq('id', artisan.id);
 
     if (!error) setIsEditing(false);
@@ -449,6 +482,48 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
 
   if (isLoading) return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin text-emerald-500" size={50} /></div>;
 
+  // --- منطق جواز الثقة (Trust Passport Logic) ---
+  
+  // تحديد المستوى
+  let currentLevelLabel = t.levels.basic;
+  let levelColor = "text-slate-500";
+  
+  if (artisan.tier === 'pro') {
+    currentLevelLabel = t.levels.pro;
+    levelColor = "text-blue-500";
+  } else if (artisan.tier === 'business') {
+    currentLevelLabel = t.levels.business;
+    levelColor = "text-emerald-500";
+  }
+
+  // التحقق من المعايير
+  // نفترض أن قاعدة البيانات تخزن هذه القيم، وإلا نضع قيماً افتراضية منطقية للتحقق
+  const isIdVerified = artisan.is_id_verified || false; 
+  const isBizVerified = artisan.is_biz_verified || false;
+  const isPhoneVerified = artisan.phone ? true : false; // مجرد مثال، يُفضل حقل صريح
+  const isAddressVerified = artisan.address ? true : false;
+  const isPortfolioVerified = portfolio.length > 0;
+  
+  // معايير جديدة مبنية على الأداء
+  const hasPositiveReviews = artisan.rating >= 4.0 && artisan.reviews_count > 0;
+  const hasCompletedProjects = (artisan.completed_projects || 0) > 0;
+  // لنفترض أن معدل الإتمام مخزن في قاعدة البيانات، وإلا نحسبه أو نستخدم قيمة افتراضية
+  const completionRate = artisan.completion_rate || 0; 
+  const hasGoodCompletionRate = completionRate >= 90;
+
+  // مكون فرعي لعنصر في قائمة التحقق
+  const VerificationItem = ({ label, isVerified }) => (
+    <li className={`flex items-center gap-3 ${isVerified ? textTitle : textMuted}`}>
+      {isVerified ? (
+        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span>
+      ) : (
+        <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center text-xs"><Lock size={12}/></span>
+      )}
+      <span className={isVerified ? 'font-bold' : 'line-through opacity-70'}>{label}</span>
+    </li>
+  );
+
+
   return (
     <div className="fixed inset-0 z-[9999999] bg-black/60 backdrop-blur-sm flex justify-center items-start overflow-y-auto p-4 md:p-10" onClick={onClose}>
       <div 
@@ -514,8 +589,8 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                 )}
                 
                 {!isEditing && (
-                  <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                    <Award size={14} /> {t.businessVerified}
+                  <span className={`bg-${levelColor.split('-')[1]}-500/20 ${levelColor} border border-${levelColor.split('-')[1]}-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1`}>
+                    <Award size={14} /> {currentLevelLabel}
                   </span>
                 )}
               </div>
@@ -532,7 +607,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                 ) : (
                   <span className="flex items-center gap-1"><MapPin size={16} /> {artisan.address || t.noAddress}</span>
                 )}
-                {!isEditing && <span className="flex items-center gap-1 text-amber-400"><Star size={16} className="fill-current" /> {artisan.rating || '5.0'} ({artisan.reviews_count || 0} avis)</span>}
+                {!isEditing && <span className="flex items-center gap-1 text-amber-400"><Star size={16} className="fill-current" /> {artisan.rating || '0.0'} ({artisan.reviews_count || 0})</span>}
               </div>
             </div>
           </div>
@@ -553,50 +628,46 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
               </div>
             )}
 
+            {/* --- جواز الثقة الديناميكي --- */}
             <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm`}>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <div className={`w-10 h-10 rounded-full bg-${levelColor.split('-')[1]}-500/10 flex items-center justify-center ${levelColor}`}>
                   <ShieldCheck size={24} />
                 </div>
                 <div>
                   <h3 className={`font-black text-lg ${textTitle}`}>{t.trustPassport}</h3>
-                  <p className={`text-xs ${textMuted}`}>{t.level} <span className="text-emerald-500 font-bold">{t.businessVerified}</span></p>
+                  <p className={`text-xs ${textMuted}`}>{t.level} <span className={`${levelColor} font-bold`}>{currentLevelLabel}</span></p>
                 </div>
               </div>
               
-              <ul className="space-y-4 text-sm font-bold">
-                <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedId}</li>
-                <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedBiz}</li>
-                <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedPhone}</li>
-                <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedAddress}</li>
-                <li className={`flex items-center gap-3 ${textTitle}`}><span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span> {t.verifiedPortfolio}</li>
+              <ul className="space-y-4 text-sm">
+                {/* البنود الأساسية */}
+                <VerificationItem label={t.verifiedId} isVerified={isIdVerified} />
+                <VerificationItem label={t.verifiedBiz} isVerified={isBizVerified} />
+                <VerificationItem label={t.verifiedPhone} isVerified={isPhoneVerified} />
+                <VerificationItem label={t.verifiedAddress} isVerified={isAddressVerified} />
+                <VerificationItem label={t.verifiedPortfolio} isVerified={isPortfolioVerified} />
+                
+                {/* البنود المبنية على الأداء (الجديدة) */}
+                <div className="my-2 border-t border-slate-100 dark:border-slate-800"></div>
+                <VerificationItem label={t.positiveReviews} isVerified={hasPositiveReviews} />
+                <VerificationItem label={t.completedProjects} isVerified={hasCompletedProjects} />
+                <VerificationItem label={t.completionRate} isVerified={hasGoodCompletionRate} />
               </ul>
             </div>
 
             <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm grid grid-cols-2 gap-4`}>
               <div>
                 <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.completed}</p>
-                {isEditing ? (
-                   <input type="number" value={artisan.completed_projects || ''} onChange={e => setArtisan({...artisan, completed_projects: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} />
-                ) : (
-                  <p className={`font-black text-xl ${textTitle}`}>{artisan.completed_projects || 0}</p>
-                )}
+                <p className={`font-black text-xl ${textTitle}`}>{artisan.completed_projects || 0}</p>
               </div>
               <div>
                 <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseRate}</p>
-                {isEditing ? (
-                   <input type="number" value={artisan.response_rate || ''} onChange={e => setArtisan({...artisan, response_rate: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder="%" />
-                ) : (
-                  <p className={`font-black text-xl text-emerald-500`} dir="ltr">{artisan.response_rate || '100'}%</p>
-                )}
+                <p className={`font-black text-xl text-emerald-500`} dir="ltr">{artisan.response_rate || '100'}%</p>
               </div>
               <div className="col-span-2">
                 <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseTime}</p>
-                {isEditing ? (
-                   <input type="text" value={artisan.response_time || ''} onChange={e => setArtisan({...artisan, response_time: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder={t.placeholders.responseTimeEx} />
-                ) : (
-                  <p className={`font-black text-xl ${textTitle}`} dir="ltr">{artisan.response_time || t.notDetermined}</p>
-                )}
+                <p className={`font-black text-xl ${textTitle}`} dir="ltr">{artisan.response_time || t.notDetermined}</p>
               </div>
             </div>
           </div>
@@ -716,116 +787,156 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                 </div>
               )}
 
-              {activeTab === 'reviews' && (
-                <div className="animate-fade-in space-y-6">
-                  
-                  {!isOwner && (
-                    <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm`}>
-                      <h3 className={`font-black text-lg mb-3 ${textTitle}`}>{t.reviewForm.title}</h3>
-
-                      {hasReviewed ? (
-                        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 p-4 rounded-xl text-sm font-bold">
-                          {t.reviewForm.alreadyReviewed}
-                        </div>
-                      ) : (
-                        <form onSubmit={handleSubmitReview} className="space-y-4">
-                          <div>
-                            <p className={`text-sm font-bold mb-2 ${textMuted}`}>{t.reviewForm.howDoYouRate}</p>
-                            <div className="flex items-center gap-2">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                  type="button"
-                                  key={star}
-                                  onClick={() => setSelectedRating(star)}
-                                  onMouseEnter={() => setHoverRating(star)}
-                                  onMouseLeave={() => setHoverRating(0)}
-                                  className="p-1 transition-transform hover:scale-125 focus:outline-none"
-                                >
-                                  <Star size={28} className={`${(hoverRating || selectedRating) >= star ? 'text-amber-400 fill-amber-400' : 'text-slate-300 dark:text-slate-600'} transition-colors`} />
-                                </button>
-                              ))}
-                              {selectedRating > 0 && <span className="text-sm font-bold text-amber-500 mr-2">({selectedRating} / 5)</span>}
-                            </div>
-                          </div>
-
-                          <div>
-                            <textarea
-                              value={reviewComment}
-                              onChange={(e) => setReviewComment(e.target.value)}
-                              placeholder={t.reviewForm.commentPlaceholder}
-                              className={`w-full p-3 rounded-xl border text-sm outline-none focus:border-emerald-500 ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`}
-                              rows={3}
-                            />
-                          </div>
-
-                          <button type="submit" disabled={isSubmittingReview || selectedRating === 0} className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-md shadow-emerald-500/20 transition-all">
-                            {isSubmittingReview ? <Loader2 size={18} className="animate-spin" /> : `✅ ${t.reviewForm.submitBtn}`}
-                          </button>
-                        </form>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    <h3 className={`font-black text-lg ${textTitle}`}>
-                      {t.reviewsTitle} ({reviewsList.length})
+            {/* REVIEWS TAB - نظام التقييمات الذكي */}
+            {activeTab === 'reviews' && (
+              <div className="animate-fade-in space-y-6">
+                
+                {/* 1. نموذج إضافة تقييم */}
+                {!isOwner && (
+                  <div className={`p-6 rounded-2xl border ${bgCard} shadow-sm`}>
+                    <h3 className={`font-black text-lg mb-3 ${textTitle}`}>
+                      {t.reviewForm.title}
                     </h3>
 
-                    {reviewsList.length > 0 ? (
-                      reviewsList.map((review) => {
-                        const reviewerName = review.profiles?.full_name || (language === 'ar' ? 'مستخدم SouqBTP' : 'SouqBTP User');
-                        const reviewDate = new Date(review.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : 'en-US');
-                        const helpfulVotes = reviewVotesMap[review.id] || 0;
-                        const hasVoted = userVotedReviews.has(review.id);
-
-                        return (
-                          <div key={review.id} className={`p-5 rounded-2xl border ${bgCard} shadow-sm space-y-3`}>
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className={`font-bold text-sm ${textTitle}`}>{reviewerName}</h4>
-                                <div className="flex items-center gap-1 mt-1 text-amber-400">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star key={i} size={14} className={i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-700'} />
-                                  ))}
-                                </div>
-                              </div>
-                              <span className="text-xs text-slate-400">{reviewDate}</span>
-                            </div>
-
-                            {review.comment ? (
-                              <p className={`text-sm leading-relaxed ${textMuted} bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800`}>
-                                "{review.comment}"
-                              </p>
-                            ) : (
-                              <p className="text-xs italic text-slate-400">
-                                {language === 'ar' ? 'تقييم بالنجوم فقط بدون تعليق' : 'Star rating only, no comment'}
-                              </p>
-                            )}
-
-                            <div className="pt-2">
+                    {hasReviewed ? (
+                      <div className="bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 p-4 rounded-xl text-sm font-bold">
+                        {t.reviewForm.alreadyReviewed}
+                      </div>
+                    ) : (
+                      <form onSubmit={handleSubmitReview} className="space-y-4">
+                        <div>
+                          <p className={`text-sm font-bold mb-2 ${textMuted}`}>
+                            {t.reviewForm.howDoYouRate}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
                               <button
                                 type="button"
-                                onClick={() => handleToggleHelpful(review.id)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
-                                  hasVoted ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-transparent text-slate-500 hover:text-emerald-500 border-slate-200 dark:border-slate-700'
-                                }`}
+                                key={star}
+                                onClick={() => setSelectedRating(star)}
+                                onMouseEnter={() => setHoverRating(star)}
+                                onMouseLeave={() => setHoverRating(0)}
+                                className="p-1 transition-transform hover:scale-125 focus:outline-none"
                               >
-                                <ThumbsUp size={13} />
-                                {t.helpful} {helpfulVotes > 0 && `(${helpfulVotes})`}
+                                <Star
+                                  size={28}
+                                  className={`${
+                                    (hoverRating || selectedRating) >= star
+                                      ? 'text-amber-400 fill-amber-400'
+                                      : 'text-slate-300 dark:text-slate-600'
+                                  } transition-colors`}
+                                />
                               </button>
-                            </div>
+                            ))}
+                            {selectedRating > 0 && (
+                              <span className="text-sm font-bold text-amber-500 mr-2">
+                                ({selectedRating} / 5)
+                              </span>
+                            )}
                           </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-center py-10">
-                        <Star size={48} className="mx-auto mb-3 opacity-20 text-slate-400" />
-                        <p className={`${textMuted} font-bold`}>{t.emptyReviews}</p>
-                      </div>
+                        </div>
+
+                        <div>
+                          <textarea
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            placeholder={t.reviewForm.commentPlaceholder}
+                            className={`w-full p-3 rounded-xl border text-sm outline-none focus:border-emerald-500 ${
+                              isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'
+                            }`}
+                            rows={3}
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={isSubmittingReview || selectedRating === 0}
+                          className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-md shadow-emerald-500/20 transition-all"
+                        >
+                          {isSubmittingReview ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            `✅ ${t.reviewForm.submitBtn}`
+                          )}
+                        </button>
+                      </form>
                     )}
                   </div>
+                )}
+
+                {/* 2. قائمة التقييمات السابقة */}
+                <div className="space-y-4">
+                  <h3 className={`font-black text-lg ${textTitle}`}>
+                    {t.reviewsTitle} ({reviewsList.length})
+                  </h3>
+
+                  {reviewsList.length > 0 ? (
+                    reviewsList.map((review) => {
+                      const reviewerName = review.profiles?.full_name || (language === 'ar' ? 'مستخدم SouqBTP' : 'Utilisateur SouqBTP');
+                      const reviewDate = new Date(review.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR');
+                      const helpfulVotes = reviewVotesMap[review.id] || 0;
+                      const hasVoted = userVotedReviews.has(review.id);
+
+                      return (
+                        <div key={review.id} className={`p-5 rounded-2xl border ${bgCard} shadow-sm space-y-3`}>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className={`font-bold text-sm ${textTitle}`}>{reviewerName}</h4>
+                              <div className="flex items-center gap-1 mt-1 text-amber-400">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    size={14}
+                                    className={i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-700'}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <span className="text-xs text-slate-400">{reviewDate}</span>
+                          </div>
+
+                          {review.comment ? (
+                            <p className={`text-sm leading-relaxed ${textMuted} bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800`}>
+                              "{review.comment}"
+                            </p>
+                          ) : (
+                            <p className="text-xs italic text-slate-400">
+                              {language === 'ar' ? 'تقييم بالنجوم فقط بدون تعليق' : 'Évaluation sans commentaire'}
+                            </p>
+                          )}
+
+                          <div className="pt-2">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleHelpful(review.id)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+                                hasVoted
+                                  ? 'bg-emerald-500 text-white border-emerald-500'
+                                  : 'bg-transparent text-slate-500 hover:text-emerald-500 border-slate-200 dark:border-slate-700'
+                              }`}
+                            >
+                              <ThumbsUp size={13} />
+                              {t.helpful} {helpfulVotes > 0 && `(${helpfulVotes})`}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-10">
+                      <Star size={48} className="mx-auto mb-3 opacity-20 text-slate-400" />
+                      <p className={`${textMuted} font-bold`}>
+                        {language === 'ar' 
+                          ? 'لا توجد تقييمات لهذا الحرفي حتى الآن. كن أول من يقيّمه!' 
+                          : language === 'fr'
+                          ? 'Aucun avis pour le moment. Soyez le premier à donner votre avis !'
+                          : 'No reviews yet. Be the first to leave a review!'}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            )}
 
             </div>
           </div>
