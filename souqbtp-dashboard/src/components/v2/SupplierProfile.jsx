@@ -7,7 +7,6 @@ import {
   Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud
 } from 'lucide-react';
 
-// أضفنا artisanId كـ Prop لاستقباله من الـ BTPHub
 export default function SupplierProfile({ artisanId, isDarkMode = false, language = 'ar', onClose }) {
   const { id } = useParams(); 
   const navigate = useNavigate();
@@ -38,7 +37,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       stats: { completed: "مشروع منجز", responseRate: "معدل الاستجابة", responseTime: "وقت الرد" },
       tabs: { services: "الخدمات والأسعار", portfolio: "معرض الأعمال", reviews: "التقييمات" },
       actions: { quote: "طلب عرض سعر", contact: "مراسلة", close: "إغلاق", edit: "تعديل البروفايل", save: "حفظ التغييرات" },
-      about: "نبذة عن الشركة", portfolioEmpty: "لا توجد صور في معرض الأعمال حالياً.", reviewsTitle: "آراء المقاولين",
+      about: "نبذة عن الشركة", portfolioEmpty: "لا توجد صور في معرض الأعمال حالياً.", reviewsTitle: "التقييمات",
       addService: "إضافة خدمة جديدة", serviceNamePlaceholder: "اسم الخدمة (مثال: تركيب كهرباء)",
       pricePlaceholder: "السعر المبدئي (MAD)", descPlaceholder: "وصف قصير للخدمة...",
       saveServiceBtn: "حفظ الخدمة", cancel: "إلغاء", emptyServices: "لا توجد خدمات مضافة حتى الآن.",
@@ -46,9 +45,20 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       placeholders: {
         name: "✍️ أدخل اسم الشركة أو الحرفي هنا...",
         category: "✍️ حدد تخصصك (مثال: كهربائي، صباغ)...",
-        address: "✍️ أدخل المدينة أو العنوان السطحي..."
+        address: "✍️ أدخل المدينة أو العنوان السطحي...",
+        aboutDesc: "اكتب نبذة عن الشركة هنا...",
+        responseTimeEx: "مثال: < 30 mins"
       },
-      addPhoto: "إضافة صورة للمعرض"
+      addPhoto: "إضافة صورة للمعرض",
+      noDesc: "لا يتوفر وصف حالياً.",
+      unspecified: "فئة غير محددة",
+      noAddress: "العنوان غير محدد",
+      artisanName: "اسم الحرفي",
+      emptyReviews: "فارغة حالياً.",
+      notDetermined: "غير محدد",
+      deleteConfirmService: "هل أنت متأكد من حذف هذه الخدمة؟",
+      deleteConfirmPhoto: "حذف هذه الصورة من معرض الأعمال؟",
+      generalQuote: "طلب عرض سعر عام"
     },
     fr: {
       trustPassport: "Passeport de Confiance", level: "Niveau :", businessVerified: "Entreprise Vérifiée",
@@ -57,17 +67,58 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       stats: { completed: "Chantiers", responseRate: "Taux de réponse", responseTime: "Temps de réponse" },
       tabs: { services: "Services & Tarifs", portfolio: "Réalisations", reviews: "Avis clients" },
       actions: { quote: "Demander un devis", contact: "Contacter", close: "Fermer", edit: "Modifier profil", save: "Enregistrer" },
-      about: "À propos", portfolioEmpty: "Aucune photo pour le moment.", reviewsTitle: "Avis des entrepreneurs",
+      about: "À propos", portfolioEmpty: "Aucune photo pour le moment.", reviewsTitle: "Avis des clients",
       addService: "Ajouter un nouveau service", serviceNamePlaceholder: "Nom du service (ex: Installation)",
       pricePlaceholder: "Prix de départ (MAD)", descPlaceholder: "Brève description...",
-      saveServiceBtn: "Enregistrer le service", cancel: "Annuler", emptyServices: "Aucun service ajouté pour le moment.",
-      startingFrom: "À partir de", toReviews: "Aller à la page des avis",
+      saveServiceBtn: "Enregistrer", cancel: "Annuler", emptyServices: "Aucun service ajouté pour le moment.",
+      startingFrom: "À partir de", toReviews: "Aller aux avis",
       placeholders: {
         name: "✍️ Entrez le nom de l'entreprise...",
         category: "✍️ Spécialité (ex: Électricien)...",
-        address: "✍️ Entrez l'adresse ou la ville..."
+        address: "✍️ Entrez l'adresse ou la ville...",
+        aboutDesc: "Écrivez une description de l'entreprise ici...",
+        responseTimeEx: "ex: < 30 mins"
       },
-      addPhoto: "Ajouter une photo"
+      addPhoto: "Ajouter une photo",
+      noDesc: "Aucune description disponible.",
+      unspecified: "Catégorie non définie",
+      noAddress: "Adresse non spécifiée",
+      artisanName: "Nom de l'artisan",
+      emptyReviews: "Aucun avis pour le moment.",
+      notDetermined: "Non défini",
+      deleteConfirmService: "Êtes-vous sûr de vouloir supprimer ce service ?",
+      deleteConfirmPhoto: "Supprimer cette photo du portfolio ?",
+      generalQuote: "Demande de devis général"
+    },
+    en: {
+      trustPassport: "Trust Passport", level: "Level:", businessVerified: "Verified Business",
+      verifiedId: "Verified ID", verifiedBiz: "Verified Business Reg.", verifiedPhone: "Verified Phone",
+      verifiedAddress: "Verified Address", verifiedPortfolio: "Verified Portfolio",
+      stats: { completed: "Completed Jobs", responseRate: "Response Rate", responseTime: "Response Time" },
+      tabs: { services: "Services & Pricing", portfolio: "Portfolio", reviews: "Reviews" },
+      actions: { quote: "Request Quote", contact: "Contact", close: "Close", edit: "Edit Profile", save: "Save Changes" },
+      about: "About Us", portfolioEmpty: "No photos in portfolio yet.", reviewsTitle: "Customer Reviews",
+      addService: "Add New Service", serviceNamePlaceholder: "Service name (e.g., Wiring)",
+      pricePlaceholder: "Starting price (MAD)", descPlaceholder: "Short description...",
+      saveServiceBtn: "Save Service", cancel: "Cancel", emptyServices: "No services added yet.",
+      startingFrom: "Starting from", toReviews: "Go to Reviews",
+      placeholders: {
+        name: "✍️ Enter company or artisan name...",
+        category: "✍️ Specialty (e.g., Electrician)...",
+        address: "✍️ Enter city or address...",
+        aboutDesc: "Write a description of the company here...",
+        responseTimeEx: "e.g., < 30 mins"
+      },
+      addPhoto: "Add Photo",
+      noDesc: "No description available yet.",
+      unspecified: "Unspecified Category",
+      noAddress: "Address not specified",
+      artisanName: "Artisan Name",
+      emptyReviews: "Empty right now.",
+      notDetermined: "Not determined",
+      deleteConfirmService: "Are you sure you want to delete this service?",
+      deleteConfirmPhoto: "Delete this photo from portfolio?",
+      generalQuote: "General Quote Request"
     }
   }[language] || t.ar;
 
@@ -78,7 +129,6 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       const loggedInUserId = user ? user.id : '9e85d1a0-918f-4c26-a78a-42ad05186b51'; 
       setCurrentUserId(loggedInUserId);
 
-      // هنا يتم تحديد الحرفي الصحيح بناءً على ما تم الضغط عليه (artisanId)
       const profileId = artisanId || id || loggedInUserId; 
 
       const { data: artisanData } = await supabase.from('suppliers').select('*').eq('id', profileId).single();
@@ -93,7 +143,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
       setIsLoading(false);
     };
     fetchProfileData();
-  }, [id, artisanId]); // أضفنا artisanId هنا ليتم تحديث البيانات عند تغييره
+  }, [id, artisanId]); 
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -125,7 +175,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   };
 
   const handleDeleteService = async (serviceId) => {
-    if (window.confirm("Are you sure?")) {
+    if (window.confirm(t.deleteConfirmService)) {
       await supabase.from('provider_services').delete().eq('id', serviceId);
       setServices(services.filter(s => s.id !== serviceId));
     }
@@ -135,8 +185,8 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
     const requestPayload = {
       items: [{
         product: {
-          name: service ? service.service_name : "General Quote Request",
-          supplier: artisan.store_name || "Supplier",
+          name: service ? service.service_name : t.generalQuote,
+          supplier: artisan.store_name || t.artisanName,
           price: service ? service.starting_price : 0,
           currency: 'MAD'
         },
@@ -185,7 +235,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   };
 
   const handleDeletePortfolioImage = async (imageId) => {
-    if (window.confirm("حذف هذه الصورة من معرض الأعمال؟")) {
+    if (window.confirm(t.deleteConfirmPhoto)) {
       await supabase.from('provider_portfolio').delete().eq('id', imageId);
       setPortfolio(portfolio.filter(p => p.id !== imageId));
     }
@@ -203,14 +253,12 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   if (isLoading) return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin text-emerald-500" size={50} /></div>;
 
   return (
-    // الغلاف الشفاف الأسود الذي يطفو فوق السلة وكل محتويات الصفحة (z-[9999999])
     <div className="fixed inset-0 z-[9999999] bg-black/60 backdrop-blur-sm flex justify-center items-start overflow-y-auto p-4 md:p-10" onClick={onClose}>
       <div 
         className={`w-full max-w-6xl mx-auto shadow-2xl overflow-hidden ${bgMain} flex flex-col rounded-3xl animate-fade-in relative`} 
         dir={isRtl ? 'rtl' : 'ltr'}
-        onClick={e => e.stopPropagation()} // منع إغلاق النافذة عند الضغط بداخلها
+        onClick={e => e.stopPropagation()} 
       >
-        
         <div className="relative h-64 md:h-80 w-full bg-slate-800 group">
           <img src={defaultCover} alt="Cover" className="w-full h-full object-cover opacity-80" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
@@ -265,7 +313,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                 {isEditing ? (
                   <input type="text" placeholder={t.placeholders.name} value={artisan.store_name || ''} onChange={e => setArtisan({...artisan, store_name: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 text-2xl font-black text-white outline-none focus:border-emerald-500 placeholder-slate-400 w-full md:w-96" />
                 ) : (
-                  <h1 className="text-2xl md:text-3xl font-black text-white">{artisan.store_name || 'اسم الحرفي'}</h1>
+                  <h1 className="text-2xl md:text-3xl font-black text-white">{artisan.store_name || t.artisanName}</h1>
                 )}
                 
                 {!isEditing && (
@@ -278,14 +326,14 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
               {isEditing ? (
                 <input type="text" placeholder={t.placeholders.category} value={artisan.category || ''} onChange={e => setArtisan({...artisan, category: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 mb-2 text-sm text-emerald-400 outline-none focus:border-emerald-500 block w-full md:w-80 placeholder-slate-400" />
               ) : (
-                <p className="text-emerald-400 font-bold text-sm md:text-base mb-2">{artisan.category || 'فئة غير محددة'}</p>
+                <p className="text-emerald-400 font-bold text-sm md:text-base mb-2">{artisan.category || t.unspecified}</p>
               )}
 
               <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
                 {isEditing ? (
                   <input type="text" placeholder={t.placeholders.address} value={artisan.address || ''} onChange={e => setArtisan({...artisan, address: e.target.value})} className="bg-slate-900/80 border border-slate-500 rounded px-3 py-1 text-white outline-none focus:border-emerald-500 w-full md:w-80 placeholder-slate-400" />
                 ) : (
-                  <span className="flex items-center gap-1"><MapPin size={16} /> {artisan.address || 'العنوان غير محدد'}</span>
+                  <span className="flex items-center gap-1"><MapPin size={16} /> {artisan.address || t.noAddress}</span>
                 )}
                 {!isEditing && <span className="flex items-center gap-1 text-amber-400"><Star size={16} className="fill-current" /> {artisan.rating || '5.0'} ({artisan.reviews_count || 0} avis)</span>}
               </div>
@@ -342,15 +390,15 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                 {isEditing ? (
                    <input type="number" value={artisan.response_rate || ''} onChange={e => setArtisan({...artisan, response_rate: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder="%" />
                 ) : (
-                  <p className={`font-black text-xl text-emerald-500`}>{artisan.response_rate || '100'}%</p>
+                  <p className={`font-black text-xl text-emerald-500`} dir="ltr">{artisan.response_rate || '100'}%</p>
                 )}
               </div>
               <div className="col-span-2">
                 <p className={`text-xs ${textMuted} mb-1 font-bold`}>{t.stats.responseTime}</p>
                 {isEditing ? (
-                   <input type="text" value={artisan.response_time || ''} onChange={e => setArtisan({...artisan, response_time: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder="مثال: < 30 mins" />
+                   <input type="text" value={artisan.response_time || ''} onChange={e => setArtisan({...artisan, response_time: e.target.value})} className={`w-full border rounded p-1 text-sm font-bold outline-none ${bgMain} ${textTitle}`} placeholder={t.placeholders.responseTimeEx} />
                 ) : (
-                  <p className={`font-black text-xl ${textTitle}`}>{artisan.response_time || 'غير محدد'}</p>
+                  <p className={`font-black text-xl ${textTitle}`} dir="ltr">{artisan.response_time || t.notDetermined}</p>
                 )}
               </div>
             </div>
@@ -383,9 +431,9 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                   <div>
                     <h3 className={`font-black text-lg mb-2 ${textTitle}`}>{t.about}</h3>
                     {isEditing ? (
-                      <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className={`w-full ${bgCard} border rounded-xl p-3 h-32 outline-none focus:border-emerald-500 text-sm font-medium`} placeholder="اكتب نبذة عن الشركة هنا..." />
+                      <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className={`w-full ${bgCard} border rounded-xl p-3 h-32 outline-none focus:border-emerald-500 text-sm font-medium`} placeholder={t.placeholders.aboutDesc} />
                     ) : (
-                      <p className={`text-sm leading-relaxed ${textMuted} font-medium`}>{artisan.about_text || 'لا يتوفر وصف حالياً.'}</p>
+                      <p className={`text-sm leading-relaxed ${textMuted} font-medium`}>{artisan.about_text || t.noDesc}</p>
                     )}
                   </div>
                   
@@ -474,7 +522,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
               {activeTab === 'reviews' && (
                 <div className="animate-fade-in text-center p-10 flex flex-col items-center justify-center">
                   <Star size={48} className={`mb-4 opacity-20 ${textMuted}`} />
-                  <p className={`${textMuted} font-bold mb-6`}>{t.reviewsTitle} فارغة حالياً.</p>
+                  <p className={`${textMuted} font-bold mb-6`}>{t.reviewsTitle} {t.emptyReviews}</p>
                   <button onClick={() => navigate('/v2/reviews')} className="bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-emerald-600 shadow-md transition-transform hover:scale-105">
                     {t.toReviews}
                   </button>
