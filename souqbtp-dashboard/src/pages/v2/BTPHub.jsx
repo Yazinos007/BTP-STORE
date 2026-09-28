@@ -461,15 +461,16 @@ export default function BTPHub() {
       {activeMode === 'services' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
           {artisans.map((artisan) => {
-            // نأخذ الخدمة الأولى للمورد كمثال للعرض
+            // نأخذ الخدمة الأولى للمورد، أو نضع قيمة افتراضية لتجنب إخفاء البطاقة
             const mainService = artisan.provider_services && artisan.provider_services.length > 0 
               ? artisan.provider_services[0] 
-              : null;
-
-            if (!mainService) return null;
+              : { 
+                  service_name: language === 'ar' ? 'لم يضف خدمات بعد' : (language === 'fr' ? 'Aucun service ajouté' : 'No services added'),
+                  starting_price: 0
+                };
 
             // 1. تحديد السعر الأساسي
-            let basePrice = Number(mainService.starting_price);
+            let basePrice = Number(mainService.starting_price) || 0;
             let finalPrice = basePrice;
             let priceType = 'standard'; 
 
@@ -482,7 +483,7 @@ export default function BTPHub() {
             } 
             // 3. التحقق من التسعير بالكمية (Prix Chantier)
             else if (mainService.service_pricing_tiers && mainService.service_pricing_tiers.length > 0) {
-              const activeTier = mainService.service_pricing_tiers?.find(
+              const activeTier = mainService.service_pricing_tiers.find(
                 tier => requestedQty >= tier.min_qty && requestedQty <= tier.max_qty
               );
               if (activeTier) {
@@ -495,9 +496,9 @@ export default function BTPHub() {
             const distanceKm = calculateDistance(chantierLocation.lat, chantierLocation.lng, artisan.latitude, artisan.longitude);
             const transportCost = distanceKm !== null ? (distanceKm * costPerKm * numberOfTrips) : 0;
             const goodsCost = finalPrice * requestedQty;
-            const totalCost = goodsCost + transportCost;
+            const totalCost = goodsCost > 0 ? (goodsCost + transportCost) : 0;
             
-            const isSmartChoice = distanceKm !== null && distanceKm <= 25;
+            const isSmartChoice = distanceKm !== null && distanceKm <= 25 && finalPrice > 0;
 
             // قاموس الترجمة الشامل للبطاقة الذكية
             const tCard = {
