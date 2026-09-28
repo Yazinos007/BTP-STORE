@@ -7,7 +7,7 @@ import {
   Search, Mic, Camera, FileText, MapPin, CheckCircle, Clock, Star, 
   ShieldCheck, ShoppingCart, Filter, Package, Zap, Droplet, PaintRoller, 
   Hammer, ArrowRight, Plus, CheckCircle2, TrendingUp, Briefcase,
-  Store, Coins, Globe, Bitcoin, Minus, MessageCircle, X, Trash2, Building2
+  Store, Coins, Globe, Bitcoin, Minus, MessageCircle, X, Trash2, Building2, Timer
 } from 'lucide-react';
 
 const getCurrencySymbol = (curr) => {
@@ -30,6 +30,38 @@ const getCurrencyIcon = (curr) => {
   return <span className="font-black text-xs">🇲🇦</span>;
 };
 
+// --- مكون العداد التنازلي لعروض الـ Flash Deals ---
+const FlashDealTimer = ({ expiresAt }) => {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const calculateTime = () => {
+      const difference = +new Date(expiresAt) - +new Date();
+      if (difference > 0) {
+        const h = Math.floor((difference / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((difference / 1000 / 60) % 60);
+        const s = Math.floor((difference / 1000) % 60);
+        setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+      } else {
+        setTimeLeft('انتهى العرض');
+      }
+    };
+    
+    calculateTime();
+    const timer = setInterval(calculateTime, 1000);
+    return () => clearInterval(timer);
+  }, [expiresAt]);
+
+  if (timeLeft === 'انتهى العرض') return null;
+
+  return (
+    <div className="flex items-center gap-2 bg-red-100 text-red-600 px-3 py-1.5 rounded-full text-xs font-black animate-pulse border border-red-200 w-fit mt-2">
+      <Timer size={14} /> 
+      <span>ينتهي خلال: <span dir="ltr">{timeLeft}</span></span>
+    </div>
+  );
+};
+
 export default function BTPHub() {
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const navigate = useNavigate();
@@ -46,6 +78,7 @@ export default function BTPHub() {
   const [cart, setCart] = useState([]); 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedItem, setAddedItem] = useState(null);
+  const [requestedQty, setRequestedQty] = useState(300);
 
   // 1. إضافة متغير لتخزين الحرفيين
   const [artisans, setArtisans] = useState([]);
@@ -415,130 +448,161 @@ export default function BTPHub() {
       {activeMode === 'services' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
           {artisans.map((artisan) => {
-            // 1. حساب السعر الأدنى
-            const minPrice = artisan.provider_services && artisan.provider_services.length > 0
-              ? Math.min(...artisan.provider_services.map(s => Number(s.starting_price)))
-              : 0;
+            // نأخذ الخدمة الأولى للمورد كمثال للعرض
+            const mainService = artisan.provider_services && artisan.provider_services.length > 0 
+              ? artisan.provider_services[0] 
+              : null;
 
-            // 2. حساب المسافة
-            const distanceKm = calculateDistance(chantierLocation.lat, chantierLocation.lng, artisan.latitude, artisan.longitude);
+            if (!mainService) return null;
 
-            // 3. حساب التكلفة الواصلة للورش
-            let totalCost = null;
-            if (minPrice > 0 && distanceKm !== null) {
-              const goodsCost = minPrice * requiredQuantity;
-              const transportCost = distanceKm * costPerKm * numberOfTrips;
-              totalCost = goodsCost + transportCost;
+            // 1. تحديد السعر الأساسي
+            let basePrice = Number(mainService.starting_price);
+            let finalPrice = basePrice;
+            let priceType = 'standard'; 
+
+            // 2. التحقق من عروض الاستعجال (Flash Deals)
+            const isFlashDealActive = mainService.flash_discount_price && mainService.flash_expires_at && (new Date(mainService.flash_expires_at) > new Date());
+            
+            if (isFlashDealActive) {
+              finalPrice = Number(mainService.flash_discount_price);
+              priceType = 'flash';
+            } 
+            // 3. التحقق من التسعير بالكمية (Prix Chantier)
+            else if (mainService.service_pricing_tiers && mainService.service_pricing_tiers.length > 0) {
+              const activeTier = mainService.service_pricing_tiers.find(
+                tier => requestedQty >= tier.min_qty && requestedQty <= tier.max_qty
+              );
+              if (activeTier) {
+                finalPrice = Number(activeTier.price);
+                priceType = 'tier';
+              }
             }
 
-            // 4. الخيار الذكي (إذا كانت المسافة أقل من 25 كم)
-            const isSmartChoice = distanceKm !== null && distanceKm <= 25 && minPrice > 0;
+            // 4. خوارزمية المسافة والتكلفة الواصلة (Coût Rendu Chantier)
+            const distanceKm = calculateDistance(chantierLocation.lat, chantierLocation.lng, artisan.latitude, artisan.longitude);
+            const transportCost = distanceKm !== null ? (distanceKm * costPerKm * numberOfTrips) : 0;
+            const goodsCost = finalPrice * requestedQty;
+            const totalCost = goodsCost + transportCost;
+            
+            const isSmartChoice = distanceKm !== null && distanceKm <= 25;
 
             // قاموس الترجمة الشامل للبطاقة الذكية
             const tCard = {
               ar: {
-                interventions: "التدخلات", completed: "مكتملة", response: "الاستجابة",
                 basePrice: "السعر الأساسي", startingFrom: "ابتداءً من", unavailable: "غير متوفر",
-                viewProfile: "عرض البروفايل", requestQuote: "طلب السلعة", unspecified: "فئة غير محددة",
-                distanceToChantier: "المسافة للورش:", deliveryTime: "مدة التوصيل:",
-                totalCostLabel: "التكلفة الإجمالية واصلة:", smartChoice: "💡 خيار ذكي: توفير كبير في تكلفة النقل!",
-                goodsPriceLabel: "سعر السلعة:", km: "كم", notSpecified: "غير محدد", later: "يحدد لاحقاً",
-                goodsPlusTransport: "(السلعة + النقل)", artisanName: "اسم المورد"
+                viewProfile: "عرض التفاصيل", requestQuote: "إضافة للسلة", unspecified: "فئة غير محددة",
+                distanceToChantier: "المسافة والتوصيل:", deliveryTime: "مدة التوصيل:",
+                totalCostLabel: "التكلفة النهائية للورش:", smartChoice: "💡 الأقرب للورش",
+                goodsPriceLabel: "السعر للوحدة:", km: "كم", notSpecified: "غير محدد", later: "يحدد لاحقاً",
+                goodsPlusTransport: "(شاملة السلعة + النقل)", artisanName: "اسم المورد",
+                qtyRequested: "الكمية المطلوبة", tierApplied: "تم تطبيق خصم الكمية الجملة!",
+                priceTierLabel: "Prix Chantier", priceNormalLabel: "السعر", confirmOrder: "تأكيد طلب الشراء"
               },
               fr: {
-                interventions: "Interventions", completed: "complétées", response: "Réponse",
                 basePrice: "Tarif de base", startingFrom: "À partir de", unavailable: "Non disponible",
-                viewProfile: "Voir profil", requestQuote: "Commander", unspecified: "Catégorie non définie",
-                distanceToChantier: "Distance au chantier :", deliveryTime: "Délai de livraison :",
-                totalCostLabel: "Coût Rendu Chantier :", smartChoice: "💡 Choix malin : Économie sur le transport !",
-                goodsPriceLabel: "Prix du produit :", km: "km", notSpecified: "Non spécifié", later: "À définir",
-                goodsPlusTransport: "(Produit + Transport)", artisanName: "Nom du fournisseur"
+                viewProfile: "Voir Détails", requestQuote: "Ajouter", unspecified: "Catégorie non définie",
+                distanceToChantier: "Distance & Livraison :", deliveryTime: "Délai de livraison :",
+                totalCostLabel: "Coût Final Rendu Chantier :", smartChoice: "💡 Le plus proche",
+                goodsPriceLabel: "Prix Unitaire :", km: "km", notSpecified: "Non spécifié", later: "À définir",
+                goodsPlusTransport: "(Produit + Transport inclus)", artisanName: "Nom du fournisseur",
+                qtyRequested: "Quantité Demandée", tierApplied: "Prix de gros appliqué !",
+                priceTierLabel: "Prix Chantier", priceNormalLabel: "Prix", confirmOrder: "Confirmer la commande"
               },
               en: {
-                interventions: "Interventions", completed: "completed", response: "Response",
                 basePrice: "Base Price", startingFrom: "Starting from", unavailable: "Unavailable",
-                viewProfile: "View Profile", requestQuote: "Order Now", unspecified: "Unspecified category",
-                distanceToChantier: "Distance to site:", deliveryTime: "Delivery time:",
-                totalCostLabel: "Total Delivered Cost:", smartChoice: "💡 Smart Choice: Save on transport!",
-                goodsPriceLabel: "Goods Price:", km: "km", notSpecified: "Unspecified", later: "TBD",
-                goodsPlusTransport: "(Goods + Transport)", artisanName: "Supplier Name"
+                viewProfile: "View Details", requestQuote: "Add to Cart", unspecified: "Unspecified category",
+                distanceToChantier: "Distance & Delivery:", deliveryTime: "Delivery time:",
+                totalCostLabel: "Final Delivered Cost:", smartChoice: "💡 Closest to site",
+                goodsPriceLabel: "Unit Price:", km: "km", notSpecified: "Unspecified", later: "TBD",
+                goodsPlusTransport: "(Goods + Transport incl.)", artisanName: "Supplier Name",
+                qtyRequested: "Requested Qty", tierApplied: "Wholesale discount applied!",
+                priceTierLabel: "Tier Price", priceNormalLabel: "Price", confirmOrder: "Confirm Order"
               }
-            }[language] || tCard.ar;
+            }[language] || tCard.ar; // الافتراضي هو العربية
 
             return (
-              <div key={artisan.id} className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow relative overflow-hidden`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+              <div key={artisan.id} className={`rounded-3xl border ${priceType === 'flash' ? 'border-red-500 shadow-red-500/10' : 'border-slate-200 dark:border-slate-800'} p-6 ${isDarkMode ? 'bg-slate-900' : 'bg-white'} shadow-sm hover:shadow-xl transition-all relative overflow-hidden`} dir={isRtl ? 'rtl' : 'ltr'}>
                 
-                {/* شارة الخيار الذكي */}
-                {isSmartChoice && (
-                  <div className="absolute top-0 right-0 left-0 bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 flex items-center justify-center gap-1 border-b border-emerald-200 z-10">
-                    {tCard.smartChoice}
+                {/* شارات العروض الذكية */}
+                {priceType === 'flash' && (
+                  <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-black px-4 py-1.5 rounded-bl-xl flex items-center gap-1 z-10">
+                    <Zap size={14} className="fill-current" /> BTP Flash Deal
+                  </div>
+                )}
+                {priceType !== 'flash' && isSmartChoice && (
+                  <div className={`absolute top-0 ${isRtl ? 'right-0' : 'left-0'} bg-emerald-500 text-white text-xs font-black px-4 py-1.5 ${isRtl ? 'rounded-bl-xl' : 'rounded-br-xl'} flex items-center gap-1 z-10`}>
+                     {tCard.smartChoice}
                   </div>
                 )}
 
-                <div className={`flex items-center gap-4 mb-4 ${isSmartChoice ? 'mt-6' : ''}`}>
-                  <div className="w-16 h-16 bg-slate-200 rounded-full overflow-hidden shrink-0">
-                    <img 
-                      src={artisan.logo_url || `https://ui-avatars.com/api/?name=${artisan.store_name}&background=10b981&color=fff`} 
-                      alt={artisan.store_name} 
-                      className="w-full h-full object-cover"
-                    />
+                <div className="flex items-center gap-4 mt-4 mb-5">
+                  <div className="w-14 h-14 bg-slate-100 rounded-2xl overflow-hidden shrink-0 border">
+                    <img src={artisan.logo_url || `https://ui-avatars.com/api/?name=${artisan.store_name}&background=10b981&color=fff`} alt="logo" className="w-full h-full object-cover"/>
                   </div>
                   <div>
-                    <h3 className={`font-bold text-lg flex items-center gap-1 ${textTitle}`}>
-                      {artisan.store_name || tCard.artisanName} 
-                      {(artisan.tier === 'pro' || artisan.tier === 'business') && <ShieldCheck className="w-4 h-4 text-emerald-500" />}
-                    </h3>
-                    <p className="text-sm text-emerald-600 font-bold">{artisan.category || tCard.unspecified}</p>
+                    <h3 className={`font-black text-lg leading-tight ${textTitle}`}>{artisan.store_name || tCard.artisanName}</h3>
+                    <p className="text-sm text-emerald-600 font-bold">{mainService.service_name}</p>
                   </div>
                 </div>
-                
-                <div className="space-y-3 mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500 font-medium">{tCard.goodsPriceLabel}</span>
-                    <span className={`font-black ${textTitle}`}>{minPrice > 0 ? `${minPrice} MAD` : tCard.unavailable}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500 font-medium">{tCard.distanceToChantier}</span>
-                    <span className="font-bold text-blue-600 flex items-center gap-1">📍 {distanceKm !== null ? `${distanceKm} ${tCard.km}` : tCard.notSpecified}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500 font-medium">{tCard.deliveryTime}</span>
-                    <span className="font-bold text-amber-600">⏱️ {artisan.delivery_time || tCard.later}</span>
-                  </div>
 
-                  {totalCost !== null && (
-                    <>
-                      <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500 font-bold">{tCard.totalCostLabel}</span>
-                        <div className={language === 'ar' ? 'text-left' : 'text-right'}>
-                          <span className="font-black text-emerald-600 block text-lg">{totalCost.toLocaleString()} MAD</span>
-                          <span className="text-[10px] text-slate-400 block">{tCard.goodsPlusTransport}</span>
+                <div className={`${isDarkMode ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-50 border-slate-100'} p-4 rounded-2xl border space-y-4`}>
+                  
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className={`text-xs font-bold block mb-1 ${textMuted}`}>{tCard.goodsPriceLabel} ({priceType === 'tier' ? tCard.priceTierLabel : tCard.priceNormalLabel})</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`font-black text-2xl ${priceType === 'flash' ? 'text-red-500' : textTitle}`}>
+                            {finalPrice > 0 ? finalPrice : tCard.unavailable} <span className="text-sm">MAD</span>
+                          </span>
+                          {(priceType === 'flash' || priceType === 'tier') && basePrice > 0 && (
+                            <span className="text-slate-400 text-sm font-bold line-through">
+                              {basePrice} MAD
+                            </span>
+                          )}
                         </div>
                       </div>
-                    </>
+                      
+                      <div className={isRtl ? 'text-left' : 'text-right'}>
+                        <span className={`text-xs font-bold block mb-1 ${textMuted}`}>{tCard.qtyRequested}</span>
+                        <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-lg text-sm font-black flex items-center justify-center gap-1">
+                          <Package size={14}/> {requestedQty}
+                        </span>
+                      </div>
+                    </div>
+
+                    {priceType === 'flash' && <FlashDealTimer expiresAt={mainService.flash_expires_at} />}
+
+                    {priceType === 'tier' && (
+                      <div className="mt-2 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg w-fit">
+                        <TrendingDown size={12}/> {tCard.tierApplied}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={`border-t my-2 ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}></div>
+
+                  <div className="flex justify-between items-center text-sm">
+                    <span className={`font-bold ${textMuted}`}>{tCard.distanceToChantier}</span>
+                    <span className="font-bold text-blue-600 dark:text-blue-400">📍 {distanceKm !== null ? `${distanceKm} ${tCard.km}` : tCard.notSpecified}</span>
+                  </div>
+                  
+                  {totalCost > 0 && (
+                    <div className="flex justify-between items-center bg-emerald-500 text-white p-3 rounded-xl shadow-inner mt-2">
+                      <span className="font-bold text-sm">{tCard.totalCostLabel}</span>
+                      <div className={isRtl ? 'text-left' : 'text-right'}>
+                        <span className="font-black text-xl block">{totalCost.toLocaleString()} MAD</span>
+                        <span className="text-[10px] opacity-80 block">{tCard.goodsPlusTransport}</span>
+                      </div>
+                    </div>
                   )}
                 </div>
                 
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setSelectedSupplier(artisan)} 
-                    className={`flex-1 border py-2.5 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}
-                  >
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => setSelectedSupplier(artisan)} className={`flex-1 border py-3 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}>
                     {tCard.viewProfile}
                   </button>
-                  <button 
-                    onClick={() => handleAddToCart({ 
-                      id: artisan.id, 
-                      name: tCard.requestQuote, 
-                      supplier: artisan.store_name, 
-                      type: 'service', 
-                      image_url: artisan.logo_url 
-                    })}
-                    className="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold shadow-md shadow-emerald-500/20"
-                  >
+                  <button onClick={() => handleAddToCart({ id: artisan.id, name: mainService.service_name, supplier: artisan.store_name, price: finalPrice, type: 'service' })} className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm font-black shadow-lg">
                     {tCard.requestQuote}
                   </button>
                 </div>

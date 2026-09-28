@@ -23,7 +23,14 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   const [currentUserId, setCurrentUserId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   
-  const [newService, setNewService] = useState({ service_name: '', description: '', starting_price: '' });
+  const [newService, setNewService] = useState({ 
+  service_name: '', 
+  description: '', 
+  starting_price: '',
+  flash_discount_price: '',
+  flash_expires_at: ''
+});
+
   const [isAddingService, setIsAddingService] = useState(false);
   
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -96,7 +103,12 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
         submitWarning: "تم تسجيل تقييمك. نظراً لتقييمك المنخفض، تم إرسال تنبيه للإدارة لمراجعة الجودة."
       },
       helpful: "مفيد",
-      gpsBtn: "تحديد موقع المستودع (GPS)", gpsSuccess: "تم التقاط الإحداثيات بنجاح!", gpsError: "يرجى تفعيل الـ GPS في المتصفح أو الهاتف."
+      gpsBtn: "تحديد موقع المستودع (GPS)", 
+      gpsSuccess: "تم التقاط الإحداثيات بنجاح!", 
+      gpsError: "يرجى تفعيل الـ GPS في المتصفح أو الهاتف.",
+      flashDealTitle: "إعداد عرض استعجالي (اختياري)",
+      flashPricePlaceholder: "سعر العرض (MAD)",
+      flashDatePlaceholder: "تاريخ انتهاء العرض"
     },
     fr: {
       trustPassport: "Passeport de Confiance", 
@@ -152,7 +164,12 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
         submitWarning: "Avis enregistré. Un signalement a été transmis à l'administration."
       },
       helpful: "Utile",
-      gpsBtn: "Détecter la position (GPS)", gpsSuccess: "Coordonnées enregistrées avec succès !", gpsError: "Veuillez activer le GPS de votre appareil."
+      gpsBtn: "Détecter la position (GPS)", 
+      gpsSuccess: "Coordonnées enregistrées avec succès !", 
+      gpsError: "Veuillez activer le GPS de votre appareil.",
+      flashDealTitle: "Configurer une offre éclair (Optionnel)",
+      flashPricePlaceholder: "Prix de l'offre (MAD)",
+      flashDatePlaceholder: "Date de fin de l'offre"
     },
     en: {
       trustPassport: "Trust Passport", 
@@ -208,7 +225,11 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
         submitWarning: "Review recorded. Due to low rating, an alert was sent to admin."
       },
       helpful: "Helpful",
-      gpsBtn: "Detect Location (GPS)", gpsSuccess: "Coordinates saved successfully!", gpsError: "Please enable GPS on your device."
+      gpsBtn: "Detect Location (GPS)", 
+      gpsSuccess: "Coordinates saved successfully!", 
+      gpsError: "Please enable GPS on your device.",
+      lashPricePlaceholder: "Flash Price (MAD)",
+      flashDatePlaceholder: "Deal Expiry Date"
     }
   }[language] || t.ar;
 
@@ -317,17 +338,29 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   };
 
   const handleAddService = async () => {
-    if (!newService.service_name || !newService.starting_price) return;
-    const { data } = await supabase.from('provider_services').insert({
-      provider_id: artisan.id, service_name: newService.service_name, description: newService.description, starting_price: newService.starting_price
-    }).select().single();
+  if (!newService.service_name || !newService.starting_price) return;
+  
+  const { data } = await supabase.from('provider_services').insert({
+    provider_id: artisan.id, 
+    service_name: newService.service_name, 
+    description: newService.description, 
+    starting_price: newService.starting_price,
+    flash_discount_price: newService.flash_discount_price ? Number(newService.flash_discount_price) : null,
+    flash_expires_at: newService.flash_expires_at || null
+  }).select().single();
 
-    if (data) {
-      setServices([...services, data]);
-      setNewService({ service_name: '', description: '', starting_price: '' }); 
-      setIsAddingService(false); 
-    }
-  };
+  if (data) {
+    setServices([...services, data]);
+    setNewService({ 
+      service_name: '', 
+      description: '', 
+      starting_price: '', 
+      flash_discount_price: '', 
+      flash_expires_at: '' 
+    }); 
+    setIsAddingService(false); 
+  }
+};
 
   const handleDeleteService = async (serviceId) => {
     if (window.confirm(t.deleteConfirmService)) {
@@ -750,17 +783,44 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                         </button>
                       ) : (
                         <div className={`p-5 rounded-2xl border-2 border-emerald-500/50 ${isDarkMode ? 'bg-slate-800' : 'bg-emerald-50/50'}`}>
-                          <h4 className={`font-bold text-sm mb-4 flex items-center gap-2 ${textTitle}`}><Plus size={16}/> {t.addService}</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <input type="text" placeholder={t.serviceNamePlaceholder} value={newService.service_name} onChange={e => setNewService({...newService, service_name: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
-                            <input type="number" placeholder={t.pricePlaceholder} value={newService.starting_price} onChange={e => setNewService({...newService, starting_price: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} dir="ltr" />
-                          </div>
-                          <input type="text" placeholder={t.descPlaceholder} value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} className={`border rounded-xl p-3 text-sm w-full mb-4 outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
-                          <div className="flex gap-3">
-                            <button type="button" onClick={handleAddService} className="flex-1 bg-emerald-500 text-white rounded-xl py-3 text-sm font-bold hover:bg-emerald-600">{t.saveServiceBtn}</button>
-                            <button type="button" onClick={() => setIsAddingService(false)} className={`flex-1 rounded-xl py-3 text-sm font-bold ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'}`}>{t.cancel}</button>
-                          </div>
-                        </div>
+                        <h4 className={`font-bold text-sm mb-4 flex items-center gap-2 ${textTitle}`}><Plus size={16}/> {t.addService}</h4>
+  
+                    {/* الحقول الأساسية */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <input type="text" placeholder={t.serviceNamePlaceholder} value={newService.service_name} onChange={e => setNewService({...newService, service_name: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
+                        <input type="number" placeholder={t.pricePlaceholder} value={newService.starting_price} onChange={e => setNewService({...newService, starting_price: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} dir="ltr" />
+                      </div>
+                        <input type="text" placeholder={t.descPlaceholder} value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} className={`border rounded-xl p-3 text-sm w-full mb-4 outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
+
+                    {/* قسم إعداد الـ Flash Deal (جديد) */}
+                        <div className="mb-4 p-4 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 rounded-xl">
+                        <h5 className="text-xs font-bold text-red-600 dark:text-red-400 mb-3 flex items-center gap-1">
+                        <Zap size={14} /> {t.flashDealTitle}
+                      </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input 
+                          type="number" 
+                          placeholder={t.flashPricePlaceholder} 
+                          value={newService.flash_discount_price} 
+                          onChange={e => setNewService({...newService, flash_discount_price: e.target.value})} 
+                          className={`border rounded-xl p-2 text-sm outline-none focus:border-red-500 font-bold ${bgCard} ${textTitle}`} 
+                          dir="ltr" 
+                      />
+                        <input 
+                          type="datetime-local" 
+                          value={newService.flash_expires_at} 
+                          onChange={e => setNewService({...newService, flash_expires_at: e.target.value})} 
+                          className={`border rounded-xl p-2 text-sm outline-none focus:border-red-500 font-bold ${bgCard} ${textTitle} text-slate-500`} 
+                      />
+                    </div>
+                  </div>
+
+                    {/* أزرار الحفظ */}
+                        <div className="flex gap-3">
+                        <button type="button" onClick={handleAddService} className="flex-1 bg-emerald-500 text-white rounded-xl py-3 text-sm font-bold hover:bg-emerald-600">{t.saveServiceBtn}</button>
+                        <button type="button" onClick={() => setIsAddingService(false)} className={`flex-1 rounded-xl py-3 text-sm font-bold ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'}`}>{t.cancel}</button>
+                    </div>
+                  </div>
                       )}
                     </div>
                   )}
