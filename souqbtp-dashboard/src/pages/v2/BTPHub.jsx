@@ -85,10 +85,10 @@ export default function BTPHub() {
   // 2. جلب البيانات عند تحميل الصفحة
   useEffect(() => {
     const fetchArtisans = async () => {
-      // نجلب الحرفيين ومعهم أسعار خدماتهم لحساب "التعريفة الأساسية"
+      // 🚀 التعديل هنا: جلب كل تفاصيل الخدمات وجدول شرائح التسعير المرتبط بها
       const { data, error } = await supabase
         .from('suppliers')
-        .select('*, provider_services(starting_price)');
+        .select('*, provider_services(*, service_pricing_tiers(*))');
         
       if (data) {
         setArtisans(data);
@@ -469,7 +469,7 @@ export default function BTPHub() {
             } 
             // 3. التحقق من التسعير بالكمية (Prix Chantier)
             else if (mainService.service_pricing_tiers && mainService.service_pricing_tiers.length > 0) {
-              const activeTier = mainService.service_pricing_tiers.find(
+              const activeTier = mainService.service_pricing_tiers?.find(
                 tier => requestedQty >= tier.min_qty && requestedQty <= tier.max_qty
               );
               if (activeTier) {
