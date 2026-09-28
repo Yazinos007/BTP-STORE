@@ -752,13 +752,14 @@ export default function BTPHub() {
         />
       )}
 
-      {/* في مكان استدعاء النافذة المنبثقة داخل BTPHub.jsx */}
-      {selectedSupplier && (
-        <SupplierProfile 
-          artisanId={selectedSupplier.id} 
-          onClose={() => setSelectedSupplier(null)} 
-        />
-      )}
+    {selectedSupplier && (
+      <SupplierProfile 
+        artisanId={selectedSupplier.id} 
+        language={language}      
+        isDarkMode={isDarkMode}   
+        onClose={() => setSelectedSupplier(null)} 
+      />
+    )}
 
       <style>{`
         @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
