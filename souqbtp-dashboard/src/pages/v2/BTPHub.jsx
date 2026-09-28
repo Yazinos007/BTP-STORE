@@ -395,15 +395,52 @@ export default function BTPHub() {
       {activeMode === 'services' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
           {artisans.map((artisan) => {
-            // حساب السعر الأدنى من الخدمات المربوطة بالحرفي (إذا كان لديه خدمات)
+            // حساب السعر الأدنى
             const minPrice = artisan.provider_services && artisan.provider_services.length > 0
               ? Math.min(...artisan.provider_services.map(s => Number(s.starting_price)))
               : 0;
 
+            // قاموس الترجمة الخاص بالبطاقات
+            const tCard = {
+              ar: {
+                interventions: "التدخلات",
+                completed: "مكتملة",
+                response: "الاستجابة",
+                basePrice: "السعر الأساسي",
+                startingFrom: "ابتداءً من",
+                unavailable: "غير متوفر",
+                viewProfile: "عرض البروفايل",
+                requestQuote: "طلب عرض سعر",
+                unspecified: "فئة غير محددة"
+              },
+              fr: {
+                interventions: "Interventions",
+                completed: "complétées",
+                response: "Réponse",
+                basePrice: "Tarif de base",
+                startingFrom: "À partir de",
+                unavailable: "Non disponible",
+                viewProfile: "Voir profil",
+                requestQuote: "Demander devis",
+                unspecified: "Catégorie non définie"
+              },
+              en: {
+                interventions: "Interventions",
+                completed: "completed",
+                response: "Response",
+                basePrice: "Base Price",
+                startingFrom: "Starting from",
+                unavailable: "Unavailable",
+                viewProfile: "View Profile",
+                requestQuote: "Request Quote",
+                unspecified: "Unspecified category"
+              }
+            }[language] || tCard.ar; // تأكد أن متغير language موجود في BTPHub، أو استبدله بـ 'ar' مؤقتاً إذا لم يكن موجوداً
+
             return (
-              <div key={artisan.id} className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
+              <div key={artisan.id} className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="w-16 h-16 bg-slate-200 rounded-full overflow-hidden shrink-0">
                     <img 
                       src={artisan.logo_url || `https://ui-avatars.com/api/?name=${artisan.store_name}&background=10b981&color=fff`} 
                       alt={artisan.store_name} 
@@ -415,50 +452,45 @@ export default function BTPHub() {
                       {artisan.store_name || 'اسم الحرفي'} 
                       {(artisan.tier === 'pro' || artisan.tier === 'business') && <ShieldCheck className="w-4 h-4 text-emerald-500" />}
                     </h3>
-                    <p className="text-sm text-emerald-600 font-bold">{artisan.category || t.services.specialty}</p>
+                    <p className="text-sm text-emerald-600 font-bold">{artisan.category || tCard.unspecified}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-2 mb-6">
-                  {/* التدخلات المنجزة الحقيقية */}
                   <div className={`flex justify-between text-sm ${textMuted}`}>
-                    <span>{t.services.interventions}</span>
-                    <span className={`font-semibold ${textTitle}`}>{artisan.completed_projects || 0} {t.services.completed}</span>
+                    <span>{tCard.interventions}</span>
+                    <span className={`font-semibold ${textTitle}`}>{artisan.completed_projects || 0} {tCard.completed}</span>
                   </div>
-                  {/* وقت الاستجابة الحقيقي */}
                   <div className={`flex justify-between text-sm ${textMuted}`}>
-                    <span>{t.services.response}</span>
-                    <span className="font-semibold text-emerald-600">{artisan.response_time || '< 30 mins'}</span>
+                    <span>{tCard.response}</span>
+                    <span className="font-semibold text-emerald-600" dir="ltr">{artisan.response_time || '< 30 mins'}</span>
                   </div>
-                  {/* السعر الأساسي الحقيقي */}
                   <div className={`flex justify-between text-sm ${textMuted}`}>
-                    <span>{t.services.basePrice}</span>
+                    <span>{tCard.basePrice}</span>
                     <span className={`font-semibold ${textTitle}`}>
-                      {minPrice > 0 ? `${t.services.startingFrom} ${minPrice} MAD` : 'غير متوفر'}
+                      {minPrice > 0 ? `${tCard.startingFrom} ${minPrice} MAD` : tCard.unavailable}
                     </span>
                   </div>
                 </div>
                 
                 <div className="flex gap-2">
                   <button 
-                    // إذا كنت تستخدم نافذة منبثقة (Modal) مرر الحرفي هكذا: setSelectedSupplier(artisan)
-                    // أو استخدم navigate('/v2/artisan/' + artisan.id) للانتقال للصفحة
                     onClick={() => setSelectedSupplier(artisan)} 
                     className={`flex-1 border py-2 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}
                   >
-                    {t.services.viewProfile}
+                    {tCard.viewProfile}
                   </button>
                   <button 
                     onClick={() => handleAddToCart({ 
                       id: artisan.id, 
-                      name: 'طلب عرض سعر عام', 
+                      name: tCard.requestQuote, 
                       supplier: artisan.store_name, 
                       type: 'service', 
                       image_url: artisan.logo_url 
                     })}
                     className="flex-1 bg-emerald-500 text-white py-2 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold"
                   >
-                    {t.services.requestQuote}
+                    {tCard.requestQuote}
                   </button>
                 </div>
               </div>
