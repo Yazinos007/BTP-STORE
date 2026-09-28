@@ -273,6 +273,26 @@ export default function BTPHub() {
     setCart(prev => prev.filter(item => item.product.id !== productId));
   };
 
+  // 1. دالة حساب المسافة بالكيلومتر (Haversine)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 6371; // نصف قطر الأرض بالكيلومتر
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c); // إرجاع المسافة بدون فواصل
+};
+// إحداثيات الورش الخاص بالمقاول (قصبة تادلة كمثال)
+  const chantierLocation = { lat: 32.5977, lng: -6.2658 };
+// متغيرات افتراضية لحساب التكلفة الإجمالية (يمكن ربطها بمدخلات بحث المستخدم لاحقاً)
+  const requiredQuantity = 300; // 300 طن إسمنت
+  const truckCapacity = 30; // الشاحنة تهز 30 طن
+  const costPerKm = 30; // 30 درهم للكيلومتر للشاحنة
+  const numberOfTrips = Math.ceil(requiredQuantity / truckCapacity); // 10 رحلات
+
   return (
     <div className="animate-fade-in pb-32 max-w-7xl mx-auto w-full" dir={isRtl ? 'rtl' : 'ltr'}>
       
@@ -395,51 +415,67 @@ export default function BTPHub() {
       {activeMode === 'services' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
           {artisans.map((artisan) => {
-            // حساب السعر الأدنى
+            // 1. حساب السعر الأدنى
             const minPrice = artisan.provider_services && artisan.provider_services.length > 0
               ? Math.min(...artisan.provider_services.map(s => Number(s.starting_price)))
               : 0;
 
-            // قاموس الترجمة الخاص بالبطاقات
+            // 2. حساب المسافة
+            const distanceKm = calculateDistance(chantierLocation.lat, chantierLocation.lng, artisan.latitude, artisan.longitude);
+
+            // 3. حساب التكلفة الواصلة للورش
+            let totalCost = null;
+            if (minPrice > 0 && distanceKm !== null) {
+              const goodsCost = minPrice * requiredQuantity;
+              const transportCost = distanceKm * costPerKm * numberOfTrips;
+              totalCost = goodsCost + transportCost;
+            }
+
+            // 4. الخيار الذكي (إذا كانت المسافة أقل من 25 كم)
+            const isSmartChoice = distanceKm !== null && distanceKm <= 25 && minPrice > 0;
+
+            // قاموس الترجمة الشامل للبطاقة الذكية
             const tCard = {
               ar: {
-                interventions: "التدخلات",
-                completed: "مكتملة",
-                response: "الاستجابة",
-                basePrice: "السعر الأساسي",
-                startingFrom: "ابتداءً من",
-                unavailable: "غير متوفر",
-                viewProfile: "عرض البروفايل",
-                requestQuote: "طلب عرض سعر",
-                unspecified: "فئة غير محددة"
+                interventions: "التدخلات", completed: "مكتملة", response: "الاستجابة",
+                basePrice: "السعر الأساسي", startingFrom: "ابتداءً من", unavailable: "غير متوفر",
+                viewProfile: "عرض البروفايل", requestQuote: "طلب السلعة", unspecified: "فئة غير محددة",
+                distanceToChantier: "المسافة للورش:", deliveryTime: "مدة التوصيل:",
+                totalCostLabel: "التكلفة الإجمالية واصلة:", smartChoice: "💡 خيار ذكي: توفير كبير في تكلفة النقل!",
+                goodsPriceLabel: "سعر السلعة:", km: "كم", notSpecified: "غير محدد", later: "يحدد لاحقاً",
+                goodsPlusTransport: "(السلعة + النقل)", artisanName: "اسم المورد"
               },
               fr: {
-                interventions: "Interventions",
-                completed: "complétées",
-                response: "Réponse",
-                basePrice: "Tarif de base",
-                startingFrom: "À partir de",
-                unavailable: "Non disponible",
-                viewProfile: "Voir profil",
-                requestQuote: "Demander devis",
-                unspecified: "Catégorie non définie"
+                interventions: "Interventions", completed: "complétées", response: "Réponse",
+                basePrice: "Tarif de base", startingFrom: "À partir de", unavailable: "Non disponible",
+                viewProfile: "Voir profil", requestQuote: "Commander", unspecified: "Catégorie non définie",
+                distanceToChantier: "Distance au chantier :", deliveryTime: "Délai de livraison :",
+                totalCostLabel: "Coût Rendu Chantier :", smartChoice: "💡 Choix malin : Économie sur le transport !",
+                goodsPriceLabel: "Prix du produit :", km: "km", notSpecified: "Non spécifié", later: "À définir",
+                goodsPlusTransport: "(Produit + Transport)", artisanName: "Nom du fournisseur"
               },
               en: {
-                interventions: "Interventions",
-                completed: "completed",
-                response: "Response",
-                basePrice: "Base Price",
-                startingFrom: "Starting from",
-                unavailable: "Unavailable",
-                viewProfile: "View Profile",
-                requestQuote: "Request Quote",
-                unspecified: "Unspecified category"
+                interventions: "Interventions", completed: "completed", response: "Response",
+                basePrice: "Base Price", startingFrom: "Starting from", unavailable: "Unavailable",
+                viewProfile: "View Profile", requestQuote: "Order Now", unspecified: "Unspecified category",
+                distanceToChantier: "Distance to site:", deliveryTime: "Delivery time:",
+                totalCostLabel: "Total Delivered Cost:", smartChoice: "💡 Smart Choice: Save on transport!",
+                goodsPriceLabel: "Goods Price:", km: "km", notSpecified: "Unspecified", later: "TBD",
+                goodsPlusTransport: "(Goods + Transport)", artisanName: "Supplier Name"
               }
-            }[language] || tCard.ar; // تأكد أن متغير language موجود في BTPHub، أو استبدله بـ 'ar' مؤقتاً إذا لم يكن موجوداً
+            }[language] || tCard.ar;
 
             return (
-              <div key={artisan.id} className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
-                <div className="flex items-center gap-4 mb-4">
+              <div key={artisan.id} className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow relative overflow-hidden`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                
+                {/* شارة الخيار الذكي */}
+                {isSmartChoice && (
+                  <div className="absolute top-0 right-0 left-0 bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 flex items-center justify-center gap-1 border-b border-emerald-200 z-10">
+                    {tCard.smartChoice}
+                  </div>
+                )}
+
+                <div className={`flex items-center gap-4 mb-4 ${isSmartChoice ? 'mt-6' : ''}`}>
                   <div className="w-16 h-16 bg-slate-200 rounded-full overflow-hidden shrink-0">
                     <img 
                       src={artisan.logo_url || `https://ui-avatars.com/api/?name=${artisan.store_name}&background=10b981&color=fff`} 
@@ -449,34 +485,47 @@ export default function BTPHub() {
                   </div>
                   <div>
                     <h3 className={`font-bold text-lg flex items-center gap-1 ${textTitle}`}>
-                      {artisan.store_name || 'اسم الحرفي'} 
+                      {artisan.store_name || tCard.artisanName} 
                       {(artisan.tier === 'pro' || artisan.tier === 'business') && <ShieldCheck className="w-4 h-4 text-emerald-500" />}
                     </h3>
                     <p className="text-sm text-emerald-600 font-bold">{artisan.category || tCard.unspecified}</p>
                   </div>
                 </div>
                 
-                <div className="space-y-2 mb-6">
-                  <div className={`flex justify-between text-sm ${textMuted}`}>
-                    <span>{tCard.interventions}</span>
-                    <span className={`font-semibold ${textTitle}`}>{artisan.completed_projects || 0} {tCard.completed}</span>
+                <div className="space-y-3 mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500 font-medium">{tCard.goodsPriceLabel}</span>
+                    <span className={`font-black ${textTitle}`}>{minPrice > 0 ? `${minPrice} MAD` : tCard.unavailable}</span>
                   </div>
-                  <div className={`flex justify-between text-sm ${textMuted}`}>
-                    <span>{tCard.response}</span>
-                    <span className="font-semibold text-emerald-600" dir="ltr">{artisan.response_time || '< 30 mins'}</span>
+                  
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500 font-medium">{tCard.distanceToChantier}</span>
+                    <span className="font-bold text-blue-600 flex items-center gap-1">📍 {distanceKm !== null ? `${distanceKm} ${tCard.km}` : tCard.notSpecified}</span>
                   </div>
-                  <div className={`flex justify-between text-sm ${textMuted}`}>
-                    <span>{tCard.basePrice}</span>
-                    <span className={`font-semibold ${textTitle}`}>
-                      {minPrice > 0 ? `${tCard.startingFrom} ${minPrice} MAD` : tCard.unavailable}
-                    </span>
+                  
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500 font-medium">{tCard.deliveryTime}</span>
+                    <span className="font-bold text-amber-600">⏱️ {artisan.delivery_time || tCard.later}</span>
                   </div>
+
+                  {totalCost !== null && (
+                    <>
+                      <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500 font-bold">{tCard.totalCostLabel}</span>
+                        <div className={language === 'ar' ? 'text-left' : 'text-right'}>
+                          <span className="font-black text-emerald-600 block text-lg">{totalCost.toLocaleString()} MAD</span>
+                          <span className="text-[10px] text-slate-400 block">{tCard.goodsPlusTransport}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
                 
                 <div className="flex gap-2">
                   <button 
                     onClick={() => setSelectedSupplier(artisan)} 
-                    className={`flex-1 border py-2 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}
+                    className={`flex-1 border py-2.5 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}
                   >
                     {tCard.viewProfile}
                   </button>
@@ -488,7 +537,7 @@ export default function BTPHub() {
                       type: 'service', 
                       image_url: artisan.logo_url 
                     })}
-                    className="flex-1 bg-emerald-500 text-white py-2 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold"
+                    className="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors text-sm font-bold shadow-md shadow-emerald-500/20"
                   >
                     {tCard.requestQuote}
                   </button>
