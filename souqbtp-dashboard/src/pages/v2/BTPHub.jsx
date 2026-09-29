@@ -80,10 +80,8 @@ export default function BTPHub() {
   const [addedItem, setAddedItem] = useState(null);
   const [requestedQty, setRequestedQty] = useState(300);
 
-  // 1. إضافة متغير لتخزين الحرفيين
   const [artisans, setArtisans] = useState([]);
 
-  // --- حالات نافذة إضافة فائض الأوراش ---
   const [surplusDeals, setSurplusDeals] = useState([]);
   const [isSurplusModalOpen, setIsSurplusModalOpen] = useState(false);
   const [isSubmittingSurplus, setIsSubmittingSurplus] = useState(false);
@@ -93,14 +91,87 @@ export default function BTPHub() {
     qty_left: '',
     original_price: '',
     burn_price: '',
-    duration_hours: '24', // الافتراضي 24 ساعة
+    duration_hours: '24', 
     latitude: null,
     longitude: null,
     image_file: null,
     image_preview: null
   });
 
-  // 2. جلب البيانات عند تحميل الصفحة
+  // --- حالات الشراء الجماعي (Achat Groupé) ---
+  const [groupedOrders, setGroupedOrders] = useState([]);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [selectedGroupOrder, setSelectedGroupOrder] = useState(null);
+  const [joinQty, setJoinQty] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+
+  // جلب الطلبات الجماعية (أضف هذا داخل useEffect الأساسي أو في واحد منفصل)
+  useEffect(() => {
+    let isMounted = true;
+    const fetchGroupedOrders = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('grouped_orders')
+          .select('*, provider_services(service_name, starting_price, suppliers(store_name, logo_url))')
+          .eq('status', 'active')
+          .gte('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false });
+
+        if (!error && data && isMounted) {
+          setGroupedOrders(data);
+        }
+      } catch (err) {
+        console.error("Error fetching grouped orders:", err);
+      }
+    };
+    fetchGroupedOrders();
+    return () => { isMounted = false; };
+  }, []);
+
+  // دالة الانضمام لطلب جماعي
+  const handleJoinGroupOrder = async (e) => {
+    e.preventDefault();
+    if (!joinQty || isNaN(joinQty) || Number(joinQty) <= 0) return;
+    
+    setIsJoining(true);
+    const qty = Number(joinQty);
+    
+    try {
+      // 1. تسجيل المساهمة
+      const { error: participantError } = await supabase.from('grouped_order_participants').insert({
+        grouped_order_id: selectedGroupOrder.id,
+        user_name: 'المقاول الحالي', // مؤقتاً
+        requested_qty: qty
+      });
+
+      if (!participantError) {
+        // 2. تحديث الكمية المجمعة في الطلب الرئيسي
+        const newTotal = selectedGroupOrder.current_qty + qty;
+        const newStatus = newTotal >= selectedGroupOrder.target_qty ? 'completed' : 'active';
+        
+        await supabase.from('grouped_orders')
+          .update({ current_qty: newTotal, status: newStatus })
+          .eq('id', selectedGroupOrder.id);
+
+        // 3. تحديث الواجهة محلياً
+        setGroupedOrders(prev => prev.map(order => 
+          order.id === selectedGroupOrder.id 
+            ? { ...order, current_qty: newTotal, status: newStatus } 
+            : order
+        ).filter(order => order.status === 'active')); // إخفاء المكتملة أو تركها حسب الرغبة
+
+        setIsGroupModalOpen(false);
+        setJoinQty('');
+        setSelectedGroupOrder(null);
+        alert(language === 'ar' ? 'تمت مساهمتك بنجاح!' : 'Participation confirmée !');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
   useEffect(() => {
     const fetchArtisans = async () => {
       try {
@@ -204,7 +275,27 @@ export default function BTPHub() {
           alertFillRequired: "يرجى ملء الحقول الأساسية وتحديد الموقع (GPS)",
           alertSuccess: "تم نشر عرضك بنجاح!"
         }
-      }
+      },
+      groupe: {
+        title: "الشراء الجماعي للمقاولين (Achat Groupé)",
+        desc: "انضم لمقاولين آخرين للوصول إلى الكمية المطلوبة وتفعيل سعر الجملة للجميع!",
+        createBtn: "فتح طلب جماعي جديد",
+        targetQty: "الهدف:",
+        collected: "تم جمع:",
+        missing: "متبقي:",
+        targetPrice: "السعر المخفض المستهدف",
+        joinBtn: "المساهمة في الطلب",
+        completedBtn: "اكتمل الطلب!",
+        empty: "لا توجد طلبات شراء جماعي مفتوحة حالياً.",
+        modal: {
+          title: "المساهمة في الطلب الجماعي",
+          desc: "حدد الكمية التي تريد حجزها من هذا الطلب.",
+          qty: "الكمية المطلوبة",
+          qtyPlh: "مثال: 50",
+          submitBtn: "تأكيد المساهمة",
+          submitting: "جاري التأكيد..."
+        }
+      } 
     },
     fr: {
       searchPlaceholder: "Que recherchez-vous pour votre chantier ?", 
@@ -281,6 +372,26 @@ export default function BTPHub() {
           alertGpsError: "Veuillez activer le GPS.",
           alertFillRequired: "Veuillez remplir les champs requis et le GPS.",
           alertSuccess: "Votre offre a été publiée !"
+        }
+      },
+      groupe: {
+        title: "Achats Groupés BTP (Achat Groupé)",
+        desc: "Rejoignez d'autres entrepreneurs pour atteindre la quantité requise et débloquer le prix de gros !",
+        createBtn: "Créer une commande groupée",
+        targetQty: "Objectif :",
+        collected: "Collecté :",
+        missing: "Manquant :",
+        targetPrice: "Prix Cible",
+        joinBtn: "Participer à la commande",
+        completedBtn: "Commande Complétée !",
+        empty: "Aucune commande groupée ouverte pour le moment.",
+        modal: {
+          title: "Participer à la commande",
+          desc: "Indiquez la quantité que vous souhaitez réserver.",
+          qty: "Quantité souhaitée",
+          qtyPlh: "Ex : 50",
+          submitBtn: "Confirmer la participation",
+          submitting: "Confirmation..."
         }
       }
     },
@@ -360,6 +471,26 @@ export default function BTPHub() {
           alertFillRequired: "Please fill the required fields and capture GPS location.",
           alertSuccess: "Your offer has been published!"
         }
+      },
+      groupe: {
+        title: "Contractors Group Buying",
+        desc: "Join other contractors to hit the target quantity and unlock wholesale pricing for everyone!",
+        createBtn: "Start New Group Order",
+        targetQty: "Target:",
+        collected: "Collected:",
+        missing: "Missing:",
+        targetPrice: "Target Discount Price",
+        joinBtn: "Join Order",
+        completedBtn: "Order Completed!",
+        empty: "No open group orders at the moment.",
+        modal: {
+          title: "Join Group Order",
+          desc: "Specify the quantity you want to reserve from this order.",
+          qty: "Requested Quantity",
+          qtyPlh: "E.g., 50",
+          submitBtn: "Confirm Participation",
+          submitting: "Confirming..."
+        }
       }
     }
   };
@@ -378,7 +509,8 @@ export default function BTPHub() {
     { id: 'transport', icon: '🚚', label: t.modes.transport },
     { id: 'documents', icon: '📄', label: t.modes.documents },
     { id: 'companies', icon: '🏢', label: t.modes.companies },
-    { id: 'surplus', icon: '♻️', label: language === 'ar' ? 'فائض الأوراش' : (language === 'fr' ? 'Surplus Chantier' : 'Site Surplus') }
+    { id: 'surplus', icon: '♻️', label: language === 'ar' ? 'فائض الأوراش' : (language === 'fr' ? 'Surplus Chantier' : 'Site Surplus') },
+    { id: 'groupe', icon: '🤝', label: language === 'ar' ? 'شراء جماعي' : (language === 'fr' ? 'Achat Groupé' : 'Group Buying') }
   ];
 
   const categories = [
@@ -1097,6 +1229,121 @@ export default function BTPHub() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 10. GROUP BUYING MODE (الشراء الجماعي) */}
+      {activeMode === 'groupe' && (
+        <div className="animate-fade-in">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-6 rounded-3xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+            <div>
+              <h2 className="text-2xl font-black text-blue-900 dark:text-blue-400 flex items-center gap-2 mb-2">
+                <Globe className="text-blue-500" /> {t.groupe.title}
+              </h2>
+              <p className="text-sm text-blue-800 dark:text-blue-300 font-medium max-w-2xl">
+                {t.groupe.desc}
+              </p>
+            </div>
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 shrink-0">
+              <Plus size={18} /> {t.groupe.createBtn}
+            </button>
+          </div>
+
+          {groupedOrders.length === 0 ? (
+            <div className={`text-center py-20 rounded-3xl border-2 border-dashed ${isDarkMode ? 'border-slate-700 bg-slate-900/50 text-slate-400' : 'border-slate-300 bg-slate-50 text-slate-500'}`}>
+              <Globe size={48} className="mx-auto mb-4 opacity-20" />
+              <h3 className="font-black text-xl mb-2">{t.groupe.empty}</h3>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {groupedOrders.map((order) => {
+                const progress = Math.min((order.current_qty / order.target_qty) * 100, 100);
+                const isCompleted = order.status === 'completed' || progress >= 100;
+                const serviceInfo = order.provider_services || {};
+                const supplierInfo = serviceInfo.suppliers || {};
+
+                return (
+                  <div key={order.id} className={`rounded-3xl border-2 ${isCompleted ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10' : 'border-blue-200 dark:border-blue-800'} p-6 relative overflow-hidden ${bgCard} shadow-lg hover:shadow-xl transition-all`} dir={isRtl ? 'rtl' : 'ltr'}>
+                    
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-slate-100 rounded-2xl overflow-hidden border">
+                          <img src={supplierInfo.logo_url || `https://ui-avatars.com/api/?name=${supplierInfo.store_name || 'S'}&background=3b82f6&color=fff`} alt="logo" className="w-full h-full object-cover"/>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500 font-bold mb-1">{supplierInfo.store_name}</p>
+                          <h3 className={`font-black text-xl leading-tight ${textTitle}`}>{serviceInfo.service_name || 'سلعة غير محددة'}</h3>
+                        </div>
+                      </div>
+                      <FlashDealTimer expiresAt={order.expires_at} />
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 mb-6">
+                      <div className="flex justify-between items-end mb-2">
+                        <div>
+                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">{t.groupe.targetPrice}</p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black text-blue-600">{order.target_price}</span>
+                            <span className="text-sm font-bold text-blue-600/70">MAD</span>
+                            <span className="text-xs text-slate-400 line-through ml-2">{serviceInfo.starting_price} MAD</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* شريط التقدم (Progress Bar) */}
+                      <div className="mt-4">
+                        <div className="flex justify-between text-xs font-bold mb-2">
+                          <span className="text-emerald-600">{t.groupe.collected} {order.current_qty}</span>
+                          <span className={textTitle}>{t.groupe.targetQty} {order.target_qty}</span>
+                        </div>
+                        <div className="h-3 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-1000 ${isCompleted ? 'bg-emerald-500' : 'bg-blue-500'}`} 
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-center text-[10px] text-slate-400 font-bold mt-2">
+                          {isCompleted ? 'الكمية مكتملة!' : `${t.groupe.missing} ${order.target_qty - order.current_qty}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button 
+                      disabled={isCompleted}
+                      onClick={() => { setSelectedGroupOrder(order); setIsGroupModalOpen(true); }} 
+                      className={`w-full py-4 rounded-xl font-black text-lg flex items-center justify-center gap-2 transition-all shadow-lg ${
+                        isCompleted 
+                          ? 'bg-emerald-500 text-white cursor-not-allowed' 
+                          : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90'
+                      }`}
+                    >
+                      {isCompleted ? <><CheckCircle2 size={20}/> {t.groupe.completedBtn}</> : <><ShoppingCart size={20}/> {t.groupe.joinBtn}</>}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* نافذة المساهمة في الطلب الجماعي (توضع أسفل الملف بجانب نافذة الفائض) */}
+      {isGroupModalOpen && selectedGroupOrder && (
+        <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-sm flex justify-center items-center p-4" onClick={() => setIsGroupModalOpen(false)}>
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'} w-full max-w-sm rounded-3xl p-6 shadow-2xl relative border animate-slide-up`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
+            <button onClick={() => setIsGroupModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors`}>
+              <X size={20} />
+            </button>
+            <h2 className={`text-xl font-black mb-2 ${textTitle}`}>{t.groupe.modal.title}</h2>
+            <p className={`text-sm mb-6 ${textMuted}`}>{t.groupe.modal.desc}</p>
+            <form onSubmit={handleJoinGroupOrder}>
+              <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.groupe.modal.qty}</label>
+              <input type="number" required min="1" max={selectedGroupOrder.target_qty - selectedGroupOrder.current_qty} value={joinQty} onChange={e => setJoinQty(e.target.value)} className={`w-full p-4 rounded-xl border outline-none focus:border-blue-500 text-lg font-black text-center ${bgCard} ${textTitle} mb-4`} placeholder={t.groupe.modal.qtyPlh} />
+              <button type="submit" disabled={isJoining} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2">
+                {isJoining ? t.groupe.modal.submitting : t.groupe.modal.submitBtn}
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
