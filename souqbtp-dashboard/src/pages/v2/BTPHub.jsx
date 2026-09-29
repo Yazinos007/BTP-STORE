@@ -348,9 +348,8 @@ export default function BTPHub() {
           qtyPlh: "مثال: 50",
           submitBtn: "تأكيد المساهمة",
           submitting: "جاري التأكيد..."
-        }
-      },
-      createModal: {
+        },
+        createModal: {
           title: "فتح طلب شراء جماعي",
           desc: "اختر السلعة وحدد الكمية الإجمالية المستهدفة لتفعيل السعر المخفض.",
           service: "السلعة / الخدمة المطلوبة",
@@ -363,6 +362,7 @@ export default function BTPHub() {
           submitting: "جاري الإطلاق...",
           alertFill: "يرجى تعبئة جميع الحقول بشكل صحيح.",
           alertSuccess: "تم إطلاق الطلب الجماعي بنجاح! العداد بدأ الآن."
+        }
       }
     },
     fr: {
@@ -460,9 +460,8 @@ export default function BTPHub() {
           qtyPlh: "Ex : 50",
           submitBtn: "Confirmer la participation",
           submitting: "Confirmation..."
-        }
-      },
-      createModal: {
+        },
+        createModal: {
           title: "Créer une commande groupée",
           desc: "Choisissez le produit et définissez la quantité cible pour activer le prix de gros.",
           service: "Produit / Service souhaité",
@@ -475,6 +474,7 @@ export default function BTPHub() {
           submitting: "Lancement...",
           alertFill: "Veuillez remplir tous les champs correctement.",
           alertSuccess: "Commande groupée lancée avec succès ! Le compte à rebours a commencé."
+        }
       }
     },
     en: {
@@ -572,9 +572,8 @@ export default function BTPHub() {
           qtyPlh: "E.g., 50",
           submitBtn: "Confirm Participation",
           submitting: "Confirming..."
-        }
-      },
-      createModal: {
+        },
+        createModal: {
           title: "Create Group Order",
           desc: "Choose the product and set the target quantity to unlock the wholesale price.",
           service: "Desired Product / Service",
@@ -587,6 +586,7 @@ export default function BTPHub() {
           submitting: "Launching...",
           alertFill: "Please fill all fields correctly.",
           alertSuccess: "Group order launched successfully! The countdown has started."
+        }
       }
     }
   };
