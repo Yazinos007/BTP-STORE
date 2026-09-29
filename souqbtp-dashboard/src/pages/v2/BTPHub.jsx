@@ -180,7 +180,30 @@ export default function BTPHub() {
         km: "كم",
         burnPrice: "السعر المحروق للوحدة",
         bookBtn: "حجز للاستلام الفوري",
-        empty: "لا توجد فرص فائض أوراش متاحة حالياً."
+        empty: "لا توجد فرص فائض أوراش متاحة حالياً.",
+        modal: {
+          title: "بيع فائض الورش",
+          desc: "أدخل تفاصيل السلعة المتبقية ليأتي مقاول آخر لحملها.",
+          photo: "التقط صورة للسلعة في الورش",
+          contractor: "اسم المقاول / الورش",
+          contractorPlh: "مثال: ورش فيلا بنعلي",
+          item: "السلعة المتبقية",
+          itemPlh: "مثال: 50 كيس إسمنت",
+          priceNormal: "السعر العادي (للمقارنة)",
+          priceBurn: "السعر المحروق!",
+          qty: "الكمية",
+          qtyPlh: "مثال: 50",
+          duration: "مدة العرض",
+          hours: "ساعة",
+          gpsLocated: "تم التحديد",
+          gpsBtn: "GPS",
+          publishing: "جاري النشر...",
+          publishBtn: "نشر العرض فوراً",
+          alertGpsSuccess: "تم التقاط الإحداثيات بنجاح!",
+          alertGpsError: "يرجى تفعيل الـ GPS في جهازك.",
+          alertFillRequired: "يرجى ملء الحقول الأساسية وتحديد الموقع (GPS)",
+          alertSuccess: "تم نشر عرضك بنجاح!"
+        }
       }
     },
     fr: {
@@ -235,7 +258,30 @@ export default function BTPHub() {
         km: "km",
         burnPrice: "Prix cassé unitaire",
         bookBtn: "Réserver pour retrait immédiat",
-        empty: "Aucune opportunité de surplus de chantier disponible actuellement."
+        empty: "Aucune opportunité de surplus de chantier disponible actuellement.",
+        modal: {
+          title: "Vendre un surplus",
+          desc: "Saisissez les détails pour qu'un autre entrepreneur vienne récupérer la marchandise.",
+          photo: "Prendre une photo sur le chantier",
+          contractor: "Nom de l'entreprise",
+          contractorPlh: "Ex : Chantier Villa Benali",
+          item: "Marchandise restante",
+          itemPlh: "Ex : 50 sacs de ciment",
+          priceNormal: "Prix Normal",
+          priceBurn: "Prix Cassé !",
+          qty: "Quantité",
+          qtyPlh: "Ex : 50",
+          duration: "Durée",
+          hours: "Heures",
+          gpsLocated: "Localisé",
+          gpsBtn: "GPS",
+          publishing: "Publication...",
+          publishBtn: "Publier l'offre",
+          alertGpsSuccess: "Coordonnées GPS capturées !",
+          alertGpsError: "Veuillez activer le GPS.",
+          alertFillRequired: "Veuillez remplir les champs requis et le GPS.",
+          alertSuccess: "Votre offre a été publiée !"
+        }
       }
     },
     en: {
@@ -290,7 +336,30 @@ export default function BTPHub() {
         km: "km",
         burnPrice: "Rock-bottom Unit Price",
         bookBtn: "Book for Immediate Pickup",
-        empty: "No site surplus opportunities available at the moment."
+        empty: "No site surplus opportunities available at the moment.",
+        modal: {
+          title: "Sell Surplus",
+          desc: "Enter the details so another contractor can pick up the remaining items.",
+          photo: "Take a photo on site",
+          contractor: "Contractor / Site Name",
+          contractorPlh: "E.g., Villa Benali Site",
+          item: "Remaining Item",
+          itemPlh: "E.g., 50 cement bags",
+          priceNormal: "Normal Price",
+          priceBurn: "Burn Price!",
+          qty: "Quantity",
+          qtyPlh: "E.g., 50",
+          duration: "Duration",
+          hours: "Hours",
+          gpsLocated: "Located",
+          gpsBtn: "GPS",
+          publishing: "Publishing...",
+          publishBtn: "Publish Offer Now",
+          alertGpsSuccess: "GPS coordinates captured!",
+          alertGpsError: "Please enable GPS on your device.",
+          alertFillRequired: "Please fill the required fields and capture GPS location.",
+          alertSuccess: "Your offer has been published!"
+        }
       }
     }
   };
@@ -425,15 +494,11 @@ export default function BTPHub() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setNewSurplus(prev => ({
-            ...prev,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          }));
-          alert(language === 'ar' ? 'تم التقاط الإحداثيات بنجاح!' : 'Coordonnées GPS capturées !');
+          setNewSurplus(prev => ({ ...prev, latitude: position.coords.latitude, longitude: position.coords.longitude }));
+          alert(t.surplus.modal.alertGpsSuccess);
         },
         (error) => {
-          alert(language === 'ar' ? 'يرجى تفعيل الـ GPS في جهازك.' : 'Veuillez activer le GPS.');
+          alert(t.surplus.modal.alertGpsError);
         },
         { enableHighAccuracy: true }
       );
@@ -444,31 +509,24 @@ export default function BTPHub() {
   const handleSubmitSurplus = async (e) => {
     e.preventDefault();
     if (!newSurplus.item_name || !newSurplus.burn_price || !newSurplus.latitude) {
-      alert(language === 'ar' ? 'يرجى ملء الحقول الأساسية وتحديد الموقع (GPS)' : 'Veuillez remplir les champs requis et le GPS');
+      alert(t.surplus.modal.alertFillRequired);
       return;
     }
 
     setIsSubmittingSurplus(true);
     try {
-      let finalImageUrl = 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=500'; // صورة افتراضية
-      
-      // إذا قام برفع صورة (يتطلب إنشاء مجلد 'surplus-images' في Storage لاحقاً)
+      let finalImageUrl = 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=500';
       if (newSurplus.image_file) {
         const fileExt = newSurplus.image_file.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('surplus-images')
-          .upload(`public/${fileName}`, newSurplus.image_file);
-          
+        const { data: uploadData, error: uploadError } = await supabase.storage.from('surplus-images').upload(`public/${fileName}`, newSurplus.image_file);
         if (!uploadError && uploadData) {
           const { data: publicUrlData } = supabase.storage.from('surplus-images').getPublicUrl(uploadData.path);
           finalImageUrl = publicUrlData.publicUrl;
         }
       }
 
-      // حساب تاريخ انتهاء العرض
       const expiresAt = new Date(Date.now() + parseInt(newSurplus.duration_hours) * 3600000).toISOString();
-
       const { data, error } = await supabase.from('chantier_surplus').insert({
         contractor_name: newSurplus.contractor_name || 'مقاول مستقل',
         item_name: newSurplus.item_name,
@@ -482,13 +540,10 @@ export default function BTPHub() {
       }).select().single();
 
       if (!error && data) {
-        setSurplusDeals([data, ...surplusDeals]); // إضافة العرض الجديد للواجهة فوراً
-        setIsSurplusModalOpen(false); // إغلاق النافذة
-        // إعادة تصفير النموذج
+        setSurplusDeals([data, ...surplusDeals]);
+        setIsSurplusModalOpen(false);
         setNewSurplus({ contractor_name: '', item_name: '', qty_left: '', original_price: '', burn_price: '', duration_hours: '24', latitude: null, longitude: null, image_file: null, image_preview: null });
-        alert(language === 'ar' ? 'تم نشر عرضك بنجاح!' : 'Votre offre a été publiée !');
-      } else {
-        console.error(error);
+        alert(t.surplus.modal.alertSuccess);
       }
     } catch (err) {
       console.error(err);
@@ -1148,14 +1203,11 @@ export default function BTPHub() {
             </button>
 
             <h2 className={`text-2xl font-black mb-1 flex items-center gap-2 ${textTitle}`}>
-              <Zap className="text-amber-500 fill-current" /> {language === 'ar' ? 'بيع فائض الورش' : 'Vendre un surplus'}
+              <Zap className="text-amber-500 fill-current" /> {t.surplus.modal.title}
             </h2>
-            <p className={`text-sm mb-6 ${textMuted}`}>
-              {language === 'ar' ? 'أدخل تفاصيل السلعة المتبقية ليأتي مقاول آخر لحملها.' : 'Saisissez les détails pour qu\'un autre entrepreneur vienne récupérer la marchandise.'}
-            </p>
+            <p className={`text-sm mb-6 ${textMuted}`}>{t.surplus.modal.desc}</p>
 
             <form onSubmit={handleSubmitSurplus} className="space-y-4">
-              {/* صورة السلعة */}
               <label className={`block w-full border-2 border-dashed ${isDarkMode ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-300 hover:bg-slate-50'} rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden`}>
                 {newSurplus.image_preview ? (
                   <img src={newSurplus.image_preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
@@ -1163,7 +1215,7 @@ export default function BTPHub() {
                   <Camera size={32} className={`mx-auto mb-2 ${textMuted}`} />
                 )}
                 <span className={`relative z-10 font-bold ${textTitle} drop-shadow-md`}>
-                  {language === 'ar' ? 'التقط صورة للسلعة في الورش' : 'Prendre une photo sur le chantier'}
+                  {t.surplus.modal.photo}
                 </span>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                   const file = e.target.files[0];
@@ -1173,49 +1225,49 @@ export default function BTPHub() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{language === 'ar' ? 'اسم المقاول / الورش' : 'Nom de l\'entreprise'}</label>
-                  <input type="text" required value={newSurplus.contractor_name} onChange={e => setNewSurplus({...newSurplus, contractor_name: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder="مثال: ورش فيلا بنعلي" />
+                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus.modal.contractor}</label>
+                  <input type="text" required value={newSurplus.contractor_name} onChange={e => setNewSurplus({...newSurplus, contractor_name: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus.modal.contractorPlh} />
                 </div>
                 <div>
-                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{language === 'ar' ? 'السلعة المتبقية' : 'Marchandise restante'}</label>
-                  <input type="text" required value={newSurplus.item_name} onChange={e => setNewSurplus({...newSurplus, item_name: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder="مثال: 50 كيس إسمنت" />
+                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus.modal.item}</label>
+                  <input type="text" required value={newSurplus.item_name} onChange={e => setNewSurplus({...newSurplus, item_name: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus.modal.itemPlh} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{language === 'ar' ? 'السعر العادي (للمقارنة)' : 'Prix Normal'}</label>
+                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus.modal.priceNormal}</label>
                   <input type="number" required value={newSurplus.original_price} onChange={e => setNewSurplus({...newSurplus, original_price: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder="MAD" dir="ltr" />
                 </div>
                 <div>
-                  <label className={`block text-xs font-bold mb-1 text-red-500`}>{language === 'ar' ? 'السعر المحروق!' : 'Prix Cassé !'}</label>
+                  <label className={`block text-xs font-bold mb-1 text-red-500`}>{t.surplus.modal.priceBurn}</label>
                   <input type="number" required value={newSurplus.burn_price} onChange={e => setNewSurplus({...newSurplus, burn_price: e.target.value})} className={`w-full p-3 rounded-xl border-2 border-red-200 outline-none focus:border-red-500 text-sm font-black bg-red-50 dark:bg-red-900/20 text-red-600`} placeholder="MAD" dir="ltr" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div className="md:col-span-1">
-                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{language === 'ar' ? 'الكمية' : 'Quantité'}</label>
-                  <input type="text" required value={newSurplus.qty_left} onChange={e => setNewSurplus({...newSurplus, qty_left: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder="مثال: 50" />
+                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus.modal.qty}</label>
+                  <input type="text" required value={newSurplus.qty_left} onChange={e => setNewSurplus({...newSurplus, qty_left: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus.modal.qtyPlh} />
                 </div>
                 <div className="md:col-span-1">
-                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{language === 'ar' ? 'مدة العرض' : 'Durée'}</label>
+                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus.modal.duration}</label>
                   <select value={newSurplus.duration_hours} onChange={e => setNewSurplus({...newSurplus, duration_hours: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`}>
-                    <option value="12">12 {language === 'ar' ? 'ساعة' : 'Heures'}</option>
-                    <option value="24">24 {language === 'ar' ? 'ساعة' : 'Heures'}</option>
-                    <option value="48">48 {language === 'ar' ? 'ساعة' : 'Heures'}</option>
+                    <option value="12">12 {t.surplus.modal.hours}</option>
+                    <option value="24">24 {t.surplus.modal.hours}</option>
+                    <option value="48">48 {t.surplus.modal.hours}</option>
                   </select>
                 </div>
                 <div className="md:col-span-1">
                   <button type="button" onClick={handleGetSurplusLocation} className={`w-full p-3 rounded-xl border-2 text-sm font-black flex items-center justify-center gap-2 transition-all ${newSurplus.latitude ? 'bg-emerald-100 border-emerald-500 text-emerald-700' : 'bg-slate-100 border-blue-500 text-blue-600 hover:bg-blue-50'}`}>
                     {newSurplus.latitude ? <CheckCircle2 size={16}/> : <MapPin size={16}/>}
-                    {newSurplus.latitude ? (language === 'ar' ? 'تم التحديد' : 'Localisé') : 'GPS'}
+                    {newSurplus.latitude ? t.surplus.modal.gpsLocated : t.surplus.modal.gpsBtn}
                   </button>
                 </div>
               </div>
 
               <button type="submit" disabled={isSubmittingSurplus} className="w-full mt-4 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors">
-                {isSubmittingSurplus ? (language === 'ar' ? 'جاري النشر...' : 'Publication...') : (language === 'ar' ? 'نشر العرض فوراً' : 'Publier l\'offre')}
+                {isSubmittingSurplus ? t.surplus.modal.publishing : t.surplus.modal.publishBtn}
               </button>
             </form>
           </div>
