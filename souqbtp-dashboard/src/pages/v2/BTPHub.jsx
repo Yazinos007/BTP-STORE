@@ -1584,55 +1584,7 @@ export default function BTPHub() {
         onClose={() => setSelectedSupplier(null)} 
       />
     )}
-
-      {isCreateGroupModalOpen && (
-        <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-sm flex justify-center items-center p-4" onClick={() => setIsCreateGroupModalOpen(false)}>
-          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'} w-full max-w-md rounded-3xl p-6 shadow-2xl relative border animate-slide-up`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
-            <button onClick={() => setIsCreateGroupModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors`}>
-              <X size={20} />
-            </button>
-            <h2 className={`text-xl font-black mb-1 flex items-center gap-2 ${textTitle}`}>
-              <Globe className="text-blue-500" /> {t.groupe?.createModal?.title || 'Créer une commande groupée'}
-            </h2>
-            <p className={`text-sm mb-6 ${textMuted}`}>{t.groupe?.createModal?.desc || 'Définissez la quantité cible pour activer le prix.'}</p>
-            
-            <form onSubmit={handleCreateGroupOrder} className="space-y-4">
-              <div>
-                <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.groupe?.createModal?.service || 'Produit / Service'}</label>
-                <select 
-                  required 
-                  value={newGroupOrder.service_id} 
-                  onChange={e => setNewGroupOrder({...newGroupOrder, service_id: e.target.value})} 
-                  className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 text-sm font-bold ${bgCard} ${textTitle}`}
-                >
-                  <option value="">-- {t.groupe?.createModal?.servicePlh || 'Sélectionnez un produit'} --</option>
-                  {availableServices.map(srv => (
-                    <option key={srv.id} value={srv.id}>
-                      {srv.service_name} ({srv.suppliers?.store_name || 'مورد'}) - {srv.starting_price} MAD
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.groupe?.createModal?.targetQty || 'Quantité Cible'}</label>
-                  <input type="number" required min="1" value={newGroupOrder.target_qty} onChange={e => setNewGroupOrder({...newGroupOrder, target_qty: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.groupe?.createModal?.targetQtyPlh || '500'} dir="ltr" />
-                </div>
-                <div>
-                  <label className={`block text-xs font-bold mb-2 text-blue-600`}>{t.groupe?.createModal?.targetPrice || 'Prix Cible'}</label>
-                  <input type="number" required min="0" value={newGroupOrder.target_price} onChange={e => setNewGroupOrder({...newGroupOrder, target_price: e.target.value})} className={`w-full p-3 rounded-xl border-2 border-blue-200 outline-none focus:border-blue-500 text-sm font-black bg-blue-50 dark:bg-blue-900/20 text-blue-600`} placeholder={t.groupe?.createModal?.targetPricePlh || '67'} dir="ltr" />
-                </div>
-              </div>
-
-              <button type="submit" disabled={isCreatingGroupOrder} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors">
-                {isCreatingGroupOrder ? (t.groupe?.createModal?.submitting || 'Lancement...') : (t.groupe?.createModal?.submitBtn || 'Lancer la commande')}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
+    
       <style>{`
         @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slide-up { animation: slide-up 0.4s ease-out forwards; }
