@@ -105,6 +105,60 @@ export default function BTPHub() {
   const [joinQty, setJoinQty] = useState('');
   const [isJoining, setIsJoining] = useState(false);
 
+  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [isCreatingGroupOrder, setIsCreatingGroupOrder] = useState(false);
+  const [availableServices, setAvailableServices] = useState([]);
+  const [newGroupOrder, setNewGroupOrder] = useState({
+    service_id: '', target_qty: '', target_price: ''
+  });
+
+  // فتح نافذة الإنشاء وجلب الخدمات المتاحة
+  const openCreateGroupModal = async () => {
+    setIsCreateGroupModalOpen(true);
+    try {
+      const { data } = await supabase
+        .from('provider_services')
+        .select('id, service_name, starting_price, suppliers(store_name)');
+      if (data) setAvailableServices(data);
+    } catch (err) { console.error(err); }
+  };
+
+  // إرسال الطلب الجماعي الجديد
+  const handleCreateGroupOrder = async (e) => {
+    e.preventDefault();
+    if (!newGroupOrder.service_id || !newGroupOrder.target_qty || !newGroupOrder.target_price) {
+      alert(t.groupe.createModal.alertFill); return;
+    }
+    
+    setIsCreatingGroupOrder(true);
+    try {
+      // العداد يمتد لـ 48 ساعة
+      const expiresAt = new Date(Date.now() + 48 * 3600000).toISOString(); 
+      
+      const { data, error } = await supabase.from('grouped_orders').insert({
+        service_id: newGroupOrder.service_id,
+        target_qty: Number(newGroupOrder.target_qty),
+        current_qty: 0,
+        target_price: Number(newGroupOrder.target_price),
+        expires_at: expiresAt,
+        status: 'active'
+      }).select('*, provider_services(service_name, starting_price, suppliers(store_name, logo_url))').single();
+
+      if (!error && data) {
+        setGroupedOrders([data, ...groupedOrders]);
+        setIsCreateGroupModalOpen(false);
+        setNewGroupOrder({ service_id: '', target_qty: '', target_price: '' });
+        alert(t.groupe.createModal.alertSuccess);
+      } else {
+        console.error(error);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsCreatingGroupOrder(false);
+    }
+  };
+
   // جلب الطلبات الجماعية (أضف هذا داخل useEffect الأساسي أو في واحد منفصل)
   useEffect(() => {
     let isMounted = true;
@@ -295,7 +349,21 @@ export default function BTPHub() {
           submitBtn: "تأكيد المساهمة",
           submitting: "جاري التأكيد..."
         }
-      } 
+      },
+      createModal: {
+          title: "فتح طلب شراء جماعي",
+          desc: "اختر السلعة وحدد الكمية الإجمالية المستهدفة لتفعيل السعر المخفض.",
+          service: "السلعة / الخدمة المطلوبة",
+          servicePlh: "اختر من قائمة العروض",
+          targetQty: "الكمية الهدف (الإجمالية)",
+          targetQtyPlh: "مثال: 500",
+          targetPrice: "السعر المخفض المستهدف",
+          targetPricePlh: "مثال: 67",
+          submitBtn: "إطلاق الطلب الجماعي (48 ساعة)",
+          submitting: "جاري الإطلاق...",
+          alertFill: "يرجى تعبئة جميع الحقول بشكل صحيح.",
+          alertSuccess: "تم إطلاق الطلب الجماعي بنجاح! العداد بدأ الآن."
+      }
     },
     fr: {
       searchPlaceholder: "Que recherchez-vous pour votre chantier ?", 
@@ -393,6 +461,20 @@ export default function BTPHub() {
           submitBtn: "Confirmer la participation",
           submitting: "Confirmation..."
         }
+      },
+      createModal: {
+          title: "Créer une commande groupée",
+          desc: "Choisissez le produit et définissez la quantité cible pour activer le prix de gros.",
+          service: "Produit / Service souhaité",
+          servicePlh: "Sélectionnez dans la liste",
+          targetQty: "Quantité Cible Globale",
+          targetQtyPlh: "Ex : 500",
+          targetPrice: "Prix Cible",
+          targetPricePlh: "Ex : 67",
+          submitBtn: "Lancer la commande (48h)",
+          submitting: "Lancement...",
+          alertFill: "Veuillez remplir tous les champs correctement.",
+          alertSuccess: "Commande groupée lancée avec succès ! Le compte à rebours a commencé."
       }
     },
     en: {
@@ -491,6 +573,20 @@ export default function BTPHub() {
           submitBtn: "Confirm Participation",
           submitting: "Confirming..."
         }
+      },
+      createModal: {
+          title: "Create Group Order",
+          desc: "Choose the product and set the target quantity to unlock the wholesale price.",
+          service: "Desired Product / Service",
+          servicePlh: "Select from the list",
+          targetQty: "Total Target Quantity",
+          targetQtyPlh: "E.g., 500",
+          targetPrice: "Target Discount Price",
+          targetPricePlh: "E.g., 67",
+          submitBtn: "Launch Group Order (48h)",
+          submitting: "Launching...",
+          alertFill: "Please fill all fields correctly.",
+          alertSuccess: "Group order launched successfully! The countdown has started."
       }
     }
   };
@@ -1244,7 +1340,7 @@ export default function BTPHub() {
                 {t.groupe.desc}
               </p>
             </div>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 shrink-0">
+            <button onClick={openCreateGroupModal} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 shrink-0">
               <Plus size={18} /> {t.groupe.createBtn}
             </button>
           </div>
@@ -1341,6 +1437,55 @@ export default function BTPHub() {
               <input type="number" required min="1" max={selectedGroupOrder.target_qty - selectedGroupOrder.current_qty} value={joinQty} onChange={e => setJoinQty(e.target.value)} className={`w-full p-4 rounded-xl border outline-none focus:border-blue-500 text-lg font-black text-center ${bgCard} ${textTitle} mb-4`} placeholder={t.groupe.modal.qtyPlh} />
               <button type="submit" disabled={isJoining} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2">
                 {isJoining ? t.groupe.modal.submitting : t.groupe.modal.submitBtn}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* نافذة إنشاء طلب جماعي جديد */}
+      {isCreateGroupModalOpen && (
+        <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-sm flex justify-center items-center p-4" onClick={() => setIsCreateGroupModalOpen(false)}>
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'} w-full max-w-md rounded-3xl p-6 shadow-2xl relative border animate-slide-up`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
+            <button onClick={() => setIsCreateGroupModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors`}>
+              <X size={20} />
+            </button>
+            <h2 className={`text-xl font-black mb-1 flex items-center gap-2 ${textTitle}`}>
+              <Globe className="text-blue-500" /> {t.groupe.createModal.title}
+            </h2>
+            <p className={`text-sm mb-6 ${textMuted}`}>{t.groupe.createModal.desc}</p>
+            
+            <form onSubmit={handleCreateGroupOrder} className="space-y-4">
+              <div>
+                <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.groupe.createModal.service}</label>
+                <select 
+                  required 
+                  value={newGroupOrder.service_id} 
+                  onChange={e => setNewGroupOrder({...newGroupOrder, service_id: e.target.value})} 
+                  className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 text-sm font-bold ${bgCard} ${textTitle}`}
+                >
+                  <option value="">-- {t.groupe.createModal.servicePlh} --</option>
+                  {availableServices.map(srv => (
+                    <option key={srv.id} value={srv.id}>
+                      {srv.service_name} ({srv.suppliers?.store_name || 'مورد'}) - {srv.starting_price} MAD
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.groupe.createModal.targetQty}</label>
+                  <input type="number" required min="1" value={newGroupOrder.target_qty} onChange={e => setNewGroupOrder({...newGroupOrder, target_qty: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.groupe.createModal.targetQtyPlh} dir="ltr" />
+                </div>
+                <div>
+                  <label className={`block text-xs font-bold mb-2 text-blue-600`}>{t.groupe.createModal.targetPrice}</label>
+                  <input type="number" required min="0" value={newGroupOrder.target_price} onChange={e => setNewGroupOrder({...newGroupOrder, target_price: e.target.value})} className={`w-full p-3 rounded-xl border-2 border-blue-200 outline-none focus:border-blue-500 text-sm font-black bg-blue-50 dark:bg-blue-900/20 text-blue-600`} placeholder={t.groupe.createModal.targetPricePlh} dir="ltr" />
+                </div>
+              </div>
+
+              <button type="submit" disabled={isCreatingGroupOrder} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors">
+                {isCreatingGroupOrder ? t.groupe.createModal.submitting : t.groupe.createModal.submitBtn}
               </button>
             </form>
           </div>
