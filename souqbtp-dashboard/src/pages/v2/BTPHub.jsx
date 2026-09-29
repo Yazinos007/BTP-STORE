@@ -649,18 +649,16 @@ export default function BTPHub() {
 
   useEffect(() => {
     let isMounted = true;
-    // --- جلب عروض فائض الأوراش ---
     const loadSurplusDeals = async () => {
       try {
         const { data, error } = await supabase
           .from('chantier_surplus')
           .select('*')
-          // عرض الصفقات التي لم تنتهِ صلاحيتها فقط
-          .gte('expires_at', new Date().toISOString()) 
-          .order('created_at', { ascending: false });
-
+          .gte('expires_at', new Date().toISOString()); 
         if (!error && data) {
-          if (isMounted) setSurplusDeals(data);
+          if (isMounted) setSurplusDeals(data.reverse()); // ترتيب محلي بدلاً من قاعدة البيانات
+        } else if (error) {
+          console.error("Supabase Error 400:", error.message);
         }
       } catch (err) {
         console.error("Error fetching surplus:", err);
@@ -1443,49 +1441,83 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* نافذة إنشاء طلب جماعي جديد (محمية ضد الانهيار) */}
-      {isCreateGroupModalOpen && (
-        <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-sm flex justify-center items-center p-4" onClick={() => setIsCreateGroupModalOpen(false)}>
-          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'} w-full max-w-md rounded-3xl p-6 shadow-2xl relative border animate-slide-up`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
-            <button onClick={() => setIsCreateGroupModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors`}>
+      {/* 🚀 نافذة إضافة فائض الأوراش (محمية ضد الانهيار) */}
+      {isSurplusModalOpen && (
+        <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-sm flex justify-center items-center p-4 overflow-y-auto" onClick={() => setIsSurplusModalOpen(false)}>
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'} w-full max-w-lg rounded-3xl p-6 shadow-2xl relative border animate-slide-up my-8`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
+            
+            <button onClick={() => setIsSurplusModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-red-100 hover:bg-red-500 text-red-500 hover:text-white rounded-full transition-colors`}>
               <X size={20} />
             </button>
-            <h2 className={`text-xl font-black mb-1 flex items-center gap-2 ${textTitle}`}>
-              <Globe className="text-blue-500" /> {t.groupe?.createModal?.title || 'Créer une commande groupée'}
+
+            <h2 className={`text-2xl font-black mb-1 flex items-center gap-2 ${textTitle}`}>
+              <Zap className="text-amber-500 fill-current" /> {t.surplus?.modal?.title || 'Vendre un surplus'}
             </h2>
-            <p className={`text-sm mb-6 ${textMuted}`}>{t.groupe?.createModal?.desc || 'Définissez la quantité cible pour activer le prix.'}</p>
-            
-            <form onSubmit={handleCreateGroupOrder} className="space-y-4">
-              <div>
-                <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.groupe?.createModal?.service || 'Produit / Service'}</label>
-                <select 
-                  required 
-                  value={newGroupOrder.service_id} 
-                  onChange={e => setNewGroupOrder({...newGroupOrder, service_id: e.target.value})} 
-                  className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 text-sm font-bold ${bgCard} ${textTitle}`}
-                >
-                  <option value="">-- {t.groupe?.createModal?.servicePlh || 'Sélectionnez un produit'} --</option>
-                  {availableServices.map(srv => (
-                    <option key={srv.id} value={srv.id}>
-                      {srv.service_name} ({srv.suppliers?.store_name || 'مورد'}) - {srv.starting_price} MAD
-                    </option>
-                  ))}
-                </select>
+            <p className={`text-sm mb-6 ${textMuted}`}>
+              {t.surplus?.modal?.desc || 'Saisissez les détails pour qu\'un autre entrepreneur vienne récupérer la marchandise.'}
+            </p>
+
+            <form onSubmit={handleSubmitSurplus} className="space-y-4">
+              <label className={`block w-full border-2 border-dashed ${isDarkMode ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-300 hover:bg-slate-50'} rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden`}>
+                {newSurplus.image_preview ? (
+                  <img src={newSurplus.image_preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                ) : (
+                  <Camera size={32} className={`mx-auto mb-2 ${textMuted}`} />
+                )}
+                <span className={`relative z-10 font-bold ${textTitle} drop-shadow-md`}>
+                  {t.surplus?.modal?.photo || 'Prendre une photo'}
+                </span>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                  const file = e.target.files[0];
+                  if(file) setNewSurplus({...newSurplus, image_file: file, image_preview: URL.createObjectURL(file)});
+                }} />
+              </label>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus?.modal?.contractor || 'Nom de l\'entreprise'}</label>
+                  <input type="text" required value={newSurplus.contractor_name} onChange={e => setNewSurplus({...newSurplus, contractor_name: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus?.modal?.contractorPlh || 'Ex: Chantier Alpha'} />
+                </div>
+                <div>
+                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus?.modal?.item || 'Marchandise'}</label>
+                  <input type="text" required value={newSurplus.item_name} onChange={e => setNewSurplus({...newSurplus, item_name: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus?.modal?.itemPlh || 'Ex: Ciment'} />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.groupe?.createModal?.targetQty || 'Quantité Cible'}</label>
-                  <input type="number" required min="1" value={newGroupOrder.target_qty} onChange={e => setNewGroupOrder({...newGroupOrder, target_qty: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.groupe?.createModal?.targetQtyPlh || '500'} dir="ltr" />
+                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus?.modal?.priceNormal || 'Prix Normal'}</label>
+                  <input type="number" required value={newSurplus.original_price} onChange={e => setNewSurplus({...newSurplus, original_price: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder="MAD" dir="ltr" />
                 </div>
                 <div>
-                  <label className={`block text-xs font-bold mb-2 text-blue-600`}>{t.groupe?.createModal?.targetPrice || 'Prix Cible'}</label>
-                  <input type="number" required min="0" value={newGroupOrder.target_price} onChange={e => setNewGroupOrder({...newGroupOrder, target_price: e.target.value})} className={`w-full p-3 rounded-xl border-2 border-blue-200 outline-none focus:border-blue-500 text-sm font-black bg-blue-50 dark:bg-blue-900/20 text-blue-600`} placeholder={t.groupe?.createModal?.targetPricePlh || '67'} dir="ltr" />
+                  <label className={`block text-xs font-bold mb-1 text-red-500`}>{t.surplus?.modal?.priceBurn || 'Prix Cassé'}</label>
+                  <input type="number" required value={newSurplus.burn_price} onChange={e => setNewSurplus({...newSurplus, burn_price: e.target.value})} className={`w-full p-3 rounded-xl border-2 border-red-200 outline-none focus:border-red-500 text-sm font-black bg-red-50 dark:bg-red-900/20 text-red-600`} placeholder="MAD" dir="ltr" />
                 </div>
               </div>
 
-              <button type="submit" disabled={isCreatingGroupOrder} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors">
-                {isCreatingGroupOrder ? (t.groupe?.createModal?.submitting || 'Lancement...') : (t.groupe?.createModal?.submitBtn || 'Lancer la commande')}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div className="md:col-span-1">
+                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus?.modal?.qty || 'Quantité'}</label>
+                  <input type="text" required value={newSurplus.qty_left} onChange={e => setNewSurplus({...newSurplus, qty_left: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus?.modal?.qtyPlh || '50'} />
+                </div>
+                <div className="md:col-span-1">
+                  <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus?.modal?.duration || 'Durée'}</label>
+                  <select value={newSurplus.duration_hours} onChange={e => setNewSurplus({...newSurplus, duration_hours: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`}>
+                    <option value="12">12 {t.surplus?.modal?.hours || 'H'}</option>
+                    <option value="24">24 {t.surplus?.modal?.hours || 'H'}</option>
+                    <option value="48">48 {t.surplus?.modal?.hours || 'H'}</option>
+                  </select>
+                </div>
+                <div className="md:col-span-1">
+                  <button type="button" onClick={handleGetSurplusLocation} className={`w-full p-3 rounded-xl border-2 text-sm font-black flex items-center justify-center gap-2 transition-all ${newSurplus.latitude ? 'bg-emerald-100 border-emerald-500 text-emerald-700' : 'bg-slate-100 border-blue-500 text-blue-600 hover:bg-blue-50'}`}>
+                    {newSurplus.latitude ? <CheckCircle2 size={16}/> : <MapPin size={16}/>}
+                    {newSurplus.latitude ? (t.surplus?.modal?.gpsLocated || 'Localisé') : (t.surplus?.modal?.gpsBtn || 'GPS')}
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" disabled={isSubmittingSurplus} className="w-full mt-4 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors">
+                {isSubmittingSurplus ? (t.surplus?.modal?.publishing || 'Publication...') : (t.surplus?.modal?.publishBtn || 'Publier l\'offre')}
               </button>
             </form>
           </div>
