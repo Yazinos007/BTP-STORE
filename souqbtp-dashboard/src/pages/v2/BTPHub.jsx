@@ -252,7 +252,8 @@ export default function BTPHub() {
     { id: 'maintenance', icon: '🔧', label: t.modes.maintenance },
     { id: 'transport', icon: '🚚', label: t.modes.transport },
     { id: 'documents', icon: '📄', label: t.modes.documents },
-    { id: 'companies', icon: '🏢', label: t.modes.companies }
+    { id: 'companies', icon: '🏢', label: t.modes.companies },
+    { id: 'surplus', icon: '♻️', label: language === 'ar' ? 'فائض الأوراش' : (language === 'fr' ? 'Surplus Chantier' : 'Site Surplus') }
   ];
 
   const categories = [
@@ -791,6 +792,101 @@ export default function BTPHub() {
               {t.companies.contact}
             </button>
             <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors"></div>
+          </div>
+        </div>
+      )}
+
+      {/* 9. SURPLUS MODE (بورصة فائض الأوراش) */}
+      {activeMode === 'surplus' && (
+        <div className="animate-fade-in">
+          {/* ترويسة القسم */}
+          <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 p-4 rounded-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-black text-amber-900 dark:text-amber-400 flex items-center gap-2">
+                <Zap className="fill-current" /> فرص الأوراش المجاورة (استلام فوري)
+              </h2>
+              <p className="text-sm text-amber-800 dark:text-amber-500 font-medium mt-1">
+                سلع متبقية من مشاريع مقاولين آخرين بأسعار محروقة. الشرط الوحيد: <span className="font-bold underline">النقل على حسابك من الورش مباشرة!</span>
+              </p>
+            </div>
+            <button className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl font-bold shadow-md transition-colors flex items-center justify-center gap-2 shrink-0">
+              <Plus size={18} /> عرض سلعة للبيع
+            </button>
+          </div>
+
+          {/* شبكة عروض الفائض */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* 
+              هنا نقوم بعمل map لبيانات جدول chantier_surplus
+              وضعت بيانات افتراضية (Dummy) الآن لتتمكن من معاينة التصميم فوراً
+            */}
+            {[
+              {
+                id: 1, contractor_name: "ورش فيلا العطاري", item_name: "زليج كومباكتو 60x60 (لون رمادي)", qty_left: "45 متر مربع",
+                original_price: 120, burn_price: 65, lat: 32.6000, lng: -6.2700, expires_at: new Date(Date.now() + 86400000).toISOString(),
+                image_url: "https://images.unsplash.com/photo-1523413363574-c30aa1c2a516?w=500&q=80"
+              },
+              {
+                id: 2, contractor_name: "مشروع عمارة النور", item_name: "أكياس إسمنت 45 (متبقية من الصب)", qty_left: "22 كيس",
+                original_price: 75, burn_price: 50, lat: 32.5800, lng: -6.2500, expires_at: new Date(Date.now() + 14400000).toISOString(),
+                image_url: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=500&q=80"
+              }
+            ].map((deal) => {
+              // خوارزمية المسافة بين المقاول المشتري والمقاول البائع
+              const distanceKm = calculateDistance(chantierLocation.lat, chantierLocation.lng, deal.lat, deal.lng);
+              const discountPercentage = Math.round(((deal.original_price - deal.burn_price) / deal.original_price) * 100);
+              
+              return (
+                <div key={deal.id} className="rounded-3xl border-2 border-amber-400 p-1 relative overflow-hidden bg-amber-400 shadow-xl hover:-translate-y-1 transition-transform" dir={isRtl ? 'rtl' : 'ltr'}>
+                  
+                  {/* شارة التخفيض الضخمة */}
+                  <div className={`absolute top-4 ${isRtl ? 'right-0 rounded-l-xl' : 'left-0 rounded-r-xl'} bg-red-600 text-white font-black text-sm px-4 py-1.5 shadow-lg z-10 flex items-center gap-1`}>
+                    تخفيض -{discountPercentage}%
+                  </div>
+
+                  <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-2xl h-full flex flex-col relative`}>
+                    <div className="h-48 relative rounded-t-2xl overflow-hidden">
+                      <img src={deal.image_url} alt={deal.item_name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
+                      <div className="absolute bottom-3 right-3 left-3 flex justify-between items-end">
+                        <span className="bg-black/60 backdrop-blur text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-white/20">
+                          متبقي: {deal.qty_left}
+                        </span>
+                        <span className="text-white text-xs font-bold flex items-center gap-1 bg-blue-600/80 backdrop-blur px-3 py-1.5 rounded-lg">
+                          <MapPin size={14} /> تبعد {distanceKm} كم
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-5 flex-1 flex flex-col">
+                      <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase tracking-wider">{deal.contractor_name}</p>
+                      <h3 className={`font-black text-lg leading-tight mb-4 ${textTitle}`}>{deal.item_name}</h3>
+                      
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex-1 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-200 dark:border-amber-800/50">
+                          <p className="text-[10px] text-amber-700 dark:text-amber-500 font-bold mb-1">السعر المحروق للوحدة</p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-2xl font-black text-amber-600">{deal.burn_price}</span>
+                            <span className="text-sm font-bold text-amber-600/70">MAD</span>
+                            <span className="text-xs text-slate-400 line-through ml-auto">{deal.original_price} MAD</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-auto space-y-3">
+                        <div className="flex justify-center w-full">
+                          {/* استخدام مكون العداد التنازلي الذي تمت إضافته مسبقاً */}
+                          <FlashDealTimer expiresAt={deal.expires_at} />
+                        </div>
+                        <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
+                          <ShoppingCart size={18} /> حجز للاستلام الفوري
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
