@@ -252,6 +252,37 @@ export default function BTPHub() {
     fetchArtisans();
   }, []);
 
+  // --- حالات طلب عروض الأسعار المخصصة (RFQ) ---
+  const [isRfqModalOpen, setIsRfqModalOpen] = useState(false);
+  const [isSubmittingRfq, setIsSubmittingRfq] = useState(false);
+  const [rfqForm, setRfqForm] = useState({
+    title: '', category: '', details: '', deadline: ''
+  });
+  const handleSubmitRfq = async (e) => {
+    e.preventDefault();
+    setIsSubmittingRfq(true);
+    try {
+      const { error } = await supabase.from('rfq_requests').insert({
+        title: rfqForm.title,
+        category: rfqForm.category,
+        details: rfqForm.details,
+        deadline: rfqForm.deadline,
+        status: 'open'
+      });
+      if (!error) {
+        setIsRfqModalOpen(false);
+        setRfqForm({ title: '', category: '', details: '', deadline: '' });
+        alert(t.rfq?.modal?.success || "Succès !");
+      } else {
+        console.error("Error inserting RFQ:", error);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmittingRfq(false);
+    }
+  };
+
   const translations = {
     ar: {
       searchPlaceholder: "ماذا تحتاج لمشروعك؟ ابحث عن الأسمنت، الحديد، مقاول...",
@@ -362,6 +393,25 @@ export default function BTPHub() {
           submitting: "جاري الإطلاق...",
           alertFill: "يرجى تعبئة جميع الحقول بشكل صحيح.",
           alertSuccess: "تم إطلاق الطلب الجماعي بنجاح! العداد بدأ الآن."
+        }
+      },
+      rfq: {
+        title: "لم أجد ما أبحث عنه",
+        desc: "صف احتياجك بدقة وتلقى عروضاً من موردينا المعتمدين.",
+        btn: "صف احتياجك",
+        modal: {
+          title: "نشر طلب مخصص (Appel d'offres)",
+          desc: "حدد تفاصيل مشروعك وسيقوم الموردون المعتمدون بتقديم عروض أسعارهم.",
+          reqTitle: "عنوان الطلب",
+          reqTitlePlh: "مثال: مطلوب توريد وتركيب 50 نافذة ألمنيوم",
+          category: "التصنيف",
+          catSelect: "اختر التصنيف المناسب",
+          details: "التفاصيل الفنية (المقاسات، الجودة، مكان الورش)",
+          detailsPlh: "اكتب جميع التفاصيل التي تهم المورد هنا...",
+          deadline: "آخر أجل لتلقي العروض",
+          submitBtn: "نشر الطلب للموردين",
+          submitting: "جاري النشر...",
+          success: "تم نشر طلبك بنجاح! ستتلقى العروض قريباً."
         }
       }
     },
@@ -475,6 +525,25 @@ export default function BTPHub() {
           alertFill: "Veuillez remplir tous les champs correctement.",
           alertSuccess: "Commande groupée lancée avec succès ! Le compte à rebours a commencé."
         }
+      },
+      rfq: {
+        title: "Je ne trouve pas ce que je cherche",
+        desc: "Décrivez votre besoin exact et recevez des offres de nos fournisseurs vérifiés.",
+        btn: "Décrivez votre besoin",
+        modal: {
+          title: "Publier un Appel d'offres",
+          desc: "Précisez les détails de votre projet pour recevoir les devis des fournisseurs.",
+          reqTitle: "Titre de la demande",
+          reqTitlePlh: "Ex: Fourniture et pose de 50 fenêtres en aluminium",
+          category: "Catégorie",
+          catSelect: "Sélectionnez une catégorie",
+          details: "Détails Techniques (Dimensions, Qualité, Lieu)",
+          detailsPlh: "Décrivez toutes les spécifications ici...",
+          deadline: "Date limite de réponse",
+          submitBtn: "Publier la demande",
+          submitting: "Publication...",
+          success: "Votre demande a été publiée avec succès !"
+        }
       }
     },
     en: {
@@ -587,7 +656,26 @@ export default function BTPHub() {
           alertFill: "Please fill all fields correctly.",
           alertSuccess: "Group order launched successfully! The countdown has started."
         }
-      }
+      },
+      rfq: {
+        title: "I can't find what I'm looking for",
+        desc: "Describe your exact need and receive offers from our verified suppliers.",
+        btn: "Describe your need",
+        modal: {
+          title: "Post a Custom Request (RFQ)",
+          desc: "Specify your project details to receive quotes from verified suppliers.",
+          reqTitle: "Request Title",
+          reqTitlePlh: "E.g., Supply and installation of 50 aluminum windows",
+          category: "Category",
+          catSelect: "Select Category",
+          details: "Technical Details (Dimensions, Quality, Location)",
+          detailsPlh: "Write all specifications here...",
+          deadline: "Submission Deadline",
+          submitBtn: "Post Request",
+          submitting: "Posting...",
+          success: "Your request has been posted successfully!"
+        }
+      } 
     }
   };
 
@@ -1429,7 +1517,7 @@ export default function BTPHub() {
         </div>
         
         <button 
-          onClick={() => alert("نافذة الطلبات المخصصة قيد التطوير... ستتوفر قريباً!")} 
+          onClick={() => setIsRfqModalOpen(true)} 
           className="bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2 whitespace-nowrap"
         >
         <FileText className="w-5 h-5" />
@@ -1679,6 +1767,56 @@ export default function BTPHub() {
 
               <button type="submit" disabled={isSubmittingSurplus} className="w-full mt-4 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors">
                 {isSubmittingSurplus ? (t.surplus?.modal?.publishing || 'Publication...') : (t.surplus?.modal?.publishBtn || 'Publier l\'offre')}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* 4. 📣 نافذة نشر طلب مخصص (Appel d'offres / RFQ) */}
+      {/* ============================================================== */}
+      {isRfqModalOpen && (
+        <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-sm flex justify-center items-center p-4 overflow-y-auto" onClick={() => setIsRfqModalOpen(false)}>
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'} w-full max-w-lg rounded-3xl p-6 shadow-2xl relative border animate-slide-up my-8`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
+            <button onClick={() => setIsRfqModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors`}>
+              <X size={20} />
+            </button>
+            <h2 className={`text-xl font-black mb-1 flex items-center gap-2 ${textTitle}`}>
+              <FileText className="text-emerald-500" /> {t.rfq?.modal?.title || "Publier un Appel d'offres"}
+            </h2>
+            <p className={`text-sm mb-6 ${textMuted}`}>{t.rfq?.modal?.desc || "Précisez les détails de votre projet."}</p>
+            
+            <form onSubmit={handleSubmitRfq} className="space-y-4">
+              <div>
+                <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.rfq?.modal?.reqTitle || "Titre de la demande"}</label>
+                <input type="text" required value={rfqForm.title} onChange={e => setRfqForm({...rfqForm, title: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-emerald-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.rfq?.modal?.reqTitlePlh || "Ex: Fourniture et pose..."} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.rfq?.modal?.category || "Catégorie"}</label>
+                  <select required value={rfqForm.category} onChange={e => setRfqForm({...rfqForm, category: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-emerald-500 text-sm font-bold ${bgCard} ${textTitle}`}>
+                    <option value="">-- {t.rfq?.modal?.catSelect || "Sélectionnez"} --</option>
+                    {categories.filter(c => c.id !== 'All').map(c => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                    <option value="other">أخرى / Autres</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.rfq?.modal?.deadline || "Date limite"}</label>
+                  <input type="date" required value={rfqForm.deadline} onChange={e => setRfqForm({...rfqForm, deadline: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-emerald-500 text-sm font-bold ${bgCard} ${textTitle} text-slate-500`} />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.rfq?.modal?.details || "Détails Techniques"}</label>
+                <textarea required rows="4" value={rfqForm.details} onChange={e => setRfqForm({...rfqForm, details: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-emerald-500 text-sm font-medium ${bgCard} ${textTitle}`} placeholder={t.rfq?.modal?.detailsPlh || "Décrivez toutes les spécifications..."}></textarea>
+              </div>
+
+              <button type="submit" disabled={isSubmittingRfq} className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors">
+                {isSubmittingRfq ? (t.rfq?.modal?.submitting || "Publication...") : (t.rfq?.modal?.submitBtn || "Publier la demande")}
               </button>
             </form>
           </div>
