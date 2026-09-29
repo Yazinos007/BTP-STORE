@@ -83,6 +83,8 @@ export default function BTPHub() {
   // 1. إضافة متغير لتخزين الحرفيين
   const [artisans, setArtisans] = useState([]);
 
+  const [surplusDeals, setSurplusDeals] = useState([]);
+
   // 2. جلب البيانات عند تحميل الصفحة
   useEffect(() => {
     const fetchArtisans = async () => {
@@ -151,6 +153,19 @@ export default function BTPHub() {
         title: "لم أجد ما أبحث عنه",
         desc: "صف احتياجك بدقة وتلقى عروضاً من موردينا المعتمدين.",
         btn: "صف احتياجك"
+      },
+      surplus: {
+        title: "فرص الأوراش المجاورة (استلام فوري)",
+        desc: "سلع متبقية من مشاريع مقاولين آخرين بأسعار محروقة. الشرط الوحيد:",
+        descBold: "النقل على حسابك من الورش مباشرة!",
+        addBtn: "عرض سلعة للبيع",
+        discount: "تخفيض",
+        qtyLeft: "متبقي:",
+        distance: "تبعد",
+        km: "كم",
+        burnPrice: "السعر المحروق للوحدة",
+        bookBtn: "حجز للاستلام الفوري",
+        empty: "لا توجد فرص فائض أوراش متاحة حالياً."
       }
     },
     fr: {
@@ -193,6 +208,19 @@ export default function BTPHub() {
         title: "Je ne trouve pas ce que je cherche",
         desc: "Décrivez votre besoin exact et recevez des offres de nos fournisseurs vérifiés.",
         btn: "Décrivez votre besoin"
+      },
+      surplus: {
+        title: "Opportunités Chantiers Voisins (Retrait Immédiat)",
+        desc: "Matériaux restants d'autres chantiers à prix cassés. Seule condition :",
+        descBold: "Transport à votre charge depuis le chantier !",
+        addBtn: "Vendre un surplus",
+        discount: "Réduction",
+        qtyLeft: "Reste :",
+        distance: "À",
+        km: "km",
+        burnPrice: "Prix cassé unitaire",
+        bookBtn: "Réserver pour retrait immédiat",
+        empty: "Aucune opportunité de surplus de chantier disponible actuellement."
       }
     },
     en: {
@@ -235,6 +263,19 @@ export default function BTPHub() {
         title: "I can't find what I'm looking for",
         desc: "Describe your exact need and receive offers from our verified suppliers.",
         btn: "Describe your need"
+      },
+      surplus: {
+        title: "Nearby Site Opportunities (Immediate Pickup)",
+        desc: "Remaining materials from other sites at rock-bottom prices. Only condition:",
+        descBold: "Transport is on you directly from the site!",
+        addBtn: "Sell Surplus",
+        discount: "Discount",
+        qtyLeft: "Left:",
+        distance: "Away",
+        km: "km",
+        burnPrice: "Rock-bottom Unit Price",
+        bookBtn: "Book for Immediate Pickup",
+        empty: "No site surplus opportunities available at the moment."
       }
     }
   };
@@ -291,6 +332,30 @@ export default function BTPHub() {
       }
     };
     loadMarketplace();
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    // --- جلب عروض فائض الأوراش ---
+    const loadSurplusDeals = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('chantier_surplus')
+          .select('*')
+          // عرض الصفقات التي لم تنتهِ صلاحيتها فقط
+          .gte('expires_at', new Date().toISOString()) 
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          if (isMounted) setSurplusDeals(data);
+        }
+      } catch (err) {
+        console.error("Error fetching surplus:", err);
+      }
+    };
+    loadSurplusDeals();
+
     return () => { isMounted = false; };
   }, []);
 
@@ -803,91 +868,88 @@ export default function BTPHub() {
           <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 p-4 rounded-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-black text-amber-900 dark:text-amber-400 flex items-center gap-2">
-                <Zap className="fill-current" /> فرص الأوراش المجاورة (استلام فوري)
+                <Zap className="fill-current" /> {t.surplus.title}
               </h2>
               <p className="text-sm text-amber-800 dark:text-amber-500 font-medium mt-1">
-                سلع متبقية من مشاريع مقاولين آخرين بأسعار محروقة. الشرط الوحيد: <span className="font-bold underline">النقل على حسابك من الورش مباشرة!</span>
+                {t.surplus.desc} <span className="font-bold underline">{t.surplus.descBold}</span>
               </p>
             </div>
             <button className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl font-bold shadow-md transition-colors flex items-center justify-center gap-2 shrink-0">
-              <Plus size={18} /> عرض سلعة للبيع
+              <Plus size={18} /> {t.surplus.addBtn}
             </button>
           </div>
 
           {/* شبكة عروض الفائض */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* 
-              هنا نقوم بعمل map لبيانات جدول chantier_surplus
-              وضعت بيانات افتراضية (Dummy) الآن لتتمكن من معاينة التصميم فوراً
-            */}
-            {[
-              {
-                id: 1, contractor_name: "ورش فيلا العطاري", item_name: "زليج كومباكتو 60x60 (لون رمادي)", qty_left: "45 متر مربع",
-                original_price: 120, burn_price: 65, lat: 32.6000, lng: -6.2700, expires_at: new Date(Date.now() + 86400000).toISOString(),
-                image_url: "https://images.unsplash.com/photo-1523413363574-c30aa1c2a516?w=500&q=80"
-              },
-              {
-                id: 2, contractor_name: "مشروع عمارة النور", item_name: "أكياس إسمنت 45 (متبقية من الصب)", qty_left: "22 كيس",
-                original_price: 75, burn_price: 50, lat: 32.5800, lng: -6.2500, expires_at: new Date(Date.now() + 14400000).toISOString(),
-                image_url: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=500&q=80"
-              }
-            ].map((deal) => {
-              // خوارزمية المسافة بين المقاول المشتري والمقاول البائع
-              const distanceKm = calculateDistance(chantierLocation.lat, chantierLocation.lng, deal.lat, deal.lng);
-              const discountPercentage = Math.round(((deal.original_price - deal.burn_price) / deal.original_price) * 100);
-              
-              return (
-                <div key={deal.id} className="rounded-3xl border-2 border-amber-400 p-1 relative overflow-hidden bg-amber-400 shadow-xl hover:-translate-y-1 transition-transform" dir={isRtl ? 'rtl' : 'ltr'}>
-                  
-                  {/* شارة التخفيض الضخمة */}
-                  <div className={`absolute top-4 ${isRtl ? 'right-0 rounded-l-xl' : 'left-0 rounded-r-xl'} bg-red-600 text-white font-black text-sm px-4 py-1.5 shadow-lg z-10 flex items-center gap-1`}>
-                    تخفيض -{discountPercentage}%
-                  </div>
-
-                  <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-2xl h-full flex flex-col relative`}>
-                    <div className="h-48 relative rounded-t-2xl overflow-hidden">
-                      <img src={deal.image_url} alt={deal.item_name} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
-                      <div className="absolute bottom-3 right-3 left-3 flex justify-between items-end">
-                        <span className="bg-black/60 backdrop-blur text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-white/20">
-                          متبقي: {deal.qty_left}
-                        </span>
-                        <span className="text-white text-xs font-bold flex items-center gap-1 bg-blue-600/80 backdrop-blur px-3 py-1.5 rounded-lg">
-                          <MapPin size={14} /> تبعد {distanceKm} كم
-                        </span>
-                      </div>
+          {surplusDeals.length === 0 ? (
+            <div className={`text-center py-20 rounded-3xl border-2 border-dashed ${isDarkMode ? 'border-slate-700 bg-slate-900/50 text-slate-400' : 'border-slate-300 bg-slate-50 text-slate-500'}`}>
+              <Zap size={48} className="mx-auto mb-4 opacity-20" />
+              <h3 className="font-black text-xl mb-2">{t.surplus.empty}</h3>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {surplusDeals.map((deal) => {
+                // خوارزمية المسافة بين المقاول المشتري والمقاول البائع
+                const distanceKm = calculateDistance(chantierLocation.lat, chantierLocation.lng, deal.latitude, deal.longitude);
+                const original = Number(deal.original_price);
+                const burn = Number(deal.burn_price);
+                const discountPercentage = original > 0 ? Math.round(((original - burn) / original) * 100) : 0;
+                
+                return (
+                  <div key={deal.id} className="rounded-3xl border-2 border-amber-400 p-1 relative overflow-hidden bg-amber-400 shadow-xl hover:-translate-y-1 transition-transform" dir={isRtl ? 'rtl' : 'ltr'}>
+                    
+                    {/* شارة التخفيض الضخمة */}
+                    <div className={`absolute top-4 ${isRtl ? 'right-0 rounded-l-xl' : 'left-0 rounded-r-xl'} bg-red-600 text-white font-black text-sm px-4 py-1.5 shadow-lg z-10 flex items-center gap-1`}>
+                      {t.surplus.discount} -{discountPercentage}%
                     </div>
 
-                    <div className="p-5 flex-1 flex flex-col">
-                      <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase tracking-wider">{deal.contractor_name}</p>
-                      <h3 className={`font-black text-lg leading-tight mb-4 ${textTitle}`}>{deal.item_name}</h3>
-                      
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="flex-1 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-200 dark:border-amber-800/50">
-                          <p className="text-[10px] text-amber-700 dark:text-amber-500 font-bold mb-1">السعر المحروق للوحدة</p>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-black text-amber-600">{deal.burn_price}</span>
-                            <span className="text-sm font-bold text-amber-600/70">MAD</span>
-                            <span className="text-xs text-slate-400 line-through ml-auto">{deal.original_price} MAD</span>
+                    <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-2xl h-full flex flex-col relative`}>
+                      <div className="h-48 relative rounded-t-2xl overflow-hidden">
+                        <img src={deal.image_url} alt={deal.item_name} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
+                        <div className="absolute bottom-3 right-3 left-3 flex justify-between items-end">
+                          <span className="bg-black/60 backdrop-blur text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-white/20">
+                            {t.surplus.qtyLeft} {deal.qty_left}
+                          </span>
+                          <span className="text-white text-xs font-bold flex items-center gap-1 bg-blue-600/80 backdrop-blur px-3 py-1.5 rounded-lg">
+                            <MapPin size={14} /> {t.surplus.distance} {distanceKm !== null ? distanceKm : '?'} {t.surplus.km}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-5 flex-1 flex flex-col">
+                        <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase tracking-wider">{deal.contractor_name}</p>
+                        <h3 className={`font-black text-lg leading-tight mb-4 ${textTitle}`}>{deal.item_name}</h3>
+                        
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="flex-1 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-200 dark:border-amber-800/50">
+                            <p className="text-[10px] text-amber-700 dark:text-amber-500 font-bold mb-1">{t.surplus.burnPrice}</p>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-2xl font-black text-amber-600">{deal.burn_price}</span>
+                              <span className="text-sm font-bold text-amber-600/70">MAD</span>
+                              <span className="text-xs text-slate-400 line-through ml-auto">{deal.original_price} MAD</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="mt-auto space-y-3">
-                        <div className="flex justify-center w-full">
-                          {/* استخدام مكون العداد التنازلي الذي تمت إضافته مسبقاً */}
-                          <FlashDealTimer expiresAt={deal.expires_at} />
+                        <div className="mt-auto space-y-3">
+                          <div className="flex justify-center w-full">
+                            <FlashDealTimer expiresAt={deal.expires_at} />
+                          </div>
+                          <button 
+                            // هنا يمكنك ربط الزر لإضافة العرض إلى السلة أو فتح محادثة
+                            onClick={() => console.log('Booked:', deal.item_name)} 
+                            className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg"
+                          >
+                            <ShoppingCart size={18} /> {t.surplus.bookBtn}
+                          </button>
                         </div>
-                        <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
-                          <ShoppingCart size={18} /> حجز للاستلام الفوري
-                        </button>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
