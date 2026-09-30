@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import SmartVoiceService from './SmartVoiceService';
 import { 
   ShieldCheck, MapPin, Star, CheckCircle2, 
   Image as ImageIcon, MessageSquare, Briefcase, 
@@ -824,6 +825,8 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                       )}
                     </div>
                   )}
+
+                  <SmartVoiceService isDarkMode={isDarkMode} onPublish={(data) => console.log("الذكاء الاصطناعي أرسل:", data)} />
 
                   {services.length > 0 ? (
                     <div className="space-y-4">
