@@ -55,7 +55,8 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
           </div>
         </button>
 
-        <button onClick={onManualClick} className={`flex-[1] p-4 rounded-2xl font-black text-sm border-2 flex flex-col items-center justify-center gap-1 transition-all hover:-translate-y-1 ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+        {/* زر الإدخال اليدوي الكلاسيكي */}
+        <button onClick={() => onManualClick && onManualClick()} className={`flex-[1] p-4 rounded-2xl font-black text-sm border-2 flex flex-col items-center justify-center gap-1 transition-all hover:-translate-y-1 ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
           <Edit3 size={20} className="mb-1" />
           {language === 'ar' ? 'يدوي' : 'Manuel'}
         </button>

@@ -809,7 +809,10 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
         language={language}
         isOwner={true} 
         onPublish={handlePublishAIService}
-        onManualClick={() => setIsAddingService(true)} 
+        onManualClick={() => {
+          setIsEditing(true);        
+          setIsAddingService(true); 
+        }} 
       />
 
       {/* 3. الاستمارة اليدوية الكلاسيكية (تظهر فقط عند الضغط على زر "يدوي") */}
