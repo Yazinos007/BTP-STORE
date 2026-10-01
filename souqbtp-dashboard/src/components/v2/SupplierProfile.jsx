@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import SmartVoiceService from './SmartVoiceService';
+import SmartVoicePortfolio from './SmartVoicePortfolio';
 import { 
   ShieldCheck, MapPin, Star, CheckCircle2, 
   Image as ImageIcon, MessageSquare, Briefcase, 
@@ -277,6 +278,14 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handlePublishAIPortfolio = async (data) => {
+    console.log("تم استلام إنجاز جديد:", data);
+    // إذا كانت هناك صورة، data.image ستحتوي عليها
+    alert(language === 'ar' ? 'تمت إضافة الإنجاز بنجاح لمعرض أعمالك!' : 'Réalisation ajoutée avec succès !');
+    
+    // لاحقاً سنضيف كود الـ Supabase هنا لرفع الصورة وحفظ الإنجاز
   };
 
   // --- دالة جلب التقييمات ---
@@ -898,39 +907,66 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
     </div>
   )}
 
-              {activeTab === 'portfolio' && (
-                <div className="animate-fade-in space-y-6">
-                  {isEditing && (
-                    <label className="w-full border-2 border-dashed border-emerald-500/50 bg-emerald-50/30 dark:bg-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-emerald-50/80 transition-colors">
-                       {isUploadingPortfolio ? <Loader2 className="animate-spin text-emerald-500" size={32}/> : <UploadCloud className="text-emerald-500" size={32}/>}
-                       <span className="font-bold text-emerald-600">{t.addPhoto}</span>
-                       <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'portfolio')} disabled={isUploadingPortfolio} />
-                    </label>
-                  )}
+  {activeTab === 'portfolio' && (
+  <div className="animate-fade-in space-y-6">
+    
+    {/* 1. الزر السحري الجديد (صوت + يدوي) يظهر في وضع التعديل */}
+    {isEditing && (
+      <>
+        <SmartVoicePortfolio 
+          isDarkMode={isDarkMode} 
+          language={language}
+          isOwner={true} 
+          onPublish={handlePublishAIPortfolio}
+          onManualClick={() => {
+            // هذه الحيلة تفتح نافذة رفع الصور القديمة الخاصة بك عند الضغط على زر "يدوي"
+            document.getElementById('portfolio-upload-input').click();
+          }} 
+        />
+        
+        {/* الـ input القديم الخاص بك، جعلناه مخفياً ليعمل في الخلفية */}
+        <input 
+          id="portfolio-upload-input"
+          type="file" 
+          accept="image/*" 
+          className="hidden" 
+          onChange={(e) => handleUploadImage(e, 'portfolio')} 
+          disabled={isUploadingPortfolio} 
+        />
 
-                  {portfolio.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {portfolio.map(img => (
-                        <div key={img.id} className="aspect-square rounded-2xl overflow-hidden bg-slate-200 group relative border shadow-sm">
-                          <img src={img.image_url} alt="Portfolio" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                          {isEditing && (
-                            <button onClick={() => handleDeletePortfolioImage(img.id)} className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                              <Trash2 size={16} />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center p-10">
-                      <ImageIcon size={48} className={`mx-auto mb-4 opacity-20 ${textMuted}`} />
-                      <p className={`${textMuted} font-bold`}>{t.portfolioEmpty}</p>
-                    </div>
-                  )}
-                </div>
-              )}
+        {/* مؤشر التحميل القديم في حالة كان الحرفي يرفع صورة يدوياً */}
+        {isUploadingPortfolio && (
+          <div className="flex items-center justify-center gap-2 p-4 bg-emerald-50 dark:bg-slate-800 rounded-xl text-emerald-500 font-bold">
+            <Loader2 className="animate-spin" size={24} /> جاري الرفع...
+          </div>
+        )}
+      </>
+    )}
 
-            {/* REVIEWS TAB - نظام التقييمات الذكي */}
+    {/* 2. عرض الصور (شبكة الإنجازات) - تبقى كما كانت بدون تغيير */}
+    {portfolio.length > 0 ? (
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {portfolio.map(img => (
+          <div key={img.id} className="aspect-square rounded-2xl overflow-hidden bg-slate-200 group relative border shadow-sm">
+            <img src={img.image_url} alt="Portfolio" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+            {isEditing && (
+              <button onClick={() => handleDeletePortfolioImage(img.id)} className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="text-center p-10">
+        <ImageIcon size={48} className={`mx-auto mb-4 opacity-20 ${textMuted}`} />
+        <p className={`${textMuted} font-bold`}>{t.portfolioEmpty}</p>
+      </div>
+    )}
+  </div>
+)}
+
+{/* REVIEWS TAB - نظام التقييمات الذكي */}
             {activeTab === 'reviews' && (
               <div className="animate-fade-in space-y-6">
                 
@@ -1080,7 +1116,6 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                 </div>
               </div>
             )}
-
             </div>
           </div>
         </div>
