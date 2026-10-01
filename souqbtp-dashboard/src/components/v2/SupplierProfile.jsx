@@ -788,102 +788,92 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
               ))}
             </div>
 
-            <div className="flex-1">
+           <div className="flex-1">
               
-              {activeTab === 'services' && (
-                <div className="animate-fade-in space-y-6">
-                  <div>
-                    <h3 className={`font-black text-lg mb-2 ${textTitle}`}>{t.about}</h3>
-                    {isEditing ? (
-                      <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className={`w-full ${bgCard} border rounded-xl p-3 h-32 outline-none focus:border-emerald-500 text-sm font-medium`} placeholder={t.placeholders.aboutDesc} />
-                    ) : (
-                      <p className={`text-sm leading-relaxed ${textMuted} font-medium`}>{artisan.about_text || t.noDesc}</p>
-                    )}
-                  </div>
-                  
-                  {isEditing && (
-                    <div className="mb-6">
-                      {!isAddingService ? (
-                        <button type="button" onClick={() => setIsAddingService(true)} className="w-full border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-4 text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors flex items-center justify-center gap-2 font-bold">
-                          <Plus size={20} /> {t.addService}
-                        </button>
-                      ) : (
-                        <div className={`p-5 rounded-2xl border-2 border-emerald-500/50 ${isDarkMode ? 'bg-slate-800' : 'bg-emerald-50/50'}`}>
-                        <h4 className={`font-bold text-sm mb-4 flex items-center gap-2 ${textTitle}`}><Plus size={16}/> {t.addService}</h4>
-  
-                    {/* الحقول الأساسية */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <input type="text" placeholder={t.serviceNamePlaceholder} value={newService.service_name} onChange={e => setNewService({...newService, service_name: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
-                        <input type="number" placeholder={t.pricePlaceholder} value={newService.starting_price} onChange={e => setNewService({...newService, starting_price: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} dir="ltr" />
-                      </div>
-                        <input type="text" placeholder={t.descPlaceholder} value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} className={`border rounded-xl p-3 text-sm w-full mb-4 outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
+  {activeTab === 'services' && (
+    <div className="animate-fade-in space-y-6">
+      
+      {/* 1. قسم النبذة التعريفي (À propos) */}
+      <div>
+        <h3 className={`font-black text-lg mb-2 ${textTitle}`}>{t.about}</h3>
+        {isEditing ? (
+          <textarea value={artisan.about_text || ''} onChange={e => setArtisan({...artisan, about_text: e.target.value})} className={`w-full ${bgCard} border rounded-xl p-3 h-32 outline-none focus:border-emerald-500 text-sm font-medium`} placeholder={t.placeholders.aboutDesc} />
+        ) : (
+          <p className={`text-sm leading-relaxed ${textMuted} font-medium`}>{artisan.about_text || t.noDesc}</p>
+        )}
+      </div>
+      
+      {/* 2. الزر السحري الجديد (صوت + يدوي) */}
+      {/* نضعه داخل شرط isEditing لكي لا يظهر للزبائن الذين يزورون البروفايل */}
+      {isEditing && (
+        <SmartVoiceService 
+          isDarkMode={isDarkMode} 
+          language={language}
+          isOwner={true} 
+          onPublish={handlePublishAIService}
+          // تمرير دالة فتح الاستمارة اليدوية لكي يعمل زر "يدوي" الجديد
+          onManualClick={() => setIsAddingService(true)} 
+        />
+      )}
 
-                    {/* قسم إعداد الـ Flash Deal (جديد) */}
-                        <div className="mb-4 p-4 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 rounded-xl">
-                        <h5 className="text-xs font-bold text-red-600 dark:text-red-400 mb-3 flex items-center gap-1">
-                        <Zap size={14} /> {t.flashDealTitle}
-                      </h5>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input 
-                          type="number" 
-                          placeholder={t.flashPricePlaceholder} 
-                          value={newService.flash_discount_price} 
-                          onChange={e => setNewService({...newService, flash_discount_price: e.target.value})} 
-                          className={`border rounded-xl p-2 text-sm outline-none focus:border-red-500 font-bold ${bgCard} ${textTitle}`} 
-                          dir="ltr" 
-                      />
-                        <input 
-                          type="datetime-local" 
-                          value={newService.flash_expires_at} 
-                          onChange={e => setNewService({...newService, flash_expires_at: e.target.value})} 
-                          className={`border rounded-xl p-2 text-sm outline-none focus:border-red-500 font-bold ${bgCard} ${textTitle} text-slate-500`} 
-                      />
-                    </div>
-                  </div>
+      {/* 3. الاستمارة اليدوية الكلاسيكية (تظهر فقط عند الضغط على زر "يدوي") */}
+      {isEditing && isAddingService && (
+        <div className={`p-5 rounded-2xl border-2 border-emerald-500/50 mb-6 ${isDarkMode ? 'bg-slate-800' : 'bg-emerald-50/50'}`}>
+          <h4 className={`font-bold text-sm mb-4 flex items-center gap-2 ${textTitle}`}><Plus size={16}/> {t.addService}</h4>
+          
+          {/* الحقول الأساسية */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <input type="text" placeholder={t.serviceNamePlaceholder} value={newService.service_name} onChange={e => setNewService({...newService, service_name: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
+            <input type="number" placeholder={t.pricePlaceholder} value={newService.starting_price} onChange={e => setNewService({...newService, starting_price: e.target.value})} className={`border rounded-xl p-3 text-sm outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} dir="ltr" />
+          </div>
+          <input type="text" placeholder={t.descPlaceholder} value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} className={`border rounded-xl p-3 text-sm w-full mb-4 outline-none focus:border-emerald-500 font-bold ${bgCard} ${textTitle}`} />
 
-                    {/* أزرار الحفظ */}
-                        <div className="flex gap-3">
-                        <button type="button" onClick={handleAddService} className="flex-1 bg-emerald-500 text-white rounded-xl py-3 text-sm font-bold hover:bg-emerald-600">{t.saveServiceBtn}</button>
-                        <button type="button" onClick={() => setIsAddingService(false)} className={`flex-1 rounded-xl py-3 text-sm font-bold ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'}`}>{t.cancel}</button>
-                    </div>
-                  </div>
-                      )}
-                    </div>
-                  )}
+          {/* قسم إعداد الـ Flash Deal */}
+          <div className="mb-4 p-4 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 rounded-xl">
+            <h5 className="text-xs font-bold text-red-600 dark:text-red-400 mb-3 flex items-center gap-1">
+              <Zap size={14} /> {t.flashDealTitle}
+            </h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="number" placeholder={t.flashPricePlaceholder} value={newService.flash_discount_price} onChange={e => setNewService({...newService, flash_discount_price: e.target.value})} className={`border rounded-xl p-2 text-sm outline-none focus:border-red-500 font-bold ${bgCard} ${textTitle}`} dir="ltr" />
+              <input type="datetime-local" value={newService.flash_expires_at} onChange={e => setNewService({...newService, flash_expires_at: e.target.value})} className={`border rounded-xl p-2 text-sm outline-none focus:border-red-500 font-bold ${bgCard} ${textTitle} text-slate-500`} />
+            </div>
+          </div>
 
-                  <SmartVoiceService 
-                    isDarkMode={isDarkMode} 
-                    language={language}
-                    isOwner={true} /* ملاحظة: في المستقبل اجعلها true فقط إذا كان الزائر هو صاحب الحساب */
-                    onPublish={handlePublishAIService} 
-                  />
+          {/* أزرار الحفظ */}
+          <div className="flex gap-3">
+            <button type="button" onClick={handleAddService} className="flex-1 bg-emerald-500 text-white rounded-xl py-3 text-sm font-bold hover:bg-emerald-600">{t.saveServiceBtn}</button>
+            <button type="button" onClick={() => setIsAddingService(false)} className={`flex-1 rounded-xl py-3 text-sm font-bold ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'}`}>{t.cancel}</button>
+          </div>
+        </div>
+      )}
 
-                  {services.length > 0 ? (
-                    <div className="space-y-4">
-                      {services.map(service => (
-                        <div key={service.id} className={`p-5 rounded-2xl border ${bgCard} hover:shadow-md transition-shadow flex flex-col sm:flex-row items-center justify-between gap-4 group`}>
-                          <div className="flex-1">
-                            <h4 className={`font-bold text-lg mb-1 ${textTitle}`}>{service.service_name}</h4>
-                            <p className={`text-sm ${textMuted} mb-3 font-medium`}>{service.description}</p>
-                            <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${isDarkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t.startingFrom} {service.starting_price} MAD</span>
-                          </div>
-                          <div className="flex gap-2 w-full sm:w-auto">
-                            {isEditing ? (
-                              <button type="button" onClick={() => handleDeleteService(service.id)} className="w-full sm:w-auto bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2.5 rounded-xl transition-colors"><Trash2 size={18}/></button>
-                            ) : (
-                              <button type="button" onClick={() => handleRequestQuote(service)} className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-md shadow-emerald-500/20">
-                                {t.actions.quote}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={`text-sm ${textMuted} p-6 text-center border rounded-xl border-dashed font-bold`}>{t.emptyServices}</p>
-                  )}
-                </div>
-              )}
+      {/* 4. عرض الخدمات المضافة */}
+      {services.length > 0 ? (
+        <div className="space-y-4">
+          {services.map(service => (
+            <div key={service.id} className={`p-5 rounded-2xl border ${bgCard} hover:shadow-md transition-shadow flex flex-col sm:flex-row items-center justify-between gap-4 group`}>
+              <div className="flex-1">
+                <h4 className={`font-bold text-lg mb-1 ${textTitle}`}>{service.service_name}</h4>
+                <p className={`text-sm ${textMuted} mb-3 font-medium`}>{service.description}</p>
+                <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${isDarkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t.startingFrom} {service.starting_price} MAD</span>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                {isEditing ? (
+                  <button type="button" onClick={() => handleDeleteService(service.id)} className="w-full sm:w-auto bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2.5 rounded-xl transition-colors"><Trash2 size={18}/></button>
+                ) : (
+                  <button type="button" onClick={() => handleRequestQuote(service)} className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-md shadow-emerald-500/20">
+                    {t.actions.quote}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className={`text-sm ${textMuted} p-6 text-center border rounded-xl border-dashed font-bold`}>{t.emptyServices}</p>
+      )}
+    </div>
+  )}
 
               {activeTab === 'portfolio' && (
                 <div className="animate-fade-in space-y-6">

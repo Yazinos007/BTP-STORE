@@ -2,22 +2,20 @@ import React, { useState } from 'react';
 import { Mic, X, Zap, CheckCircle2, Edit3, Activity, Check } from 'lucide-react';
 
 export default function SmartVoiceService({ isDarkMode = false, language = 'fr', isOwner = true, onPublish }) {
-  // 1. صلاحية الظهور: إذا لم يكن هو صاحب البروفايل، لا تعرض الزر نهائياً
   if (!isOwner) return null;
 
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState('idle'); 
   const [mockResult, setMockResult] = useState(null);
-  const [isEditingPrice, setIsEditingPrice] = useState(false); // حالة تعديل السعر
+  const [isEditingPrice, setIsEditingPrice] = useState(false); 
 
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
 
-  // 2. قاموس الترجمة الديناميكي المدمج
   const translations = {
     ar: { btn: "أضف خدمة بصوتك (AI)", title: "ماذا تقدم لعملائك؟", desc: "تحدث بالدارجة، وسيقوم الذكاء الاصطناعي بكتابة وتصنيف وتسعير خدمتك تلقائياً.", start: "بدء التسجيل الآن", listening: "جاري الاستماع...", processing: "الذكاء الاصطناعي يحلل...", success: "تمت صياغة الخدمة بنجاح", priceNote: "سعر مقترح مبدئي", retry: "إعادة التسجيل", publish: "نشر في متجري", aiTag: "مُولد بالذكاء الاصطناعي" },
-    fr: { btn: "Ajouter un service à la voix (IA)", title: "Que proposez-vous ?", desc: "Parlez en Darija, l'IA rédigera, classera et tarifera votre service automatiquement.", start: "Commencer l'enregistrement", listening: "Écoute en cours...", processing: "L'IA analyse...", success: "Service formulé avec succès", priceNote: "Prix initial suggéré", retry: "Réessayer", publish: "Publier le service", aiTag: "Généré par l'IA" },
-    en: { btn: "Add service by voice (AI)", title: "What do you offer?", desc: "Speak in Darija, AI will write, categorize and price your service automatically.", start: "Start Recording", listening: "Listening...", processing: "AI is analyzing...", success: "Service formulated successfully", priceNote: "Suggested initial price", retry: "Retry", publish: "Publish to my store", aiTag: "AI Generated" }
+    fr: { btn: "Ajouter un service (IA)", title: "Que proposez-vous ?", desc: "Parlez en Darija, l'IA rédigera, classera et tarifera votre service automatiquement.", start: "Commencer l'enregistrement", listening: "Écoute en cours...", processing: "L'IA analyse...", success: "Service formulé avec succès", priceNote: "Prix initial suggéré", retry: "Réessayer", publish: "Publier le service", aiTag: "Généré par l'IA" },
+    en: { btn: "Add service (AI)", title: "What do you offer?", desc: "Speak in Darija, AI will write, categorize and price your service automatically.", start: "Start Recording", listening: "Listening...", processing: "AI is analyzing...", success: "Service formulated successfully", priceNote: "Suggested initial price", retry: "Retry", publish: "Publish to my store", aiTag: "AI Generated" }
   };
   const t = translations[language] || translations.fr;
   const isRtl = language === 'ar';
@@ -45,13 +43,23 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)} className="w-full relative overflow-hidden group bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white p-4 rounded-2xl font-black text-lg shadow-xl shadow-indigo-500/30 flex justify-center items-center gap-3 transition-all transform hover:-translate-y-1 mb-4" dir={isRtl ? 'rtl' : 'ltr'}>
-        <div className="absolute inset-0 w-full h-full bg-white/20 blur-xl group-hover:bg-white/30 transition-colors"></div>
-        <div className="relative z-10 flex items-center gap-2">
-          <div className="bg-white/20 p-2 rounded-full animate-pulse"><Mic size={24} className="text-white" /></div>
-          {t.btn} <Zap size={18} className="text-amber-400 fill-current mx-1" />
-        </div>
-      </button>
+      {/* تم دمج الزر الصوتي مع زر الإدخال اليدوي هنا */}
+      <div className="flex gap-2 mb-6 w-full" dir={isRtl ? 'rtl' : 'ltr'}>
+        <button onClick={() => setIsOpen(true)} className="flex-[3] relative overflow-hidden group bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white p-4 rounded-2xl font-black text-lg shadow-xl shadow-indigo-500/30 flex justify-center items-center gap-3 transition-all transform hover:-translate-y-1">
+          <div className="absolute inset-0 w-full h-full bg-white/20 blur-xl group-hover:bg-white/30 transition-colors"></div>
+          <div className="relative z-10 flex items-center gap-2">
+            <div className="bg-white/20 p-2 rounded-full animate-pulse"><Mic size={24} className="text-white" /></div>
+            <span className="hidden sm:inline">{t.btn}</span>
+            <span className="sm:hidden">{language === 'ar' ? 'صوت' : 'Voix'}</span>
+            <Zap size={18} className="text-amber-400 fill-current mx-1" />
+          </div>
+        </button>
+
+        <button onClick={() => alert("سيتم فتح استمارة الإدخال اليدوي العادية هنا")} className={`flex-[1] p-4 rounded-2xl font-black text-sm border-2 flex flex-col items-center justify-center gap-1 transition-all hover:-translate-y-1 ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+          <Edit3 size={20} className="mb-1" />
+          {language === 'ar' ? 'يدوي' : 'Manuel'}
+        </button>
+      </div>
 
       {isOpen && (
         <div className="fixed inset-0 z-[9999999] bg-black/80 backdrop-blur-md flex justify-center items-end sm:items-center p-4 sm:p-0" onClick={handleClose}>
@@ -103,7 +111,6 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
                       <div>
                         <p className={`text-[10px] font-bold ${textMuted}`}>{t.priceNote}</p>
                         
-                        {/* 3. تفعيل زر تعديل السعر */}
                         {isEditingPrice ? (
                           <div className="flex items-center gap-2 mt-1">
                             <input type="number" autoFocus value={mockResult.price} onChange={e => setMockResult({...mockResult, price: e.target.value})} className="w-24 p-1 text-lg font-black text-emerald-600 bg-white dark:bg-slate-800 border-2 border-emerald-400 rounded-lg outline-none text-center" dir="ltr" />
