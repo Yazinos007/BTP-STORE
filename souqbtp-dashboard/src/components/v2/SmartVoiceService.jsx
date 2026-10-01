@@ -14,6 +14,9 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
 
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null);
+
   const translations = {
     ar: { btn: "أضف خدمة بصوتك (AI)", title: "ماذا تقدم لعملائك؟", desc: "تحدث بالدارجة، وسيقوم الذكاء الاصطناعي بكتابة وتصنيف وتسعير خدمتك تلقائياً.", start: "بدء التسجيل الآن", listening: "جاري الاستماع...", processing: "الذكاء الاصطناعي يحلل...", success: "تمت صياغة الخدمة بنجاح", priceNote: "سعر مقترح مبدئي", retry: "إعادة التسجيل", publish: "نشر في متجري", aiTag: "مُولد بالذكاء الاصطناعي" },
     fr: { btn: "Ajouter un service (IA)", title: "Que proposez-vous ?", desc: "Parlez en Darija, l'IA rédigera, classera et tarifera votre service automatiquement.", start: "Commencer l'enregistrement", listening: "Écoute en cours...", processing: "L'IA analyse...", success: "Service formulé avec succès", priceNote: "Prix initial suggéré", retry: "Réessayer", publish: "Publier le service", aiTag: "Généré par l'IA" },
@@ -22,33 +25,50 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
   const t = translations[language] || translations.fr;
   const isRtl = language === 'ar';
 
-  const startListening = () => {
-    setStep('listening');
+  // 1. فتح الميكروفون وبدء التسجيل الحقيقي
+  const startRealListening = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+      recorder.onstop = async () => {
+        setStep('processing');
+        const finalBlob = new Blob(chunks, { type: 'audio/webm' });
+        setAudioBlob(finalBlob);
+        // إغلاق الميكروفون من المتصفح نهائياً
+        stream.getTracks().forEach(track => track.stop());
+        // 🚀 هنا سنقوم لاحقاً باستدعاء دالة إرسال finalBlob إلى الذكاء الاصطناعي
+        await simulateAIResponseForNow(finalBlob); 
+      };
+      recorder.start();
+      setMediaRecorder(recorder);
+      setStep('listening');
+    } catch (error) {
+      console.error("خطأ في الميكروفون:", error);
+      alert(language === 'ar' ? "الرجاء السماح باستخدام الميكروفون للتسجيل." : "Veuillez autoriser l'accès au microphone.");
+    }
+  };
+  // 2. إيقاف التسجيل يدوياً
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+  };
+  // 3. دالة مؤقتة لتشغيل المعاينة حتى نربط الـ API في الخطوة القادمة
+  const simulateAIResponseForNow = async (blob) => {
+    // محاكاة إرسال الصوت للذكاء الاصطناعي (سنستبدلها بالربط الحقيقي قريباً)
     setTimeout(() => {
-      setStep('processing');
-      setTimeout(() => {
-        // الذكاء الاصطناعي الآن يولد كائناً بـ 3 لغات
-        setMockResult({
-          title: {
-            ar: "تركيب وصيانة اللوحات الكهربائية",
-            fr: "Installation et maintenance de tableaux électriques",
-            en: "Installation and maintenance of electrical panels"
-          },
-          category: {
-            ar: "الكهرباء (تريسيان)",
-            fr: "Électricité Bâtiment",
-            en: "Electrical Building"
-          },
-          description: {
-            ar: "تمديد الأسلاك، تركيب الطابلوات، وإصلاح الأعطال المنزلية باستخدام معدات مطابقة لمعايير السلامة.",
-            fr: "Câblage, installation de tableaux électriques et réparation de pannes domestiques.",
-            en: "Wiring, installation of electrical panels, and repair of domestic faults."
-          },
-          price: 500,
-        });
-        setStep('preview');
-      }, 2500);
-    }, 3000);
+      setMockResult({
+        title: { ar: "تركيب وصيانة اللوحات الكهربائية", fr: "Installation et maintenance de tableaux", en: "Electrical panel maintenance" },
+        category: { ar: "الكهرباء", fr: "Électricité", en: "Electrical" },
+        description: { ar: "تم تسجيل صوتك بنجاح! هذا مجرد اختبار مؤقت.", fr: "Voix enregistrée avec succès !", en: "Voice recorded successfully!" },
+        price: 500,
+      });
+      setStep('preview');
+    }, 2000);
   };
 
   const handleClose = () => {
@@ -88,20 +108,30 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
               
               {step === 'idle' && (
                 <div className="text-center w-full">
-                  <div className="w-24 h-24 mx-auto bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-6 cursor-pointer hover:scale-105 transition-transform" onClick={startListening}><Mic size={40} /></div>
+                  <div className="w-24 h-24 mx-auto bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-6 cursor-pointer hover:scale-105 transition-transform" onClick={startRealListening}><Mic size={40} /></div>
                   <h3 className={`text-2xl font-black mb-2 ${textTitle}`}>{t.title}</h3>
                   <p className={`text-sm mb-8 ${textMuted}`}>{t.desc}</p>
-                  <button onClick={startListening} className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-colors">{t.start}</button>
+                  <button onClick={startRealListening} className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-colors">{t.start}</button>
                 </div>
               )}
 
               {step === 'listening' && (
                 <div className="text-center w-full">
-                  <div className="relative w-32 h-32 mx-auto mb-8 flex items-center justify-center">
+                  <div 
+                    onClick={stopRecording}
+                    className="relative w-32 h-32 mx-auto mb-8 flex items-center justify-center cursor-pointer group hover:scale-105 transition-transform"
+                  >
                     <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-20"></div>
-                    <div className="relative w-20 h-20 bg-red-500 text-white rounded-full flex items-center justify-center"><Mic size={32} /></div>
+                    <div className="relative w-20 h-20 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-red-500/40">
+                      {/* سيظهر أيقونة التوقف (مربع) عند تمرير الماوس */}
+                      <Mic size={32} className="group-hover:hidden" />
+                      <div className="hidden group-hover:block w-8 h-8 bg-white rounded-sm"></div>
+                    </div>
                   </div>
                   <h3 className={`text-xl font-black mb-2 text-red-500`}>{t.listening}</h3>
+                  <p className={`text-sm font-bold ${textMuted} animate-pulse`}>
+                    {language === 'ar' ? '(اضغط على الدائرة الحمراء للإيقاف)' : '(Appuyez pour arrêter)'}
+                  </p>
                 </div>
               )}
 
