@@ -48,13 +48,24 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   const [reviewVotesMap, setReviewVotesMap] = useState({});
   const [userVotedReviews, setUserVotedReviews] = useState(new Set());
 
-  // دالة ذكية لقراءة النصوص: إذا كانت JSON تقرأ لغة الواجهة، وإذا كانت نصاً عادياً تعرضه كما هو
+  // دالة ذكية لقراءة النصوص: تتعرف على الـ JSON وتفكه حتى لو كان مخزناً كنص عادي
   const getLocalizedText = (field, currentLang) => {
     if (!field) return '';
-    if (typeof field === 'object') {
-      return field[currentLang] || field['fr'] || field['ar'] || '';
+    let parsedField = field;
+    // 1. محاولة تحويل النص إلى كائن إذا كان يبدو كـ JSON (يبدأ بقوس { )
+    if (typeof field === 'string' && field.trim().startsWith('{')) {
+      try {
+        parsedField = JSON.parse(field);
+      } catch (e) {
+        return field; // إذا لم يكن JSON صحيحاً، نرجعه كنص عادي
+      }
     }
-    return field; // للخدمات القديمة المدخلة يدوياً
+    // 2. إذا أصبح كائناً صحيحاً، نستخرج اللغة المطلوبة
+    if (typeof parsedField === 'object' && parsedField !== null) {
+      return parsedField[currentLang] || parsedField['fr'] || parsedField['ar'] || '';
+    }
+    // 3. للخدمات القديمة (النصوص العادية التي تم إدخالها يدوياً)
+    return String(field); 
   };
 
   // --- قاموس الترجمة الشامل ---
