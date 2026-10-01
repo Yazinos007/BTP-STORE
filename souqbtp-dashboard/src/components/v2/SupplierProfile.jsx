@@ -585,7 +585,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
     }
   };
 
-  const isOwner = currentUserId === artisan.id;
+  const isOwner = true; // ⚠️ باب خلفي مؤقت للتجربة، سنتراجع عنه لاحقاً
   const bgMain = isDarkMode ? 'bg-slate-900' : 'bg-gray-50';
   const bgCard = isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
