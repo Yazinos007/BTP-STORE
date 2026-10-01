@@ -832,17 +832,16 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
         )}
       </div>
       
-      {/* 🌟 قمنا بحذف شرط isEditing من هنا لكي يظهر الزر دائماً 🌟 */}
-      <SmartVoiceService 
-        isDarkMode={isDarkMode} 
-        language={language}
-        isOwner={true} 
-        onPublish={handlePublishAIService}
-        onManualClick={() => {
-          setIsEditing(true);        
-          setIsAddingService(true); 
-        }} 
-      />
+      {/* 🌟 إرجاع شرط التعديل وحماية الصلاحيات بالمتغير isOwner 🌟 */}
+      {isEditing && (
+        <SmartVoiceService 
+          isDarkMode={isDarkMode} 
+          language={language}
+          isOwner={isOwner} 
+          onPublish={handlePublishAIService}
+          onManualClick={() => setIsAddingService(true)} 
+        />
+      )}
 
       {/* 3. الاستمارة اليدوية الكلاسيكية (تظهر فقط عند الضغط على زر "يدوي") */}
       {isEditing && isAddingService && (
@@ -916,7 +915,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
         <SmartVoicePortfolio 
           isDarkMode={isDarkMode} 
           language={language}
-          isOwner={true} 
+          isOwner={isOwner} 
           onPublish={handlePublishAIPortfolio}
           onManualClick={() => {
             // هذه الحيلة تفتح نافذة رفع الصور القديمة الخاصة بك عند الضغط على زر "يدوي"
