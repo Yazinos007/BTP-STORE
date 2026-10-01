@@ -48,6 +48,15 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
   const [reviewVotesMap, setReviewVotesMap] = useState({});
   const [userVotedReviews, setUserVotedReviews] = useState(new Set());
 
+  // دالة ذكية لقراءة النصوص: إذا كانت JSON تقرأ لغة الواجهة، وإذا كانت نصاً عادياً تعرضه كما هو
+  const getLocalizedText = (field, currentLang) => {
+    if (!field) return '';
+    if (typeof field === 'object') {
+      return field[currentLang] || field['fr'] || field['ar'] || '';
+    }
+    return field; // للخدمات القديمة المدخلة يدوياً
+  };
+
   // --- قاموس الترجمة الشامل ---
   const t = {
     ar: {
@@ -852,8 +861,12 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
           {services.map(service => (
             <div key={service.id} className={`p-5 rounded-2xl border ${bgCard} hover:shadow-md transition-shadow flex flex-col sm:flex-row items-center justify-between gap-4 group`}>
               <div className="flex-1">
-                <h4 className={`font-bold text-lg mb-1 ${textTitle}`}>{service.service_name}</h4>
-                <p className={`text-sm ${textMuted} mb-3 font-medium`}>{service.description}</p>
+                <h4 className={`font-bold text-lg mb-1 ${textTitle}`}>
+                  {getLocalizedText(service.service_name, language)}
+                </h4>
+                <p className={`text-sm ${textMuted} mb-3 font-medium`}>
+                  {getLocalizedText(service.description, language)}
+                </p>
                 <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${isDarkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t.startingFrom} {service.starting_price} MAD</span>
               </div>
               <div className="flex gap-2 w-full sm:w-auto">

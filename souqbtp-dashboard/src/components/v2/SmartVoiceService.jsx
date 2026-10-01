@@ -27,10 +27,23 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
     setTimeout(() => {
       setStep('processing');
       setTimeout(() => {
+        // الذكاء الاصطناعي الآن يولد كائناً بـ 3 لغات
         setMockResult({
-          title: language === 'ar' ? "تركيب وصيانة اللوحات الكهربائية" : "Installation et maintenance de tableaux électriques",
-          category: language === 'ar' ? "الكهرباء (تريسيان)" : "Électricité Bâtiment",
-          description: language === 'ar' ? "تمديد الأسلاك، تركيب الطابلوات، وإصلاح الأعطال المنزلية." : "Câblage, installation de tableaux électriques et réparation de pannes domestiques.",
+          title: {
+            ar: "تركيب وصيانة اللوحات الكهربائية",
+            fr: "Installation et maintenance de tableaux électriques",
+            en: "Installation and maintenance of electrical panels"
+          },
+          category: {
+            ar: "الكهرباء (تريسيان)",
+            fr: "Électricité Bâtiment",
+            en: "Electrical Building"
+          },
+          description: {
+            ar: "تمديد الأسلاك، تركيب الطابلوات، وإصلاح الأعطال المنزلية باستخدام معدات مطابقة لمعايير السلامة.",
+            fr: "Câblage, installation de tableaux électriques et réparation de pannes domestiques.",
+            en: "Wiring, installation of electrical panels, and repair of domestic faults."
+          },
           price: 500,
         });
         setStep('preview');
@@ -128,8 +141,15 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
                         }} />
                       </label>
                     </div>
-                    <h4 className={`text-lg font-black mb-2 leading-tight ${textTitle}`}>{mockResult.title}</h4>
-                    <p className={`text-sm leading-relaxed mb-4 ${textMuted}`}>{mockResult.description}</p>
+                    <p className="text-[10px] font-bold text-indigo-500 mb-1 mt-2">
+                      {mockResult.category[language] || mockResult.category['fr']}
+                    </p>
+                    <h4 className={`text-lg font-black mb-2 leading-tight ${textTitle}`}>
+                      {mockResult.title[language] || mockResult.title['fr']}
+                    </h4>
+                    <p className={`text-sm leading-relaxed mb-4 ${textMuted}`}>
+                      {mockResult.description[language] || mockResult.description['fr']}
+                    </p>
                     
                     <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 flex justify-between items-center">
                       <div>
