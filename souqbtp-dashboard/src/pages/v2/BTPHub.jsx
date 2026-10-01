@@ -63,6 +63,20 @@ const FlashDealTimer = ({ expiresAt }) => {
 };
 
 export default function BTPHub() {
+
+  // --- دالة فك التشفير للغات ---
+  const getLocalizedText = (field, currentLang) => {
+    if (!field) return '';
+    let parsedField = field;
+    if (typeof field === 'string' && field.trim().startsWith('{')) {
+      try { parsedField = JSON.parse(field); } catch (e) { return field; }
+    }
+    if (typeof parsedField === 'object' && parsedField !== null) {
+      return parsedField[currentLang] || parsedField['fr'] || parsedField['ar'] || '';
+    }
+    return String(field); 
+  };
+
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const navigate = useNavigate();
   const context = useOutletContext() || {};
@@ -1082,7 +1096,7 @@ export default function BTPHub() {
                   </div>
                   <div>
                     <h3 className={`font-black text-lg leading-tight ${textTitle}`}>{artisan.store_name || tCard.artisanName}</h3>
-                    <p className="text-sm text-emerald-600 font-bold">{mainService.service_name}</p>
+                    <p className="text-sm text-emerald-600 font-bold">{getLocalizedText(mainService.service_name, language)}</p>
                   </div>
                 </div>
 
@@ -1143,7 +1157,7 @@ export default function BTPHub() {
                   <button onClick={() => setSelectedSupplier(artisan)} className={`flex-1 border py-3 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}>
                     {tCard.viewProfile}
                   </button>
-                  <button onClick={() => handleAddToCart({ id: artisan.id, name: mainService.service_name, supplier: artisan.store_name, price: finalPrice, type: 'service' })} className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm font-black shadow-lg">
+                  <button onClick={() => handleAddToCart({ id: artisan.id, name: getLocalizedText(mainService.service_name, language), supplier: artisan.store_name, price: finalPrice, type: 'service' })} className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm font-black shadow-lg">
                     {tCard.requestQuote}
                   </button>
                 </div>
