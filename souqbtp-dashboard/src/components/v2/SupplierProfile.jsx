@@ -803,18 +803,14 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
         )}
       </div>
       
-      {/* 2. الزر السحري الجديد (صوت + يدوي) */}
-      {/* نضعه داخل شرط isEditing لكي لا يظهر للزبائن الذين يزورون البروفايل */}
-      {isEditing && (
-        <SmartVoiceService 
-          isDarkMode={isDarkMode} 
-          language={language}
-          isOwner={true} 
-          onPublish={handlePublishAIService}
-          // تمرير دالة فتح الاستمارة اليدوية لكي يعمل زر "يدوي" الجديد
-          onManualClick={() => setIsAddingService(true)} 
-        />
-      )}
+      {/* 🌟 قمنا بحذف شرط isEditing من هنا لكي يظهر الزر دائماً 🌟 */}
+      <SmartVoiceService 
+        isDarkMode={isDarkMode} 
+        language={language}
+        isOwner={true} 
+        onPublish={handlePublishAIService}
+        onManualClick={() => setIsAddingService(true)} 
+      />
 
       {/* 3. الاستمارة اليدوية الكلاسيكية (تظهر فقط عند الضغط على زر "يدوي") */}
       {isEditing && isAddingService && (

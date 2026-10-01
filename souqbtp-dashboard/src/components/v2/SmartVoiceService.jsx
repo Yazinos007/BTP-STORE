@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Mic, X, Zap, CheckCircle2, Edit3, Activity, Check } from 'lucide-react';
 
-export default function SmartVoiceService({ isDarkMode = false, language = 'fr', isOwner = true, onPublish }) {
+export default function SmartVoiceService({ isDarkMode = false, language = 'fr', isOwner = true, onPublish, onManualClick }) {
   if (!isOwner) return null;
 
   const [isOpen, setIsOpen] = useState(false);
@@ -55,7 +55,7 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
           </div>
         </button>
 
-        <button onClick={() => alert("سيتم فتح استمارة الإدخال اليدوي العادية هنا")} className={`flex-[1] p-4 rounded-2xl font-black text-sm border-2 flex flex-col items-center justify-center gap-1 transition-all hover:-translate-y-1 ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+        <button onClick={onManualClick} className={`flex-[1] p-4 rounded-2xl font-black text-sm border-2 flex flex-col items-center justify-center gap-1 transition-all hover:-translate-y-1 ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
           <Edit3 size={20} className="mb-1" />
           {language === 'ar' ? 'يدوي' : 'Manuel'}
         </button>
