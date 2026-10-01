@@ -120,7 +120,7 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
                   <div className="flex items-center justify-center gap-2 text-emerald-500 mb-4 bg-emerald-50 dark:bg-emerald-900/20 py-2 rounded-lg font-bold text-sm border border-emerald-200"><CheckCircle2 size={18} /> {t.success}</div>
                   
                   <div className={`p-5 rounded-2xl border ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'} shadow-sm relative mb-6`}>
-                    <p className="text-[10px] font-bold text-indigo-500 mb-1 mt-2">{mockResult.category}</p>
+                    
                     {/* قسم إضافة صورة للخدمة */}
                     <div className="mb-4">
                       <label className={`block w-full h-24 border-2 border-dashed ${isDarkMode ? 'border-slate-600 hover:bg-slate-700' : 'border-slate-300 hover:bg-slate-50'} rounded-xl text-center cursor-pointer transition-colors relative overflow-hidden flex flex-col items-center justify-center`}>
@@ -141,6 +141,8 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
                         }} />
                       </label>
                     </div>
+
+                    {/* عرض تفاصيل الخدمة بذكاء حسب لغة الواجهة */}
                     <p className="text-[10px] font-bold text-indigo-500 mb-1 mt-2">
                       {mockResult.category[language] || mockResult.category['fr']}
                     </p>
