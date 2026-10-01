@@ -234,6 +234,31 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
     }
   }[language] || t.ar;
 
+  // دالة الحفظ الفعلي للخدمة المولدة بالصوت
+  const handlePublishAIService = async (data) => {
+    try {
+      const { error } = await supabase
+        .from('provider_services')
+        .insert({
+          provider_id: artisanId, // تأكد أن متغير الـ ID الخاص بالمورد متوفر هنا
+          service_name: data.title,
+          description: data.description,
+          starting_price: Number(data.price),
+          // يمكنك تخصيص الـ category_id هنا إذا كان الجدول يتطلب رقماً بدلاً من نص
+        });
+
+      if (!error) {
+        alert(language === 'ar' ? 'تمت إضافة الخدمة بنجاح إلى متجرك!' : 'Service ajouté à votre boutique avec succès !');
+        // إذا كانت لديك دالة لجلب الخدمات، استدعها هنا لتحديث الواجهة فوراً
+        // fetchProviderServices(); 
+      } else {
+        console.error("Error saving AI service:", error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // --- دالة جلب التقييمات ---
   const fetchReviews = async (providerId, userId) => {
     try {
@@ -826,7 +851,12 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
                     </div>
                   )}
 
-                  <SmartVoiceService isDarkMode={isDarkMode} onPublish={(data) => console.log("الذكاء الاصطناعي أرسل:", data)} />
+                  <SmartVoiceService 
+                    isDarkMode={isDarkMode} 
+                    language={language}
+                    isOwner={true} /* ملاحظة: في المستقبل اجعلها true فقط إذا كان الزائر هو صاحب الحساب */
+                    onPublish={handlePublishAIService} 
+                  />
 
                   {services.length > 0 ? (
                     <div className="space-y-4">
