@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mic, X, Zap, CheckCircle2, Edit3, Activity, Check } from 'lucide-react';
+import { Mic, X, Zap, CheckCircle2, Edit3, Activity, Check, Camera } from 'lucide-react';
 
 export default function SmartVoiceService({ isDarkMode = false, language = 'fr', isOwner = true, onPublish, onManualClick }) {
   if (!isOwner) return null;
@@ -8,6 +8,8 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
   const [step, setStep] = useState('idle'); 
   const [mockResult, setMockResult] = useState(null);
   const [isEditingPrice, setIsEditingPrice] = useState(false); 
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
@@ -39,6 +41,7 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
   const handleClose = () => {
     setIsOpen(false);
     setTimeout(() => { setStep('idle'); setMockResult(null); setIsEditingPrice(false); }, 300);
+    setImageFile(null); setImagePreview(null);
   };
 
   return (
@@ -105,6 +108,26 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
                   
                   <div className={`p-5 rounded-2xl border ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'} shadow-sm relative mb-6`}>
                     <p className="text-[10px] font-bold text-indigo-500 mb-1 mt-2">{mockResult.category}</p>
+                    {/* قسم إضافة صورة للخدمة */}
+                    <div className="mb-4">
+                      <label className={`block w-full h-24 border-2 border-dashed ${isDarkMode ? 'border-slate-600 hover:bg-slate-700' : 'border-slate-300 hover:bg-slate-50'} rounded-xl text-center cursor-pointer transition-colors relative overflow-hidden flex flex-col items-center justify-center`}>
+                        {imagePreview ? (
+                          <img src={imagePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-90" />
+                        ) : (
+                          <Camera size={24} className={`mb-1 ${textMuted}`} />
+                        )}
+                        <span className={`relative z-10 font-bold text-xs ${imagePreview ? 'text-white drop-shadow-md bg-black/30 px-2 rounded' : textTitle}`}>
+                          {language === 'ar' ? 'أضف صورة للعمل (اختياري)' : 'Ajouter une photo (Optionnel)'}
+                        </span>
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                          const file = e.target.files[0];
+                          if(file) {
+                            setImageFile(file);
+                            setImagePreview(URL.createObjectURL(file));
+                          }
+                        }} />
+                      </label>
+                    </div>
                     <h4 className={`text-lg font-black mb-2 leading-tight ${textTitle}`}>{mockResult.title}</h4>
                     <p className={`text-sm leading-relaxed mb-4 ${textMuted}`}>{mockResult.description}</p>
                     
@@ -130,7 +153,7 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
                   
                   <div className="flex gap-3">
                     <button onClick={() => setStep('idle')} className={`flex-1 py-3.5 rounded-xl font-bold text-sm border-2 ${isDarkMode ? 'border-slate-700 text-slate-300' : 'border-slate-300 text-slate-700'}`}>{t.retry}</button>
-                    <button onClick={() => { onPublish && onPublish(mockResult); handleClose(); }} className="flex-[2] bg-emerald-500 hover:bg-emerald-600 text-white py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-lg"><Check size={18} /> {t.publish}</button>
+                    <button onClick={() => { onPublish && onPublish({ ...mockResult, image: imageFile }); handleClose(); }} className="flex-[2] bg-emerald-500 hover:bg-emerald-600 text-white py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-lg"><Check size={18} /> {t.publish}</button>
                   </div>
                 </div>
               )}
