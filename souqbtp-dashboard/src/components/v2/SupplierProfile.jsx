@@ -5,7 +5,7 @@ import SmartVoiceService from './SmartVoiceService';
 import { 
   ShieldCheck, MapPin, Star, CheckCircle2, 
   Image as ImageIcon, MessageSquare, Briefcase, 
-  Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud, ThumbsUp, Lock, Navigation
+  Award, FileText, X, Edit, Save, Plus, Trash2, Loader2, Camera, UploadCloud, ThumbsUp, Lock, Navigation, Trash2, Zap
 } from 'lucide-react';
 
 export default function SupplierProfile({ artisanId, isDarkMode = false, language = 'ar', onClose }) {
