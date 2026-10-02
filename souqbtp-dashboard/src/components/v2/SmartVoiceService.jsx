@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mic, X, Zap, CheckCircle2, Edit3, Activity, Check, Camera } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export default function SmartVoiceService({ isDarkMode = false, language = 'fr', isOwner = true, onPublish, onManualClick }) {
   if (!isOwner) return null;
@@ -41,7 +42,7 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
         // إغلاق الميكروفون من المتصفح نهائياً
         stream.getTracks().forEach(track => track.stop());
         // 🚀 هنا سنقوم لاحقاً باستدعاء دالة إرسال finalBlob إلى الذكاء الاصطناعي
-        await simulateAIResponseForNow(finalBlob); 
+        await processRealAudio(finalBlob);
       };
       recorder.start();
       setMediaRecorder(recorder);
@@ -57,18 +58,29 @@ export default function SmartVoiceService({ isDarkMode = false, language = 'fr',
       mediaRecorder.stop();
     }
   };
-  // 3. دالة مؤقتة لتشغيل المعاينة حتى نربط الـ API في الخطوة القادمة
-  const simulateAIResponseForNow = async (blob) => {
-    // محاكاة إرسال الصوت للذكاء الاصطناعي (سنستبدلها بالربط الحقيقي قريباً)
-    setTimeout(() => {
-      setMockResult({
-        title: { ar: "تركيب وصيانة اللوحات الكهربائية", fr: "Installation et maintenance de tableaux", en: "Electrical panel maintenance" },
-        category: { ar: "الكهرباء", fr: "Électricité", en: "Electrical" },
-        description: { ar: "تم تسجيل صوتك بنجاح! هذا مجرد اختبار مؤقت.", fr: "Voix enregistrée avec succès !", en: "Voice recorded successfully!" },
-        price: 500,
+  
+  const processRealAudio = async (blob) => {
+    try {
+      // 1. تجهيز الملف الصوتي
+      const formData = new FormData();
+      formData.append('audio', blob, 'recording.webm');
+
+      // 2. إرساله إلى دالة Supabase (التي سننشئها في الخطوة الثانية)
+      const { data, error } = await supabase.functions.invoke('voice-to-service', {
+        body: formData,
       });
+
+      if (error) throw new Error(error.message);
+
+      // 3. عرض النتيجة الحقيقية
+      setMockResult(data); 
       setStep('preview');
-    }, 2000);
+
+    } catch (err) {
+      console.error("خطأ في الذكاء الاصطناعي:", err);
+      alert(language === 'ar' ? "حدث خطأ أثناء التحليل. يرجى التحدث بوضوح والمحاولة مجدداً." : "Erreur d'analyse. Veuillez réessayer.");
+      setStep('idle');
+    }
   };
 
   const handleClose = () => {
