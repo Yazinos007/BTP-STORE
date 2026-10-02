@@ -720,12 +720,12 @@ export default function BTPHub() {
   const bgCard = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-100';
 
   const modes = [
-    { id: 'experts', icon: '📐', label: t.modes.experts },
-    { id: 'materiaux', icon: '🧱', label: t.modes.materiaux },
-    { id: 'grosOeuvre', icon: '🏗️', label: t.modes.grosOeuvre || "الأشغال الكبرى" }, // أضفنا قسم الأشغال الكبرى
     { id: 'services', icon: '👷', label: t.modes.services },
-    { id: 'machines', icon: '🚜', label: t.modes.machines },
+    { id: 'materiaux', icon: '🧱', label: t.modes.materiaux },
     { id: 'maintenance', icon: '🔧', label: t.modes.maintenance },
+    { id: 'experts', icon: '📐', label: t.modes.experts },
+    { id: 'grosOeuvre', icon: '🏗️', label: t.modes.grosOeuvre || "الأشغال الكبرى" },
+    { id: 'machines', icon: '🚜', label: t.modes.machines },
     { id: 'transport', icon: '🚚', label: t.modes.transport },
     { id: 'documents', icon: '📄', label: t.modes.documents },
     { id: 'companies', icon: '🏢', label: t.modes.companies },
