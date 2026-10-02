@@ -311,8 +311,15 @@ export default function BTPHub() {
       qty: "الكمية:", total: "المجموع:", orderFrom: "طلب وعروض أسعار",
       wholesaleActivated: "🎉 تم تفعيل سعر الجملة",
       modes: { 
-        materiaux: "المواد", services: "الخدمات", experts: "الخبراء", machines: "المعدات",
-        maintenance: "صيانة", transport: "نقل", documents: "وثائق", companies: "شركات"
+        experts: "مكاتب الدراسات",
+        materiaux: "مورد المواد",
+        grosOeuvre: "الأشغال الكبرى",
+        services: "لْمْعْلّْم (Lmعalam)",
+        machines: "المعدات",
+        maintenance: "صيانة",
+        transport: "نقل",
+        documents: "وثائق",
+        companies: "شركات"
       },
       services: {
         interventions: "التدخلات", completed: "مكتملة",
@@ -442,8 +449,15 @@ export default function BTPHub() {
       qty: "Qté :", total: "Total :", orderFrom: "Demander devis & Commander",
       wholesaleActivated: "🎉 Prix de gros activé",
       modes: { 
-        materiaux: "Matériaux", services: "Services", experts: "Experts", machines: "Machines",
-        maintenance: "Maintenance", transport: "Transport", documents: "Documents", companies: "Entreprises"
+        experts: "experts",
+        materiaux: "Fournisseur",
+        grosOeuvre: "gros oeuvres",
+        services: "Lmعalam (لْمْعْلّْم)",
+        machines: "machines",
+        maintenance: "maintenance",
+        transport: "Transport",
+        documents: "Documents",
+        companies: "Entreprises"
       },
       services: {
         interventions: "Interventions", completed: "complétées",
@@ -573,8 +587,15 @@ export default function BTPHub() {
       qty: "Qty:", total: "Total:", orderFrom: "Request Quote & Order",
       wholesaleActivated: "🎉 Wholesale price activated",
       modes: { 
-        materiaux: "Materials", services: "Services", experts: "Experts", machines: "Machines",
-        maintenance: "Maintenance", transport: "Transport", documents: "Documents", companies: "Companies"
+        experts: "experts",
+        materiaux: "Supplier",
+        grosOeuvre: "structural works",
+        services: "Lmعalam (لْمْعْلّْم)",
+        machines: "machines",
+        maintenance: "maintenance",
+        transport: "Transport",
+        documents: "Documents",
+        companies: "Companies"
       },
       services: {
         interventions: "Jobs", completed: "completed",
@@ -699,16 +720,15 @@ export default function BTPHub() {
   const bgCard = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-100';
 
   const modes = [
+    { id: 'experts', icon: '📐', label: t.modes.experts },
     { id: 'materiaux', icon: '🧱', label: t.modes.materiaux },
+    { id: 'grosOeuvre', icon: '🏗️', label: t.modes.grosOeuvre || "الأشغال الكبرى" }, // أضفنا قسم الأشغال الكبرى
     { id: 'services', icon: '👷', label: t.modes.services },
     { id: 'machines', icon: '🚜', label: t.modes.machines },
-    { id: 'experts', icon: '📐', label: t.modes.experts },
     { id: 'maintenance', icon: '🔧', label: t.modes.maintenance },
     { id: 'transport', icon: '🚚', label: t.modes.transport },
     { id: 'documents', icon: '📄', label: t.modes.documents },
     { id: 'companies', icon: '🏢', label: t.modes.companies },
-    { id: 'surplus', icon: '♻️', label: language === 'ar' ? 'فائض الأوراش' : (language === 'fr' ? 'Surplus Chantier' : 'Site Surplus') },
-    { id: 'groupe', icon: '🤝', label: language === 'ar' ? 'شراء جماعي' : (language === 'fr' ? 'Achat Groupé' : 'Group Buying') }
   ];
 
   const categories = [
@@ -884,7 +904,7 @@ export default function BTPHub() {
     <div className="animate-fade-in pb-32 max-w-7xl mx-auto w-full" dir={isRtl ? 'rtl' : 'ltr'}>
       
       {/* Top Header & Smart Search */}
-      <div className={`${isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-100'} backdrop-blur-md p-6 rounded-3xl border shadow-sm mb-8 mt-4`}>
+      <div className={`${isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-100'} backdrop-blur-md p-6 rounded-3xl border shadow-sm mb-4 mt-4`}>
         <div className="max-w-4xl mx-auto flex items-center bg-gray-100 dark:bg-slate-800 rounded-full p-2 border border-transparent focus-within:border-emerald-500 transition-colors shadow-inner">
           <Search className={`w-6 h-6 text-gray-400 ${isRtl ? 'mr-3 ml-2' : 'ml-3 mr-2'}`} />
           <input 
@@ -895,14 +915,41 @@ export default function BTPHub() {
             className="flex-1 bg-transparent border-none focus:ring-0 text-gray-700 dark:text-gray-200 outline-none placeholder-gray-400 font-medium"
           />
           <div className={`flex gap-2 ${isRtl ? 'ml-2' : 'mr-2'}`}>
-            <button className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-full transition-colors">
+            <button 
+              onClick={() => alert("سيتم تفعيل ميزة البحث بالصوت قريباً! (جارٍ ربطها بالذكاء الاصطناعي)")} 
+              className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-full transition-colors relative group"
+            >
               <Mic className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
             </button>
-            <button className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-full transition-colors">
+            <button 
+              onClick={() => alert("سيتم تفعيل ميزة البحث بالكاميرا قريباً!")}
+              className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-full transition-colors relative group"
+            >
               <Camera className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping"></span>
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 🚀 Floating Action Buttons (الشراء الجماعي و فائض الأوراش) */}
+      <div className="flex justify-center gap-4 mb-8">
+        <button 
+          onClick={() => setActiveMode('groupe')}
+          className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg
+            ${activeMode === 'groupe' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-500/40 ring-4 ring-blue-500/20' : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800'}`}
+        >
+          <span className="text-xl">🤝</span> {language === 'ar' ? 'شراء جماعي' : (language === 'fr' ? 'Achat Groupé' : 'Group Buying')}
+        </button>
+
+        <button 
+          onClick={() => setActiveMode('surplus')}
+          className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg
+            ${activeMode === 'surplus' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/40 ring-4 ring-emerald-500/20' : 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'}`}
+        >
+          <span className="text-xl">♻️️</span> {language === 'ar' ? 'فائض الأوراش' : (language === 'fr' ? 'Surplus Chantier' : 'Site Surplus')}
+        </button>
       </div>
 
       {/* Master Marketplace Switcher */}
