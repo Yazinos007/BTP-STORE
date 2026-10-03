@@ -8,7 +8,9 @@ import {
   ShieldCheck, ShoppingCart, Filter, Package, Zap, Droplet, PaintRoller, 
   Hammer, ArrowRight, Plus, CheckCircle2, TrendingUp, Briefcase,
   Store, Coins, Globe, Bitcoin, Minus, MessageCircle, X, Trash2, Building2, Timer,
-  HardHat, LayoutGrid, Flame, Component, AppWindow
+  HardHat, LayoutGrid, Flame, Component, AppWindow, Wind, ArrowUpDown, Cctv, Umbrella, 
+  Sparkles, Trees, Siren, PenTool, Compass, Calculator, Sofa, Mountain, Layers, Factory, Waves,
+  Tractor, Wrench, Truck, Trash, FileCheck, Shield, Award
 } from 'lucide-react';
 
 const getCurrencySymbol = (curr) => {
@@ -304,7 +306,12 @@ export default function BTPHub() {
       categoriesTitle: "التصنيفات",
       all: "الكل", cement: "مواد البناء والأسمنت", steel: "الحديد والتسليح", wood: "الخشب والنجارة",
       plumbing: "السباكة والأنابيب", electrical: "الكهرباء والإنارة", paint: "الصباغة والعزل",
-      masonry: "البناء", tiling: "الزليج والرخام", welding: "الحدادة والتلحيم", plaster: "الجبس والديكور", aluminum: "الألمنيوم والزجاج",
+      masonry: "البناء", tiling: "الزليج والرخام", welding: "الحدادة والتلحيم", plaster: "الجبس والديكور", 
+      aluminum: "الألمنيوم والزجاج", hvac: "التكييف والتهوية", elevators: "صيانة المصاعد", security: "الأمان والمراقبة", 
+      waterproofing: "العزل وتسرب المياه", cleaning: "النظافة ونهاية الورش", gardens: "المسابح والحدائق", sos: "طوارئ (SOS)",
+      architect: "هندسة معمارية", topographer: "طوبوغرافيا", studies: "مكاتب الدراسات", control: "مراقبة الجودة", interior: "تصميم داخلي",
+      earthworks: "الحفر والتهيئة", concrete: "الأساسات والخرسانة", industrial: "البناء الصناعي", demolition: "الهدم وإزالة الركام", sanitation: "الصرف الصحي",
+      heavyMachinery: "آليات ثقيلة", tools: "معدات خفيفة", goodsTransport: "نقل السلع", debrisRemoval: "إزالة الردم", permits: "رخص إدارية", insurance: "تأمين الأوراش", verifiedSuppliers: "موردون معتمدون", majorContractors: "مقاولات كبرى",
       addToCart: "أضف للمشروع", retail: "تقسيط:", wholesale: "جملة:",
       supplier: "المورد:", cartEmpty: "مشروعك فارغ", itemsInCart: "عناصر",
       checkout: "إتمام الطلب", emptySearch: "لم نجد ما يطابق بحثك.",
@@ -313,7 +320,7 @@ export default function BTPHub() {
       qty: "الكمية:", total: "المجموع:", orderFrom: "طلب وعروض أسعار",
       wholesaleActivated: "🎉 تم تفعيل سعر الجملة",
       modes: { 
-        experts: "مكاتب الدراسات",
+        experts: "الخبراء",
         materiaux: "مورد المواد",
         grosOeuvre: "الأشغال الكبرى",
         services: "لْمْعْلّْم (alamعLm)",
@@ -443,7 +450,12 @@ export default function BTPHub() {
       categoriesTitle: "Catégories",
       all: "Tout", cement: "Gros œuvre & Ciment", steel: "Acier & Armature", wood: "Bois & Menuiserie",
       plumbing: "Plomberie & Tuyauterie", electrical: "Électricité & Éclairage", paint: "Peinture & Isolation",
-      masonry: "Maçonnerie", tiling: "Carrelage & Marbre", welding: "Soudure & Ferronnerie", plaster: "Plâtre & Déco", aluminum: "Aluminium & Verre",
+      masonry: "Maçonnerie", tiling: "Carrelage & Marbre", welding: "Soudure & Ferronnerie", plaster: "Plâtre & Déco", 
+      aluminum: "Aluminium & Verre", hvac: "Climatisation & HVAC", elevators: "Ascenseurs", security: "Sécurité & Caméras", 
+      waterproofing: "Étanchéité & Fuites", cleaning: "Nettoyage Fin Chantier", gardens: "Piscines & Jardins", sos: "SOS Dépannage",
+      architect: "Architecture", topographer: "Topographie", studies: "Bureau d'études", control: "Bureau de contrôle", interior: "Design d'intérieur",
+      earthworks: "Terrassement", concrete: "Fondations & Béton", industrial: "Bâtiment Industriel", demolition: "Démolition", sanitation: "Assainissement",
+      heavyMachinery: "Engins Lourds", tools: "Outillage", goodsTransport: "Transport Marchandises", debrisRemoval: "Évacuation Gravats", permits: "Permis & Admin", insurance: "Assurance", verifiedSuppliers: "Fournisseurs Vérifiés", majorContractors: "Grandes Entreprises",
       addToCart: "Ajouter au projet", retail: "Détail :", wholesale: "Gros :",
       supplier: "Fournisseur :", cartEmpty: "Projet vide", itemsInCart: "éléments",
       checkout: "Voir le Projet", emptySearch: "Aucun résultat trouvé.",
@@ -582,7 +594,12 @@ export default function BTPHub() {
       categoriesTitle: "Categories",
       all: "All", cement: "Masonry & Cement", steel: "Steel & Rebar", wood: "Wood & Carpentry",
       plumbing: "Plumbing & Piping", electrical: "Electrical & Lighting", paint: "Paint & Insulation",
-      masonry: "Masonry", tiling: "Tiling & Marble", welding: "Welding & Ironwork", plaster: "Plaster & Decor", aluminum: "Aluminum & Glass",
+      masonry: "Masonry", tiling: "Tiling & Marble", welding: "Welding & Ironwork", plaster: "Plaster & Decor", 
+      aluminum: "Aluminum & Glass", hvac: "HVAC & AC", elevators: "Elevators", security: "Security & Cameras", 
+      waterproofing: "Waterproofing & Leaks", cleaning: "Post-Construction Cleaning", gardens: "Pools & Gardens", sos: "SOS Emergency",
+      architect: "Architecture", topographer: "Topography", studies: "Engineering Studies", control: "Quality Control", interior: "Interior Design",
+      earthworks: "Earthworks", concrete: "Foundations & Concrete", industrial: "Industrial Building", demolition: "Demolition", sanitation: "Sanitation",
+      heavyMachinery: "Heavy Machinery", tools: "Tools", goodsTransport: "Goods Transport", debrisRemoval: "Debris Removal", permits: "Admin Permits", insurance: "Insurance", verifiedSuppliers: "Verified Suppliers", majorContractors: "Major Contractors",
       addToCart: "Add to Project", retail: "Retail:", wholesale: "Wholesale:",
       supplier: "Supplier:", cartEmpty: "Project is empty", itemsInCart: "items",
       checkout: "View Project", emptySearch: "No results found.",
@@ -748,6 +765,38 @@ export default function BTPHub() {
     { id: 'Welding', label: t.welding, icon: Flame },
     { id: 'Plaster', label: t.plaster, icon: Component },
     { id: 'Aluminum', label: t.aluminum, icon: AppWindow },
+      // --- أقسام الصيانة ---
+    { id: 'HVAC', label: t.hvac, icon: Wind },
+    { id: 'Elevators', label: t.elevators, icon: ArrowUpDown },
+    { id: 'Security', label: t.security, icon: Cctv },
+    { id: 'Waterproofing', label: t.waterproofing, icon: Umbrella },
+    { id: 'Cleaning', label: t.cleaning, icon: Sparkles },
+    { id: 'Gardens', label: t.gardens, icon: Trees },
+    { id: 'SOS', label: t.sos, icon: Siren },
+      // --- أقسام الخبراء ---
+    { id: 'Architect', label: t.architect, icon: PenTool },
+    { id: 'Topographer', label: t.topographer, icon: Compass },
+    { id: 'Studies', label: t.studies, icon: Calculator },
+    { id: 'Control', label: t.control, icon: ShieldCheck },
+    { id: 'Interior', label: t.interior, icon: Sofa },
+      // --- أقسام الأشغال الكبرى ---
+    { id: 'Earthworks', label: t.earthworks, icon: Mountain },
+    { id: 'Concrete', label: t.concrete, icon: Layers },
+    { id: 'Industrial', label: t.industrial, icon: Factory },
+    { id: 'Demolition', label: t.demolition, icon: Hammer },
+    { id: 'Sanitation', label: t.sanitation, icon: Waves },
+      // --- المعدات ---
+    { id: 'HeavyMachinery', label: t.heavyMachinery, icon: Tractor },
+    { id: 'Tools', label: t.tools, icon: Wrench },
+      // --- النقل ---
+    { id: 'GoodsTransport', label: t.goodsTransport, icon: Truck },
+    { id: 'DebrisRemoval', label: t.debrisRemoval, icon: Trash },
+      // --- الوثائق ---
+    { id: 'Permits', label: t.permits, icon: FileCheck },
+    { id: 'Insurance', label: t.insurance, icon: Shield },
+      // --- الشركات ---
+    { id: 'VerifiedSuppliers', label: t.verifiedSuppliers, icon: Award },
+    { id: 'MajorContractors', label: t.majorContractors, icon: Building2 },
   ];
 
   useEffect(() => {
@@ -1258,171 +1307,328 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* 3. EXPERTS MODE */}
+      {/* 3. EXPERTS MODE (الخبراء ومكاتب الدراسات) */}
       {activeMode === 'experts' && (
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-           <div className="bg-slate-900 text-white rounded-2xl shadow-lg border border-slate-800 p-6 relative overflow-hidden group hover:-translate-y-1 transition-all">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-bl-full group-hover:scale-110 transition-transform"></div>
-            <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full mb-4">{t.experts.badge}</span>
-            <h3 className="font-black text-xl mb-1">Cabinet Yassine Archi</h3>
-            <p className="text-slate-400 text-sm mb-4">{t.experts.experience}</p>
-            <div className="space-y-3 mb-6">
-              <p className="text-sm flex items-center text-slate-300"><CheckCircle className={`w-4 h-4 text-emerald-400 ${isRtl ? 'ml-2' : 'mr-2'}`} /> {t.experts.skill1}</p>
-              <p className="text-sm flex items-center text-slate-300"><CheckCircle className={`w-4 h-4 text-emerald-400 ${isRtl ? 'ml-2' : 'mr-2'}`} /> {t.experts.skill2}</p>
-            </div>
-            <button 
-              onClick={() => handleAddToCart({ id: 'e1', name: 'Consultation Architecte', supplier: 'Cabinet Yassine Archi', type: 'expert', image_url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=150' })}
-              className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-lg shadow-emerald-500/20"
-            >
-              {t.experts.book}
-            </button>
+        <div className="animate-fade-in">
+          {/* شريط الفلترة الذكي للخبراء */}
+          <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
+            {categories.map(cat => {
+              // إظهار زر "الكل" وفلاتر الخبراء فقط
+              const expertCats = ['All', 'Architect', 'Topographer', 'Studies', 'Control', 'Interior'];
+              if (!expertCats.includes(cat.id)) return null; 
+              
+              const isActive = activeCategory === cat.id;
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                    isActive 
+                      ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' 
+                      : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
+                  }`}
+                >
+                  <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> 
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
-         </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* بطاقة مثال لخبير / مكتب دراسات */}
+            <div className="bg-slate-900 text-white rounded-2xl shadow-lg border border-slate-800 p-6 relative overflow-hidden group hover:-translate-y-1 transition-all">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-bl-full group-hover:scale-110 transition-transform"></div>
+              <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full mb-4">{t.experts.badge}</span>
+              <h3 className="font-black text-xl mb-1">Cabinet Yassine Archi</h3>
+              <p className="text-slate-400 text-sm mb-4">{t.experts.experience}</p>
+              <div className="space-y-3 mb-6">
+                <p className="text-sm flex items-center text-slate-300"><CheckCircle className={`w-4 h-4 text-emerald-400 ${isRtl ? 'ml-2' : 'mr-2'}`} /> {t.experts.skill1}</p>
+                <p className="text-sm flex items-center text-slate-300"><CheckCircle className={`w-4 h-4 text-emerald-400 ${isRtl ? 'ml-2' : 'mr-2'}`} /> {t.experts.skill2}</p>
+              </div>
+              <button 
+                onClick={() => handleAddToCart({ id: 'e1', name: 'Consultation Architecte', supplier: 'Cabinet Yassine Archi', type: 'expert', image_url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=150' })}
+                className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-lg shadow-emerald-500/20"
+              >
+                {t.experts.book}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* 4. MACHINES MODE */}
+      {/* 3.5 GROS OEUVRE MODE (الأشغال الكبرى) */}
+      {activeMode === 'grosOeuvre' && (
+        <div className="animate-fade-in">
+          {/* شريط الفلترة الذكي للأشغال الكبرى */}
+          <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
+            {categories.map(cat => {
+              // إظهار زر "الكل" وفلاتر الأشغال الكبرى فقط
+              const grosOeuvreCats = ['All', 'Earthworks', 'Concrete', 'Industrial', 'Demolition', 'Sanitation'];
+              if (!grosOeuvreCats.includes(cat.id)) return null; 
+              
+              const isActive = activeCategory === cat.id;
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                    isActive 
+                      ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' 
+                      : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
+                  }`}
+                >
+                  <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> 
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* بطاقة مثال لشركة أشغال كبرى */}
+            <div className={`rounded-2xl border overflow-hidden ${bgCard} shadow-sm hover:shadow-lg transition-all`}>
+              <div className="h-48 relative bg-slate-200">
+                <img src="https://images.unsplash.com/photo-1541888087525-2bf7cd7e4df4?w=500" alt="Gros Oeuvre" className="w-full h-full object-cover"/>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-orange-500 text-white text-xs font-black uppercase px-3 py-1 rounded-full shadow-lg flex items-center gap-1`}>
+                  <ShieldCheck size={12}/> {t.companies.verify}
+                </span>
+              </div>
+              <div className="p-5 flex-1 flex flex-col">
+                <h3 className={`font-black text-lg leading-tight mb-2 ${textTitle}`}>Bâtisseurs Atlas SARL</h3>
+                <p className="text-sm text-emerald-600 font-bold mb-4">{t.concrete}</p>
+                <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
+                  <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                    <p className={`text-xs ${textMuted}`}>{t.transport.capacity}</p>
+                    <p className={`font-bold ${textTitle}`}>Équipement complet</p>
+                  </div>
+                  <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}>
+                    <p className="text-xs text-emerald-600">التوفر</p>
+                    <p className="font-bold text-emerald-600">فوري</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleAddToCart({ id: 'go1', name: 'Travaux de Fondations', supplier: 'Bâtisseurs Atlas SARL', type: 'service', image_url: 'https://images.unsplash.com/photo-1541888087525-2bf7cd7e4df4?w=150' })}
+                  className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm font-black shadow-lg mt-auto"
+                >
+                  {t.services.requestQuote}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. MACHINES MODE (المعدات) */}
       {activeMode === 'machines' && (
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-          <div className={`rounded-2xl border overflow-hidden ${bgCard} shadow-sm hover:shadow-lg transition-all`}>
-            <div className="h-48 bg-slate-200 relative">
-              <img src="https://images.unsplash.com/photo-1579762699924-a74087cb8916?w=500" alt="Excavatrice" className="w-full h-full object-cover"/>
-              <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg`}>
-                <Clock className="w-3 h-3 mr-1" /> {t.machines.available} 25 Sept
-              </span>
-            </div>
-            <div className="p-5">
-              <h3 className={`font-black text-lg mb-1 ${textTitle}`}>CAT 320 Excavatrice</h3>
-              <p className={`text-sm mb-4 ${textMuted}`}>{t.machines.details}</p>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                  <p className={`text-xs ${textMuted}`}>{t.machines.day}</p>
-                  <p className={`font-bold ${textTitle}`}>1,800 MAD</p>
-                </div>
-                <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}>
-                  <p className="text-xs text-emerald-600">{t.machines.week}</p>
-                  <p className="font-bold text-emerald-600">9,500 MAD</p>
-                </div>
+        <div className="animate-fade-in">
+          <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
+            {categories.map(cat => {
+              if (!['All', 'HeavyMachinery', 'Tools'].includes(cat.id)) return null; 
+              const isActive = activeCategory === cat.id; const Icon = cat.icon;
+              return (
+                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
+                  <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> {cat.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* نفس بطاقة المعدات القديمة تضعها هنا */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={`rounded-2xl border overflow-hidden ${bgCard} shadow-sm hover:shadow-lg transition-all`}>
+              <div className="h-48 bg-slate-200 relative">
+                <img src="https://images.unsplash.com/photo-1579762699924-a74087cb8916?w=500" alt="Excavatrice" className="w-full h-full object-cover"/>
+                <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg`}><Clock className="w-3 h-3 mr-1" /> {t.machines.available} 25 Sept</span>
               </div>
-              <button 
-                onClick={() => handleAddToCart({ id: 'm1', name: 'CAT 320 Excavatrice', supplier: 'Atlas Engins', type: 'rental', price: 1800, duration: 3, dates: '25-27 Sept', transport: 500, image_url: 'https://images.unsplash.com/photo-1579762699924-a74087cb8916?w=150' })}
-                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 transition-opacity font-bold"
-              >
-                {t.machines.book}
-              </button>
+              <div className="p-5">
+                <h3 className={`font-black text-lg mb-1 ${textTitle}`}>CAT 320 Excavatrice</h3>
+                <p className={`text-sm mb-4 ${textMuted}`}>{t.machines.details}</p>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}><p className={`text-xs ${textMuted}`}>{t.machines.day}</p><p className={`font-bold ${textTitle}`}>1,800 MAD</p></div>
+                  <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}><p className="text-xs text-emerald-600">{t.machines.week}</p><p className="font-bold text-emerald-600">9,500 MAD</p></div>
+                </div>
+                <button onClick={() => handleAddToCart({ id: 'm1', name: 'CAT 320 Excavatrice', supplier: 'Atlas Engins', type: 'rental', price: 1800 })} className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 font-bold">{t.machines.book}</button>
+              </div>
             </div>
           </div>
-         </div>
+        </div>
       )}
 
-      {/* 5. MAINTENANCE MODE */}
+      {/* 5. MAINTENANCE MODE (الصيانة) */}
       {activeMode === 'maintenance' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-          <div className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-slate-200 rounded-xl overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=150" alt="Maintenance" className="w-full h-full object-cover"/>
-              </div>
-              <div>
-                <h3 className={`font-bold text-lg ${textTitle}`}>Equipe Atlas Réparation</h3>
-                <p className="text-sm text-emerald-600 font-bold">Mécanique Engins Lourds</p>
-              </div>
-            </div>
-            <div className="space-y-2 mb-6 text-sm">
-              <div className={`flex justify-between ${textMuted}`}><span>{t.maintenance.type}</span><span className={`font-semibold ${textTitle}`}>Sur chantier</span></div>
-              <div className={`flex justify-between ${textMuted}`}><span>{t.maintenance.response}</span><span className="font-semibold text-emerald-600">Sous 2h</span></div>
-            </div>
-            <button 
-              onClick={() => handleAddToCart({ id: 'maint1', name: 'Mécanique Engins Lourds', supplier: 'Equipe Atlas Réparation', type: 'service', image_url: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=150' })}
-              className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-sm"
-            >
-              {t.maintenance.book}
-            </button>
+        <div className="animate-fade-in">
+          {/* شريط الفلترة الذكي للصيانة */}
+          <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
+            {categories.map(cat => {
+              // إظهار زر "الكل" وفلاتر الصيانة فقط
+              const maintenanceCats = ['All', 'HVAC', 'Elevators', 'Security', 'Waterproofing', 'Cleaning', 'Gardens', 'SOS'];
+              if (!maintenanceCats.includes(cat.id)) return null; 
+              
+              const isActive = activeCategory === cat.id;
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                    isActive 
+                      ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' 
+                      : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
+                  }`}
+                >
+                  <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> 
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
-        </div>
-      )}
 
-      {/* 6. TRANSPORT MODE */}
-      {activeMode === 'transport' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-          <div className={`rounded-2xl border overflow-hidden ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
-            <div className="h-40 bg-slate-200 relative">
-              <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500" alt="Camion" className="w-full h-full object-cover"/>
-            </div>
-            <div className="p-5">
-              <h3 className={`font-black text-lg mb-2 ${textTitle}`}>Semi-remorque Plateau</h3>
-              <div className="space-y-2 mb-4 text-sm">
-                <div className={`flex justify-between ${textMuted}`}><span>{t.transport.capacity}</span><span className={`font-semibold ${textTitle}`}>24 Tonnes</span></div>
-                <div className={`flex justify-between ${textMuted}`}><span>{t.transport.route}</span><span className={`font-semibold ${textTitle}`}>National</span></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* بطاقة مثال لخدمة صيانة */}
+            <div className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 bg-slate-200 rounded-xl overflow-hidden shrink-0">
+                  <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=150" alt="Maintenance" className="w-full h-full object-cover"/>
+                </div>
+                <div>
+                  <h3 className={`font-bold text-lg leading-tight ${textTitle}`}>Equipe Atlas Réparation</h3>
+                  <p className="text-sm text-emerald-600 font-bold">Mécanique Engins & Climatisation</p>
+                </div>
               </div>
-              <div className={`p-3 rounded-xl text-center border mb-4 ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}>
-                <p className="font-black text-emerald-600">12 {t.transport.price}</p>
+              <div className="space-y-2 mb-6 text-sm">
+                <div className={`flex justify-between ${textMuted}`}><span>{t.maintenance.type}</span><span className={`font-semibold ${textTitle}`}>Sur chantier</span></div>
+                <div className={`flex justify-between ${textMuted}`}><span>{t.maintenance.response}</span><span className="font-semibold text-emerald-600">Sous 2h</span></div>
               </div>
               <button 
-                onClick={() => handleAddToCart({ id: 'trans1', name: 'Semi-remorque Plateau', supplier: 'Transporteurs Express', type: 'rental', price: 1200, duration: 1, transport: 0, image_url: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500' })}
-                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 transition-opacity font-bold"
+                onClick={() => handleAddToCart({ id: 'maint1', name: 'Intervention Rapide', supplier: 'Equipe Atlas', type: 'service', image_url: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=150' })}
+                className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-sm"
               >
-                {t.transport.book}
+                {t.maintenance.book}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 7. DOCUMENTS MODE */}
-      {activeMode === 'documents' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-          <div className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
-            <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4">
-              <FileText size={24} />
+      {/* 6. TRANSPORT MODE (النقل) */}
+      {activeMode === 'transport' && (
+        <div className="animate-fade-in">
+          <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
+            {categories.map(cat => {
+              if (!['All', 'GoodsTransport', 'DebrisRemoval'].includes(cat.id)) return null; 
+              const isActive = activeCategory === cat.id; const Icon = cat.icon;
+              return (
+                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
+                  <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> {cat.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* محتوى النقل */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={`rounded-2xl border overflow-hidden ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
+              <div className="h-40 bg-slate-200 relative"><img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500" alt="Camion" className="w-full h-full object-cover"/></div>
+              <div className="p-5">
+                <h3 className={`font-black text-lg mb-2 ${textTitle}`}>Semi-remorque Plateau</h3>
+                <div className="space-y-2 mb-4 text-sm">
+                  <div className={`flex justify-between ${textMuted}`}><span>{t.transport.capacity}</span><span className={`font-semibold ${textTitle}`}>24 Tonnes</span></div>
+                  <div className={`flex justify-between ${textMuted}`}><span>{t.transport.route}</span><span className={`font-semibold ${textTitle}`}>National</span></div>
+                </div>
+                <div className={`p-3 rounded-xl text-center border mb-4 ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}><p className="font-black text-emerald-600">12 {t.transport.price}</p></div>
+                <button onClick={() => handleAddToCart({ id: 'trans1', name: 'Semi-remorque', supplier: 'Transporteurs Express', type: 'rental' })} className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 font-bold">{t.transport.book}</button>
+              </div>
             </div>
-            <h3 className={`font-bold text-lg mb-1 ${textTitle}`}>Permis de Construire</h3>
-            <p className={`text-sm mb-4 line-clamp-2 ${textMuted}`}>Assistance complète pour l'obtention du permis de construire auprès des autorités locales.</p>
-            <div className="space-y-2 mb-6 text-sm">
-              <div className={`flex justify-between ${textMuted}`}><span>{t.documents.time}</span><span className={`font-semibold ${textTitle}`}>15-30 Jours</span></div>
-              <div className={`flex justify-between ${textMuted}`}><span>{t.documents.type}</span><span className="font-semibold text-blue-500">Administratif</span></div>
-            </div>
-            <button 
-              onClick={() => handleAddToCart({ id: 'doc1', name: 'Permis de Construire', supplier: 'Cabinet Administratif', type: 'service', image_url: 'https://via.placeholder.com/150/3b82f6/ffffff?text=Document' })}
-              className="w-full border-2 border-blue-500 text-blue-500 py-2 rounded-xl hover:bg-blue-50 transition-colors font-bold"
-            >
-              {t.documents.request}
-            </button>
           </div>
         </div>
       )}
 
-      {/* 8. COMPANIES MODE */}
+      {/* 7. DOCUMENTS MODE (الوثائق) */}
+      {activeMode === 'documents' && (
+        <div className="animate-fade-in">
+          {/* شريط فلاتر الوثائق */}
+          <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
+            {categories.map(cat => {
+              if (!['All', 'Permits', 'Insurance'].includes(cat.id)) return null; 
+              const isActive = activeCategory === cat.id; const Icon = cat.icon;
+              return (
+                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
+                  <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> {cat.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
+              <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4">
+                <FileText size={24} />
+              </div>
+              <h3 className={`font-bold text-lg mb-1 ${textTitle}`}>Permis de Construire</h3>
+              <p className={`text-sm mb-4 line-clamp-2 ${textMuted}`}>Assistance complète pour l'obtention du permis de construire auprès des autorités locales.</p>
+              <div className="space-y-2 mb-6 text-sm">
+                <div className={`flex justify-between ${textMuted}`}><span>{t.documents.time}</span><span className={`font-semibold ${textTitle}`}>15-30 Jours</span></div>
+                <div className={`flex justify-between ${textMuted}`}><span>{t.documents.type}</span><span className="font-semibold text-blue-500">Administratif</span></div>
+              </div>
+              <button 
+                onClick={() => handleAddToCart({ id: 'doc1', name: 'Permis de Construire', supplier: 'Cabinet Administratif', type: 'service', image_url: 'https://via.placeholder.com/150/3b82f6/ffffff?text=Document' })}
+                className="w-full border-2 border-blue-500 text-blue-500 py-2 rounded-xl hover:bg-blue-50 transition-colors font-bold"
+              >
+                {t.documents.request}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. COMPANIES MODE (الشركات) */}
       {activeMode === 'companies' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl shadow-lg border border-slate-700 p-6 relative overflow-hidden group">
-            <div className="flex items-center gap-4 mb-6 relative z-10">
-              <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center p-2 shadow-inner">
-                <Building2 size={32} className="text-slate-800" />
+        <div className="animate-fade-in">
+          {/* شريط فلاتر الشركات */}
+          <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
+            {categories.map(cat => {
+              if (!['All', 'VerifiedSuppliers', 'MajorContractors'].includes(cat.id)) return null; 
+              const isActive = activeCategory === cat.id; const Icon = cat.icon;
+              return (
+                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
+                  <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> {cat.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl shadow-lg border border-slate-700 p-6 relative overflow-hidden group">
+              <div className="flex items-center gap-4 mb-6 relative z-10">
+                <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center p-2 shadow-inner">
+                  <Building2 size={32} className="text-slate-800" />
+                </div>
+                <div>
+                  <h3 className="font-black text-xl mb-1 flex items-center gap-2">
+                    BTP Maroc SA <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                  </h3>
+                  <p className="text-emerald-400 text-xs font-bold">{t.companies.verify}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-black text-xl mb-1 flex items-center gap-2">
-                  BTP Maroc SA <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                </h3>
-                <p className="text-emerald-400 text-xs font-bold">{t.companies.verify}</p>
+              <div className="grid grid-cols-2 gap-4 mb-6 relative z-10">
+                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 text-center">
+                  <p className="text-2xl font-black text-white">45+</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">{t.companies.projects}</p>
+                </div>
+                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 text-center">
+                  <p className="text-2xl font-black text-white">ISO</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">9001:2015</p>
+                </div>
               </div>
+              <button 
+                onClick={() => handleAddToCart({ id: 'comp1', name: 'Partenariat Global', supplier: 'BTP Maroc SA', type: 'service', image_url: 'https://via.placeholder.com/150/1e293b/ffffff?text=Company' })}
+                className="w-full bg-white text-slate-900 py-3 rounded-xl hover:bg-gray-100 transition-colors font-black relative z-10 shadow-lg"
+              >
+                {t.companies.contact}
+              </button>
+              <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors"></div>
             </div>
-            <div className="grid grid-cols-2 gap-4 mb-6 relative z-10">
-              <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 text-center">
-                <p className="text-2xl font-black text-white">45+</p>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider">{t.companies.projects}</p>
-              </div>
-              <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 text-center">
-                <p className="text-2xl font-black text-white">ISO</p>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider">9001:2015</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => handleAddToCart({ id: 'comp1', name: 'Partenariat Global', supplier: 'BTP Maroc SA', type: 'service', image_url: 'https://via.placeholder.com/150/1e293b/ffffff?text=Company' })}
-              className="w-full bg-white text-slate-900 py-3 rounded-xl hover:bg-gray-100 transition-colors font-black relative z-10 shadow-lg"
-            >
-              {t.companies.contact}
-            </button>
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors"></div>
           </div>
         </div>
       )}
