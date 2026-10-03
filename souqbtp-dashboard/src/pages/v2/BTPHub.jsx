@@ -88,6 +88,10 @@ export default function BTPHub() {
   const isRtl = language === 'ar';
 
   const [activeMode, setActiveMode] = useState('materiaux');
+    // إعادة تعيين الفلتر الفرعي إلى "الكل" عند الانتقال بين الأقسام الرئيسية
+      useEffect(() => {
+       setActiveCategory('All');
+      }, [activeMode]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
