@@ -1045,10 +1045,44 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* 2. SERVICES MODE */}
+      {/* 2. SERVICES MODE (لْمْعْلّْم) */}
       {activeMode === 'services' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-          {artisans.map((artisan) => {
+        <div className="animate-fade-in">
+          {/* شريط الفلترة الذكي (كهرباء، سباكة، صباغة...) */}
+          <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
+            {categories.map(cat => {
+              // نخفي الأسمنت والحديد لأنها تخص مورد المواد وليس الحرفي
+              if (cat.id === 'Cement' || cat.id === 'Steel') return null; 
+              
+              const isActive = activeCategory === cat.id;
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                    isActive 
+                      ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' 
+                      : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
+                  }`}
+                >
+                  <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> 
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* شبكة الحرفيين المفلترة */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {artisans
+              .filter(artisan => {
+                if (activeCategory === 'All') return true;
+                // نجلب تصنيف الخدمة من قاعدة البيانات، ونطابقه مع الفلتر المختار
+                const serviceCat = String(artisan.provider_services?.[0]?.category || '');
+                return serviceCat.includes(activeCategory);
+              })
+              .map((artisan) => {
             // نأخذ الخدمة الأولى للمورد، أو نضع قيمة افتراضية لتجنب إخفاء البطاقة
             const mainService = artisan.provider_services && artisan.provider_services.length > 0 
               ? artisan.provider_services[0] 
@@ -1211,6 +1245,7 @@ export default function BTPHub() {
               </div>
             );
           })}
+         </div>
         </div>
       )}
 
