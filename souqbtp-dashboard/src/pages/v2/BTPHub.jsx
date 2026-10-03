@@ -1038,6 +1038,10 @@ export default function BTPHub() {
           {/* Categories */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
+              // 🔴 تحديد فئات الموردين (المواد) فقط وإخفاء الباقي
+              const materiauxCats = ['All', 'Cement', 'Steel', 'Wood', 'Plumbing', 'Electrical', 'Paint'];
+              if (!materiauxCats.includes(cat.id)) return null;
+              
               const isActive = activeCategory === cat.id;
               const Icon = cat.icon;
               return (
@@ -1046,7 +1050,7 @@ export default function BTPHub() {
                   onClick={() => setActiveCategory(cat.id)}
                   className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
                     isActive 
-                      ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500' 
+                      ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' 
                       : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
                   }`}
                 >
@@ -1110,11 +1114,12 @@ export default function BTPHub() {
       {/* 2. SERVICES MODE (لْمْعْلّْم) */}
       {activeMode === 'services' && (
         <div className="animate-fade-in">
-          {/* شريط الفلترة الذكي (كهرباء، سباكة، صباغة...) */}
+          {/* شريط الفلترة الذكي للحرفيين (لمعلم) */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
-              // نخفي الأسمنت والحديد لأنها تخص مورد المواد وليس الحرفي
-              if (cat.id === 'Cement' || cat.id === 'Steel') return null; 
+              // 🔴 تحديد فئات الحرفيين فقط (وإخفاء الأسمنت والحديد والخبراء وغيرها)
+              const servicesCats = ['All', 'Masonry', 'Tiling', 'Plumbing', 'Electrical', 'Paint', 'Wood', 'Welding', 'Plaster', 'Aluminum'];
+              if (!servicesCats.includes(cat.id)) return null; 
               
               const isActive = activeCategory === cat.id;
               const Icon = cat.icon;
