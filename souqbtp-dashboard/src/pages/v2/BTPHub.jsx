@@ -1039,7 +1039,7 @@ export default function BTPHub() {
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
               // 🔴 تحديد فئات الموردين (المواد) فقط وإخفاء الباقي
-              const materiauxCats = ['All', 'Cement', 'Steel', 'Wood', 'Plumbing', 'Electrical', 'Paint'];
+              const materiauxCats = ['All', 'Cement', 'Steel', 'Wood', 'Tiling', 'Plumbing', 'Electrical', 'Paint'];
               if (!materiauxCats.includes(cat.id)) return null;
               
               const isActive = activeCategory === cat.id;
