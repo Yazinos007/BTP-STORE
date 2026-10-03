@@ -7,7 +7,8 @@ import {
   Search, Mic, Camera, FileText, MapPin, CheckCircle, Clock, Star, 
   ShieldCheck, ShoppingCart, Filter, Package, Zap, Droplet, PaintRoller, 
   Hammer, ArrowRight, Plus, CheckCircle2, TrendingUp, Briefcase,
-  Store, Coins, Globe, Bitcoin, Minus, MessageCircle, X, Trash2, Building2, Timer
+  Store, Coins, Globe, Bitcoin, Minus, MessageCircle, X, Trash2, Building2, Timer,
+  HardHat, LayoutGrid, Flame, Component, AppWindow
 } from 'lucide-react';
 
 const getCurrencySymbol = (curr) => {
@@ -303,6 +304,7 @@ export default function BTPHub() {
       categoriesTitle: "التصنيفات",
       all: "الكل", cement: "مواد البناء والأسمنت", steel: "الحديد والتسليح", wood: "الخشب والنجارة",
       plumbing: "السباكة والأنابيب", electrical: "الكهرباء والإنارة", paint: "الصباغة والعزل",
+      masonry: "البناء", tiling: "الزليج والرخام", welding: "الحدادة والتلحيم", plaster: "الجبس والديكور", aluminum: "الألمنيوم والزجاج",
       addToCart: "أضف للمشروع", retail: "تقسيط:", wholesale: "جملة:",
       supplier: "المورد:", cartEmpty: "مشروعك فارغ", itemsInCart: "عناصر",
       checkout: "إتمام الطلب", emptySearch: "لم نجد ما يطابق بحثك.",
@@ -441,6 +443,7 @@ export default function BTPHub() {
       categoriesTitle: "Catégories",
       all: "Tout", cement: "Gros œuvre & Ciment", steel: "Acier & Armature", wood: "Bois & Menuiserie",
       plumbing: "Plomberie & Tuyauterie", electrical: "Électricité & Éclairage", paint: "Peinture & Isolation",
+      masonry: "Maçonnerie", tiling: "Carrelage & Marbre", welding: "Soudure & Ferronnerie", plaster: "Plâtre & Déco", aluminum: "Aluminium & Verre",
       addToCart: "Ajouter au projet", retail: "Détail :", wholesale: "Gros :",
       supplier: "Fournisseur :", cartEmpty: "Projet vide", itemsInCart: "éléments",
       checkout: "Voir le Projet", emptySearch: "Aucun résultat trouvé.",
@@ -579,6 +582,7 @@ export default function BTPHub() {
       categoriesTitle: "Categories",
       all: "All", cement: "Masonry & Cement", steel: "Steel & Rebar", wood: "Wood & Carpentry",
       plumbing: "Plumbing & Piping", electrical: "Electrical & Lighting", paint: "Paint & Insulation",
+      masonry: "Masonry", tiling: "Tiling & Marble", welding: "Welding & Ironwork", plaster: "Plaster & Decor", aluminum: "Aluminum & Glass",
       addToCart: "Add to Project", retail: "Retail:", wholesale: "Wholesale:",
       supplier: "Supplier:", cartEmpty: "Project is empty", itemsInCart: "items",
       checkout: "View Project", emptySearch: "No results found.",
@@ -733,12 +737,17 @@ export default function BTPHub() {
 
   const categories = [
     { id: 'All', label: t.all, icon: Filter },
-    { id: 'Cement', label: t.cement, icon: Package },
-    { id: 'Steel', label: t.steel, icon: Hammer },
-    { id: 'Wood', label: t.wood, icon: TrendingUp },
+    { id: 'Cement', label: t.cement, icon: Package }, 
+    { id: 'Steel', label: t.steel, icon: Hammer },    
+    { id: 'Masonry', label: t.masonry, icon: HardHat },
+    { id: 'Tiling', label: t.tiling, icon: LayoutGrid },
     { id: 'Plumbing', label: t.plumbing, icon: Droplet },
     { id: 'Electrical', label: t.electrical, icon: Zap },
     { id: 'Paint', label: t.paint, icon: PaintRoller },
+    { id: 'Wood', label: t.wood, icon: TrendingUp },
+    { id: 'Welding', label: t.welding, icon: Flame },
+    { id: 'Plaster', label: t.plaster, icon: Component },
+    { id: 'Aluminum', label: t.aluminum, icon: AppWindow },
   ];
 
   useEffect(() => {
