@@ -10,7 +10,7 @@ import {
   Store, Coins, Globe, Bitcoin, Minus, MessageCircle, X, Trash2, Building2, Timer,
   HardHat, LayoutGrid, Flame, Component, AppWindow, Wind, ArrowUpDown, Cctv, Umbrella, 
   Sparkles, Trees, Siren, PenTool, Compass, Calculator, Sofa, Mountain, Layers, Factory, Waves,
-  Tractor, Wrench, Truck, Trash, FileCheck, Shield, Award
+  Tractor, Wrench, Truck, Trash, FileCheck, Shield, Award, MoreHorizontal
 } from 'lucide-react';
 
 const getCurrencySymbol = (curr) => {
@@ -315,7 +315,7 @@ export default function BTPHub() {
       waterproofing: "العزل وتسرب المياه", cleaning: "النظافة ونهاية الورش", gardens: "المسابح والحدائق", sos: "طوارئ (SOS)",
       architect: "هندسة معمارية", topographer: "طوبوغرافيا", studies: "مكاتب الدراسات", control: "مراقبة الجودة", interior: "تصميم داخلي",
       earthworks: "الحفر والتهيئة", concrete: "الأساسات والخرسانة", industrial: "البناء الصناعي", demolition: "الهدم وإزالة الركام", sanitation: "الصرف الصحي",
-      heavyMachinery: "آليات ثقيلة", tools: "معدات خفيفة", goodsTransport: "نقل السلع", debrisRemoval: "إزالة الردم", permits: "رخص إدارية", insurance: "تأمين الأوراش", verifiedSuppliers: "موردون معتمدون", majorContractors: "مقاولات كبرى",
+      heavyMachinery: "آليات ثقيلة", tools: "معدات خفيفة", goodsTransport: "نقل السلع", debrisRemoval: "إزالة الردم", permits: "رخص إدارية", insurance: "تأمين الأوراش", verifiedSuppliers: "موردون معتمدون", majorContractors: "مقاولات كبرى", other: "أخرى (بحث)",
       addToCart: "أضف للمشروع", retail: "تقسيط:", wholesale: "جملة:",
       supplier: "المورد:", cartEmpty: "مشروعك فارغ", itemsInCart: "عناصر",
       checkout: "إتمام الطلب", emptySearch: "لم نجد ما يطابق بحثك.",
@@ -459,7 +459,7 @@ export default function BTPHub() {
       waterproofing: "Étanchéité & Fuites", cleaning: "Nettoyage Fin Chantier", gardens: "Piscines & Jardins", sos: "SOS Dépannage",
       architect: "Architecture", topographer: "Topographie", studies: "Bureau d'études", control: "Bureau de contrôle", interior: "Design d'intérieur",
       earthworks: "Terrassement", concrete: "Fondations & Béton", industrial: "Bâtiment Industriel", demolition: "Démolition", sanitation: "Assainissement",
-      heavyMachinery: "Engins Lourds", tools: "Outillage", goodsTransport: "Transport Marchandises", debrisRemoval: "Évacuation Gravats", permits: "Permis & Admin", insurance: "Assurance", verifiedSuppliers: "Fournisseurs Vérifiés", majorContractors: "Grandes Entreprises",
+      heavyMachinery: "Engins Lourds", tools: "Outillage", goodsTransport: "Transport Marchandises", debrisRemoval: "Évacuation Gravats", permits: "Permis & Admin", insurance: "Assurance", verifiedSuppliers: "Fournisseurs Vérifiés", majorContractors: "Grandes Entreprises", other: "Autre (Recherche)",
       addToCart: "Ajouter au projet", retail: "Détail :", wholesale: "Gros :",
       supplier: "Fournisseur :", cartEmpty: "Projet vide", itemsInCart: "éléments",
       checkout: "Voir le Projet", emptySearch: "Aucun résultat trouvé.",
@@ -603,7 +603,7 @@ export default function BTPHub() {
       waterproofing: "Waterproofing & Leaks", cleaning: "Post-Construction Cleaning", gardens: "Pools & Gardens", sos: "SOS Emergency",
       architect: "Architecture", topographer: "Topography", studies: "Engineering Studies", control: "Quality Control", interior: "Interior Design",
       earthworks: "Earthworks", concrete: "Foundations & Concrete", industrial: "Industrial Building", demolition: "Demolition", sanitation: "Sanitation",
-      heavyMachinery: "Heavy Machinery", tools: "Tools", goodsTransport: "Goods Transport", debrisRemoval: "Debris Removal", permits: "Admin Permits", insurance: "Insurance", verifiedSuppliers: "Verified Suppliers", majorContractors: "Major Contractors",
+      heavyMachinery: "Heavy Machinery", tools: "Tools", goodsTransport: "Goods Transport", debrisRemoval: "Debris Removal", permits: "Admin Permits", insurance: "Insurance", verifiedSuppliers: "Verified Suppliers", majorContractors: "Major Contractors", 
       addToCart: "Add to Project", retail: "Retail:", wholesale: "Wholesale:",
       supplier: "Supplier:", cartEmpty: "Project is empty", itemsInCart: "items",
       checkout: "View Project", emptySearch: "No results found.",
@@ -801,6 +801,8 @@ export default function BTPHub() {
       // --- الشركات ---
     { id: 'VerifiedSuppliers', label: t.verifiedSuppliers, icon: Award },
     { id: 'MajorContractors', label: t.majorContractors, icon: Building2 },
+      // --- أخرى ---
+    { id: 'Other', label: t.other, icon: MoreHorizontal },
   ];
 
   useEffect(() => {
@@ -1039,7 +1041,7 @@ export default function BTPHub() {
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
               // 🔴 تحديد فئات الموردين (المواد) فقط وإخفاء الباقي
-              const materiauxCats = ['All', 'Cement', 'Steel', 'Wood', 'Tiling', 'Plumbing', 'Electrical', 'Paint'];
+              const materiauxCats = ['All', 'Cement', 'Steel', 'Wood', 'Tiling', 'Plumbing', 'Electrical', 'Paint', 'Other'];
               if (!materiauxCats.includes(cat.id)) return null;
               
               const isActive = activeCategory === cat.id;
@@ -1118,7 +1120,7 @@ export default function BTPHub() {
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
               // 🔴 تحديد فئات الحرفيين فقط (وإخفاء الأسمنت والحديد والخبراء وغيرها)
-              const servicesCats = ['All', 'Masonry', 'Tiling', 'Plumbing', 'Electrical', 'Paint', 'Wood', 'Welding', 'Plaster', 'Aluminum'];
+              const servicesCats = ['All', 'Masonry', 'Tiling', 'Plumbing', 'Electrical', 'Paint', 'Wood', 'Welding', 'Plaster', 'Aluminum', 'Other'];
               if (!servicesCats.includes(cat.id)) return null; 
               
               const isActive = activeCategory === cat.id;
@@ -1323,7 +1325,7 @@ export default function BTPHub() {
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
               // إظهار زر "الكل" وفلاتر الخبراء فقط
-              const expertCats = ['All', 'Architect', 'Topographer', 'Studies', 'Control', 'Interior'];
+              const expertCats = ['All', 'Architect', 'Topographer', 'Studies', 'Control', 'Interior', 'Other'];
               if (!expertCats.includes(cat.id)) return null; 
               
               const isActive = activeCategory === cat.id;
@@ -1373,7 +1375,7 @@ export default function BTPHub() {
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
               // إظهار زر "الكل" وفلاتر الأشغال الكبرى فقط
-              const grosOeuvreCats = ['All', 'Earthworks', 'Concrete', 'Industrial', 'Demolition', 'Sanitation'];
+              const grosOeuvreCats = ['All', 'Earthworks', 'Concrete', 'Industrial', 'Demolition', 'Sanitation', 'Other'];
               if (!grosOeuvreCats.includes(cat.id)) return null; 
               
               const isActive = activeCategory === cat.id;
@@ -1472,7 +1474,7 @@ export default function BTPHub() {
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
               // إظهار زر "الكل" وفلاتر الصيانة فقط
-              const maintenanceCats = ['All', 'HVAC', 'Elevators', 'Security', 'Waterproofing', 'Cleaning', 'Gardens', 'SOS'];
+              const maintenanceCats = ['All', 'HVAC', 'Elevators', 'Security', 'Waterproofing', 'Cleaning', 'Gardens', 'SOS', 'Other'];
               if (!maintenanceCats.includes(cat.id)) return null; 
               
               const isActive = activeCategory === cat.id;
