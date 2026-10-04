@@ -1437,7 +1437,7 @@ export default function BTPHub() {
         <div className="animate-fade-in">
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
-              if (!['All', 'HeavyMachinery', 'Tools'].includes(cat.id)) return null; 
+              if (!['All', 'HeavyMachinery', 'Tools', 'Other'].includes(cat.id)) return null; 
               const isActive = activeCategory === cat.id; const Icon = cat.icon;
               return (
                 <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
@@ -1528,7 +1528,7 @@ export default function BTPHub() {
         <div className="animate-fade-in">
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
-              if (!['All', 'GoodsTransport', 'DebrisRemoval'].includes(cat.id)) return null; 
+              if (!['All', 'GoodsTransport', 'DebrisRemoval', 'Other'].includes(cat.id)) return null; 
               const isActive = activeCategory === cat.id; const Icon = cat.icon;
               return (
                 <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
@@ -1561,7 +1561,7 @@ export default function BTPHub() {
           {/* شريط فلاتر الوثائق */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
-              if (!['All', 'Permits', 'Insurance'].includes(cat.id)) return null; 
+              if (!['All', 'Permits', 'Insurance', 'Other'].includes(cat.id)) return null; 
               const isActive = activeCategory === cat.id; const Icon = cat.icon;
               return (
                 <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
@@ -1599,7 +1599,7 @@ export default function BTPHub() {
           {/* شريط فلاتر الشركات */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
-              if (!['All', 'VerifiedSuppliers', 'MajorContractors'].includes(cat.id)) return null; 
+              if (!['All', 'VerifiedSuppliers', 'MajorContractors', 'Other'].includes(cat.id)) return null; 
               const isActive = activeCategory === cat.id; const Icon = cat.icon;
               return (
                 <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
