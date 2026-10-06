@@ -565,7 +565,7 @@ export default function ContractorDashboard() {
          .update({ 
             worker_name: assignForm.name, 
             worker_phone: assignForm.phone, 
-            role: assignForm.role 
+            role: assignForm.role // 👈 يتطلب إضافة العمود في Supabase
           })
          .eq('id', editingWorkerId)
          .select();
@@ -573,7 +573,7 @@ export default function ContractorDashboard() {
       if (!error) {
         setTeam(prev => prev.map(w => w.id === editingWorkerId ? data[0] : w));
       } else {
-        console.error("Update Error details:", error);
+        console.error("Update Error:", error);
         alert(`Update Error: ${error.message}`);
       }
 
@@ -582,14 +582,12 @@ export default function ContractorDashboard() {
       const insertPayload = {
          user_id: user.id,           
          project_id: activeProject.id, 
-         stage_id: 1, // تأكد من أن هذا الحقل مقبول في جدولك
+         assignment_type: assignType, // 👈 استخدمنا الحقل الموجود في جدولك
          worker_name: assignForm.name,
          worker_phone: assignForm.phone,
-         role: assignForm.role
+         role: assignForm.role        // 👈 يتطلب إضافة العمود في Supabase
       };
       
-      console.log("Payload to insert:", insertPayload); // لمراقبة البيانات المرسلة
-
       const { data, error } = await supabase.from('milestone_assignments')
          .insert([insertPayload])
          .select(); 
@@ -598,7 +596,12 @@ export default function ContractorDashboard() {
         setTeam(prev => [...prev, data[0]]);
       } else {
         console.error("Insert Error details:", error);
-        alert(`Insert Error: ${error?.message || 'Unknown error'}`); // عرض رسالة الخطأ الحقيقية
+        // 🚀 معالجة خاصة لرسالة الخطأ الشهيرة "schema cache"
+        if (error?.message?.includes("schema cache")) {
+           alert("تم إضافة العمود في قاعدة البيانات، يرجى تحديث الصفحة (Refresh) والمحاولة مرة أخرى.");
+        } else {
+           alert(`Insert Error: ${error?.message || 'Unknown error'}`);
+        }
       }
     }
 
