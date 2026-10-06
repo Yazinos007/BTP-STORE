@@ -6,7 +6,8 @@ import useProjectStore from '../../store/useProjectStore';
 import { 
   Calculator, Star, MessageCircle, Briefcase, Camera, Wallet, 
   FolderOpen, LifeBuoy, CheckCircle2, AlertCircle, Upload, 
-  Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft, Plus
+  Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft, Plus,
+  Edit2, Bot, X, Phone
 } from 'lucide-react';
 
 export default function ContractorDashboard() {
@@ -72,193 +73,64 @@ export default function ContractorDashboard() {
   const [isSosOpen, setIsSosOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assignType, setAssignType] = useState('manual');
 
   const translations = {
     ar: {
-      pageTitle: "إدارة الأوراش والميدان",
-      calcBtn: "الحاسبة الذكية لتكاليف الورش",
-      rateBtn: "تقييم الحرفيين",
-      projectPathBtn: "مسار الورش",
-      inboxTitle: "صندوق الرسائل",
-      onlineStatus: "متصل - يوجد",
-      available: "متاحين",
-      noChats: "📭 لا توجد محادثات حتى الآن.",
-      voiceMsg: "🎤 رسالة صوتية",
-      chatStarted: "بدأت المحادثة",
-      enterChat: "دخول للمحادثة",
-      camTitle: "كاميرا الورشة وتقارير الميدان",
-      camSub: "أحدث اللقطات من ميدان الورش",
-      liveBtn: "طلب بث مباشر من الورشة",
-      noReports: "لا توجد لقطات حديثة من الورشة.",
-      interactiveShot: "لقطة ميدانية تفاعلية من الورش",
-      souqTeam: "فريق SouqBTP",
-      budgetTitle: "💰 ميزانية الورش الإجمالية",
-      pdfBtn: "تحميل PDF",
-      waBtn: "مشاركة واتساب",
-      editBudgetBtn: "تعديل الميزانية",
-      noBudget: "لم تقم بحساب الميزانية بعد. ابدأ الآن لمعرفة تكلفة مشروعك.",
-      budgetCalculated: "التكلفة التقديرية للمشروع:",
-      progTitle: "تقدم المشروع",
-      tasksDone: "المهام المنجزة",
-      tasksLeft: "المهام المتبقية",
-      compData: "بيانات المقاولة",
-      compName: "اسم الشركة",
-      phone: "رقم الهاتف",
-      city: "المدينة",
-      currentSite: "الورش الحالي",
-      saveBtn: "💾 حفظ التغييرات",
-      statsTitle: "إحصائيات تفصيلية",
-      progByStage: "التقدم حسب المرحلة:",
-      stageNames: { 1: "التخطيط", 2: "التنفيذ", 3: "التشطيب", 4: "التحفيظ" },
-      taskUnit: "مهمة",
-      teamTitle: "فريق عمل الورش",
-      noTeam: "لم تقم بتعيين أي فريق عمل حتى الآن.",
-      master: "معلم",
-      vaultTitle: "خزانة مستندات الورش",
-      uploadBtn: "رفع مستند",
-      uploading: "جاري الرفع...",
-      emptyVault: "الخزانة فارغة.",
-      radarTitle: "رادار الميزانية",
-      spent: "الفعلي:",
-      estimated: "المقدر:",
-      currency: "درهم",
-      radarGood: "الميزانية في حالة جيدة",
-      radarWarning: "انتبه، اقتربت من السقف!",
-      radarDanger: "تحذير: تجاوزت الميزانية!",
-      sosBtn: "استغاثة تقنية",
-      sosTitle: "طلب تدخل خبير تقني",
-      issueTitle: "عنوان المشكلة",
-      sosUrgent: "🔴 عاجل جداً (توقف العمل)",
-      sosNormal: "🟢 استشارة فنية",
-      sosDetails: "التفاصيل...",
-      sosSend: "إرسال النداء",
-      cancel: "إلغاء",
-      loading: "جاري تجهيز مكتبك الميداني...",
-      days: ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت']
+      pageTitle: "إدارة الأوراش والميدان", calcBtn: "الحاسبة الذكية لتكاليف الورش", rateBtn: "تقييم الحرفيين", projectPathBtn: "مسار الورش",
+      inboxTitle: "صندوق الرسائل", onlineStatus: "متصل - يوجد", available: "متاحين", noChats: "📭 لا توجد محادثات حتى الآن.", voiceMsg: "🎤 رسالة صوتية",
+      chatStarted: "بدأت المحادثة", enterChat: "دخول للمحادثة", camTitle: "كاميرا الورشة وتقارير الميدان", camSub: "أحدث اللقطات من ميدان الورش",
+      liveBtn: "طلب بث مباشر من الورشة", noReports: "لا توجد لقطات حديثة من الورشة.", interactiveShot: "لقطة ميدانية تفاعلية من الورش", souqTeam: "فريق SouqBTP",
+      budgetTitle: "💰 ميزانية الورش الإجمالية", pdfBtn: "تحميل PDF", waBtn: "مشاركة واتساب", editBudgetBtn: "تعديل الميزانية",
+      noBudget: "لم تقم بحساب الميزانية بعد. ابدأ الآن لمعرفة تكلفة مشروعك.", budgetCalculated: "التكلفة التقديرية للمشروع:", progTitle: "تقدم المشروع", tasksDone: "المهام المنجزة", 
+      tasksLeft: "المهام المتبقية", compData: "بيانات المقاولة", compName: "اسم الشركة", phone: "رقم الهاتف", city: "المدينة", currentSite: "الورش الحالي",
+      saveBtn: "💾 حفظ التغييرات", statsTitle: "إحصائيات تفصيلية", progByStage: "التقدم حسب المرحلة:", stageNames: { 1: "التخطيط", 2: "التنفيذ", 3: "التشطيب", 4: "التحفيظ" },
+      taskUnit: "مهمة", teamTitle: "فريق عمل الورش", noTeam: "لم تقم بتعيين أي فريق عمل حتى الآن.", master: "معلم", vaultTitle: "خزانة مستندات الورش",
+      uploadBtn: "رفع مستند", uploading: "جاري الرفع...", emptyVault: "الخزانة فارغة.", radarTitle: "رادار الميزانية", spent: "الفعلي:", estimated: "المقدر:",
+      currency: "درهم", radarGood: "الميزانية في حالة جيدة", radarWarning: "انتبه، اقتربت من السقف!", radarDanger: "تحذير: تجاوزت الميزانية!", sosBtn: "استغاثة تقنية",
+      sosTitle: "طلب تدخل خبير تقني", issueTitle: "عنوان المشكلة", sosUrgent: "🔴 عاجل جداً (توقف العمل)", sosNormal: "🟢 استشارة فنية", sosDetails: "التفاصيل...",
+      sosSend: "إرسال النداء", cancel: "إلغاء", loading: "جاري تجهيز مكتبك الميداني...", days: ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'],
+      team: "فريق الورش", role: "الصفة / التخصص", edit: "تعديل", delete: "حذف", assignTitle: "تعيين مسؤول أو حرفي", assignType: "طريقة التعيين", typeManual: "إدخال يدوي (فريق خاص)", 
+      typeFavorites: "كناش العناوين (فريقي المفضل)", typeMarketplace: "بحث ذكي في الماركت بليس", artisanName: "اسم الحرفي", artisanPhone: "رقم الهاتف", 
+      whatsappHint: "💡 سيقوم النظام بإرسال دعوة عبر WhatsApp لهذا الرقم لربطه بالورش مباشرة.", save: "حفظ وتعيين", cancel: "إلغاء", selectFavorite: "اختر من فريقك المفضل..."
     },
     fr: {
-      pageTitle: "Gestion des Chantiers",
-      calcBtn: "Calculateur Intelligent",
-      rateBtn: "Évaluation Artisans",
-      projectPathBtn: "Parcours du Projet",
-      inboxTitle: "Boîte de Réception",
-      onlineStatus: "En ligne -",
-      available: "disponibles",
-      noChats: "📭 Aucune conversation.",
-      voiceMsg: "🎤 Message vocal",
-      chatStarted: "Conversation démarrée",
-      enterChat: "Accéder",
-      camTitle: "Caméra & Rapports",
-      camSub: "Dernières captures du chantier",
-      liveBtn: "Demander le Direct",
-      noReports: "Aucune capture récente.",
-      interactiveShot: "Capture de terrain interactive",
-      souqTeam: "Équipe SouqBTP",
-      budgetTitle: "💰 Budget Global",
-      pdfBtn: "Télécharger PDF",
-      waBtn: "Partager WhatsApp",
-      editBudgetBtn: "Modifier le Budget",
-      noBudget: "Budget non calculé. Commencez l'estimation de votre projet.",
-      budgetCalculated: "Coût estimé du projet :",
-      progTitle: "Progression du Projet",
-      tasksDone: "Tâches Terminées",
-      tasksLeft: "Tâches Restantes",
-      compData: "Données de l'Entreprise",
-      compName: "Nom de l'entreprise",
-      phone: "Téléphone",
-      city: "Ville",
-      currentSite: "Chantier actuel",
-      saveBtn: "💾 Enregistrer",
-      statsTitle: "Statistiques Détaillées",
-      progByStage: "Progression par étape :",
-      stageNames: { 1: "Planification", 2: "Exécution", 3: "Finition", 4: "Enregistrement" },
-      taskUnit: "tâche(s)",
-      teamTitle: "Équipe du Chantier",
-      noTeam: "Aucune équipe assignée.",
-      master: "Artisan",
-      vaultTitle: "Armoire à Documents",
-      uploadBtn: "Téléverser",
-      uploading: "En cours...",
-      emptyVault: "L'armoire est vide.",
-      radarTitle: "Radar du Budget",
-      spent: "Dépensé :",
-      estimated: "Estimé :",
-      currency: "MAD",
-      radarGood: "Budget sous contrôle",
-      radarWarning: "Attention, plafond proche !",
-      radarDanger: "Alerte : Dépassement de budget !",
-      sosBtn: "Alerte Technique",
-      sosTitle: "Demande d'Intervention",
-      issueTitle: "Titre du problème",
-      sosUrgent: "🔴 Très urgent (Arrêt)",
-      sosNormal: "🟢 Consultation technique",
-      sosDetails: "Détails...",
-      sosSend: "Envoyer l'alerte",
-      cancel: "Annuler",
-      loading: "Préparation de votre bureau...",
-      days: ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+      pageTitle: "Gestion des Chantiers", calcBtn: "Calculateur Intelligent", rateBtn: "Évaluation Artisans", projectPathBtn: "Parcours du Projet",
+      inboxTitle: "Boîte de Réception", onlineStatus: "En ligne -", available: "disponibles", noChats: "📭 Aucune conversation.", voiceMsg: "🎤 Message vocal",
+      chatStarted: "Conversation démarrée", enterChat: "Accéder", camTitle: "Caméra & Rapports", camSub: "Dernières captures du chantier", liveBtn: "Demander le Direct",
+      noReports: "Aucune capture récente.", interactiveShot: "Capture de terrain interactive", souqTeam: "Équipe SouqBTP", budgetTitle: "💰 Budget Global",
+      pdfBtn: "Télécharger PDF", waBtn: "Partager WhatsApp", editBudgetBtn: "Modifier le Budget", noBudget: "Budget non calculé. Commencez l'estimation de votre projet.",
+      budgetCalculated: "Coût estimé du projet :", progTitle: "Progression du Projet", tasksDone: "Tâches Terminées", tasksLeft: "Tâches Restantes", compData: "Données de l'Entreprise",
+      compName: "Nom de l'entreprise", phone: "Téléphone", city: "Ville", currentSite: "Chantier actuel", saveBtn: "💾 Enregistrer", statsTitle: "Statistiques Détaillées",
+      progByStage: "Progression par étape :", stageNames: { 1: "Planification", 2: "Exécution", 3: "Finition", 4: "Enregistrement" }, taskUnit: "tâche(s)",
+      teamTitle: "Équipe du Chantier", noTeam: "Aucune équipe assignée.", master: "Artisan", vaultTitle: "Armoire à Documents", uploadBtn: "Téléverser",
+      uploading: "En cours...", emptyVault: "L'armoire est vide.", radarTitle: "Radar du Budget", spent: "Dépensé :", estimated: "Estimé :", currency: "MAD",
+      radarGood: "Budget sous contrôle", radarWarning: "Attention, plafond proche !", radarDanger: "Alerte : Dépassement de budget !", sosBtn: "Alerte Technique",
+      sosTitle: "Demande d'Intervention", issueTitle: "Titre du problème", sosUrgent: "🔴 Très urgent (Arrêt)", sosNormal: "🟢 Consultation technique",
+      sosDetails: "Détails...", sosSend: "Envoyer l'alerte", cancel: "Annuler", loading: "Préparation de votre bureau...", days: ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
+      team: "Équipe du Chantier", role: "Rôle / Spécialité", edit: "Modifier", delete: "Supprimer", assignTitle: "Assigner un responsable", assignType: "Type d'assignation",
+      typeManual: "Saisie Manuelle (Équipe privée)", typeFavorites: "Mes Favoris (Carnet d'adresses)", typeMarketplace: "Recherche IA (Marketplace)", artisanName: "Nom de l'artisan",
+      artisanPhone: "Numéro de téléphone", whatsappHint: "💡 Un message WhatsApp sera envoyé à ce numéro pour l'inviter à rejoindre le chantier.", save: "Enregistrer",
+      cancel: "Annuler", selectFavorite: "Sélectionnez un profil..."
     },
     en: {
-      pageTitle: "Site Management",
-      calcBtn: "Smart Cost Calculator",
-      rateBtn: "Artisan Ratings",
-      projectPathBtn: "Project Path",
-      inboxTitle: "Inbox",
-      onlineStatus: "Online -",
-      available: "available",
-      noChats: "📭 No conversations yet.",
-      voiceMsg: "🎤 Voice message",
-      chatStarted: "Conversation started",
-      enterChat: "Enter Chat",
-      camTitle: "Site Camera & Reports",
-      camSub: "Latest shots from the field",
-      liveBtn: "Request Live Broadcast",
-      noReports: "No recent shots.",
-      interactiveShot: "Interactive field shot",
-      souqTeam: "SouqBTP Team",
-      budgetTitle: "💰 Total Site Budget",
-      pdfBtn: "Download PDF",
-      waBtn: "Share via WhatsApp",
-      editBudgetBtn: "Edit Budget",
-      noBudget: "Budget not calculated. Start your project estimation now.",
-      budgetCalculated: "Estimated Project Cost:",
-      progTitle: "Project Progress",
-      tasksDone: "Completed Tasks",
-      tasksLeft: "Remaining Tasks",
-      compData: "Company Data",
-      compName: "Company Name",
-      phone: "Phone Number",
-      city: "City",
-      currentSite: "Current Site",
-      saveBtn: "💾 Save Changes",
-      statsTitle: "Detailed Statistics",
-      progByStage: "Progress by Stage:",
-      stageNames: { 1: "Planning", 2: "Execution", 3: "Finishing", 4: "Registration" },
-      taskUnit: "task(s)",
-      teamTitle: "Site Team",
-      noTeam: "No team assigned yet.",
-      master: "Master",
-      vaultTitle: "Documents Vault",
-      uploadBtn: "Upload Doc",
-      uploading: "Uploading...",
-      emptyVault: "Vault is empty.",
-      radarTitle: "Budget Radar",
-      spent: "Spent:",
-      estimated: "Estimated:",
-      currency: "MAD",
-      radarGood: "Budget is healthy",
-      radarWarning: "Warning: Approaching limit!",
-      radarDanger: "Danger: Budget exceeded!",
-      sosBtn: "Technical SOS",
-      sosTitle: "Technical Support Request",
-      issueTitle: "Issue Title",
-      sosUrgent: "🔴 Very Urgent (Stopped)",
-      sosNormal: "🟢 Consultation",
-      sosDetails: "Details...",
-      sosSend: "Send Alert",
-      cancel: "Cancel",
-      loading: "Preparing your office...",
-      days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      pageTitle: "Site Management", calcBtn: "Smart Cost Calculator", rateBtn: "Artisan Ratings", projectPathBtn: "Project Path", inboxTitle: "Inbox",
+      onlineStatus: "Online -", available: "available", noChats: "📭 No conversations yet.", voiceMsg: "🎤 Voice message", chatStarted: "Conversation started",
+      enterChat: "Enter Chat", camTitle: "Site Camera & Reports", camSub: "Latest shots from the field", liveBtn: "Request Live Broadcast", noReports: "No recent shots.",
+      interactiveShot: "Interactive field shot", souqTeam: "SouqBTP Team", budgetTitle: "💰 Total Site Budget", pdfBtn: "Download PDF", waBtn: "Share via WhatsApp",
+      editBudgetBtn: "Edit Budget", noBudget: "Budget not calculated. Start your project estimation now.", budgetCalculated: "Estimated Project Cost:",
+      progTitle: "Project Progress", tasksDone: "Completed Tasks", tasksLeft: "Remaining Tasks", compData: "Company Data", compName: "Company Name",
+      phone: "Phone Number", city: "City", currentSite: "Current Site", saveBtn: "💾 Save Changes", statsTitle: "Detailed Statistics", progByStage: "Progress by Stage:",
+      stageNames: { 1: "Planning", 2: "Execution", 3: "Finishing", 4: "Registration" }, taskUnit: "task(s)", teamTitle: "Site Team", noTeam: "No team assigned yet.",
+      master: "Master", vaultTitle: "Documents Vault", uploadBtn: "Upload Doc", uploading: "Uploading...", emptyVault: "Vault is empty.", radarTitle: "Budget Radar",
+      spent: "Spent:", estimated: "Estimated:", currency: "MAD", radarGood: "Budget is healthy", radarWarning: "Warning: Approaching limit!", radarDanger: "Danger: Budget exceeded!",
+      sosBtn: "Technical SOS", sosTitle: "Technical Support Request", issueTitle: "Issue Title", sosUrgent: "🔴 Very Urgent (Stopped)", sosNormal: "🟢 Consultation",
+      sosDetails: "Details...", sosSend: "Send Alert", cancel: "Cancel", loading: "Preparing your office...", days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      team: "Project Team", role: "Role / Specialty", edit: "Edit", delete: "Delete", assignTitle: "Assign a manager", assignType: "Assignment type",
+      typeManual: "Manual Entry (Private team)", typeFavorites: "My Favorites (Address book)", typeMarketplace: "AI Search (Marketplace)", artisanName: "Contractor name",
+      artisanPhone: "Phone number", whatsappHint: "💡 A WhatsApp message will be sent to this number inviting them to join the project.", save: "Save", cancel: "Cancel",
+      selectFavorite: "Select a profile..."
     }
   };
 
@@ -1195,18 +1067,51 @@ export default function ContractorDashboard() {
             </div>
 
             <div className={`${cardClass} mt-6`}>
-              <h2 className="text-xl font-black mb-6 pb-4 border-b border-slate-200/20">👷 {t.teamTitle}</h2>
-              {team.length === 0 ? (
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
+                <h2 className="text-xl font-black flex items-center gap-2">👷 {t.teamTitle}</h2>
+                {/* زر لفتح نافذة التعيين الذكية */}
+                <button onClick={() => setIsAssignModalOpen(true)} className="bg-blue-100/80 text-blue-600 hover:bg-blue-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2">
+                  <Plus size={16} /> أضف عضو
+                </button>
+              </div>
+              
+              {/* هنا سنضع مصفوفة وهمية للتجربة (استبدلها بـ team الحقيقية لاحقاً) */}
+              {[
+                { id: 1, name: 'Hassan', phone: '0606060606', role: 'Chef de Chantier', color: 'blue' },
+                { id: 2, name: 'Hmoud', phone: '0707070707', role: 'Plombier', color: 'emerald' },
+                { id: 3, name: '3issam', phone: '0808080808', role: 'Électricien', color: 'amber' }
+              ].length === 0 ? (
                  <p className={`text-center ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.noTeam}</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {team.map(worker => (
-                    <div key={worker.id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-slate-900/80 border-slate-700 shadow-md' : 'bg-white border-slate-100 shadow-sm'}`}>
+                  {[
+                    { id: 1, name: 'Hassan', phone: '0606060606', role: 'Chef de Chantier', color: 'blue' },
+                    { id: 2, name: 'Hmoud', phone: '0707070707', role: 'Plombier', color: 'emerald' },
+                    { id: 3, name: '3issam', phone: '0808080808', role: 'Électricien', color: 'amber' }
+                  ].map(worker => (
+                    <div key={worker.id} className={`group relative p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} shadow-sm transition-all hover:shadow-md flex items-center justify-between overflow-hidden`}>
+                      
                       <div>
-                        <h4 className="font-bold text-lg">{worker.worker_name}</h4>
-                        <p className={`text-sm mt-1 font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>📞 {worker.worker_phone || 'SouqBTP'}</p>
+                        <h4 className={`font-bold text-sm mb-1 ${textTitle}`}>{worker.name}</h4>
+                        <p className={`text-xs flex items-center gap-1 ${textMuted}`}>
+                          <Phone size={12} /> {worker.phone}
+                        </p>
                       </div>
-                      <span className="bg-indigo-500/10 text-indigo-500 px-4 py-1.5 rounded-full text-sm font-bold border border-indigo-500/20">{t.master}</span>
+                      
+                      {/* شريط الصفة (Role Badge) */}
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black bg-${worker.color}-100 text-${worker.color}-600 dark:bg-${worker.color}-900/30 dark:text-${worker.color}-400`}>
+                        {worker.role}
+                      </span>
+
+                      {/* أزرار التعديل والحذف المخفية (تظهر بالـ Hover) */}
+                      <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                        <button className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}>
+                          <Edit2 size={14} />
+                        </button>
+                        <button className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors" title={t.delete}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1314,6 +1219,99 @@ export default function ContractorDashboard() {
                 <button type="button" onClick={() => setIsNewProjectModalOpen(false)} className={`px-8 font-black py-4 rounded-xl transition-all ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>{t.cancel}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* نافذة التعيين الذكية */}
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4" dir={isRtl ? 'rtl' : 'ltr'}>
+          <div className={`w-full max-w-md rounded-3xl p-6 shadow-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-white'}`}>
+            
+            <div className="flex justify-between items-center mb-6">
+              <h3 className={`font-black text-xl flex items-center gap-2 ${textTitle}`}>
+                <Briefcase size={22} className="text-blue-500" /> {t.assignTitle}
+              </h3>
+              <button onClick={() => setIsAssignModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                <X size={20} className={textMuted} />
+              </button>
+            </div>
+
+            {/* نوع التعيين (الخيارات الثلاثة) */}
+            <div className="mb-5">
+              <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.assignType}</label>
+              <select 
+                value={assignType}
+                onChange={(e) => setAssignType(e.target.value)}
+                className={`w-full p-3 rounded-xl border font-bold text-sm outline-none transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-slate-50 border-slate-200 focus:border-blue-500'}`}
+              >
+                <option value="manual">✍️ {t.typeManual}</option>
+                <option value="favorites">⭐ {t.typeFavorites}</option>
+                <option value="marketplace">🤖 {t.typeMarketplace}</option>
+              </select>
+            </div>
+
+            {/* المحتوى يتغير حسب نوع التعيين */}
+            <div className="space-y-4 mb-8">
+              
+              {/* الخيار الأول: إدخال يدوي (تطبيق اختراق الواتساب) */}
+              {assignType === 'manual' && (
+                <div className="animate-fade-in space-y-4">
+                  <div>
+                    <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.artisanName}</label>
+                    <input type="text" className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
+                  </div>
+                  <div className="flex gap-4">
+                     <div className="flex-1">
+                      <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.artisanPhone}</label>
+                      <input type="tel" className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
+                    </div>
+                    <div className="flex-1">
+                      <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.role}</label>
+                      <input type="text" placeholder="ex: Plombier" className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
+                    </div>
+                  </div>
+                  {/* تنبيه الواتساب السحري */}
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex gap-3 items-start">
+                    <span className="text-emerald-500 mt-0.5"><MessageCircle size={16}/></span>
+                    <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 leading-relaxed">
+                      {t.whatsappHint}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* الخيار الثاني: كناش العناوين (Favorites) */}
+              {assignType === 'favorites' && (
+                <div className="animate-fade-in">
+                   <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.selectFavorite}</label>
+                   <select className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`}>
+                      <option>Yassine Bachir - Électricien (⭐ 4.9)</option>
+                      <option>Equipe Atlas - Maçonnerie (⭐ 4.7)</option>
+                   </select>
+                </div>
+              )}
+
+              {/* الخيار الثالث: الماركت بليس عبر الذكاء الاصطناعي */}
+              {assignType === 'marketplace' && (
+                <div className="animate-fade-in text-center p-6 border-2 border-dashed rounded-xl border-blue-500/30 bg-blue-500/5">
+                  <Bot size={32} className="mx-auto text-blue-500 mb-3" />
+                  <p className={`text-sm font-bold mb-2 ${textTitle}`}>جاري البحث عن أفضل الحرفيين المتاحين...</p>
+                  <p className={`text-xs ${textMuted}`}>سيقوم الذكاء الاصطناعي باقتراح أفضل المهنيين في مدينتك لتقديم عروض أسعار لهذه المهمة.</p>
+                </div>
+              )}
+
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setIsAssignModalOpen(false)} className={`flex-1 p-3 rounded-xl font-bold text-sm transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                {t.cancel}
+              </button>
+              <button className="flex-1 p-3 rounded-xl font-black text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30">
+                {t.save}
+              </button>
+            </div>
+
           </div>
         </div>
       )}
