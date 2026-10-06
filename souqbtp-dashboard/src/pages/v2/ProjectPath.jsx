@@ -24,14 +24,9 @@ export default function ProjectPath() {
   const [userProgress, setUserProgress] = useState([]);
   const [overallProgress, setOverallProgress] = useState(0);
   const [totalTasks, setTotalTasks] = useState(28); 
-  const [team, setTeam] = useState([]);
   
   const [providers, setProviders] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
-  
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [assignType, setAssignType] = useState('private');
-  const [assignForm, setAssignForm] = useState({ name: '', phone: '', providerId: '' });
 
   const translations = {
     ar: {
@@ -396,39 +391,6 @@ export default function ProjectPath() {
     } catch (err) { console.error(err); }
   };
 
-  const handleAssignSubmit = async () => {
-    if (!user) return alert(t.loginRequired);
-    if (!activeProject) return alert(language === 'ar' ? 'يرجى اختيار الورش أولاً!' : 'Veuillez sélectionner un chantier !');
-    // 🚀 السحر هنا: إذا اختار المقاول الماركت بليس، نأخذه إلى السوق فوراً!
-    if (assignType === 'marketplace') {
-      setIsAssignModalOpen(false); // نغلق النافذة
-      // نوجهه لصفحة السوق (ويمكننا تمرير رقم المرحلة في الرابط مستقبلاً لفلترة الحرفيين)
-      navigate('/v2/market?tab=artisans'); 
-      return;
-    }
-    // أما إذا اختار فريق خاص (إدخال يدوي)، نقوم بالحفظ العادي
-    if (!assignForm.name) return;
-    try {
-      const { error } = await supabase.from('milestone_assignments').insert([{
-        user_id: user.id,
-        project_id: activeProject.id,
-        stage_id: selectedStage,
-        worker_name: assignForm.name,
-        worker_phone: assignForm.phone || ''
-      }]);
-      
-      if(error) throw error;
-      
-      setIsAssignModalOpen(false);
-      setAssignForm({ name: '', phone: '', providerId: '' });
-      alert(t.successAssign);
-      loadStageData(selectedStage, user);
-    } catch (err) { 
-      console.error(err); 
-      alert(language === 'ar' ? 'حدث خطأ أثناء تعيين الفريق' : 'Erreur lors de l\'assignation de l\'équipe');
-    }
-  };
-
   return (
     <div className="animate-fade-in pb-24 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
       
@@ -450,12 +412,6 @@ export default function ProjectPath() {
       <div className={`p-6 md:p-8 rounded-3xl border-2 mb-8 ${cardBg}`}>
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
           <h3 className="text-xl font-black flex items-center gap-2">📊 {t.progressTitle}</h3>
-          <button 
-            onClick={() => setIsAssignModalOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/30 hover:-translate-y-1 w-full md:w-auto justify-center"
-          >
-            <Users size={18} /> {t.assignBtn}
-          </button>
         </div>
         
         <div className={`w-full h-8 rounded-full overflow-hidden shadow-inner p-1 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
@@ -466,20 +422,6 @@ export default function ProjectPath() {
             {overallProgress}%
           </div>
         </div>
-
-        {team.length > 0 && (
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {team.map(member => (
-              <div key={member.id} className={`flex items-center gap-3 p-3 rounded-xl border-l-4 border-blue-500 ${isDarkMode ? 'bg-slate-800' : 'bg-blue-50'}`}>
-                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black">👷</div>
-                <div>
-                  <h4 className="font-bold text-sm">{member.worker_name}</h4>
-                  <p className="text-xs opacity-70">{member.worker_phone || 'SouqBTP'}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* المراحل */}
@@ -593,61 +535,6 @@ export default function ProjectPath() {
                 </div>
               ))
             )}
-          </div>
-        </div>
-      )}
-
-      {/* نافذة التعيين */}
-      {isAssignModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsAssignModalOpen(false)}>
-          <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl animate-fade-in border-2 ${isDarkMode ? 'bg-slate-800 border-slate-600' : 'bg-white border-white'}`} onClick={e => e.stopPropagation()}>
-            <h3 className="text-2xl font-black mb-6 flex items-center gap-2 text-blue-600"><Briefcase /> {t.assignModalTitle}</h3>
-            
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-bold mb-2 opacity-80">{t.assignTypeLabel}</label>
-                <select 
-                  value={assignType} 
-                  onChange={e => setAssignType(e.target.value)} 
-                  className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${inputBg}`}
-                >
-                  <option value="private">{t.typePrivate}</option>
-                  <option value="marketplace">{t.typeMarket}</option>
-                </select>
-              </div>
-
-              {assignType === 'private' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-bold mb-2 opacity-80">{t.artisanName}</label>
-                    <input 
-                      type="text" 
-                      value={assignForm.name} 
-                      onChange={e => setAssignForm({...assignForm, name: e.target.value})} 
-                      className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${inputBg}`} 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold mb-2 opacity-80">{t.artisanPhone}</label>
-                    <input 
-                      type="tel" 
-                      value={assignForm.phone} 
-                      onChange={e => setAssignForm({...assignForm, phone: e.target.value})} 
-                      className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${inputBg}`} 
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="flex gap-4 mt-8">
-              <button onClick={handleAssignSubmit} className="flex-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-all hover:-translate-y-1">
-                {t.save}
-              </button>
-              <button onClick={() => setIsAssignModalOpen(false)} className={`flex-1 w-full font-black py-4 rounded-xl transition-all ${isDarkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
-                {t.cancel}
-              </button>
-            </div>
           </div>
         </div>
       )}
