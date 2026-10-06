@@ -97,7 +97,8 @@ export default function ContractorDashboard() {
       sosSend: "إرسال النداء", cancel: "إلغاء", loading: "جاري تجهيز مكتبك الميداني...", days: ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'],
       team: "فريق الورش", role: "الصفة / التخصص", edit: "تعديل", delete: "حذف", assignTitle: "تعيين مسؤول أو حرفي", assignType: "طريقة التعيين", typeManual: "إدخال يدوي (فريق خاص)", 
       typeFavorites: "كناش العناوين (فريقي المفضل)", typeMarketplace: "بحث ذكي في الماركت بليس", artisanName: "اسم الحرفي", artisanPhone: "رقم الهاتف", 
-      whatsappHint: "💡 سيقوم النظام بإرسال دعوة عبر WhatsApp لهذا الرقم لربطه بالورش مباشرة.", save: "حفظ وتعيين", cancel: "إلغاء", selectFavorite: "اختر من فريقك المفضل..."
+      whatsappHint: "💡 سيقوم النظام بإرسال دعوة عبر WhatsApp لهذا الرقم لربطه بالورش مباشرة.", save: "حفظ وتعيين", cancel: "إلغاء", selectFavorite: "اختر من فريقك المفضل...",
+      rolePlaceholder: "مثال: صباغ، سباك، بناء..." 
     },
     fr: {
       pageTitle: "Gestion des Chantiers", calcBtn: "Calculateur Intelligent", rateBtn: "Évaluation Artisans", projectPathBtn: "Parcours du Projet",
@@ -116,7 +117,7 @@ export default function ContractorDashboard() {
       team: "Équipe du Chantier", role: "Rôle / Spécialité", edit: "Modifier", delete: "Supprimer", assignTitle: "Assigner un responsable", assignType: "Type d'assignation",
       typeManual: "Saisie Manuelle (Équipe privée)", typeFavorites: "Mes Favoris (Carnet d'adresses)", typeMarketplace: "Recherche IA (Marketplace)", artisanName: "Nom de l'artisan",
       artisanPhone: "Numéro de téléphone", whatsappHint: "💡 Un message WhatsApp sera envoyé à ce numéro pour l'inviter à rejoindre le chantier.", save: "Enregistrer",
-      cancel: "Annuler", selectFavorite: "Sélectionnez un profil..."
+      cancel: "Annuler", selectFavorite: "Sélectionnez un profil...", rolePlaceholder: "ex: Plombier, Peintre..."
     },
     en: {
       pageTitle: "Site Management", calcBtn: "Smart Cost Calculator", rateBtn: "Artisan Ratings", projectPathBtn: "Project Path", inboxTitle: "Inbox",
@@ -134,7 +135,7 @@ export default function ContractorDashboard() {
       team: "Project Team", role: "Role / Specialty", edit: "Edit", delete: "Delete", assignTitle: "Assign a manager", assignType: "Assignment type",
       typeManual: "Manual Entry (Private team)", typeFavorites: "My Favorites (Address book)", typeMarketplace: "AI Search (Marketplace)", artisanName: "Contractor name",
       artisanPhone: "Phone number", whatsappHint: "💡 A WhatsApp message will be sent to this number inviting them to join the project.", save: "Save", cancel: "Cancel",
-      selectFavorite: "Select a profile..."
+      selectFavorite: "Select a profile...", rolePlaceholder: "ex: Plumber, Painter..."
     }
   };
 
@@ -537,6 +538,27 @@ export default function ContractorDashboard() {
     setEditingWorkerId(worker.id);
     setAssignForm({ name: worker.name, phone: worker.phone, role: worker.role });
     setIsAssignModalOpen(true);
+  };
+
+  const handleSaveWorker = async () => {
+    // التحقق من الحقول الإجبارية
+    if (!assignForm.name || !assignForm.role) {
+      alert(language === 'ar' ? 'الرجاء إدخال الاسم والصفة' : 'Veuillez saisir le nom et le rôle');
+      return;
+    }
+
+    if (editingWorkerId) {
+      // 🚀 هنا تضع كود (Update) لقاعدة البيانات مستقبلاً
+      alert(language === 'ar' ? 'تم التعديل بنجاح! (للتجربة)' : 'Modifié avec succès ! (Test)');
+    } else {
+      // 🚀 هنا تضع كود (Insert) لقاعدة البيانات مستقبلاً
+      alert(language === 'ar' ? 'تمت الإضافة بنجاح! (للتجربة)' : 'Ajouté avec succès ! (Test)');
+    }
+
+    // إغلاق النافذة وتصفير البيانات
+    setIsAssignModalOpen(false);
+    setEditingWorkerId(null);
+    setAssignForm({ name: '', phone: '', role: '' });
   };
 
   // 🚀 دالة إنشاء الورش الجديد
@@ -1291,7 +1313,7 @@ export default function ContractorDashboard() {
                     </div>
                     <div className="flex-1">
                       <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.role}</label>
-                      <input type="text" placeholder="ex: Plombier" value={assignForm.role} onChange={e => setAssignForm({...assignForm, role: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
+                      <input type="text" placeholder={t.rolePlaceholder} value={assignForm.role} onChange={e => setAssignForm({...assignForm, role: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
                     </div>
                   </div>
                   {/* تنبيه الواتساب السحري */}
@@ -1330,7 +1352,7 @@ export default function ContractorDashboard() {
               <button onClick={() => setIsAssignModalOpen(false)} className={`flex-1 p-3 rounded-xl font-bold text-sm transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
                 {t.cancel}
               </button>
-              <button className="flex-1 p-3 rounded-xl font-black text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30">
+              <button onClick={handleSaveWorker} className="flex-1 p-3 rounded-xl font-black text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30">
                 {t.save}
               </button>
             </div>
