@@ -555,41 +555,50 @@ export default function ContractorDashboard() {
     }
 
     if (!user || !activeProject) {
-      alert(language === 'ar' ? 'حدث خطأ، يرجى تحديث الصفحة.' : 'Erreur, veuillez rafraîchir la page.');
+      alert(language === 'ar' ? 'حدث خطأ، يرجى التأكد من تسجيل الدخول واختيار الورش.' : 'Erreur, veuillez vérifier la connexion et la sélection du chantier.');
       return;
     }
 
     if (editingWorkerId) {
       // 🚀 حالة التعديل (Update)
-      const { error } = await supabase.from('milestone_assignments')
-         .update({ worker_name: assignForm.name, worker_phone: assignForm.phone, role: assignForm.role })
-         .eq('id', editingWorkerId);
+      const { data, error } = await supabase.from('milestone_assignments')
+         .update({ 
+            worker_name: assignForm.name, 
+            worker_phone: assignForm.phone, 
+            role: assignForm.role 
+          })
+         .eq('id', editingWorkerId)
+         .select();
 
       if (!error) {
-        // تحديث الواجهة بالبيانات الجديدة
-        setTeam(prev => prev.map(w => w.id === editingWorkerId ? { ...w, worker_name: assignForm.name, worker_phone: assignForm.phone, role: assignForm.role } : w));
+        setTeam(prev => prev.map(w => w.id === editingWorkerId ? data[0] : w));
       } else {
-        console.error("Update Error:", error);
-        alert(language === 'ar' ? 'خطأ في التحديث' : 'Erreur de mise à jour');
+        console.error("Update Error details:", error);
+        alert(`Update Error: ${error.message}`);
       }
 
     } else {
       // 🚀 حالة الإضافة الجديدة (Insert)
-      const { data, error } = await supabase.from('milestone_assignments').insert([{
-         user_id: user.id,           // 👈 هذا ما كان ينقصنا! (مطلوب للحماية)
+      const insertPayload = {
+         user_id: user.id,           
          project_id: activeProject.id, 
-         stage_id: 1,                // 👈 قيمة افتراضية في حال كان الحقل إجبارياً
+         stage_id: 1, // تأكد من أن هذا الحقل مقبول في جدولك
          worker_name: assignForm.name,
          worker_phone: assignForm.phone,
          role: assignForm.role
-      }]).select(); // 👈 نطلب من قاعدة البيانات إرجاع السطر الجديد مع الـ ID الحقيقي
+      };
+      
+      console.log("Payload to insert:", insertPayload); // لمراقبة البيانات المرسلة
+
+      const { data, error } = await supabase.from('milestone_assignments')
+         .insert([insertPayload])
+         .select(); 
 
       if (!error && data && data.length > 0) {
-        // نأخذ البيانات الحقيقية من السيرفر ونضعها في الشاشة
         setTeam(prev => [...prev, data[0]]);
       } else {
-        console.error("Insert Error:", error);
-        alert(language === 'ar' ? 'لم يتم الحفظ، تأكد من اتصالك!' : 'Erreur de sauvegarde DB !');
+        console.error("Insert Error details:", error);
+        alert(`Insert Error: ${error?.message || 'Unknown error'}`); // عرض رسالة الخطأ الحقيقية
       }
     }
 
