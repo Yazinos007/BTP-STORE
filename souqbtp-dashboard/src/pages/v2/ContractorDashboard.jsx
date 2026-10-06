@@ -13,6 +13,8 @@ import {
 export default function ContractorDashboard() {
   const { isDarkMode, language = 'ar' } = useOutletContext(); 
   const isRtl = language === 'ar';
+  const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
+  const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
 
   // 🚀 استدعاء المخزن المركزي لتوحيد البيانات مع البروفايل
   const { supplier, updateProfile } = useSupplierStore();
@@ -1222,7 +1224,7 @@ export default function ContractorDashboard() {
           </div>
         </div>
       )}
-      
+
       {/* نافذة التعيين الذكية */}
       {isAssignModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4" dir={isRtl ? 'rtl' : 'ltr'}>
