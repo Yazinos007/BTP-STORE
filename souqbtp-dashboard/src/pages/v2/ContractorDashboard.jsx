@@ -526,33 +526,55 @@ export default function ContractorDashboard() {
     }
   };
 
-  const handleDeleteWorker = (workerId) => {
-    // سيتم ربطها بقاعدة البيانات لاحقاً
+  const handleDeleteWorker = async (workerId) => {
     if(window.confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا العضو؟' : 'Supprimer ce membre ?')) {
-       alert('تم الحذف (للتجربة)');
+       // 1. الحذف من الواجهة فوراً (لكي يختفي في لمح البصر)
+       setTeam(prev => prev.filter(w => w.id !== workerId));
+       // 2. الحذف من قاعدة البيانات
+       await supabase.from('milestone_assignments').delete().eq('id', workerId);
     }
   };
 
   const handleEditWorker = (worker) => {
     setAssignType('manual');
     setEditingWorkerId(worker.id);
-    setAssignForm({ name: worker.name, phone: worker.phone, role: worker.role });
+    // جلب البيانات ووضعها في الحقول (نستخدم worker_name لأن هذا هو اسمها في قاعدة البيانات)
+    setAssignForm({ name: worker.worker_name, phone: worker.worker_phone || '', role: worker.role || '' });
     setIsAssignModalOpen(true);
   };
 
   const handleSaveWorker = async () => {
-    // التحقق من الحقول الإجبارية
     if (!assignForm.name || !assignForm.role) {
       alert(language === 'ar' ? 'الرجاء إدخال الاسم والصفة' : 'Veuillez saisir le nom et le rôle');
       return;
     }
 
     if (editingWorkerId) {
-      // 🚀 هنا تضع كود (Update) لقاعدة البيانات مستقبلاً
-      alert(language === 'ar' ? 'تم التعديل بنجاح! (للتجربة)' : 'Modifié avec succès ! (Test)');
+      // 🚀 حالة التعديل (Update)
+      // تحديث الواجهة فوراً
+      setTeam(prev => prev.map(w => w.id === editingWorkerId ? { ...w, worker_name: assignForm.name, worker_phone: assignForm.phone, role: assignForm.role } : w));
+      // تحديث قاعدة البيانات
+      await supabase.from('milestone_assignments')
+         .update({ worker_name: assignForm.name, worker_phone: assignForm.phone, role: assignForm.role })
+         .eq('id', editingWorkerId);
     } else {
-      // 🚀 هنا تضع كود (Insert) لقاعدة البيانات مستقبلاً
-      alert(language === 'ar' ? 'تمت الإضافة بنجاح! (للتجربة)' : 'Ajouté avec succès ! (Test)');
+      // 🚀 حالة الإضافة الجديدة (Insert)
+      const newWorker = { 
+         id: Date.now(), // ID مؤقت للواجهة حتى يتم جلبه لاحقاً
+         project_id: activeProject?.id,
+         worker_name: assignForm.name, 
+         worker_phone: assignForm.phone, 
+         role: assignForm.role
+      };
+      // إضافة للواجهة فوراً
+      setTeam(prev => [...prev, newWorker]);
+      // إضافة لقاعدة البيانات
+      await supabase.from('milestone_assignments').insert([{
+         project_id: activeProject?.id,
+         worker_name: assignForm.name,
+         worker_phone: assignForm.phone,
+         role: assignForm.role
+      }]);
     }
 
     // إغلاق النافذة وتصفير البيانات
@@ -1120,35 +1142,28 @@ export default function ContractorDashboard() {
                 </button>
               </div>
               
-              {/* هنا سنضع مصفوفة وهمية للتجربة (استبدلها بـ team الحقيقية لاحقاً) */}
-              {[
-                { id: 1, name: 'Hassan', phone: '0606060606', role: 'Chef de Chantier', color: 'blue' },
-                { id: 2, name: 'Hmoud', phone: '0707070707', role: 'Plombier', color: 'emerald' },
-                { id: 3, name: '3issam', phone: '0808080808', role: 'Électricien', color: 'amber' }
-              ].length === 0 ? (
+              {/* عرض الفريق الحقيقي من قاعدة البيانات */}
+              {team.length === 0 ? (
                  <p className={`text-center ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.noTeam}</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[
-                    { id: 1, name: 'Hassan', phone: '0606060606', role: 'Chef de Chantier', color: 'blue' },
-                    { id: 2, name: 'Hmoud', phone: '0707070707', role: 'Plombier', color: 'emerald' },
-                    { id: 3, name: '3issam', phone: '0808080808', role: 'Électricien', color: 'amber' }
-                  ].map(worker => (
+                  {team.map(worker => (
                     <div key={worker.id} className={`group relative p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} shadow-sm transition-all hover:shadow-md flex items-center justify-between overflow-hidden`}>
                       
                       <div>
-                        <h4 className={`font-bold text-sm mb-1 ${textTitle}`}>{worker.name}</h4>
+                        {/* استخدمنا worker_name لأنه الاسم الحقيقي في الجدول */}
+                        <h4 className={`font-bold text-sm mb-1 ${textTitle}`}>{worker.worker_name}</h4>
                         <p className={`text-xs flex items-center gap-1 ${textMuted}`}>
-                          <Phone size={12} /> {worker.phone}
+                          <Phone size={12} /> {worker.worker_phone || 'لا يوجد رقم'}
                         </p>
                       </div>
                       
                       {/* شريط الصفة (Role Badge) */}
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black bg-${worker.color}-100 text-${worker.color}-600 dark:bg-${worker.color}-900/30 dark:text-${worker.color}-400`}>
-                        {worker.role}
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400`}>
+                        {worker.role || t.master || 'حرفي'}
                       </span>
 
-                      {/* أزرار التعديل والحذف المخفية (تظهر بالـ Hover) */}
+                      {/* أزرار التعديل والحذف */}
                       <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                         <button onClick={() => handleEditWorker(worker)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}>
                           <Edit2 size={14} />
