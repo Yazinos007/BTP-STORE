@@ -528,17 +528,22 @@ export default function ContractorDashboard() {
 
   const handleDeleteWorker = async (workerId) => {
     if(window.confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا العضو؟' : 'Supprimer ce membre ?')) {
-       // 1. الحذف من الواجهة فوراً (لكي يختفي في لمح البصر)
-       setTeam(prev => prev.filter(w => w.id !== workerId));
-       // 2. الحذف من قاعدة البيانات
-       await supabase.from('milestone_assignments').delete().eq('id', workerId);
+       // 1. الحذف من قاعدة البيانات أولاً
+       const { error } = await supabase.from('milestone_assignments').delete().eq('id', workerId);
+       
+       if (!error) {
+         // 2. تحديث الواجهة فقط إذا نجح الحذف
+         setTeam(prev => prev.filter(w => w.id !== workerId));
+       } else {
+         console.error("Delete Error:", error);
+         alert(language === 'ar' ? 'حدث خطأ أثناء الحذف.' : 'Erreur de suppression.');
+       }
     }
   };
 
   const handleEditWorker = (worker) => {
     setAssignType('manual');
     setEditingWorkerId(worker.id);
-    // جلب البيانات ووضعها في الحقول (نستخدم worker_name لأن هذا هو اسمها في قاعدة البيانات)
     setAssignForm({ name: worker.worker_name, phone: worker.worker_phone || '', role: worker.role || '' });
     setIsAssignModalOpen(true);
   };
@@ -549,32 +554,43 @@ export default function ContractorDashboard() {
       return;
     }
 
+    if (!user || !activeProject) {
+      alert(language === 'ar' ? 'حدث خطأ، يرجى تحديث الصفحة.' : 'Erreur, veuillez rafraîchir la page.');
+      return;
+    }
+
     if (editingWorkerId) {
       // 🚀 حالة التعديل (Update)
-      // تحديث الواجهة فوراً
-      setTeam(prev => prev.map(w => w.id === editingWorkerId ? { ...w, worker_name: assignForm.name, worker_phone: assignForm.phone, role: assignForm.role } : w));
-      // تحديث قاعدة البيانات
-      await supabase.from('milestone_assignments')
+      const { error } = await supabase.from('milestone_assignments')
          .update({ worker_name: assignForm.name, worker_phone: assignForm.phone, role: assignForm.role })
          .eq('id', editingWorkerId);
+
+      if (!error) {
+        // تحديث الواجهة بالبيانات الجديدة
+        setTeam(prev => prev.map(w => w.id === editingWorkerId ? { ...w, worker_name: assignForm.name, worker_phone: assignForm.phone, role: assignForm.role } : w));
+      } else {
+        console.error("Update Error:", error);
+        alert(language === 'ar' ? 'خطأ في التحديث' : 'Erreur de mise à jour');
+      }
+
     } else {
       // 🚀 حالة الإضافة الجديدة (Insert)
-      const newWorker = { 
-         id: Date.now(), // ID مؤقت للواجهة حتى يتم جلبه لاحقاً
-         project_id: activeProject?.id,
-         worker_name: assignForm.name, 
-         worker_phone: assignForm.phone, 
-         role: assignForm.role
-      };
-      // إضافة للواجهة فوراً
-      setTeam(prev => [...prev, newWorker]);
-      // إضافة لقاعدة البيانات
-      await supabase.from('milestone_assignments').insert([{
-         project_id: activeProject?.id,
+      const { data, error } = await supabase.from('milestone_assignments').insert([{
+         user_id: user.id,           // 👈 هذا ما كان ينقصنا! (مطلوب للحماية)
+         project_id: activeProject.id, 
+         stage_id: 1,                // 👈 قيمة افتراضية في حال كان الحقل إجبارياً
          worker_name: assignForm.name,
          worker_phone: assignForm.phone,
          role: assignForm.role
-      }]);
+      }]).select(); // 👈 نطلب من قاعدة البيانات إرجاع السطر الجديد مع الـ ID الحقيقي
+
+      if (!error && data && data.length > 0) {
+        // نأخذ البيانات الحقيقية من السيرفر ونضعها في الشاشة
+        setTeam(prev => [...prev, data[0]]);
+      } else {
+        console.error("Insert Error:", error);
+        alert(language === 'ar' ? 'لم يتم الحفظ، تأكد من اتصالك!' : 'Erreur de sauvegarde DB !');
+      }
     }
 
     // إغلاق النافذة وتصفير البيانات
