@@ -77,6 +77,8 @@ export default function ContractorDashboard() {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assignType, setAssignType] = useState('manual');
+  const [editingWorkerId, setEditingWorkerId] = useState(null);
+  const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '' });
 
   const translations = {
     ar: {
@@ -521,6 +523,20 @@ export default function ContractorDashboard() {
       setSaveStatus('error'); 
       setTimeout(() => setSaveStatus(null), 3000); 
     }
+  };
+
+  const handleDeleteWorker = (workerId) => {
+    // سيتم ربطها بقاعدة البيانات لاحقاً
+    if(window.confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا العضو؟' : 'Supprimer ce membre ?')) {
+       alert('تم الحذف (للتجربة)');
+    }
+  };
+
+  const handleEditWorker = (worker) => {
+    setAssignType('manual');
+    setEditingWorkerId(worker.id);
+    setAssignForm({ name: worker.name, phone: worker.phone, role: worker.role });
+    setIsAssignModalOpen(true);
   };
 
   // 🚀 دالة إنشاء الورش الجديد
@@ -1072,7 +1088,12 @@ export default function ContractorDashboard() {
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
                 <h2 className="text-xl font-black flex items-center gap-2">👷 {t.teamTitle}</h2>
                 {/* زر لفتح نافذة التعيين الذكية */}
-                <button onClick={() => setIsAssignModalOpen(true)} className="bg-blue-100/80 text-blue-600 hover:bg-blue-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2">
+                <button onClick={() => {
+                    setAssignType('manual');
+                    setEditingWorkerId(null);
+                    setAssignForm({ name: '', phone: '', role: '' });
+                    setIsAssignModalOpen(true);
+                  }} className="bg-blue-100/80 text-blue-600 hover:bg-blue-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2">
                   <Plus size={16} /> أضف عضو
                 </button>
               </div>
@@ -1107,10 +1128,10 @@ export default function ContractorDashboard() {
 
                       {/* أزرار التعديل والحذف المخفية (تظهر بالـ Hover) */}
                       <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-                        <button className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}>
+                        <button onClick={() => handleEditWorker(worker)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}>
                           <Edit2 size={14} />
                         </button>
-                        <button className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors" title={t.delete}>
+                        <button onClick={() => handleDeleteWorker(worker.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors" title={t.delete}>
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -1261,16 +1282,16 @@ export default function ContractorDashboard() {
                 <div className="animate-fade-in space-y-4">
                   <div>
                     <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.artisanName}</label>
-                    <input type="text" className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
+                    <input type="text" value={assignForm.name} onChange={e => setAssignForm({...assignForm, name: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
                   </div>
                   <div className="flex gap-4">
                      <div className="flex-1">
                       <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.artisanPhone}</label>
-                      <input type="tel" className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
+                      <input type="tel" value={assignForm.phone} onChange={e => setAssignForm({...assignForm, phone: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
                     </div>
                     <div className="flex-1">
                       <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.role}</label>
-                      <input type="text" placeholder="ex: Plombier" className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
+                      <input type="text" placeholder="ex: Plombier" value={assignForm.role} onChange={e => setAssignForm({...assignForm, role: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
                     </div>
                   </div>
                   {/* تنبيه الواتساب السحري */}
