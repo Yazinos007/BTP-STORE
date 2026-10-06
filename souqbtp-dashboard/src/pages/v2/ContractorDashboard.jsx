@@ -98,7 +98,7 @@ export default function ContractorDashboard() {
       team: "فريق الورش", role: "الصفة / التخصص", edit: "تعديل", delete: "حذف", assignTitle: "تعيين مسؤول أو حرفي", assignType: "طريقة التعيين", typeManual: "إدخال يدوي (فريق خاص)", 
       typeFavorites: "كناش العناوين (فريقي المفضل)", typeMarketplace: "بحث ذكي في الماركت بليس", artisanName: "اسم الحرفي", artisanPhone: "رقم الهاتف", 
       whatsappHint: "💡 سيقوم النظام بإرسال دعوة عبر WhatsApp لهذا الرقم لربطه بالورش مباشرة.", save: "حفظ وتعيين", cancel: "إلغاء", selectFavorite: "اختر من فريقك المفضل...",
-      rolePlaceholder: "مثال: صباغ، سباك، بناء..." 
+      rolePlaceholder: "مثال: صباغ، سباك، بناء...", addMember: "أضف عضو"
     },
     fr: {
       pageTitle: "Gestion des Chantiers", calcBtn: "Calculateur Intelligent", rateBtn: "Évaluation Artisans", projectPathBtn: "Parcours du Projet",
@@ -117,7 +117,7 @@ export default function ContractorDashboard() {
       team: "Équipe du Chantier", role: "Rôle / Spécialité", edit: "Modifier", delete: "Supprimer", assignTitle: "Assigner un responsable", assignType: "Type d'assignation",
       typeManual: "Saisie Manuelle (Équipe privée)", typeFavorites: "Mes Favoris (Carnet d'adresses)", typeMarketplace: "Recherche IA (Marketplace)", artisanName: "Nom de l'artisan",
       artisanPhone: "Numéro de téléphone", whatsappHint: "💡 Un message WhatsApp sera envoyé à ce numéro pour l'inviter à rejoindre le chantier.", save: "Enregistrer",
-      cancel: "Annuler", selectFavorite: "Sélectionnez un profil...", rolePlaceholder: "ex: Plombier, Peintre..."
+      cancel: "Annuler", selectFavorite: "Sélectionnez un profil...", rolePlaceholder: "ex: Plombier, Peintre...", addMember: "Ajouter un membre"
     },
     en: {
       pageTitle: "Site Management", calcBtn: "Smart Cost Calculator", rateBtn: "Artisan Ratings", projectPathBtn: "Project Path", inboxTitle: "Inbox",
@@ -135,7 +135,7 @@ export default function ContractorDashboard() {
       team: "Project Team", role: "Role / Specialty", edit: "Edit", delete: "Delete", assignTitle: "Assign a manager", assignType: "Assignment type",
       typeManual: "Manual Entry (Private team)", typeFavorites: "My Favorites (Address book)", typeMarketplace: "AI Search (Marketplace)", artisanName: "Contractor name",
       artisanPhone: "Phone number", whatsappHint: "💡 A WhatsApp message will be sent to this number inviting them to join the project.", save: "Save", cancel: "Cancel",
-      selectFavorite: "Select a profile...", rolePlaceholder: "ex: Plumber, Painter..."
+      selectFavorite: "Select a profile...", rolePlaceholder: "ex: Plumber, Painter...", addMember: "Add member"
     }
   };
 
@@ -1138,7 +1138,7 @@ export default function ContractorDashboard() {
                     setAssignForm({ name: '', phone: '', role: '' });
                     setIsAssignModalOpen(true);
                   }} className="bg-blue-100/80 text-blue-600 hover:bg-blue-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2">
-                  <Plus size={16} /> أضف عضو
+                  <Plus size={16} /> {t.addMember}
                 </button>
               </div>
               
