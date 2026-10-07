@@ -29,7 +29,8 @@ const translations = {
     permFiscal: 'النظام الجبائي', permCompta: 'المحاسبة والبيان',
     modalTitle: 'إضافة موظف جديد', name: 'الاسم الكامل', email: 'البريد الإلكتروني', password: 'كلمة المرور',
     permissions: 'صلاحيات الوصول الدقيقة', saveUser: 'حفظ المستخدم', cancel: 'إلغاء', boss: 'المالك (Boss)',
-    fullAccess: 'وصول كامل', partialAccess: 'وصول جزئي', noAccess: 'بدون صلاحيات', deleteConfirm: 'حذف هذا المستخدم؟'
+    fullAccess: 'وصول كامل', partialAccess: 'وصول جزئي', noAccess: 'بدون صلاحيات', deleteConfirm: 'حذف هذا المستخدم؟',
+    colChantier: 'الأوراش والميدان', permChantier: 'إدارة الأوراش (رئيس ورش)',
   },
   fr: {
     title: 'Profil & Paramètres', subtitle: 'Gérez votre compte, certifiez votre entreprise et contrôlez les accès.',
@@ -50,7 +51,8 @@ const translations = {
     permFiscal: 'Système Fiscal', permCompta: 'Comptabilité & Bilan',
     modalTitle: 'Nouvel Employé', name: 'Nom complet', email: 'Email', password: 'Mot de passe',
     permissions: 'Permissions détaillées', saveUser: 'Enregistrer', cancel: 'Annuler', boss: 'Propriétaire',
-    fullAccess: 'Accès complet', partialAccess: 'Accès partiel', noAccess: 'Aucun accès', deleteConfirm: 'Supprimer cet utilisateur ?'
+    fullAccess: 'Accès complet', partialAccess: 'Accès partiel', noAccess: 'Aucun accès', deleteConfirm: 'Supprimer cet utilisateur ?',
+    colChantier: 'Chantiers & Terrain', permChantier: 'Gestion de Chantier (Chef)',
   },
   en: {
     title: 'Profile & Settings', subtitle: 'Manage your account, certify your business, and control team access.',
@@ -71,11 +73,13 @@ const translations = {
     permFiscal: 'Tax System', permCompta: 'Accounting',
     modalTitle: 'New Employee', name: 'Full Name', email: 'Email', password: 'Password',
     permissions: 'Access Permissions', saveUser: 'Save User', cancel: 'Cancel', boss: 'Owner',
-    fullAccess: 'Full access', partialAccess: 'Partial access', noAccess: 'No access', deleteConfirm: 'Delete user?'
+    fullAccess: 'Full access', partialAccess: 'Partial access', noAccess: 'No access', deleteConfirm: 'Delete user?',
+    colChantier: 'Field & Sites', permChantier: 'Site Management (Foreman)',
   }
 };
 
 const permissionClusters = {
+  chantier: ['permChantier'],
   operations: ['permAchats', 'permStock', 'permProd'],
   commercial: ['permMarket', 'permVentes', 'permFactures'],
   hr: ['permRH'],
@@ -109,6 +113,7 @@ export default function ContractorProfile() {
   const [isSavingUser, setIsSavingUser] = useState(false);
 
   const defaultPermissions = {
+    permChantier: false,
     permAchats: false, permStock: false, permProd: false,
     permMarket: false, permVentes: false, permFactures: false,
     permRH: false, permCaisses: false, permCharges: false,
@@ -399,6 +404,7 @@ export default function ContractorProfile() {
             <thead>
               <tr className={`border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-200'} text-sm`}>
                 <th className={`pb-4 font-black ${textMuted} text-start`}>{t.userCol}</th>
+                <th className="pb-4 font-black text-purple-500 text-center">{t.colChantier}</th>
                 <th className="pb-4 font-black text-emerald-500 text-center">{t.colOps}</th>
                 <th className="pb-4 font-black text-blue-500 text-center">{t.colCommercial}</th>
                 <th className="pb-4 font-black text-pink-500 text-center">{t.colHR}</th>
@@ -440,6 +446,7 @@ export default function ContractorProfile() {
                         </div>
                       </div>
                     </td>
+                    <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.chantier} /></td>
                     <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.operations} /></td>
                     <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.commercial} /></td>
                     <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.hr} /></td> 
@@ -496,8 +503,10 @@ export default function ContractorProfile() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Object.keys(defaultPermissions).map((key) => {
                     const isChecked = formData.permissions[key];
-                    let theme = { bg: 'bg-orange-500/10', border: 'border-orange-500/30', check: 'bg-orange-500 border-orange-500', text: 'text-orange-500' };
-                    if (key.includes('Market') || key.includes('Ventes') || key.includes('Factures')) theme = { bg: 'bg-blue-500/10', border: 'border-blue-500/30', check: 'bg-blue-500 border-blue-500', text: 'text-blue-500' };
+                    let theme = { bg: 'bg-orange-500/10', border: 'border-orange-500/30', check: 'bg-orange-500 border-orange-500', text: 'text-orange-500' }; // اللون الافتراضي (البرتقالي)
+
+                    if (key.includes('Chantier')) theme = { bg: 'bg-purple-500/10', border: 'border-purple-500/30', check: 'bg-purple-500 border-purple-500', text: 'text-purple-500' };
+                    else if (key.includes('Market') || key.includes('Ventes') || key.includes('Factures')) theme = { bg: 'bg-blue-500/10', border: 'border-blue-500/30', check: 'bg-blue-500 border-blue-500', text: 'text-blue-500' };
                     else if (key.includes('Achats') || key.includes('Stock') || key.includes('Prod')) theme = { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', check: 'bg-emerald-500 border-emerald-500', text: 'text-emerald-500' };
                     else if (key.includes('RH')) theme = { bg: 'bg-pink-500/10', border: 'border-pink-500/30', check: 'bg-pink-500 border-pink-500', text: 'text-pink-500' };
 
