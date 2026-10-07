@@ -19,6 +19,7 @@ import ContractorAccounting from './ContractorAccounting';
 import AIAudit from './AIAudit';
 import ContractorProfile from './ContractorProfile';
 import ContractorSubscription from './ContractorSubscription';
+import ForemanDashboard from './pages/ForemanDashboard'; 
 
 // استيراد صفحات الهبوط (المغناطيس)
 import EmpireLanding from '../../landing-pages/EmpireLanding';
@@ -55,6 +56,7 @@ export default function V2Router({ session, supplier }) {
         
         {/* الرئيسية */}
         <Route path="contractor-dashboard" element={<ContractorDashboard />} />
+        <Route path="foreman-dashboard" element={<ForemanDashboard />} />
         
         {/* القيادة والميدان */}
         <Route path="project-path" element={<ProjectPath />} />
