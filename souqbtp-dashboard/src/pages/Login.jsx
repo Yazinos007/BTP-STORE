@@ -86,8 +86,26 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: authData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
         if (loginError) throw loginError;
+        
+        // 🚀 السحر: التوجيه الذكي بعد تسجيل الدخول
+        if (authData?.user) {
+          // نبحث في جدول الموظفين لمعرفة ما إذا كان هذا المستخدم يمتلك صلاحية رئيس الورش
+          const { data: employeeData } = await supabase
+            .from('employees')
+            .select('permissions, role')
+            .eq('email', authData.user.email)
+            .maybeSingle();
+
+          if (employeeData && employeeData.permissions?.permChantier) {
+            // هذا موظف بصلاحيات "رئيس ورش"
+            window.location.href = '/v2/foreman-dashboard'; // أو استخدام التوجيه الخاص بـ PHP إذا كان المسار مختلفاً
+          } else {
+            // هذا المقاول الأساسي أو موظف إداري آخر
+            window.location.href = '/v2/dashboard'; // أو مسار لوحة التحكم الرئيسية
+          }
+        }
         
       } else {
         const { error: signUpError } = await supabase.auth.signUp({
@@ -95,11 +113,10 @@ export default function Login() {
           password,
           options: {
             data: {
-              // 🚀 قصف شامل: إرسال الاسم في كل المفاتيح المحتملة!
               store_name: storeName,
-              name: storeName,          // ليظهر بشكل صحيح في لوحة Auth
-              full_name: storeName,     // كبديل إضافي
-              company_name: storeName,  // كبديل لاسم الشركة
+              name: storeName,          
+              full_name: storeName,     
+              company_name: storeName,  
               phone: phone || null,
               role: role,
               tier: role === 'wholesaler' ? 'enterprise' : 'starter',
@@ -112,7 +129,6 @@ export default function Login() {
 
         alert(t.regSuccess);
         
-        // إعادة تحميل الصفحة لتسجيل الدخول بسلاسة
         setTimeout(() => {
            window.location.reload();
         }, 1000);
