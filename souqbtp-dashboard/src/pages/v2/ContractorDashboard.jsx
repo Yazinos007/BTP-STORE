@@ -7,7 +7,7 @@ import {
   Calculator, Star, MessageCircle, Briefcase, Camera, Wallet, 
   FolderOpen, LifeBuoy, CheckCircle2, AlertCircle, Upload, 
   Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft, Plus,
-  Edit2, Bot, X, Phone, ShieldCheck
+  Edit2, Bot, X, Phone, ShieldCheck, BellRing
 } from 'lucide-react';
 
 export default function ContractorDashboard() {
@@ -78,7 +78,7 @@ export default function ContractorDashboard() {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assignType, setAssignType] = useState('manual');
   const [editingWorkerId, setEditingWorkerId] = useState(null);
-  const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '', stage: 2, isManager: false });
+  const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '', stage: 2, isManager: false, wage: '' });
 
   const translations = {
     ar: {
@@ -626,6 +626,23 @@ export default function ContractorDashboard() {
     setIsAssignModalOpen(false);
     setEditingWorkerId(null);
     setAssignForm({ name: '', phone: '', role: '', stage: 2, isManager: false });
+  };
+
+  // 🚀 سحر الـ B2B: دالة الموافقة على تعيين حرفي
+  const handleApproveWorker = async (workerId) => {
+    // تحديث الواجهة فوراً (Optimistic UI)
+    setTeam(prev => prev.map(w => w.id === workerId ? { ...w, status: 'approved' } : w));
+    // تحديث قاعدة البيانات
+    const { error } = await supabase.from('milestone_assignments').update({ status: 'approved' }).eq('id', workerId);
+    if (error) alert("خطأ في الاتصال بقاعدة البيانات");
+  };
+
+  // 🚀 سحر الـ B2B: دالة رفض تعيين حرفي
+  const handleRejectWorker = async (workerId) => {
+    if(window.confirm(language === 'ar' ? 'هل أنت متأكد من رفض هذا التعيين؟' : 'Refuser cette assignation ?')) {
+       setTeam(prev => prev.filter(w => w.id !== workerId));
+       await supabase.from('milestone_assignments').delete().eq('id', workerId);
+    }
   };
 
   // 🚀 دالة إنشاء الورش الجديد
@@ -1180,27 +1197,60 @@ export default function ContractorDashboard() {
                 <button onClick={() => {
                     setAssignType('manual');
                     setEditingWorkerId(null);
-                    setAssignForm({ name: '', phone: '', role: '', stage: 2, isManager: false });
+                    setAssignForm({ name: '', phone: '', role: '', stage: 2, isManager: false, wage: '' });
                     setIsAssignModalOpen(true);
                   }} className="bg-blue-100/80 text-blue-600 hover:bg-blue-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2">
                   <Plus size={16} /> {t.addMember}
                 </button>
               </div>
               
-              {/* عرض الفريق المنظم هرمياً */}
+              {/* عرض الفريق المنظم هرمياً + نظام الموافقات B2B */}
               {team.length === 0 ? (
                  <p className={`text-center py-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.noTeam}</p>
               ) : (
                 <div className="space-y-8 animate-fade-in">
                   
-                  {/* 1. قسم الإدارة (رؤساء الورش) */}
-                  {team.filter(w => w.is_manager).length > 0 && (
+                  {/* 🚨 قسم الطلبات المعلقة (B2B Magic) 🚨 */}
+                  {team.filter(w => w.status === 'pending').length > 0 && (
+                    <div className="mb-8 p-6 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 shadow-lg shadow-amber-500/5">
+                      <h3 className="text-lg font-black text-amber-600 dark:text-amber-500 mb-4 flex items-center gap-2">
+                        <BellRing className="animate-bounce" /> {language === 'ar' ? 'طلبات تعيين في انتظار موافقتك' : 'En attente d\'approbation'}
+                      </h3>
+                      <div className="space-y-3">
+                        {team.filter(w => w.status === 'pending').map(req => (
+                          <div key={req.id} className={`flex flex-col md:flex-row justify-between md:items-center p-4 rounded-xl shadow-sm border gap-4 ${isDarkMode ? 'bg-slate-800 border-amber-700/50' : 'bg-white border-amber-200'}`}>
+                            <div>
+                              <p className={`text-sm font-bold ${textTitle}`}>
+                                <span className="text-amber-600">رئيس الورش</span> يطلب تعيين <span className="text-blue-500">{req.worker_name}</span> بصفة <span className="underline decoration-amber-500 decoration-2">{req.role}</span>
+                              </p>
+                              {req.daily_wage && (
+                                <p className="text-xs font-black mt-2 bg-emerald-500/10 text-emerald-600 inline-block px-3 py-1 rounded-full border border-emerald-500/20">
+                                  الأجر المقترح: {req.daily_wage} درهم/يوم
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => handleApproveWorker(req.id)} className="flex-1 md:flex-none bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg font-black text-sm flex items-center justify-center gap-2 transition-transform hover:scale-105 shadow-md shadow-emerald-500/20">
+                                <CheckCircle2 size={18} /> {language === 'ar' ? 'موافقة' : 'Approuver'}
+                              </button>
+                              <button onClick={() => handleRejectWorker(req.id)} className="flex-1 md:flex-none bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 px-5 py-2.5 rounded-lg font-black text-sm flex items-center justify-center gap-2 transition-transform hover:scale-105">
+                                <X size={18} /> {language === 'ar' ? 'رفض' : 'Refuser'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 1. قسم الإدارة (رؤساء الورش المعتمدين) */}
+                  {team.filter(w => w.is_manager && w.status !== 'pending').length > 0 && (
                     <div>
                       <h3 className={`text-sm font-black mb-4 uppercase tracking-wider text-amber-500 flex items-center gap-2`}>
                         <ShieldCheck size={16} /> الإشراف والقيادة
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {team.filter(w => w.is_manager).map(worker => (
+                        {team.filter(w => w.is_manager && w.status !== 'pending').map(worker => (
                           <div key={worker.id} className={`group relative p-4 rounded-2xl border-2 transition-all hover:shadow-lg flex items-center justify-between overflow-hidden bg-amber-50/50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-700/50 shadow-amber-500/10`}>
                             <div className={`absolute top-0 bottom-0 ${isRtl ? 'right-0' : 'left-0'} w-1.5 bg-amber-500`}></div>
                             <div className={`${isRtl ? 'pr-3' : 'pl-3'}`}>
@@ -1219,7 +1269,6 @@ export default function ContractorDashboard() {
                                 <ShieldCheck size={10}/> {language === 'ar' ? 'صلاحيات وصول' : 'Accès Autorisé'}
                               </span>
                             </div>
-                             {/* أزرار التعديل والحذف */}
                             <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                               <button onClick={() => handleEditWorker(worker)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}><Edit2 size={14} /></button>
                               <button onClick={() => handleDeleteWorker(worker.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors" title={t.delete}><Trash2 size={14} /></button>
@@ -1230,16 +1279,13 @@ export default function ContractorDashboard() {
                     </div>
                   )}
 
-                  {/* 2. قسم فرق العمل مقسمة حسب المراحل */}
+                  {/* 2. قسم فرق العمل (المعتمدين) مقسمة حسب المراحل */}
                   <div className="space-y-6">
                     {[1, 2, 3, 4].map(stageId => {
-                      // جلب العمال الذين يتبعون لهذه المرحلة وليسوا مدراء
-                      const stageWorkers = team.filter(w => !w.is_manager && (w.stage_id === stageId || (!w.stage_id && stageId === 2)));
-                      
-                      if (stageWorkers.length === 0) return null; // إخفاء المرحلة إذا كانت فارغة
+                      const stageWorkers = team.filter(w => !w.is_manager && w.status !== 'pending' && (w.stage_id === stageId || (!w.stage_id && stageId === 2)));
+                      if (stageWorkers.length === 0) return null; 
 
                       const stageColor = stageStyles[stageId].color;
-                      
                       return (
                         <div key={stageId} className="relative">
                           <h3 className={`text-xs font-black mb-3 text-${stageColor}-600 dark:text-${stageColor}-400 flex items-center gap-2 border-b border-${stageColor}-200/30 pb-2`}>
@@ -1258,7 +1304,6 @@ export default function ContractorDashboard() {
                                 <span className={`px-2.5 py-1 rounded-full text-[9px] font-black bg-${stageColor}-50 text-${stageColor}-600 dark:bg-${stageColor}-900/20 dark:text-${stageColor}-400 border border-${stageColor}-100 dark:border-${stageColor}-800/50`}>
                                   {worker.role || t.master || 'حرفي'}
                                 </span>
-                                 {/* أزرار التعديل والحذف */}
                                 <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                                   <button onClick={() => handleEditWorker(worker)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}><Edit2 size={14} /></button>
                                   <button onClick={() => handleDeleteWorker(worker.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors" title={t.delete}><Trash2 size={14} /></button>
