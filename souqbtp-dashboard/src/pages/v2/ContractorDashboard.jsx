@@ -7,7 +7,7 @@ import {
   Calculator, Star, MessageCircle, Briefcase, Camera, Wallet, 
   FolderOpen, LifeBuoy, CheckCircle2, AlertCircle, Upload, 
   Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft, Plus,
-  Edit2, Bot, X, Phone
+  Edit2, Bot, X, Phone, ShieldCheck
 } from 'lucide-react';
 
 export default function ContractorDashboard() {
@@ -551,7 +551,14 @@ export default function ContractorDashboard() {
   const handleEditWorker = (worker) => {
     setAssignType('manual');
     setEditingWorkerId(worker.id);
-    setAssignForm({ name: worker.worker_name, phone: worker.worker_phone || '', role: worker.role || '' });
+    // 🚀 جلب البيانات الجديدة وتعبئتها
+    setAssignForm({ 
+      name: worker.worker_name, 
+      phone: worker.worker_phone || '', 
+      role: worker.role || '',
+      stage: worker.stage_id || 2, // افتراضياً المرحلة 2 إذا لم توجد
+      isManager: worker.is_manager || false // افتراضياً حرفي عادي
+    });
     setIsAssignModalOpen(true);
   };
 
@@ -572,14 +579,14 @@ export default function ContractorDashboard() {
          .update({ 
             worker_name: assignForm.name, 
             worker_phone: assignForm.phone, 
-            role: assignForm.role,        // 👈 يتطلب إضافة العمود في Supabase
-            stage: assignForm.stage,      // 👈 يتطلب إضافة العمود في Supabase
-            isManager: assignForm.isManager // 👈 يتطلب إضافة العمود في Supabase
+            role: assignForm.role,
+            stage_id: assignForm.stage,      // 👈 حفظ المرحلة
+            is_manager: assignForm.isManager // 👈 حفظ صلاحية الإدارة
           })
          .eq('id', editingWorkerId)
          .select();
 
-      if (!error) {
+      if (!error && data) {
         setTeam(prev => prev.map(w => w.id === editingWorkerId ? data[0] : w));
       } else {
         console.error("Update Error:", error);
@@ -594,9 +601,9 @@ export default function ContractorDashboard() {
          assignment_type: assignType, 
          worker_name: assignForm.name,
          worker_phone: assignForm.phone,
-         role: assignForm.role,        // 👈 يتطلب إضافة العمود في Supabase
-         stage: assignForm.stage,      // 👈 يتطلب إضافة العمود في Supabase
-         isManager: assignForm.isManager // 👈 يتطلب إضافة العمود في Supabase
+         role: assignForm.role,
+         stage_id: assignForm.stage,      // 👈 حفظ المرحلة
+         is_manager: assignForm.isManager // 👈 حفظ صلاحية الإدارة
       };
       
       const { data, error } = await supabase.from('milestone_assignments')
@@ -607,19 +614,18 @@ export default function ContractorDashboard() {
         setTeam(prev => [...prev, data[0]]);
       } else {
         console.error("Insert Error details:", error);
-        // 🚀 معالجة خاصة لرسالة الخطأ الشهيرة "schema cache"
         if (error?.message?.includes("schema cache")) {
-           alert("تم إضافة العمود في قاعدة البيانات، يرجى تحديث الصفحة (Refresh) والمحاولة مرة أخرى.");
+           alert(language === 'ar' ? "تمت إضافة أعمدة جديدة في قاعدة البيانات، يرجى تحديث الصفحة (Refresh)." : "Cache schéma modifié, veuillez rafraîchir.");
         } else {
            alert(`Insert Error: ${error?.message || 'Unknown error'}`);
         }
       }
     }
 
-    // إغلاق النافذة وتصفير البيانات
+    // إغلاق النافذة وتصفير البيانات (مع تصفير الخصائص الجديدة أيضاً)
     setIsAssignModalOpen(false);
     setEditingWorkerId(null);
-    setAssignForm({ name: '', phone: '', role: '' });
+    setAssignForm({ name: '', phone: '', role: '', stage: 2, isManager: false });
   };
 
   // 🚀 دالة إنشاء الورش الجديد
