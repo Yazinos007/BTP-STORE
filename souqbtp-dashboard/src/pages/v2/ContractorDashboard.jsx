@@ -98,7 +98,7 @@ export default function ContractorDashboard() {
       team: "فريق الورش", role: "الصفة / التخصص", edit: "تعديل", delete: "حذف", assignTitle: "تعيين مسؤول أو حرفي", assignType: "طريقة التعيين", typeManual: "إدخال يدوي (فريق خاص)", 
       typeFavorites: "كناش العناوين (فريقي المفضل)", typeMarketplace: "بحث ذكي في الماركت بليس", artisanName: "اسم الحرفي", artisanPhone: "رقم الهاتف", 
       whatsappHint: "💡 سيقوم النظام بإرسال دعوة عبر WhatsApp لهذا الرقم لربطه بالورش مباشرة.", save: "حفظ وتعيين", cancel: "إلغاء", selectFavorite: "اختر من فريقك المفضل...",
-      rolePlaceholder: "مثال: صباغ، سباك، بناء...", addMember: "أضف عضو"
+      rolePlaceholder: "مثال: صباغ، سباك، بناء...", addMember: "أضف عضو", leadershipTitle: "الإشراف والقيادة" 
     },
     fr: {
       pageTitle: "Gestion des Chantiers", calcBtn: "Calculateur Intelligent", rateBtn: "Évaluation Artisans", projectPathBtn: "Parcours du Projet",
@@ -117,7 +117,7 @@ export default function ContractorDashboard() {
       team: "Équipe du Chantier", role: "Rôle / Spécialité", edit: "Modifier", delete: "Supprimer", assignTitle: "Assigner un responsable", assignType: "Type d'assignation",
       typeManual: "Saisie Manuelle (Équipe privée)", typeFavorites: "Mes Favoris (Carnet d'adresses)", typeMarketplace: "Recherche IA (Marketplace)", artisanName: "Nom de l'artisan",
       artisanPhone: "Numéro de téléphone", whatsappHint: "💡 Un message WhatsApp sera envoyé à ce numéro pour l'inviter à rejoindre le chantier.", save: "Enregistrer",
-      cancel: "Annuler", selectFavorite: "Sélectionnez un profil...", rolePlaceholder: "ex: Plombier, Peintre...", addMember: "Ajouter un membre"
+      cancel: "Annuler", selectFavorite: "Sélectionnez un profil...", rolePlaceholder: "ex: Plombier, Peintre...", addMember: "Ajouter un membre", leadershipTitle: "Supervision & Direction"
     },
     en: {
       pageTitle: "Site Management", calcBtn: "Smart Cost Calculator", rateBtn: "Artisan Ratings", projectPathBtn: "Project Path", inboxTitle: "Inbox",
@@ -135,7 +135,7 @@ export default function ContractorDashboard() {
       team: "Project Team", role: "Role / Specialty", edit: "Edit", delete: "Delete", assignTitle: "Assign a manager", assignType: "Assignment type",
       typeManual: "Manual Entry (Private team)", typeFavorites: "My Favorites (Address book)", typeMarketplace: "AI Search (Marketplace)", artisanName: "Contractor name",
       artisanPhone: "Phone number", whatsappHint: "💡 A WhatsApp message will be sent to this number inviting them to join the project.", save: "Save", cancel: "Cancel",
-      selectFavorite: "Select a profile...", rolePlaceholder: "ex: Plumber, Painter...", addMember: "Add member"
+      selectFavorite: "Select a profile...", rolePlaceholder: "ex: Plumber, Painter...", addMember: "Add member", leadershipTitle: "Supervision & Leadership"
     }
   };
 
@@ -1248,10 +1248,10 @@ export default function ContractorDashboard() {
 
                   {/* 1. قسم الإدارة (رؤساء الورش المعتمدين) */}
                   {team.filter(w => w.is_manager && w.status !== 'pending').length > 0 && (
-                    <div>
-                      <h3 className={`text-sm font-black mb-4 uppercase tracking-wider text-amber-500 flex items-center gap-2`}>
-                        <ShieldCheck size={16} /> الإشراف والقيادة
-                      </h3>
+                      <div>
+                        <h3 className={`text-sm font-black mb-4 uppercase tracking-wider text-amber-500 flex items-center gap-2`}>
+                          <ShieldCheck size={16} /> {t.leadershipTitle}
+                        </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {team.filter(w => w.is_manager && w.status !== 'pending').map(worker => (
                           <div key={worker.id} className={`group relative p-4 rounded-2xl border-2 transition-all hover:shadow-lg flex items-center justify-between overflow-hidden bg-amber-50/50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-700/50 shadow-amber-500/10`}>
