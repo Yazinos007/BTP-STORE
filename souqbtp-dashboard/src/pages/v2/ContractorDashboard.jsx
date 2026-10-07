@@ -78,7 +78,7 @@ export default function ContractorDashboard() {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assignType, setAssignType] = useState('manual');
   const [editingWorkerId, setEditingWorkerId] = useState(null);
-  const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '' });
+  const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '', stage: 2, isManager: false });
 
   const translations = {
     ar: {
@@ -242,6 +242,13 @@ export default function ContractorDashboard() {
     ar: ['رخصة بناء', 'تصميم هندسي', 'فاتورة / توصيل', 'عقد عمل', 'أخرى'],
     fr: ['Permis de construire', 'Conception architecturale', 'Facture / Livraison', 'Contrat de travail', 'Autre'],
     en: ['Building permit', 'Architectural design', 'Invoice / Delivery', 'Work contract', 'Other']
+  };
+
+  const stageStyles = {
+    1: { color: 'blue', hex: '#3b82f6', icon: '📝', name: 'Planification' },
+    2: { color: 'orange', hex: '#f97316', icon: '🏗️', name: 'Exécution' },
+    3: { color: 'purple', hex: '#a855f7', icon: '🎨', name: 'Finition' },
+    4: { color: 'emerald', hex: '#22c55e', icon: '📜', name: 'Enregistrement' }
   };
 
   const cardClass = `relative z-10 rounded-3xl p-6 transition-all duration-500 transform hover:-translate-y-2 border-2 ${
@@ -565,7 +572,9 @@ export default function ContractorDashboard() {
          .update({ 
             worker_name: assignForm.name, 
             worker_phone: assignForm.phone, 
-            role: assignForm.role // 👈 يتطلب إضافة العمود في Supabase
+            role: assignForm.role,        // 👈 يتطلب إضافة العمود في Supabase
+            stage: assignForm.stage,      // 👈 يتطلب إضافة العمود في Supabase
+            isManager: assignForm.isManager // 👈 يتطلب إضافة العمود في Supabase
           })
          .eq('id', editingWorkerId)
          .select();
@@ -582,10 +591,12 @@ export default function ContractorDashboard() {
       const insertPayload = {
          user_id: user.id,           
          project_id: activeProject.id, 
-         assignment_type: assignType, // 👈 استخدمنا الحقل الموجود في جدولك
+         assignment_type: assignType, 
          worker_name: assignForm.name,
          worker_phone: assignForm.phone,
-         role: assignForm.role        // 👈 يتطلب إضافة العمود في Supabase
+         role: assignForm.role,        // 👈 يتطلب إضافة العمود في Supabase
+         stage: assignForm.stage,      // 👈 يتطلب إضافة العمود في Supabase
+         isManager: assignForm.isManager // 👈 يتطلب إضافة العمود في Supabase
       };
       
       const { data, error } = await supabase.from('milestone_assignments')
@@ -1176,20 +1187,29 @@ export default function ContractorDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {team.map(worker => (
-                    <div key={worker.id} className={`group relative p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} shadow-sm transition-all hover:shadow-md flex items-center justify-between overflow-hidden`}>
+                    <div key={worker.id} className={`group relative p-4 rounded-2xl border-2 transition-all hover:shadow-md flex items-center justify-between overflow-hidden ${worker.is_manager ? 'bg-amber-50/30 border-amber-200 dark:bg-amber-900/10 dark:border-amber-700/50' : (isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200')}`}>
                       
-                      <div>
-                        {/* استخدمنا worker_name لأنه الاسم الحقيقي في الجدول */}
-                        <h4 className={`font-bold text-sm mb-1 ${textTitle}`}>{worker.worker_name}</h4>
-                        <p className={`text-xs flex items-center gap-1 ${textMuted}`}>
-                          <Phone size={12} /> {worker.worker_phone || 'لا يوجد رقم'}
+                      {/* شريط جانبي يمثل لون المرحلة */}
+                      <div className={`absolute top-0 bottom-0 ${isRtl ? 'right-0' : 'left-0'} w-1.5 bg-${stageStyles[worker.stage_id || 2]?.color}-500`}></div>
+                      
+                      <div className={`${isRtl ? 'pr-3' : 'pl-3'}`}>
+                        <h4 className={`font-black text-sm mb-1 flex items-center gap-1 ${worker.is_manager ? 'text-amber-700 dark:text-amber-500' : textTitle}`}>
+                          {worker.is_manager && '👑'} {worker.worker_name}
+                        </h4>
+                        <p className={`text-xs font-bold flex items-center gap-1 ${textMuted}`}>
+                          <Phone size={10} /> {worker.worker_phone || 'لا يوجد رقم'}
                         </p>
                       </div>
                       
-                      {/* شريط الصفة (Role Badge) */}
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400`}>
-                        {worker.role || t.master || 'حرفي'}
-                      </span>
+                      {/* شريط الصفة والمرحلة */}
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black bg-${stageStyles[worker.stage_id || 2]?.color}-100 text-${stageStyles[worker.stage_id || 2]?.color}-600 dark:bg-${stageStyles[worker.stage_id || 2]?.color}-900/30 dark:text-${stageStyles[worker.stage_id || 2]?.color}-400`}>
+                          {worker.role || t.master || 'حرفي'}
+                        </span>
+                        {worker.is_manager && (
+                           <span className="text-[9px] font-bold text-amber-500 flex items-center gap-1"><ShieldCheck size={10}/> Chef</span>
+                        )}
+                      </div>
 
                       {/* أزرار التعديل والحذف */}
                       <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
@@ -1342,23 +1362,58 @@ export default function ContractorDashboard() {
             {/* المحتوى يتغير حسب نوع التعيين */}
             <div className="space-y-4 mb-8">
               
-              {/* الخيار الأول: إدخال يدوي (تطبيق اختراق الواتساب) */}
+              {/* الخيار الأول: إدخال يدوي (متطور) */}
               {assignType === 'manual' && (
-                <div className="animate-fade-in space-y-4">
+                <div className="animate-fade-in space-y-5">
+                  
+                  {/* مفتاح رئيس الورش (Toggle) */}
+                  <div className={`p-4 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-colors ${assignForm.isManager ? 'bg-amber-500/10 border-amber-500/50' : (isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200')}`} onClick={() => setAssignForm({...assignForm, isManager: !assignForm.isManager})}>
+                    <div>
+                      <h4 className={`font-black text-sm flex items-center gap-2 ${assignForm.isManager ? 'text-amber-600 dark:text-amber-500' : textTitle}`}>
+                        👑 {language === 'ar' ? 'تعيين كرئيس ورش (Chef de Chantier)' : 'Définir comme Chef de Chantier'}
+                      </h4>
+                      <p className={`text-[10px] font-bold mt-1 ${textMuted}`}>
+                        {language === 'ar' ? 'سيتم منحه صلاحيات في لوحة الأذونات لتعيين الحرفيين' : 'Sera autorisé dans le Panneau des Permissions'}
+                      </p>
+                    </div>
+                    <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${assignForm.isManager ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
+                      <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-in-out ${assignForm.isManager ? (isRtl ? '-translate-x-6' : 'translate-x-6') : 'translate-x-0'}`}></div>
+                    </div>
+                  </div>
+
                   <div>
                     <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.artisanName}</label>
-                    <input type="text" value={assignForm.name} onChange={e => setAssignForm({...assignForm, name: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
+                    <input type="text" value={assignForm.name} onChange={e => setAssignForm({...assignForm, name: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`} />
                   </div>
+                  
                   <div className="flex gap-4">
                      <div className="flex-1">
                       <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.artisanPhone}</label>
-                      <input type="tel" value={assignForm.phone} onChange={e => setAssignForm({...assignForm, phone: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
+                      <input type="tel" value={assignForm.phone} onChange={e => setAssignForm({...assignForm, phone: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`} />
                     </div>
                     <div className="flex-1">
                       <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.role}</label>
-                      <input type="text" placeholder={t.rolePlaceholder} value={assignForm.role} onChange={e => setAssignForm({...assignForm, role: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} />
+                      <input type="text" placeholder={t.rolePlaceholder} value={assignForm.role} onChange={e => setAssignForm({...assignForm, role: e.target.value})} className={`w-full p-3 rounded-xl border text-sm outline-none font-bold ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`} />
                     </div>
                   </div>
+
+                  {/* اختيار المرحلة بالألوان */}
+                  <div>
+                    <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{language === 'ar' ? 'ربط بمرحلة الورش' : 'Associer à l\'étape'}</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4].map(stageId => (
+                        <button
+                          key={stageId}
+                          type="button"
+                          onClick={() => setAssignForm({...assignForm, stage: stageId})}
+                          className={`flex-1 py-2 rounded-xl text-xs font-black transition-all border-2 ${assignForm.stage === stageId ? `bg-${stageStyles[stageId].color}-500 border-${stageStyles[stageId].color}-500 text-white shadow-md transform -translate-y-1` : (isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500' : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300')}`}
+                        >
+                          {stageStyles[stageId].icon} {stageId}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* تنبيه الواتساب السحري */}
                   <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex gap-3 items-start">
                     <span className="text-emerald-500 mt-0.5"><MessageCircle size={16}/></span>
