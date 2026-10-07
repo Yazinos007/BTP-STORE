@@ -1180,54 +1180,96 @@ export default function ContractorDashboard() {
                 <button onClick={() => {
                     setAssignType('manual');
                     setEditingWorkerId(null);
-                    setAssignForm({ name: '', phone: '', role: '' });
+                    setAssignForm({ name: '', phone: '', role: '', stage: 2, isManager: false });
                     setIsAssignModalOpen(true);
                   }} className="bg-blue-100/80 text-blue-600 hover:bg-blue-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2">
                   <Plus size={16} /> {t.addMember}
                 </button>
               </div>
               
-              {/* عرض الفريق الحقيقي من قاعدة البيانات */}
+              {/* عرض الفريق المنظم هرمياً */}
               {team.length === 0 ? (
-                 <p className={`text-center ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.noTeam}</p>
+                 <p className={`text-center py-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.noTeam}</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {team.map(worker => (
-                    <div key={worker.id} className={`group relative p-4 rounded-2xl border-2 transition-all hover:shadow-md flex items-center justify-between overflow-hidden ${worker.is_manager ? 'bg-amber-50/30 border-amber-200 dark:bg-amber-900/10 dark:border-amber-700/50' : (isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200')}`}>
-                      
-                      {/* شريط جانبي يمثل لون المرحلة */}
-                      <div className={`absolute top-0 bottom-0 ${isRtl ? 'right-0' : 'left-0'} w-1.5 bg-${stageStyles[worker.stage_id || 2]?.color}-500`}></div>
-                      
-                      <div className={`${isRtl ? 'pr-3' : 'pl-3'}`}>
-                        <h4 className={`font-black text-sm mb-1 flex items-center gap-1 ${worker.is_manager ? 'text-amber-700 dark:text-amber-500' : textTitle}`}>
-                          {worker.is_manager && '👑'} {worker.worker_name}
-                        </h4>
-                        <p className={`text-xs font-bold flex items-center gap-1 ${textMuted}`}>
-                          <Phone size={10} /> {worker.worker_phone || 'لا يوجد رقم'}
-                        </p>
-                      </div>
-                      
-                      {/* شريط الصفة والمرحلة */}
-                      <div className="flex flex-col items-end gap-1">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-black bg-${stageStyles[worker.stage_id || 2]?.color}-100 text-${stageStyles[worker.stage_id || 2]?.color}-600 dark:bg-${stageStyles[worker.stage_id || 2]?.color}-900/30 dark:text-${stageStyles[worker.stage_id || 2]?.color}-400`}>
-                          {worker.role || t.master || 'حرفي'}
-                        </span>
-                        {worker.is_manager && (
-                           <span className="text-[9px] font-bold text-amber-500 flex items-center gap-1"><ShieldCheck size={10}/> Chef</span>
-                        )}
-                      </div>
-
-                      {/* أزرار التعديل والحذف */}
-                      <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-                        <button onClick={() => handleEditWorker(worker)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}>
-                          <Edit2 size={14} />
-                        </button>
-                        <button onClick={() => handleDeleteWorker(worker.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors" title={t.delete}>
-                          <Trash2 size={14} />
-                        </button>
+                <div className="space-y-8 animate-fade-in">
+                  
+                  {/* 1. قسم الإدارة (رؤساء الورش) */}
+                  {team.filter(w => w.is_manager).length > 0 && (
+                    <div>
+                      <h3 className={`text-sm font-black mb-4 uppercase tracking-wider text-amber-500 flex items-center gap-2`}>
+                        <ShieldCheck size={16} /> الإشراف والقيادة
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {team.filter(w => w.is_manager).map(worker => (
+                          <div key={worker.id} className={`group relative p-4 rounded-2xl border-2 transition-all hover:shadow-lg flex items-center justify-between overflow-hidden bg-amber-50/50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-700/50 shadow-amber-500/10`}>
+                            <div className={`absolute top-0 bottom-0 ${isRtl ? 'right-0' : 'left-0'} w-1.5 bg-amber-500`}></div>
+                            <div className={`${isRtl ? 'pr-3' : 'pl-3'}`}>
+                              <h4 className={`font-black text-base mb-1 flex items-center gap-1 text-amber-700 dark:text-amber-400`}>
+                                👑 {worker.worker_name}
+                              </h4>
+                              <p className={`text-xs font-bold flex items-center gap-1 ${textMuted}`}>
+                                <Phone size={12} /> {worker.worker_phone || 'لا يوجد رقم'}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300`}>
+                                {worker.role || t.master || 'مدير المشروع'}
+                              </span>
+                              <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1">
+                                <ShieldCheck size={10}/> {language === 'ar' ? 'صلاحيات وصول' : 'Accès Autorisé'}
+                              </span>
+                            </div>
+                             {/* أزرار التعديل والحذف */}
+                            <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                              <button onClick={() => handleEditWorker(worker)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}><Edit2 size={14} /></button>
+                              <button onClick={() => handleDeleteWorker(worker.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors" title={t.delete}><Trash2 size={14} /></button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* 2. قسم فرق العمل مقسمة حسب المراحل */}
+                  <div className="space-y-6">
+                    {[1, 2, 3, 4].map(stageId => {
+                      // جلب العمال الذين يتبعون لهذه المرحلة وليسوا مدراء
+                      const stageWorkers = team.filter(w => !w.is_manager && (w.stage_id === stageId || (!w.stage_id && stageId === 2)));
+                      
+                      if (stageWorkers.length === 0) return null; // إخفاء المرحلة إذا كانت فارغة
+
+                      const stageColor = stageStyles[stageId].color;
+                      
+                      return (
+                        <div key={stageId} className="relative">
+                          <h3 className={`text-xs font-black mb-3 text-${stageColor}-600 dark:text-${stageColor}-400 flex items-center gap-2 border-b border-${stageColor}-200/30 pb-2`}>
+                            {stageStyles[stageId].icon} {t.stageNames[stageId]}
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {stageWorkers.map(worker => (
+                              <div key={worker.id} className={`group relative p-3 rounded-2xl border transition-all hover:shadow-md flex items-center justify-between overflow-hidden ${isDarkMode ? 'bg-slate-800/80 border-slate-700/80' : 'bg-white border-slate-100'}`}>
+                                <div className={`absolute top-0 bottom-0 ${isRtl ? 'right-0' : 'left-0'} w-1 bg-${stageColor}-400`}></div>
+                                <div className={`${isRtl ? 'pr-3' : 'pl-3'}`}>
+                                  <h4 className={`font-bold text-sm mb-0.5 ${textTitle}`}>{worker.worker_name}</h4>
+                                  <p className={`text-[10px] font-bold flex items-center gap-1 ${textMuted}`}>
+                                    <Phone size={10} /> {worker.worker_phone || '---'}
+                                  </p>
+                                </div>
+                                <span className={`px-2.5 py-1 rounded-full text-[9px] font-black bg-${stageColor}-50 text-${stageColor}-600 dark:bg-${stageColor}-900/20 dark:text-${stageColor}-400 border border-${stageColor}-100 dark:border-${stageColor}-800/50`}>
+                                  {worker.role || t.master || 'حرفي'}
+                                </span>
+                                 {/* أزرار التعديل والحذف */}
+                                <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                                  <button onClick={() => handleEditWorker(worker)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}><Edit2 size={14} /></button>
+                                  <button onClick={() => handleDeleteWorker(worker.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors" title={t.delete}><Trash2 size={14} /></button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
