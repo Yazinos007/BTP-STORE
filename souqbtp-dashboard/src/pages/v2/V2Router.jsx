@@ -19,7 +19,7 @@ import ContractorAccounting from './ContractorAccounting';
 import AIAudit from './AIAudit';
 import ContractorProfile from './ContractorProfile';
 import ContractorSubscription from './ContractorSubscription';
-import ForemanDashboard from '../ForemanDashboard';
+import ForemanDashboard from './ForemanDashboard';
 
 // استيراد صفحات الهبوط (المغناطيس)
 import EmpireLanding from '../../landing-pages/EmpireLanding';
