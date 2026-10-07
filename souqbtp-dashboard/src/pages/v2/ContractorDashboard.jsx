@@ -580,8 +580,9 @@ export default function ContractorDashboard() {
             worker_name: assignForm.name, 
             worker_phone: assignForm.phone, 
             role: assignForm.role,
-            stage_id: assignForm.stage,      // 👈 حفظ المرحلة
-            is_manager: assignForm.isManager // 👈 حفظ صلاحية الإدارة
+            stage_id: assignForm.stage,
+            is_manager: assignForm.isManager,
+            daily_wage: assignForm.wage ? parseFloat(assignForm.wage) : null // 👈 تحديث الأجر
           })
          .eq('id', editingWorkerId)
          .select();
@@ -602,8 +603,10 @@ export default function ContractorDashboard() {
          worker_name: assignForm.name,
          worker_phone: assignForm.phone,
          role: assignForm.role,
-         stage_id: assignForm.stage,      // 👈 حفظ المرحلة
-         is_manager: assignForm.isManager // 👈 حفظ صلاحية الإدارة
+         stage_id: assignForm.stage,      
+         is_manager: assignForm.isManager,
+         daily_wage: assignForm.wage ? parseFloat(assignForm.wage) : null, // 👈 حفظ الأجر
+         status: 'approved' // 👈 المقاول هو من يضيف، إذن مقبولة فوراً (بدون انتظار)
       };
       
       const { data, error } = await supabase.from('milestone_assignments')
@@ -622,10 +625,10 @@ export default function ContractorDashboard() {
       }
     }
 
-    // إغلاق النافذة وتصفير البيانات (مع تصفير الخصائص الجديدة أيضاً)
+    // إغلاق النافذة وتصفير البيانات (بما في ذلك الأجر wage)
     setIsAssignModalOpen(false);
     setEditingWorkerId(null);
-    setAssignForm({ name: '', phone: '', role: '', stage: 2, isManager: false });
+    setAssignForm({ name: '', phone: '', role: '', stage: 2, isManager: false, wage: '' }); // 👈 تصفير wage هنا
   };
 
   // 🚀 سحر الـ B2B: دالة الموافقة على تعيين حرفي
@@ -1268,6 +1271,15 @@ export default function ContractorDashboard() {
                               <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1">
                                 <ShieldCheck size={10}/> {language === 'ar' ? 'صلاحيات وصول' : 'Accès Autorisé'}
                               </span>
+                              {/* 🚀 السلاح الجديد: زر المراسلة الفورية مع رئيس الورش */}
+                              <a 
+                                href={`https://wa.me/${worker.worker_phone?.replace(/\D/g,'')}`} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="mt-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] px-3 py-1.5 rounded-lg font-black flex items-center gap-1.5 transition-all hover:scale-105 hover:shadow-md"
+                              >
+                                <MessageCircle size={12} /> {language === 'ar' ? 'مراسلة القائد' : 'Contacter Chef'}
+                              </a>
                             </div>
                             <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                               <button onClick={() => handleEditWorker(worker)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}><Edit2 size={14} /></button>
