@@ -424,11 +424,16 @@ export default function ContractorProfile() {
             <thead>
               <tr className={`border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-200'} text-sm`}>
                 <th className={`pb-4 font-black ${textMuted} text-start`}>{t.userCol}</th>
-                <th className="pb-4 font-black text-purple-500 text-center">{t.colChantier}</th>
+                {/* الأوراش والميدان: برتقالي */}
+                <th className="pb-4 font-black text-orange-500 text-center">{t.colChantier}</th>
+                {/* العمليات والمخزون: أخضر */}
                 <th className="pb-4 font-black text-emerald-500 text-center">{t.colOps}</th>
-                <th className="pb-4 font-black text-blue-500 text-center">{t.colCommercial}</th>
+                {/* التجارة والمبيعات: أخضر (لأنها تابعة للـ Communication & Achats) */}
+                <th className="pb-4 font-black text-emerald-500 text-center">{t.colCommercial}</th>
+                {/* الموارد البشرية: وردي */}
                 <th className="pb-4 font-black text-pink-500 text-center">{t.colHR}</th>
-                <th className="pb-4 font-black text-orange-500 text-center">{t.colFinance}</th>
+                {/* المالية والمحاسبة: أزرق */}
+                <th className="pb-4 font-black text-blue-500 text-center">{t.colFinance}</th>
                 <th className={`pb-4 font-black ${textMuted} text-center`}>{t.actionsCol}</th>
               </tr>
             </thead>
@@ -523,16 +528,24 @@ export default function ContractorProfile() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Object.keys(defaultPermissions).map((key) => {
                     const isChecked = formData.permissions[key];
-                    let theme = { bg: 'bg-orange-500/10', border: 'border-orange-500/30', check: 'bg-orange-500 border-orange-500', text: 'text-orange-500' };
+                    // اللون الافتراضي (لأي شيء غير محدد)
+                    let theme = { bg: 'bg-slate-500/10', border: 'border-slate-500/30', check: 'bg-slate-500 border-slate-500', text: 'text-slate-500' };
 
-                    if (key.includes('Chantier')) {
-                       theme = { bg: 'bg-purple-500/10', border: 'border-purple-500/30', check: 'bg-purple-500 border-purple-500', text: 'text-purple-500' };
-                    } else if (key.includes('Market') || key.includes('Ventes') || key.includes('Factures')) {
-                       theme = { bg: 'bg-blue-500/10', border: 'border-blue-500/30', check: 'bg-blue-500 border-blue-500', text: 'text-blue-500' };
-                    } else if (key.includes('Achats') || key.includes('Stock') || key.includes('Prod')) {
-                       theme = { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', check: 'bg-emerald-500 border-emerald-500', text: 'text-emerald-500' };
-                    } else if (key.includes('RH')) {
-                       theme = { bg: 'bg-pink-500/10', border: 'border-pink-500/30', check: 'bg-pink-500 border-pink-500', text: 'text-pink-500' };
+                    // 1. Direction & Terrain (الأوراش والميدان) -> برتقالي
+                    if (key === 'permChantier') {
+                      theme = { bg: 'bg-orange-500/10', border: 'border-orange-500/30', check: 'bg-orange-500 border-orange-500', text: 'text-orange-500' };
+                    } 
+                    // 2. Communication & Achats (العمليات والمشتريات) -> أخضر
+                    else if (key === 'permAchats' || key === 'permStock' || key === 'permProd' || key === 'permMarket' || key === 'permVentes') {
+                      theme = { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', check: 'bg-emerald-500 border-emerald-500', text: 'text-emerald-500' };
+                    } 
+                    // 3. Finance & Comptabilité (المالية والمحاسبة) -> أزرق
+                    else if (key === 'permFactures' || key === 'permCaisses' || key === 'permCharges' || key === 'permFiscal' || key === 'permCompta') {
+                      theme = { bg: 'bg-blue-500/10', border: 'border-blue-500/30', check: 'bg-blue-500 border-blue-500', text: 'text-blue-500' };
+                    } 
+                    // 4. Ressources Humaines (الموارد البشرية) -> وردي
+                    else if (key === 'permRH') {
+                      theme = { bg: 'bg-pink-500/10', border: 'border-pink-500/30', check: 'bg-pink-500 border-pink-500', text: 'text-pink-500' };
                     }
 
                     return (
