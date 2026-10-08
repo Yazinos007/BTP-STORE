@@ -219,11 +219,31 @@ export default function ContractorProfile() {
     setIsSavingUser(true);
     try {
       if (formData.id) {
-        await supabase.from('employees').update({ full_name: formData.full_name, email: formData.email, permissions: formData.permissions }).eq('id', formData.id);
+        // تحديث موظف موجود
+        await supabase.from('employees')
+          .update({ 
+            full_name: formData.full_name, 
+            email: formData.email, 
+            permissions: formData.permissions 
+          })
+          .eq('id', formData.id);
       } else {
-        await supabase.from('employees').insert({ supplier_id: userObj.id, full_name: formData.full_name, email: formData.email, role: 'employé', status: 'Actif', permissions: formData.permissions });
+        // 🚀 إضافة موظف جديد: هنا يجب التفكير في طريقة إنشاء الحساب الفعلي
+        // حالياً، نقوم بحفظه كبيانات فقط. يجب على الموظف تسجيل حساب بنفس الإيميل.
+        const { error } = await supabase.from('employees').insert({ 
+          supplier_id: userObj.id, 
+          full_name: formData.full_name, 
+          email: formData.email, 
+          role: 'employé', 
+          status: 'Actif', 
+          permissions: formData.permissions 
+        });
+        
+        if (error) throw error;
+        
+        // تنبيه ذكي للمقاول
+        alert("✅ تم حفظ الصلاحيات! يرجى إخبار الموظف بإنشاء حساب باستخدام نفس البريد الإلكتروني للوصول إلى مكتبه.");
       }
-      alert(t.successSave);
       setIsModalOpen(false);
       refreshTeam(userObj.id);
     } catch (err) { alert('Error: ' + err.message); } 
@@ -503,12 +523,17 @@ export default function ContractorProfile() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Object.keys(defaultPermissions).map((key) => {
                     const isChecked = formData.permissions[key];
-                    let theme = { bg: 'bg-orange-500/10', border: 'border-orange-500/30', check: 'bg-orange-500 border-orange-500', text: 'text-orange-500' }; // اللون الافتراضي (البرتقالي)
+                    let theme = { bg: 'bg-orange-500/10', border: 'border-orange-500/30', check: 'bg-orange-500 border-orange-500', text: 'text-orange-500' };
 
-                    if (key.includes('Chantier')) theme = { bg: 'bg-purple-500/10', border: 'border-purple-500/30', check: 'bg-purple-500 border-purple-500', text: 'text-purple-500' };
-                    else if (key.includes('Market') || key.includes('Ventes') || key.includes('Factures')) theme = { bg: 'bg-blue-500/10', border: 'border-blue-500/30', check: 'bg-blue-500 border-blue-500', text: 'text-blue-500' };
-                    else if (key.includes('Achats') || key.includes('Stock') || key.includes('Prod')) theme = { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', check: 'bg-emerald-500 border-emerald-500', text: 'text-emerald-500' };
-                    else if (key.includes('RH')) theme = { bg: 'bg-pink-500/10', border: 'border-pink-500/30', check: 'bg-pink-500 border-pink-500', text: 'text-pink-500' };
+                    if (key.includes('Chantier')) {
+                       theme = { bg: 'bg-purple-500/10', border: 'border-purple-500/30', check: 'bg-purple-500 border-purple-500', text: 'text-purple-500' };
+                    } else if (key.includes('Market') || key.includes('Ventes') || key.includes('Factures')) {
+                       theme = { bg: 'bg-blue-500/10', border: 'border-blue-500/30', check: 'bg-blue-500 border-blue-500', text: 'text-blue-500' };
+                    } else if (key.includes('Achats') || key.includes('Stock') || key.includes('Prod')) {
+                       theme = { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', check: 'bg-emerald-500 border-emerald-500', text: 'text-emerald-500' };
+                    } else if (key.includes('RH')) {
+                       theme = { bg: 'bg-pink-500/10', border: 'border-pink-500/30', check: 'bg-pink-500 border-pink-500', text: 'text-pink-500' };
+                    }
 
                     return (
                       <label key={key} className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${isChecked ? `${theme.bg}${theme.border}` : (isDarkMode ? 'bg-slate-950 border-slate-800 hover:border-slate-600' : 'bg-slate-50 border-slate-200 hover:border-slate-300')}`}>
