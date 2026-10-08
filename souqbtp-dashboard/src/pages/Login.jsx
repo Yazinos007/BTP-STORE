@@ -86,30 +86,35 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        const { data: authData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: authData, error: loginError } = await supabase.auth.signInWithPassword({ 
+          email: email.trim().toLowerCase(), 
+          password 
+        });
         if (loginError) throw loginError;
         
-        // 🚀 السحر: التوجيه الذكي بعد تسجيل الدخول
+        // 🚀 التوجيه الذكي الموحد بعد تسجيل الدخول
         if (authData?.user) {
-          // نبحث في جدول الموظفين لمعرفة ما إذا كان هذا المستخدم يمتلك صلاحية رئيس الورش
+          const userEmail = authData.user.email.toLowerCase();
+
           const { data: employeeData } = await supabase
             .from('employees')
             .select('permissions, role')
-            .eq('email', authData.user.email)
+            .ilike('email', userEmail)
             .maybeSingle();
 
-          if (employeeData && employeeData.permissions?.permChantier) {
-            // هذا موظف بصلاحيات "رئيس ورش"
-            window.location.href = '/v2/foreman-dashboard'; // أو استخدام التوجيه الخاص بـ PHP إذا كان المسار مختلفاً
+          // التحقق من صلاحية إدارة الورش (تدعم permDashboard أو التسمية السابقة permChantier)
+          const isForeman = employeeData?.permissions?.permDashboard || employeeData?.permissions?.permChantier;
+
+          if (isForeman) {
+            window.location.href = '/v2/foreman-dashboard';
           } else {
-            // هذا المقاول الأساسي أو موظف إداري آخر
-            window.location.href = '/v2/dashboard'; // أو مسار لوحة التحكم الرئيسية
+            window.location.href = '/v2/dashboard';
           }
         }
         
       } else {
         const { error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: email.trim().toLowerCase(),
           password,
           options: {
             data: {

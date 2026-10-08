@@ -22,15 +22,31 @@ const translations = {
     saveInfo: 'حفظ التعديلات', successVerify: '✅ تم إرسال ملفاتك بنجاح!', successSave: '✅ تم الحفظ بنجاح!',
     errorSave: 'حدث خطأ أثناء الحفظ.', connectTelegram: 'ربط الحساب بالتلغرام (VIP)',
     teamTitle: 'لوحة تحكم الصلاحيات', addUserBtn: 'إضافة موظف', userCol: 'المستخدم', actionsCol: 'إجراءات',
-    colCommercial: 'التجارة والمبيعات', colOps: 'العمليات والمخزون', colFinance: 'المالية والمحاسبة', colHR: 'الموارد البشرية',
-    permAchats: 'المشتريات والموردون', permStock: 'المخزون المركزي', permProd: 'الإنتاج (المعمل)', 
-    permMarket: 'الماركت بليس', permVentes: 'المبيعات', permFactures: 'الفواتير',
-    permRH: 'الموارد البشرية', permCaisses: 'الصناديق والبنك', permCharges: 'إدارة المصاريف', 
-    permFiscal: 'النظام الجبائي', permCompta: 'المحاسبة والبيان',
     modalTitle: 'إضافة موظف جديد', name: 'الاسم الكامل', email: 'البريد الإلكتروني', password: 'كلمة المرور',
     permissions: 'صلاحيات الوصول الدقيقة', saveUser: 'حفظ المستخدم', cancel: 'إلغاء', boss: 'المالك (Boss)',
     fullAccess: 'وصول كامل', partialAccess: 'وصول جزئي', noAccess: 'بدون صلاحيات', deleteConfirm: 'حذف هذا المستخدم؟',
     colChantier: 'الأوراش والميدان', permChantier: 'إدارة الأوراش (رئيس ورش)',
+
+    // القيادة والميدان
+    permDashboard: 'لوحة التحكم (مكتب الميدان)',
+    permProjectPath: 'مسار المشروع',
+    permCalculator: 'الحاسبة الذكية',
+    permCamera: 'كاميرا الورش',
+    // التواصل والمشتريات
+    permInbox: 'صندوق الرسائل',
+    permMarket: 'سوق BTP',
+    permRadar: 'رادار العروض والمناقصات',
+    permFreight: 'بورصة الشحن',
+    permLiveOrders: 'الطلبات المباشرة',
+    // المالية والمحاسبة
+    permHR: 'الموارد البشرية',
+    permInvoices: 'فواتير B2B',
+    permAccounts: 'الصناديق والحسابات',
+    permExpenses: 'المصاريف والرسوم',
+    permTax: 'النظام الجبائي',
+    permAccounting: 'المحاسبة العامة',
+    permAudit: 'تدقيق الذكاء الاصطناعي'
+    
   },
   fr: {
     title: 'Profil & Paramètres', subtitle: 'Gérez votre compte, certifiez votre entreprise et contrôlez les accès.',
@@ -44,15 +60,30 @@ const translations = {
     saveInfo: 'Enregistrer', successVerify: '✅ Documents envoyés !', successSave: '✅ Informations enregistrées !',
     errorSave: 'Erreur de sauvegarde.', connectTelegram: 'Lier avec Telegram (VIP)',
     teamTitle: 'Panneau des Permissions', addUserBtn: 'Ajouter Employé', userCol: 'Utilisateur', actionsCol: 'Actions',
-    colCommercial: 'Commercial & Ventes', colOps: 'Opérations & Stock', colFinance: 'Finances & Compta', colHR: 'RH',
-    permAchats: 'Achats & Fournisseurs', permStock: 'Stock Central', permProd: 'Production', 
-    permMarket: 'Marketplace', permVentes: 'Ventes', permFactures: 'Facturation',
-    permRH: 'Ressources Humaines', permCaisses: 'Caisses & Banques', permCharges: 'Gestion des Charges', 
-    permFiscal: 'Système Fiscal', permCompta: 'Comptabilité & Bilan',
     modalTitle: 'Nouvel Employé', name: 'Nom complet', email: 'Email', password: 'Mot de passe',
     permissions: 'Permissions détaillées', saveUser: 'Enregistrer', cancel: 'Annuler', boss: 'Propriétaire',
     fullAccess: 'Accès complet', partialAccess: 'Accès partiel', noAccess: 'Aucun accès', deleteConfirm: 'Supprimer cet utilisateur ?',
     colChantier: 'Chantiers & Terrain', permChantier: 'Gestion de Chantier (Chef)',
+
+    // Direction & Terrain
+    permDashboard: 'Tableau de Bord / Chef',
+    permProjectPath: 'Parcours Projet',
+    permCalculator: 'Calculateur Intelligent',
+    permCamera: 'Caméra du Chantier',
+    // Communication & Achats
+    permInbox: 'Boîte de Réception',
+    permMarket: 'Marché BTP',
+    permRadar: 'Radar Appels d\'offres',
+    permFreight: 'Bourse de Fret',
+    permLiveOrders: 'Commandes Live',
+    // Finance & Comptabilité
+    permHR: 'Ressources Humaines',
+    permInvoices: 'Factures B2B',
+    permAccounts: 'Caisses & Comptes',
+    permExpenses: 'Dépenses & Frais',
+    permTax: 'Système Fiscal',
+    permAccounting: 'Comptabilité Générale',
+    permAudit: 'Audit IA'
   },
   en: {
     title: 'Profile & Settings', subtitle: 'Manage your account, certify your business, and control team access.',
@@ -66,24 +97,37 @@ const translations = {
     saveInfo: 'Save', successVerify: '✅ Documents sent!', successSave: '✅ Saved successfully!',
     errorSave: 'Error saving.', connectTelegram: 'Connect Telegram (VIP)',
     teamTitle: 'Permissions Panel', addUserBtn: 'Add Employee', userCol: 'User', actionsCol: 'Actions',
-    colCommercial: 'Sales', colOps: 'Operations', colFinance: 'Finance', colHR: 'HR',
-    permAchats: 'Purchases', permStock: 'Stock', permProd: 'Production', 
-    permMarket: 'Marketplace', permVentes: 'Sales', permFactures: 'Invoicing',
-    permRH: 'Human Resources', permCaisses: 'Banks', permCharges: 'Expenses', 
-    permFiscal: 'Tax System', permCompta: 'Accounting',
     modalTitle: 'New Employee', name: 'Full Name', email: 'Email', password: 'Password',
     permissions: 'Access Permissions', saveUser: 'Save User', cancel: 'Cancel', boss: 'Owner',
     fullAccess: 'Full access', partialAccess: 'Partial access', noAccess: 'No access', deleteConfirm: 'Delete user?',
     colChantier: 'Field & Sites', permChantier: 'Site Management (Foreman)',
+
+    // Leadership & Field
+    permDashboard: 'Dashboard / Foreman',
+    permProjectPath: 'Project Path',
+    permCalculator: 'Smart Calculator',
+    permCamera: 'Site Camera',
+    // Communication & Purchases
+    permInbox: 'Inbox',
+    permMarket: 'BTP Marketplace',
+    permRadar: 'Tenders Radar',
+    permFreight: 'Freight Exchange',
+    permLiveOrders: 'Live Orders',
+    // Finance & Accounting
+    permHR: 'Human Resources',
+    permInvoices: 'B2B Invoices',
+    permAccounts: 'Cash & Accounts',
+    permExpenses: 'Expenses & Fees',
+    permTax: 'Tax System',
+    permAccounting: 'General Accounting',
+    permAudit: 'AI Audit'
   }
 };
 
 const permissionClusters = {
-  chantier: ['permChantier'],
-  operations: ['permAchats', 'permStock', 'permProd'],
-  commercial: ['permMarket', 'permVentes', 'permFactures'],
-  hr: ['permRH'],
-  finance: ['permCaisses', 'permCharges', 'permFiscal', 'permCompta']
+  terrain: ['permDashboard', 'permProjectPath', 'permCalculator', 'permCamera'],
+  achats: ['permInbox', 'permMarket', 'permRadar', 'permFreight', 'permLiveOrders'],
+  finance: ['permHR', 'permInvoices', 'permAccounts', 'permExpenses', 'permTax', 'permAccounting', 'permAudit']
 };
 
 export default function ContractorProfile() {
@@ -113,12 +157,26 @@ export default function ContractorProfile() {
   const [isSavingUser, setIsSavingUser] = useState(false);
 
   const defaultPermissions = {
-    permChantier: false,
-    permAchats: false, permStock: false, permProd: false,
-    permMarket: false, permVentes: false, permFactures: false,
-    permRH: false, permCaisses: false, permCharges: false,
-    permFiscal: false, permCompta: false
-  };
+  // Direction & Terrain (البرتقالي)
+  permDashboard: false,
+  permProjectPath: false,
+  permCalculator: false,
+  permCamera: false,
+  // Communication & Achats (الأخضر)
+  permInbox: false,
+  permMarket: false,
+  permRadar: false,
+  permFreight: false,
+  permLiveOrders: false,
+  // Finance & Comptabilité (الأزرق)
+  permHR: false,
+  permInvoices: false,
+  permAccounts: false,
+  permExpenses: false,
+  permTax: false,
+  permAccounting: false,
+  permAudit: false
+};
 
   const [formData, setFormData] = useState({
     id: null, full_name: '', email: '', password: '', permissions: defaultPermissions
@@ -528,33 +586,28 @@ export default function ContractorProfile() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Object.keys(defaultPermissions).map((key) => {
                     const isChecked = formData.permissions[key];
-                    // اللون الافتراضي (لأي شيء غير محدد)
                     let theme = { bg: 'bg-slate-500/10', border: 'border-slate-500/30', check: 'bg-slate-500 border-slate-500', text: 'text-slate-500' };
 
-                    // 1. Direction & Terrain (الأوراش والميدان) -> برتقالي
-                    if (key === 'permChantier') {
+                     // 1. Direction & Terrain -> برتقالي
+                    if (['permDashboard', 'permProjectPath', 'permCalculator', 'permCamera'].includes(key)) {
                       theme = { bg: 'bg-orange-500/10', border: 'border-orange-500/30', check: 'bg-orange-500 border-orange-500', text: 'text-orange-500' };
-                    } 
-                    // 2. Communication & Achats (العمليات والمشتريات) -> أخضر
-                    else if (key === 'permAchats' || key === 'permStock' || key === 'permProd' || key === 'permMarket' || key === 'permVentes') {
+                    }
+                     // 2. Communication & Achats -> أخضر
+                    else if (['permInbox', 'permMarket', 'permRadar', 'permFreight', 'permLiveOrders'].includes(key)) {
                       theme = { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', check: 'bg-emerald-500 border-emerald-500', text: 'text-emerald-500' };
-                    } 
-                    // 3. Finance & Comptabilité (المالية والمحاسبة) -> أزرق
-                    else if (key === 'permFactures' || key === 'permCaisses' || key === 'permCharges' || key === 'permFiscal' || key === 'permCompta') {
+                    }
+                     // 3. Finance & Comptabilité -> أزرق
+                    else {
                       theme = { bg: 'bg-blue-500/10', border: 'border-blue-500/30', check: 'bg-blue-500 border-blue-500', text: 'text-blue-500' };
-                    } 
-                    // 4. Ressources Humaines (الموارد البشرية) -> وردي
-                    else if (key === 'permRH') {
-                      theme = { bg: 'bg-pink-500/10', border: 'border-pink-500/30', check: 'bg-pink-500 border-pink-500', text: 'text-pink-500' };
                     }
 
                     return (
-                      <label key={key} className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${isChecked ? `${theme.bg}${theme.border}` : (isDarkMode ? 'bg-slate-950 border-slate-800 hover:border-slate-600' : 'bg-slate-50 border-slate-200 hover:border-slate-300')}`}>
+                      <label key={key} className={`flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${isChecked ? `${theme.bg}${theme.border}` : (isDarkMode ? 'bg-slate-950 border-slate-800 hover:border-slate-700' : 'bg-slate-50 border-slate-200 hover:border-slate-300')}`}>
                         <input type="checkbox" checked={isChecked} onChange={() => handleTogglePermission(key)} className="hidden" />
                         <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${isChecked ? theme.check : (isDarkMode ? 'border-slate-600' : 'border-slate-400')}`}>
                           {isChecked && <Check size={14} className="text-white" />}
                         </div>
-                        <span className={`text-sm font-bold ${isChecked ? theme.text : textMuted}`}>{t[key]}</span>
+                        <span className={`text-xs font-bold leading-tight ${isChecked ? theme.text : textMuted}`}>{t[key]}</span>
                       </label>
                     );
                   })}
