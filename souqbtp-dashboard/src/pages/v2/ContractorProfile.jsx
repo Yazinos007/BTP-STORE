@@ -326,10 +326,11 @@ export default function ContractorProfile() {
   };
 
   // --- Helpers ---
-  const ClusterStatus = ({ permissions, clusterKeys, isBoss }) => {
+  const ClusterStatus = ({ permissions, clusterKeys = [], isBoss }) => {
     if (isBoss) return <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mx-auto shadow-md"><Check size={14} className="text-white" /></div>;
-    const activeCount = clusterKeys.filter(key => permissions?.[key]).length;
-    if (activeCount === clusterKeys.length) return <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mx-auto shadow-md"><Check size={14} className="text-white" /></div>;
+    const keys = Array.isArray(clusterKeys) ? clusterKeys : [];
+    const activeCount = keys.filter(key => permissions?.[key]).length;
+    if (keys.length > 0 && activeCount === keys.length) return <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mx-auto shadow-md"><Check size={14} className="text-white" /></div>;
     if (activeCount > 0) return <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center mx-auto shadow-md"><Minus size={14} className="text-white" /></div>;
     return <div className={`w-6 h-6 rounded-full flex items-center justify-center mx-auto border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-300'}`}><X size={14} className={isDarkMode ? 'text-slate-600' : 'text-slate-400'} /></div>;
   };
