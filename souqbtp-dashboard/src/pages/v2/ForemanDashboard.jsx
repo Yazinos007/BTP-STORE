@@ -72,47 +72,33 @@ export default function ForemanDashboard() {
 
   const t = translations[language] || translations.fr;
 
-  // جلب المشاريع المباشر لضمان عدم بقاء الخانة فارغة
+  // 🚀 1. جلب المستخدم وحماية مصفوفة المشاريع
   useEffect(() => {
     let isMounted = true;
-
-    const loadAllProjects = async () => {
-      try {
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser && isMounted) {
-          setUser(currentUser);
+    const initialize = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user && isMounted) {
+        setUser(session.user);
+        // لا نطلب جلب المشاريع إلا إذا كانت المصفوفة فارغة فعلياً
+        if (!projects || projects.length === 0) {
+          await fetchProjects();
+        } else {
+          setLoading(false); // إذا كانت المشاريع موجودة مسبقاً، نلغي التحميل فوراً
         }
-
-        // جلب الأوراش الخاصة بالمستخدم الحالي أو المتاحة له
-        const { data: dbProjects, error } = await supabase
-          .from('projects')
-          .select('id, name, status')
-          .order('created_at', { ascending: false });
-
-        if (!error && dbProjects && dbProjects.length > 0 && isMounted) {
-          setLocalProjects(dbProjects);
-          // إذا لم يكن هناك ورش نشط، عيّن الأول تلقائياً
-          if (!activeProject) {
-            setActiveProject(dbProjects[0].id);
-          }
-        }
-      } catch (err) {
-        console.error("Error loading projects in ForemanDashboard:", err);
-      } finally {
+      } else {
         if (isMounted) setLoading(false);
       }
     };
-
-    loadAllProjects();
-    fetchProjects();
-
+    initialize();
     return () => { isMounted = false; };
-  }, []);
+  }, [projects.length]); // نراقب طول المصفوفة
 
-  // تحديث بيانات الورش المختار
+  // 🚀 2. جلب بيانات الميدان عند اختيار ورش
   useEffect(() => {
     if (activeProject) {
       fetchFieldData();
+    } else {
+      setLoading(false);
     }
   }, [activeProject]);
 
@@ -213,39 +199,37 @@ export default function ForemanDashboard() {
       </div>
 
       <div className="max-w-md mx-auto">
-        
-        {/* بطاقة الورش مع القائمة المنسدلة النظيفة */}
-        <div className={`p-6 rounded-[2rem] mb-6 border-2 shadow-lg relative overflow-hidden ${isDarkMode ? 'bg-slate-900 border-amber-500/30' : 'bg-amber-500 border-amber-600 text-white'}`}>
-          <div className="absolute -right-4 -top-4 opacity-15 pointer-events-none text-white"><HardHat size={140} /></div>
+        {/* رأس الصفحة: تصميم ميداني صارم ومحمي */}
+        <div className={`p-6 rounded-[2rem] mb-6 border-2 shadow-lg relative overflow-hidden ${isDarkMode ? 'bg-slate-900 border-amber-500/30' : 'bg-amber-500 border-amber-600'}`}>
+          <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none"><HardHat size={150} className={isDarkMode ? 'text-amber-500' : 'text-white'} /></div>
+          
           <div className="relative z-10">
-            <p className={`text-xs font-black uppercase tracking-wider mb-1 ${isDarkMode ? 'text-amber-400' : 'text-amber-950/70'}`}>{t.welcome}</p>
-            <h1 className="text-2xl font-black mb-5">
+            <p className={`text-xs font-black mb-1 ${isDarkMode ? 'text-amber-500' : 'text-amber-100'}`}>{t.welcome}</p>
+            <h1 className="text-2xl font-black mb-6 text-white drop-shadow-md">
               {activeProject ? activeProject.name : t.noProject}
             </h1>
             
-            {/* القائمة المنسدلة النظيفة بدون تداخل أو شفافيات رمادية */}
-            <div className="relative mt-2">
+            {/* 🚀 القائمة المنسدلة: تصميم صلب بخلفية بيضاء صريحة لمنع التداخل */}
+            <div className="mt-2">
               <select 
                 value={activeProject?.id || ''} 
                 onChange={(e) => setActiveProject(e.target.value)}
-                className="w-full p-4 rounded-2xl font-black bg-white text-slate-900 border-2 border-slate-100 shadow-md outline-none cursor-pointer text-sm"
+                className="w-full p-4 rounded-xl font-black bg-white text-slate-900 border-4 border-amber-300 shadow-xl outline-none cursor-pointer text-sm transition-all focus:border-amber-500 appearance-none"
+                style={{ backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23F59E0B%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: isRtl ? 'left 1rem top 50%' : 'right 1rem top 50%', backgroundSize: '0.65rem auto' }}
               >
-                <option value="" disabled className="text-slate-400">
-                  {t.selectProject}
-                </option>
-                {displayedProjects && displayedProjects.length > 0 ? (
-                  displayedProjects.map(p => (
-                    <option key={p.id} value={p.id} className="text-slate-900 font-bold py-2">
+                <option value="" disabled className="text-slate-400 font-normal">{t.selectProject}</option>
+                {projects && projects.length > 0 ? (
+                  projects.map(p => (
+                    <option key={p.id} value={p.id} className="font-bold py-2">
                       🏗️ {p.name} {p.status === 'completed' ? '(أرشيف)' : ''}
                     </option>
                   ))
                 ) : (
-                  <option value="" disabled className="text-slate-400">
-                    {t.loadingProjects}
-                  </option>
+                  <option value="" disabled>{t.loadingProjects}</option>
                 )}
               </select>
             </div>
+
           </div>
         </div>
 
