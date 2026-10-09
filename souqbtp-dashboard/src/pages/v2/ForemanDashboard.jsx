@@ -103,31 +103,41 @@ export default function ForemanDashboard() {
   }, [activeProject]);
 
   const fetchFieldData = async () => {
-    if (!activeProject?.id) return;
+    const currentProjectId = activeProject?.id || activeProject;
+    if (!currentProjectId) {
+      console.warn("⚠️ لا يوجد معرف ورش محدد لجلب الفريق!");
+      return;
+    }
+
     setLoading(true);
     try {
-      // 🚀 جلب كافة عمال هذا الورش
+      console.log("🔍 جاري جلب فريق الورش ذو المعرف:", currentProjectId);
+
+      // 1. جلب التعيينات الخاصة بهذا المشروع
       const { data: teamData, error: teamErr } = await supabase
         .from('milestone_assignments')
         .select('*')
-        .eq('project_id', activeProject.id)
-        .order('created_at', { ascending: false });
+        .eq('project_id', currentProjectId);
 
-      if (!teamErr && teamData) {
-        setTeam(teamData);
+      if (teamErr) {
+        console.error("❌ خطأ Supabase في جلب الفريق:", teamErr);
+      } else {
+        console.log("✅ الفريق المجلوب من milestone_assignments:", teamData);
+        setTeam(teamData || []);
       }
 
-      // جلب التقارير المصورة
+      // 2. جلب التقارير
       const { data: reportsData } = await supabase
         .from('site_reports')
         .select('*')
-        .eq('project_id', activeProject.id)
+        .eq('project_id', currentProjectId)
         .order('created_at', { ascending: false })
         .limit(5);
 
       if (reportsData) setReports(reportsData);
-    } catch (e) {
-      console.error("Error fetching field data:", e);
+
+    } catch (err) {
+      console.error("خطأ غير متوقع:", err);
     } finally {
       setLoading(false);
     }
@@ -222,16 +232,19 @@ export default function ForemanDashboard() {
             {/* 🚀 القائمة المنسدلة: تصميم صلب بخلفية بيضاء صريحة لمنع التداخل */}
             <div className="mt-2">
               <select 
-                value={activeProject?.id || ''} 
-                onChange={(e) => setActiveProject(e.target.value)}
-                className="w-full p-4 rounded-xl font-black bg-white text-slate-900 border-4 border-amber-300 shadow-xl outline-none cursor-pointer text-sm transition-all focus:border-amber-500 appearance-none"
-                style={{ backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23F59E0B%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: isRtl ? 'left 1rem top 50%' : 'right 1rem top 50%', backgroundSize: '0.65rem auto' }}
+                value={activeProject?.id || activeProject || ''} 
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  const found = projects.find(p => String(p.id) === String(selectedId));
+                  setActiveProject(found || selectedId);
+                }}
+                className="w-full p-4 rounded-xl font-black bg-white text-slate-900 border-4 border-amber-300 shadow-xl outline-none cursor-pointer text-sm"
               >
-                <option value="" disabled className="text-slate-400 font-normal">{t.selectProject}</option>
+                <option value="" disabled>{t.selectProject}</option>
                 {projects && projects.length > 0 ? (
                   projects.map(p => (
-                    <option key={p.id} value={p.id} className="font-bold py-2">
-                      🏗️ {p.name} {p.status === 'completed' ? '(أرشيف)' : ''}
+                    <option key={p.id} value={p.id}>
+                      🏗️ {p.name}
                     </option>
                   ))
                 ) : (
@@ -279,34 +292,33 @@ export default function ForemanDashboard() {
               </div>
             )}
 
-        {/* قسم فريق العمل الحالي */}
-        <div>
-          <h3 className={`text-sm font-black mb-3 flex items-center gap-2 ${textMuted}`}>
-            <HardHat size={16}/> {t.myTeam}
-          </h3>
-  
-        {/* 🚀 السماح بظهور العمال سواء كانت حالتهم approved أو فارغة null من البيانات السابقة */}
-        {team.filter(w => w.status !== 'pending').length === 0 ? (
-          <div className={`p-8 text-center rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <p className="font-bold text-slate-500 text-sm">{t.noWorkers}</p>
+          {/* قسم فريق العمل الحالي */}
+          <div className="mt-6">
+            <h3 className={`text-sm font-black mb-3 flex items-center gap-2 ${textMuted}`}>
+              <HardHat size={16}/> {t.myTeam} ({team.length})
+            </h3>
+
+              {team.length === 0 ? (
+                <div className={`p-8 text-center rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
+                  <p className="font-bold text-slate-500 text-sm">{t.noWorkers}</p>
           </div>
-        ) : (
+            ) : (
           <div className="space-y-2.5">
-            {team.filter(w => w.status !== 'pending').map(worker => (
-              <div key={worker.id} className={`p-4 rounded-2xl border-2 flex items-center justify-between ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-                    <CheckCircle2 size={20}/>
-                  </div>
-                  <div>
-                    <h4 className={`font-black text-sm ${textTitle}`}>{worker.worker_name}</h4>
-                    <p className={`text-xs font-bold ${textMuted} flex items-center gap-1 mt-0.5`}>
-                      <Phone size={10}/> {worker.worker_phone || '---'}
-                    </p>
-                  </div>
+              {team.map(worker => (
+          <div key={worker.id} className={`p-4 rounded-2xl border-2 flex items-center justify-between ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={20}/>
                 </div>
-                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  {worker.role || 'Artisan'}
+                <div>
+                  <h4 className={`font-black text-sm ${textTitle}`}>{worker.worker_name || worker.name || 'بدون اسم'}</h4>
+                  <p className={`text-xs font-bold ${textMuted} flex items-center gap-1 mt-0.5`}>
+                    <Phone size={10}/> {worker.worker_phone || worker.phone || '---'}
+                  </p>
+                </div>
+              </div>
+                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
+                    {worker.role || 'Artisan'}
                 </span>
               </div>
             ))}
