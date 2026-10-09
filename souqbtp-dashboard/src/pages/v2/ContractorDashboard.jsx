@@ -1280,6 +1280,13 @@ export default function ContractorDashboard() {
                               >
                                 <MessageCircle size={12} /> {language === 'ar' ? 'مراسلة القائد' : 'Contacter Chef'}
                               </a>
+                                {/* زر الولوج السريع لمكتب الميدان */}
+                              <Link 
+                                to="/v2/foreman-dashboard"
+                                className="bg-amber-500 hover:bg-amber-600 text-white text-[10px] px-3 py-1.5 rounded-lg font-black flex items-center gap-1.5 shadow-sm transition-all hover:scale-105"
+                              >
+                                <HardHat size={12} /> {language === 'ar' ? 'ولوج مكتب الميدان' : 'Ouvrir Bureau'}
+                              </Link>
                             </div>
                             <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                               <button onClick={() => handleEditWorker(worker)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors" title={t.edit}><Edit2 size={14} /></button>
