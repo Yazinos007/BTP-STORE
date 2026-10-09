@@ -7,7 +7,7 @@ import {
   Calculator, Star, MessageCircle, Briefcase, Camera, Wallet, 
   FolderOpen, LifeBuoy, CheckCircle2, AlertCircle, Upload, 
   Trash2, FileText, FileImage, FileSignature, Receipt, ChevronRight, ChevronLeft, Plus,
-  Edit2, Bot, X, Phone, ShieldCheck, BellRing
+  Edit2, Bot, X, Phone, ShieldCheck, BellRing, HardHat
 } from 'lucide-react';
 
 export default function ContractorDashboard() {
