@@ -20,11 +20,9 @@ export default function ForemanDashboard() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // حالات النوافذ المنبثقة
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
   
-  // نماذج الإدخال
   const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '', wage: '' });
   const [reportForm, setReportForm] = useState({ file: null, preview: null, description: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,7 +57,6 @@ export default function ForemanDashboard() {
   const t = translations[language] || translations.fr;
 
   useEffect(() => {
-    // 🚀 سحر الحماية: نجلب الأوراش فقط إذا كانت المصفوفة فارغة لمنع اختفائها من الواجهة
     if (!projects || projects.length === 0) {
       fetchProjects();
     }
@@ -156,39 +153,39 @@ export default function ForemanDashboard() {
     setIsSubmitting(false);
   };
 
-  if (loading && (!projects || projects.length === 0)) return <div className="fixed inset-0 z-[9999] bg-slate-900 flex justify-center items-center"><Loader2 className="animate-spin text-amber-500" size={40}/></div>;
+  if (loading && (!projects || projects.length === 0)) return <div className="fixed inset-0 z-[99999] bg-slate-900 flex justify-center items-center"><Loader2 className="animate-spin text-amber-500" size={40}/></div>;
 
   return (
-    /* 🚀 التعديل 1: إضافة pt-24 لإزاحة المحتوى تحت شريط القائمة العلوي */
-    <div className={`fixed inset-0 z-[5000] overflow-y-auto pt-24 p-4 md:p-8 pb-24 ${isDarkMode ? 'bg-slate-950' : 'bg-slate-50'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+    /* 🚀 التعديل 1: الاستيلاء الكامل على الشاشة بقوة z-[99999] و w-screen h-screen */
+    <div className={`fixed top-0 left-0 w-screen h-screen z-[99999] overflow-y-auto p-4 md:p-8 pb-24 ${isDarkMode ? 'bg-slate-950' : 'bg-slate-50'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
       {/* 🚀 شريط العودة للمقاول */}
-      <div className="max-w-md mx-auto mb-4 p-3 bg-slate-900 text-white rounded-2xl flex justify-between items-center font-black text-xs shadow-lg border border-slate-700">
-        <span className="flex items-center gap-2"><HardHat className="text-amber-500" size={16}/> {t.bossMode}</span>
-        <Link to="/v2/dashboard" className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1">
-          {t.backToDash} <ArrowRight size={14} className={isRtl ? 'rotate-180' : ''}/>
+      <div className="max-w-md mx-auto mb-6 p-4 bg-slate-900 text-white rounded-2xl flex justify-between items-center font-black text-sm shadow-xl border border-slate-700">
+        <span className="flex items-center gap-2"><HardHat className="text-amber-500" size={20}/> {t.bossMode}</span>
+        <Link to="/v2/dashboard" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-colors flex items-center gap-2">
+          {t.backToDash} <ArrowRight size={16} className={isRtl ? 'rotate-180' : ''}/>
         </Link>
       </div>
 
       <div className="max-w-md mx-auto">
-        <div className={`p-6 rounded-[2rem] mb-6 border-2 shadow-lg relative overflow-hidden ${isDarkMode ? 'bg-slate-900 border-amber-500/30' : 'bg-amber-500 border-amber-600'}`}>
+        <div className={`p-6 rounded-[2rem] mb-6 border-2 shadow-lg relative overflow-visible ${isDarkMode ? 'bg-slate-900 border-amber-500/30' : 'bg-amber-500 border-amber-600'}`}>
           <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none"><HardHat size={150} /></div>
           <div className="relative z-10">
             <p className={`text-xs font-black mb-1 ${isDarkMode ? 'text-amber-500' : 'text-amber-900/70'}`}>{t.welcome}</p>
-            <h1 className={`text-2xl font-black mb-4 ${isDarkMode ? 'text-white' : 'text-white'}`}>
+            <h1 className={`text-2xl font-black mb-6 ${isDarkMode ? 'text-white' : 'text-white'}`}>
               {activeProject ? activeProject.name : t.noProject}
             </h1>
             
-            {/* 🚀 التعديل 2: حماية مصفوفة الأوراش من التفريغ وإظهار رسالة تحميل واضحة */}
-            <div className="relative">
+            {/* 🚀 التعديل 2: إصلاح القائمة المنسدلة لتعمل بشكل ممتاز بدون تداخل النصوص */}
+            <div className="relative bg-white rounded-xl shadow-inner border-2 border-transparent focus-within:border-amber-500 overflow-hidden">
               <select 
                 value={activeProject?.id || ''} 
                 onChange={(e) => setActiveProject(e.target.value)}
-                className={`w-full p-4 rounded-xl font-black outline-none appearance-none border-2 transition-all cursor-pointer ${!activeProject ? 'bg-white text-amber-600 border-white shadow-[0_0_20px_rgba(255,255,255,0.4)] animate-pulse' : (isDarkMode ? 'bg-slate-800 text-white border-slate-700' : 'bg-white/20 text-white border-white/40')}`}
+                className="w-full p-4 font-black outline-none bg-transparent text-slate-900 cursor-pointer"
               >
                 <option value="" disabled>{t.selectProject}</option>
                 {projects && projects.length > 0 ? (
-                  projects.map(p => <option key={p.id} value={p.id} className="text-slate-900 bg-white font-bold">{p.name}</option>)
+                  projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)
                 ) : (
                   <option value="" disabled>{t.loadingProjects}</option>
                 )}
@@ -201,12 +198,12 @@ export default function ForemanDashboard() {
           <div className="animate-slide-up">
             {/* الأزرار الميدانية */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-              <button onClick={() => setIsCameraModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-blue-500/30 hover:border-blue-500' : 'bg-white border-slate-200 shadow-md'}`}>
+              <button onClick={() => setIsCameraModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-blue-500/30 hover:border-blue-500' : 'bg-white border-slate-200 shadow-md hover:border-blue-400'}`}>
                 <div className="w-14 h-14 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center"><Camera size={28}/></div>
                 <span className={`font-black text-sm text-center ${textTitle}`}>{t.cameraBtn}</span>
               </button>
 
-              <button onClick={() => setIsAssignModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-amber-500/30 hover:border-amber-500' : 'bg-white border-slate-200 shadow-md'}`}>
+              <button onClick={() => setIsAssignModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-amber-500/30 hover:border-amber-500' : 'bg-white border-slate-200 shadow-md hover:border-amber-400'}`}>
                 <div className="w-14 h-14 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center"><UserPlus size={28}/></div>
                 <span className={`font-black text-sm text-center ${textTitle}`}>{t.addWorkerBtn}</span>
               </button>
@@ -247,7 +244,7 @@ export default function ForemanDashboard() {
                         <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center"><CheckCircle2 size={20}/></div>
                         <div>
                           <h4 className={`font-black text-sm ${textTitle}`}>{worker.worker_name}</h4>
-                          <p className={`text-xs font-bold ${textMuted} flex items-center gap-1 mt-0.5`}><Phone size={10}/> {worker.worker_phone}</p>
+                          <p className={`text-xs font-bold ${textMuted} flex items-center gap-1 mt-0.5`}><Phone size={10}/> {worker.worker_phone || '---'}</p>
                         </div>
                       </div>
                       <span className={`px-2 py-1 rounded-md text-[10px] font-black ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
