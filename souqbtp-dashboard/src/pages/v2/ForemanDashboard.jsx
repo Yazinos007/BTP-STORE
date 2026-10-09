@@ -20,9 +20,11 @@ export default function ForemanDashboard() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // حالات النوافذ المنبثقة
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
   
+  // نماذج الإدخال
   const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '', wage: '' });
   const [reportForm, setReportForm] = useState({ file: null, preview: null, description: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,7 +39,8 @@ export default function ForemanDashboard() {
       role: "الصفة (صباغ، بناء...)", wage: "الأجر اليومي المقترح (درهم)", sendReq: "إرسال الطلب للإدارة",
       cancel: "إلغاء", photoTitle: "رفع تقرير ميداني مصور", desc: "وصف الصورة أو ملاحظات",
       takePhoto: "التقاط صورة / رفع", sendReport: "إرسال التقرير للباترون",
-      bossMode: "أنت في وضع المعاينة (الميدان)", backToDash: "العودة للوحة القيادة"
+      bossMode: "أنت في وضع المعاينة (الميدان)", backToDash: "العودة للوحة القيادة",
+      loadingProjects: "جاري جلب الأوراش..."
     },
     fr: {
       welcome: "Bureau de Terrain", foreman: "Chef de Chantier", noProject: "Aucun chantier",
@@ -48,14 +51,18 @@ export default function ForemanDashboard() {
       role: "Spécialité", wage: "Salaire suggéré (MAD/Jour)", sendReq: "Envoyer à la direction",
       cancel: "Annuler", photoTitle: "Nouveau rapport photo", desc: "Description / Notes",
       takePhoto: "Prendre / Choisir Photo", sendReport: "Envoyer au Patron",
-      bossMode: "Mode Aperçu (Terrain)", backToDash: "Retour au Tableau"
+      bossMode: "Mode Aperçu (Terrain)", backToDash: "Retour au Tableau",
+      loadingProjects: "Chargement des chantiers..."
     }
   };
 
-  const t = translations[language] || translations.fr; // استخدام الفرنسية كافتراضي إذا لم تكن العربية محددة
+  const t = translations[language] || translations.fr;
 
   useEffect(() => {
-    fetchProjects();
+    // 🚀 سحر الحماية: نجلب الأوراش فقط إذا كانت المصفوفة فارغة لمنع اختفائها من الواجهة
+    if (!projects || projects.length === 0) {
+      fetchProjects();
+    }
     const initUser = async () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       setUser(currentUser);
@@ -149,13 +156,13 @@ export default function ForemanDashboard() {
     setIsSubmitting(false);
   };
 
-  if (loading) return <div className="fixed inset-0 z-[9999] bg-white flex justify-center items-center"><Loader2 className="animate-spin text-amber-500" size={40}/></div>;
+  if (loading && (!projects || projects.length === 0)) return <div className="fixed inset-0 z-[9999] bg-slate-900 flex justify-center items-center"><Loader2 className="animate-spin text-amber-500" size={40}/></div>;
 
   return (
-    /* 🚀 السحر هنا: جعلنا الصفحة fixed وتغطي الشاشة بالكامل فوق السيدبار */
-    <div className={`fixed inset-0 z-[5000] overflow-y-auto p-4 md:p-8 pb-24 ${isDarkMode ? 'bg-slate-950' : 'bg-slate-50'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+    /* 🚀 التعديل 1: إضافة pt-24 لإزاحة المحتوى تحت شريط القائمة العلوي */
+    <div className={`fixed inset-0 z-[5000] overflow-y-auto pt-24 p-4 md:p-8 pb-24 ${isDarkMode ? 'bg-slate-950' : 'bg-slate-50'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 شريط العودة للمقاول (يظهر فقط كطوق نجاة للرجوع للسيدبار) */}
+      {/* 🚀 شريط العودة للمقاول */}
       <div className="max-w-md mx-auto mb-4 p-3 bg-slate-900 text-white rounded-2xl flex justify-between items-center font-black text-xs shadow-lg border border-slate-700">
         <span className="flex items-center gap-2"><HardHat className="text-amber-500" size={16}/> {t.bossMode}</span>
         <Link to="/v2/dashboard" className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1">
@@ -164,7 +171,6 @@ export default function ForemanDashboard() {
       </div>
 
       <div className="max-w-md mx-auto">
-        {/* رأس الصفحة: تصميم ميداني صارم */}
         <div className={`p-6 rounded-[2rem] mb-6 border-2 shadow-lg relative overflow-hidden ${isDarkMode ? 'bg-slate-900 border-amber-500/30' : 'bg-amber-500 border-amber-600'}`}>
           <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none"><HardHat size={150} /></div>
           <div className="relative z-10">
@@ -173,7 +179,7 @@ export default function ForemanDashboard() {
               {activeProject ? activeProject.name : t.noProject}
             </h1>
             
-            {/* 🚀 تحسين القائمة المنسدلة لتكون واضحة وجذابة */}
+            {/* 🚀 التعديل 2: حماية مصفوفة الأوراش من التفريغ وإظهار رسالة تحميل واضحة */}
             <div className="relative">
               <select 
                 value={activeProject?.id || ''} 
@@ -181,7 +187,11 @@ export default function ForemanDashboard() {
                 className={`w-full p-4 rounded-xl font-black outline-none appearance-none border-2 transition-all cursor-pointer ${!activeProject ? 'bg-white text-amber-600 border-white shadow-[0_0_20px_rgba(255,255,255,0.4)] animate-pulse' : (isDarkMode ? 'bg-slate-800 text-white border-slate-700' : 'bg-white/20 text-white border-white/40')}`}
               >
                 <option value="" disabled>{t.selectProject}</option>
-                {projects.map(p => <option key={p.id} value={p.id} className="text-slate-900 bg-white">{p.name}</option>)}
+                {projects && projects.length > 0 ? (
+                  projects.map(p => <option key={p.id} value={p.id} className="text-slate-900 bg-white font-bold">{p.name}</option>)
+                ) : (
+                  <option value="" disabled>{t.loadingProjects}</option>
+                )}
               </select>
             </div>
           </div>
@@ -189,7 +199,7 @@ export default function ForemanDashboard() {
 
         {activeProject && (
           <div className="animate-slide-up">
-            {/* 🚀 الأزرار الميدانية السريعة (Action Buttons) */}
+            {/* الأزرار الميدانية */}
             <div className="grid grid-cols-2 gap-4 mb-8">
               <button onClick={() => setIsCameraModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-blue-500/30 hover:border-blue-500' : 'bg-white border-slate-200 shadow-md'}`}>
                 <div className="w-14 h-14 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center"><Camera size={28}/></div>
@@ -202,7 +212,7 @@ export default function ForemanDashboard() {
               </button>
             </div>
 
-            {/* 🚀 قسم الطلبات المعلقة */}
+            {/* قسم الطلبات المعلقة */}
             {team.filter(w => w.status === 'pending').length > 0 && (
               <div className="mb-8">
                 <h3 className={`text-sm font-black mb-4 flex items-center gap-2 text-amber-500`}><Clock size={16}/> {t.pendingReq}</h3>
@@ -222,7 +232,7 @@ export default function ForemanDashboard() {
               </div>
             )}
 
-            {/* 🚀 فريق العمل المعتمد في الميدان */}
+            {/* فريق العمل المعتمد */}
             <div>
               <h3 className={`text-sm font-black mb-4 flex items-center gap-2 ${textMuted}`}><HardHat size={16}/> {t.myTeam}</h3>
               {team.filter(w => w.status !== 'pending').length === 0 ? (
@@ -252,11 +262,7 @@ export default function ForemanDashboard() {
         )}
       </div>
 
-      {/* ============================================================== */}
-      {/* 🚀 النوافذ المنبثقة (Modals) مخصصة للموبايل */}
-      {/* ============================================================== */}
-      
-      {/* نافذة طلب حرفي */}
+      {/* النوافذ المنبثقة */}
       {isAssignModalOpen && (
         <div className="fixed inset-0 bg-black/80 z-[6000] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className={`w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 animate-slide-up ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
@@ -283,7 +289,6 @@ export default function ForemanDashboard() {
         </div>
       )}
 
-      {/* نافذة الكاميرا */}
       {isCameraModalOpen && (
         <div className="fixed inset-0 bg-black/90 z-[6000] flex items-center justify-center p-4">
           <div className={`w-full max-w-md rounded-[2rem] p-6 animate-fade-in ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
