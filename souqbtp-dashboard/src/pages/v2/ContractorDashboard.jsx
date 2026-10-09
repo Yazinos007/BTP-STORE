@@ -98,7 +98,7 @@ export default function ContractorDashboard() {
       team: "فريق الورش", role: "الصفة / التخصص", edit: "تعديل", delete: "حذف", assignTitle: "تعيين مسؤول أو حرفي", assignType: "طريقة التعيين", typeManual: "إدخال يدوي (فريق خاص)", 
       typeFavorites: "كناش العناوين (فريقي المفضل)", typeMarketplace: "بحث ذكي في الماركت بليس", artisanName: "اسم الحرفي", artisanPhone: "رقم الهاتف", 
       whatsappHint: "💡 سيقوم النظام بإرسال دعوة عبر WhatsApp لهذا الرقم لربطه بالورش مباشرة.", save: "حفظ وتعيين", cancel: "إلغاء", selectFavorite: "اختر من فريقك المفضل...",
-      rolePlaceholder: "مثال: صباغ، سباك، بناء...", addMember: "أضف عضو", leadershipTitle: "الإشراف والقيادة" 
+      rolePlaceholder: "مثال: صباغ، سباك، بناء...", addMember: "أضف عضو", leadershipTitle: "الإشراف والقيادة", contactChef: "مراسلة القائد", openBureau: "ولوج مكتب الميدان"
     },
     fr: {
       pageTitle: "Gestion des Chantiers", calcBtn: "Calculateur Intelligent", rateBtn: "Évaluation Artisans", projectPathBtn: "Parcours du Projet",
@@ -117,7 +117,8 @@ export default function ContractorDashboard() {
       team: "Équipe du Chantier", role: "Rôle / Spécialité", edit: "Modifier", delete: "Supprimer", assignTitle: "Assigner un responsable", assignType: "Type d'assignation",
       typeManual: "Saisie Manuelle (Équipe privée)", typeFavorites: "Mes Favoris (Carnet d'adresses)", typeMarketplace: "Recherche IA (Marketplace)", artisanName: "Nom de l'artisan",
       artisanPhone: "Numéro de téléphone", whatsappHint: "💡 Un message WhatsApp sera envoyé à ce numéro pour l'inviter à rejoindre le chantier.", save: "Enregistrer",
-      cancel: "Annuler", selectFavorite: "Sélectionnez un profil...", rolePlaceholder: "ex: Plombier, Peintre...", addMember: "Ajouter un membre", leadershipTitle: "Supervision & Direction"
+      cancel: "Annuler", selectFavorite: "Sélectionnez un profil...", rolePlaceholder: "ex: Plombier, Peintre...", addMember: "Ajouter un membre", leadershipTitle: "Supervision & Direction",
+      contactChef: "Contacter Chef", openBureau: "Ouvrir Bureau"
     },
     en: {
       pageTitle: "Site Management", calcBtn: "Smart Cost Calculator", rateBtn: "Artisan Ratings", projectPathBtn: "Project Path", inboxTitle: "Inbox",
@@ -135,7 +136,8 @@ export default function ContractorDashboard() {
       team: "Project Team", role: "Role / Specialty", edit: "Edit", delete: "Delete", assignTitle: "Assign a manager", assignType: "Assignment type",
       typeManual: "Manual Entry (Private team)", typeFavorites: "My Favorites (Address book)", typeMarketplace: "AI Search (Marketplace)", artisanName: "Contractor name",
       artisanPhone: "Phone number", whatsappHint: "💡 A WhatsApp message will be sent to this number inviting them to join the project.", save: "Save", cancel: "Cancel",
-      selectFavorite: "Select a profile...", rolePlaceholder: "ex: Plumber, Painter...", addMember: "Add member", leadershipTitle: "Supervision & Leadership"
+      selectFavorite: "Select a profile...", rolePlaceholder: "ex: Plumber, Painter...", addMember: "Add member", leadershipTitle: "Supervision & Leadership",
+      contactChef: "Message Foreman", openBureau: "Open Field Office"
     }
   };
 
@@ -1278,14 +1280,14 @@ export default function ContractorDashboard() {
                                 rel="noreferrer" 
                                 className="mt-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] px-3 py-1.5 rounded-lg font-black flex items-center gap-1.5 transition-all hover:scale-105 hover:shadow-md"
                               >
-                                <MessageCircle size={12} /> {language === 'ar' ? 'مراسلة القائد' : 'Contacter Chef'}
+                                <MessageCircle size={12} /> {t.contactChef}
                               </a>
                                 {/* زر الولوج السريع لمكتب الميدان */}
                               <Link 
                                 to="/v2/foreman-dashboard"
                                 className="bg-amber-500 hover:bg-amber-600 text-white text-[10px] px-3 py-1.5 rounded-lg font-black flex items-center gap-1.5 shadow-sm transition-all hover:scale-105"
                               >
-                                <HardHat size={12} /> {language === 'ar' ? 'ولوج مكتب الميدان' : 'Ouvrir Bureau'}
+                                <HardHat size={12} /> {t.openBureau}
                               </Link>
                             </div>
                             <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-1 rounded-lg shadow-sm border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
