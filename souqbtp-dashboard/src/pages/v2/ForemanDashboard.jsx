@@ -8,21 +8,25 @@ import {
 } from 'lucide-react';
 
 export default function ForemanDashboard() {
-  const { isDarkMode, language = 'ar' } = useOutletContext(); 
+  const { isDarkMode, language = 'ar' } = useOutletContext() || {}; 
   const isRtl = language === 'ar';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
 
   const { activeProject, projects, setActiveProject, fetchProjects } = useProjectStore();
   
+  // قائمة محلية احتياطية للمشاريع لضمان ظهورها حتى لو تأخر الـ store
+  const [localProjects, setLocalProjects] = useState([]);
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState([]);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // حالات النوافذ المنبثقة
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
   
+  // نماذج الإدخال
   const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '', wage: '' });
   const [reportForm, setReportForm] = useState({ file: null, preview: null, description: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,45 +55,86 @@ export default function ForemanDashboard() {
       takePhoto: "Prendre / Choisir Photo", sendReport: "Envoyer au Patron",
       bossMode: "Mode Aperçu (Terrain)", backToDash: "Retour au Tableau",
       loadingProjects: "Chargement des chantiers..."
+    },
+    en: {
+      welcome: "Field Office", foreman: "Site Foreman", noProject: "No Project Selected",
+      selectProject: "Select project here...", cameraBtn: "Site Snapshot", addWorkerBtn: "Request Artisan",
+      myTeam: "Current Site Team", pendingReq: "Pending Management Approval",
+      approved: "Approved", pending: "Pending", noWorkers: "No artisans assigned",
+      addWorkerTitle: "Request New Artisan", workerName: "Name", phone: "Phone",
+      role: "Trade / Specialty", wage: "Proposed Daily Wage (MAD)", sendReq: "Submit to Management",
+      cancel: "Cancel", photoTitle: "Upload Site Photo Report", desc: "Description / Notes",
+      takePhoto: "Take / Upload Photo", sendReport: "Send to Contractor",
+      bossMode: "Preview Mode (Field)", backToDash: "Back to Dashboard",
+      loadingProjects: "Loading projects..."
     }
   };
 
   const t = translations[language] || translations.fr;
 
+  // جلب المشاريع المباشر لضمان عدم بقاء الخانة فارغة
   useEffect(() => {
-    if (!projects || projects.length === 0) {
-      fetchProjects();
-    }
-    const initUser = async () => {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      setUser(currentUser);
+    let isMounted = true;
+
+    const loadAllProjects = async () => {
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser && isMounted) setUser(currentUser);
+
+        // محاولة من الـ store أولاً
+        fetchProjects();
+
+        // جلب مباشر من قاعدة البيانات كخط حماية ثانٍ
+        const { data: dbProjects } = await supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (isMounted && dbProjects && dbProjects.length > 0) {
+          setLocalProjects(dbProjects);
+          // إذا لم يكن هناك ورش نشط، حدد الأول تلقائياً
+          if (!activeProject) {
+            setActiveProject(dbProjects[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading projects in ForemanDashboard:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
-    initUser();
+
+    loadAllProjects();
+
+    return () => { isMounted = false; };
   }, []);
 
+  // تحديث بيانات الورش المختار
   useEffect(() => {
     if (activeProject) {
       fetchFieldData();
-    } else {
-      setLoading(false);
     }
   }, [activeProject]);
 
   const fetchFieldData = async () => {
-    setLoading(true);
-    const { data: teamData } = await supabase.from('milestone_assignments')
-      .select('*')
-      .eq('project_id', activeProject.id)
-      .order('created_at', { ascending: false });
-    if (teamData) setTeam(teamData);
+    try {
+      const { data: teamData } = await supabase
+        .from('milestone_assignments')
+        .select('*')
+        .eq('project_id', activeProject.id)
+        .order('created_at', { ascending: false });
+      if (teamData) setTeam(teamData);
 
-    const { data: reportsData } = await supabase.from('site_reports')
-      .select('*')
-      .eq('project_id', activeProject.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
-    if (reportsData) setReports(reportsData);
-    setLoading(false);
+      const { data: reportsData } = await supabase
+        .from('site_reports')
+        .select('*')
+        .eq('project_id', activeProject.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (reportsData) setReports(reportsData);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleRequestWorker = async (e) => {
@@ -132,7 +177,7 @@ export default function ForemanDashboard() {
     if (!reportForm.file || !activeProject || !user) return;
     setIsSubmitting(true);
 
-    const fileName = `field_${Date.now()}_${reportForm.file.name}`;
+    const fileName = `field_${Date.now()}_${reportForm.file.name.replace(/\s+/g, '_')}`;
     const filePath = `${activeProject.id}/${fileName}`;
     const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, reportForm.file);
     
@@ -153,39 +198,45 @@ export default function ForemanDashboard() {
     setIsSubmitting(false);
   };
 
-  if (loading && (!projects || projects.length === 0)) return <div className="fixed inset-0 z-[99999] bg-slate-900 flex justify-center items-center"><Loader2 className="animate-spin text-amber-500" size={40}/></div>;
+  // قائمة المشاريع المعتمدة (إما من الـ store أو من الجلب المباشر)
+  const displayedProjects = (projects && projects.length > 0) ? projects : localProjects;
 
   return (
-    /* 🚀 التعديل 1: الاستيلاء الكامل على الشاشة بقوة z-[99999] و w-screen h-screen */
-    <div className={`fixed top-0 left-0 w-screen h-screen z-[99999] overflow-y-auto p-4 md:p-8 pb-24 ${isDarkMode ? 'bg-slate-950' : 'bg-slate-50'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen pt-28 pb-28 px-4 sm:px-6 relative z-10 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 شريط العودة للمقاول */}
-      <div className="max-w-md mx-auto mb-6 p-4 bg-slate-900 text-white rounded-2xl flex justify-between items-center font-black text-sm shadow-xl border border-slate-700">
+      {/* 🚀 شريط العودة للمقاول الموضع بوضوح أسفل شريط العنوان العام */}
+      <div className="max-w-md mx-auto mb-6 p-4 bg-slate-900 text-white rounded-2xl flex justify-between items-center font-black text-sm shadow-xl border border-slate-800">
         <span className="flex items-center gap-2"><HardHat className="text-amber-500" size={20}/> {t.bossMode}</span>
-        <Link to="/v2/dashboard" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-colors flex items-center gap-2">
-          {t.backToDash} <ArrowRight size={16} className={isRtl ? 'rotate-180' : ''}/>
+        <Link to="/v2/dashboard" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-xs">
+          {t.backToDash} <ArrowRight size={14} className={isRtl ? 'rotate-180' : ''}/>
         </Link>
       </div>
 
       <div className="max-w-md mx-auto">
-        <div className={`p-6 rounded-[2rem] mb-6 border-2 shadow-lg relative overflow-visible ${isDarkMode ? 'bg-slate-900 border-amber-500/30' : 'bg-amber-500 border-amber-600'}`}>
-          <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none"><HardHat size={150} /></div>
+        
+        {/* بطاقة الورش مع القائمة المنسدلة النظيفة */}
+        <div className={`p-6 rounded-[2rem] mb-6 border-2 shadow-lg relative overflow-hidden ${isDarkMode ? 'bg-slate-900 border-amber-500/30' : 'bg-amber-500 border-amber-600 text-white'}`}>
+          <div className="absolute -right-4 -top-4 opacity-15 pointer-events-none text-white"><HardHat size={140} /></div>
           <div className="relative z-10">
-            <p className={`text-xs font-black mb-1 ${isDarkMode ? 'text-amber-500' : 'text-amber-900/70'}`}>{t.welcome}</p>
-            <h1 className={`text-2xl font-black mb-6 ${isDarkMode ? 'text-white' : 'text-white'}`}>
+            <p className={`text-xs font-black uppercase tracking-wider mb-1 ${isDarkMode ? 'text-amber-400' : 'text-amber-950/70'}`}>{t.welcome}</p>
+            <h1 className="text-2xl font-black mb-5">
               {activeProject ? activeProject.name : t.noProject}
             </h1>
             
-            {/* 🚀 التعديل 2: إصلاح القائمة المنسدلة لتعمل بشكل ممتاز بدون تداخل النصوص */}
-            <div className="relative bg-white rounded-xl shadow-inner border-2 border-transparent focus-within:border-amber-500 overflow-hidden">
+            {/* القائمة المنسدلة المصممة خصيصاً لتفادي تداخل النصوص */}
+            <div className="relative bg-white rounded-2xl shadow-md border-2 border-slate-200 overflow-hidden">
               <select 
                 value={activeProject?.id || ''} 
                 onChange={(e) => setActiveProject(e.target.value)}
-                className="w-full p-4 font-black outline-none bg-transparent text-slate-900 cursor-pointer"
+                className="w-full p-4 font-black outline-none bg-white text-slate-900 cursor-pointer text-sm"
               >
                 <option value="" disabled>{t.selectProject}</option>
-                {projects && projects.length > 0 ? (
-                  projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)
+                {displayedProjects && displayedProjects.length > 0 ? (
+                  displayedProjects.map(p => (
+                    <option key={p.id} value={p.id} className="text-slate-900 py-1">
+                      🏗️ {p.name}
+                    </option>
+                  ))
                 ) : (
                   <option value="" disabled>{t.loadingProjects}</option>
                 )}
@@ -194,33 +245,34 @@ export default function ForemanDashboard() {
           </div>
         </div>
 
+        {/* جسم الصفحة بعد اختيار الورش */}
         {activeProject && (
-          <div className="animate-slide-up">
-            {/* الأزرار الميدانية */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <button onClick={() => setIsCameraModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-blue-500/30 hover:border-blue-500' : 'bg-white border-slate-200 shadow-md hover:border-blue-400'}`}>
+          <div className="space-y-6 animate-fade-in">
+            {/* الأزرار الميدانية السريعة */}
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => setIsCameraModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-blue-500/30 hover:border-blue-500' : 'bg-white border-slate-200 shadow-sm hover:border-blue-400'}`}>
                 <div className="w-14 h-14 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center"><Camera size={28}/></div>
                 <span className={`font-black text-sm text-center ${textTitle}`}>{t.cameraBtn}</span>
               </button>
 
-              <button onClick={() => setIsAssignModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-amber-500/30 hover:border-amber-500' : 'bg-white border-slate-200 shadow-md hover:border-amber-400'}`}>
+              <button onClick={() => setIsAssignModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-amber-500/30 hover:border-amber-500' : 'bg-white border-slate-200 shadow-sm hover:border-amber-400'}`}>
                 <div className="w-14 h-14 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center"><UserPlus size={28}/></div>
                 <span className={`font-black text-sm text-center ${textTitle}`}>{t.addWorkerBtn}</span>
               </button>
             </div>
 
-            {/* قسم الطلبات المعلقة */}
+            {/* الطلبات المعلقة */}
             {team.filter(w => w.status === 'pending').length > 0 && (
-              <div className="mb-8">
-                <h3 className={`text-sm font-black mb-4 flex items-center gap-2 text-amber-500`}><Clock size={16}/> {t.pendingReq}</h3>
-                <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-black mb-3 flex items-center gap-2 text-amber-500"><Clock size={16}/> {t.pendingReq}</h3>
+                <div className="space-y-2">
                   {team.filter(w => w.status === 'pending').map(worker => (
-                    <div key={worker.id} className={`p-4 rounded-2xl border-2 border-amber-500/30 flex justify-between items-center ${isDarkMode ? 'bg-slate-900/80' : 'bg-amber-50'}`}>
+                    <div key={worker.id} className={`p-4 rounded-2xl border-2 border-amber-500/30 flex justify-between items-center ${isDarkMode ? 'bg-slate-900/80' : 'bg-amber-50/70'}`}>
                       <div>
                         <h4 className={`font-bold text-sm ${textTitle}`}>{worker.worker_name}</h4>
-                        <p className={`text-xs mt-1 ${textMuted}`}>{worker.role}</p>
+                        <p className={`text-xs mt-0.5 ${textMuted}`}>{worker.role}</p>
                       </div>
-                      <span className="px-3 py-1 bg-amber-500/20 text-amber-600 rounded-full text-[10px] font-black animate-pulse">
+                      <span className="px-3 py-1 bg-amber-500/20 text-amber-600 rounded-full text-[10px] font-black">
                         ⏳ {t.pending}
                       </span>
                     </div>
@@ -229,25 +281,25 @@ export default function ForemanDashboard() {
               </div>
             )}
 
-            {/* فريق العمل المعتمد */}
+            {/* فريق الورش المعتمد */}
             <div>
-              <h3 className={`text-sm font-black mb-4 flex items-center gap-2 ${textMuted}`}><HardHat size={16}/> {t.myTeam}</h3>
+              <h3 className={`text-sm font-black mb-3 flex items-center gap-2 ${textMuted}`}><HardHat size={16}/> {t.myTeam}</h3>
               {team.filter(w => w.status !== 'pending').length === 0 ? (
                 <div className={`p-8 text-center rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
-                  <p className="font-bold text-slate-500">{t.noWorkers}</p>
+                  <p className="font-bold text-slate-500 text-sm">{t.noWorkers}</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-2.5">
                   {team.filter(w => w.status !== 'pending').map(worker => (
                     <div key={worker.id} className={`p-4 rounded-2xl border-2 flex items-center justify-between ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center"><CheckCircle2 size={20}/></div>
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0"><CheckCircle2 size={20}/></div>
                         <div>
                           <h4 className={`font-black text-sm ${textTitle}`}>{worker.worker_name}</h4>
                           <p className={`text-xs font-bold ${textMuted} flex items-center gap-1 mt-0.5`}><Phone size={10}/> {worker.worker_phone || '---'}</p>
                         </div>
                       </div>
-                      <span className={`px-2 py-1 rounded-md text-[10px] font-black ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
                         {worker.role}
                       </span>
                     </div>
@@ -259,9 +311,9 @@ export default function ForemanDashboard() {
         )}
       </div>
 
-      {/* النوافذ المنبثقة */}
+      {/* نافذة طلب حرفي */}
       {isAssignModalOpen && (
-        <div className="fixed inset-0 bg-black/80 z-[6000] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className={`w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 animate-slide-up ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
             <div className="flex justify-between items-center mb-6">
               <h3 className={`font-black text-lg ${textTitle}`}>{t.addWorkerTitle}</h3>
@@ -273,7 +325,7 @@ export default function ForemanDashboard() {
               <input required type="text" placeholder={t.role} value={assignForm.role} onChange={e=>setAssignForm({...assignForm, role: e.target.value})} className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDarkMode?'bg-slate-950 border-slate-800 text-white':'bg-slate-50 border-slate-200'}`} />
               <input type="number" placeholder={t.wage} value={assignForm.wage} onChange={e=>setAssignForm({...assignForm, wage: e.target.value})} className={`w-full p-4 rounded-xl border-2 outline-none font-bold text-amber-600 border-amber-500/30 focus:border-amber-500 ${isDarkMode?'bg-amber-500/5':'bg-amber-50'}`} />
               
-              <div className="p-3 bg-blue-500/10 rounded-xl text-blue-500 text-xs font-bold flex items-start gap-2 mt-2">
+              <div className="p-3 bg-blue-500/10 rounded-xl text-blue-500 text-xs font-bold flex items-start gap-2">
                 <AlertCircle size={16} className="shrink-0 mt-0.5"/>
                 <p>{language === 'ar' ? 'سيتم إرسال هذا الطلب للإدارة، ولن يبدأ الحرفي العمل حتى يوافق المقاول على الأجر.' : 'Cette demande sera envoyée à la direction pour validation du salaire.'}</p>
               </div>
@@ -286,8 +338,9 @@ export default function ForemanDashboard() {
         </div>
       )}
 
+      {/* نافذة الكاميرا */}
       {isCameraModalOpen && (
-        <div className="fixed inset-0 bg-black/90 z-[6000] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/90 z-[10000] flex items-center justify-center p-4">
           <div className={`w-full max-w-md rounded-[2rem] p-6 animate-fade-in ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
             <div className="flex justify-between items-center mb-6">
               <h3 className={`font-black text-lg ${textTitle}`}>{t.photoTitle}</h3>
