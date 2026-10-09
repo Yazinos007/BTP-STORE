@@ -79,20 +79,19 @@ export default function ForemanDashboard() {
     const loadAllProjects = async () => {
       try {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser && isMounted) setUser(currentUser);
+        if (currentUser && isMounted) {
+          setUser(currentUser);
+        }
 
-        // محاولة من الـ store أولاً
-        fetchProjects();
-
-        // جلب مباشر من قاعدة البيانات كخط حماية ثانٍ
-        const { data: dbProjects } = await supabase
+        // جلب الأوراش الخاصة بالمستخدم الحالي أو المتاحة له
+        const { data: dbProjects, error } = await supabase
           .from('projects')
-          .select('*')
+          .select('id, name, status')
           .order('created_at', { ascending: false });
 
-        if (isMounted && dbProjects && dbProjects.length > 0) {
+        if (!error && dbProjects && dbProjects.length > 0 && isMounted) {
           setLocalProjects(dbProjects);
-          // إذا لم يكن هناك ورش نشط، حدد الأول تلقائياً
+          // إذا لم يكن هناك ورش نشط، عيّن الأول تلقائياً
           if (!activeProject) {
             setActiveProject(dbProjects[0].id);
           }
@@ -105,6 +104,7 @@ export default function ForemanDashboard() {
     };
 
     loadAllProjects();
+    fetchProjects();
 
     return () => { isMounted = false; };
   }, []);
@@ -223,22 +223,26 @@ export default function ForemanDashboard() {
               {activeProject ? activeProject.name : t.noProject}
             </h1>
             
-            {/* القائمة المنسدلة المصممة خصيصاً لتفادي تداخل النصوص */}
-            <div className="relative bg-white rounded-2xl shadow-md border-2 border-slate-200 overflow-hidden">
+            {/* القائمة المنسدلة النظيفة بدون تداخل أو شفافيات رمادية */}
+            <div className="relative mt-2">
               <select 
                 value={activeProject?.id || ''} 
                 onChange={(e) => setActiveProject(e.target.value)}
-                className="w-full p-4 font-black outline-none bg-white text-slate-900 cursor-pointer text-sm"
+                className="w-full p-4 rounded-2xl font-black bg-white text-slate-900 border-2 border-slate-100 shadow-md outline-none cursor-pointer text-sm"
               >
-                <option value="" disabled>{t.selectProject}</option>
+                <option value="" disabled className="text-slate-400">
+                  {t.selectProject}
+                </option>
                 {displayedProjects && displayedProjects.length > 0 ? (
                   displayedProjects.map(p => (
-                    <option key={p.id} value={p.id} className="text-slate-900 py-1">
-                      🏗️ {p.name}
+                    <option key={p.id} value={p.id} className="text-slate-900 font-bold py-2">
+                      🏗️ {p.name} {p.status === 'completed' ? '(أرشيف)' : ''}
                     </option>
                   ))
                 ) : (
-                  <option value="" disabled>{t.loadingProjects}</option>
+                  <option value="" disabled className="text-slate-400">
+                    {t.loadingProjects}
+                  </option>
                 )}
               </select>
             </div>
