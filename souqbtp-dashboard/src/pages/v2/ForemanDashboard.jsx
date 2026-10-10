@@ -9,14 +9,27 @@ import {
 } from 'lucide-react';
 
 export default function ForemanDashboard() {
-  const { isDarkMode, language = 'ar' } = useOutletContext() || {}; 
+  // 🚀 إصلاح الوضع الداكن والترجمة بالاعتماد على LocalStorage كبديل عند غياب Context
+  const outletContext = useOutletContext();
+  const [isDarkMode, setIsDarkMode] = useState(outletContext?.isDarkMode || localStorage.getItem('theme') === 'dark');
+  const [language, setLanguage] = useState(outletContext?.language || localStorage.getItem('language') || 'ar');
+  
+  // تحديث فوري إذا تغيرت الإعدادات
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setIsDarkMode(localStorage.getItem('theme') === 'dark');
+      setLanguage(localStorage.getItem('language') || 'ar');
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const isRtl = language === 'ar';
   const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
 
   const { activeProject, projects, setActiveProject, fetchProjects } = useProjectStore();
   
-  // قائمة محلية احتياطية للمشاريع لضمان ظهورها حتى لو تأخر الـ store
   const [localProjects, setLocalProjects] = useState([]);
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState([]);
@@ -26,18 +39,22 @@ export default function ForemanDashboard() {
   // حالات النوافذ المنبثقة
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
-  
-  // نماذج الإدخال
-  const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '', wage: '' });
-  const [reportForm, setReportForm] = useState({ file: null, preview: null, description: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // متغيرات النوافذ المنبثقة الميدانية
   const [showPointage, setShowPointage] = useState(false);
   const [showDelivery, setShowDelivery] = useState(false);
   const [showMaterial, setShowMaterial] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
 
+  // 🚀 حالات (States) مدخلات النوافذ الجديدة
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '', wage: '' });
+  const [reportForm, setReportForm] = useState({ file: null, preview: null, description: '' });
+  
+  const [attendanceState, setAttendanceState] = useState({});
+  const [deliveryForm, setDeliveryForm] = useState({ supplier: '', material: '', file: null, preview: null });
+  const [materialDesc, setMaterialDesc] = useState('');
+  const [alertForm, setAlertForm] = useState({ description: '', file: null, preview: null });
+
+  // 🚀 قاموس الترجمة المحدث يشمل النوافذ الجديدة
   const translations = {
     ar: {
       welcome: "مكتب الميدان", foreman: "رئيس الورش", noProject: "لا يوجد ورش محدد",
@@ -49,7 +66,12 @@ export default function ForemanDashboard() {
       cancel: "إلغاء", photoTitle: "رفع تقرير ميداني مصور", desc: "وصف الصورة أو ملاحظات",
       takePhoto: "التقاط صورة / رفع", sendReport: "إرسال التقرير للباترون",
       bossMode: "أنت في وضع المعاينة (الميدان)", backToDash: "العودة للوحة القيادة",
-      loadingProjects: "جاري جلب الأوراش..."
+      loadingProjects: "جاري جلب الأوراش...",
+      // ترجمات النوافذ الجديدة
+      pointageTitle: "تسجيل حضور العمال", validerPresence: "تأكيد الحضور",
+      newBon: "إضافة وصل استلام", supplierName: "اسم المورد (مثال: شركة الإسمنت)", materialType: "نوع السلعة (مثال: 50 كيس)", sendToBureau: "إرسال للمقاول",
+      matRequest: "طلب مواد عاجلة", whatDoYouNeed: "ما هي المواد التي تنقصك الآن؟",
+      alertTitle: "إنذار طوارئ / توقف", alertDesc: "صف المشكلة (عطل، إصابة، توقف...)", sendAlert: "إرسال تنبيه عاجل", optionalPhoto: "صورة للتوثيق (اختياري)"
     },
     fr: {
       welcome: "Bureau de Terrain", foreman: "Chef de Chantier", noProject: "Aucun chantier",
@@ -61,7 +83,12 @@ export default function ForemanDashboard() {
       cancel: "Annuler", photoTitle: "Nouveau rapport photo", desc: "Description / Notes",
       takePhoto: "Prendre / Choisir Photo", sendReport: "Envoyer au Patron",
       bossMode: "Mode Aperçu (Terrain)", backToDash: "Retour au Tableau",
-      loadingProjects: "Chargement des chantiers..."
+      loadingProjects: "Chargement des chantiers...",
+      // ترجمات النوافذ الجديدة
+      pointageTitle: "Pointage des Ouvriers", validerPresence: "Valider Présence",
+      newBon: "Nouveau Bon de Livraison", supplierName: "Nom du Fournisseur", materialType: "Type de matériel", sendToBureau: "Envoyer au Bureau",
+      matRequest: "Demande Matériel", whatDoYouNeed: "De quoi avez-vous besoin ?",
+      alertTitle: "Alerte Urgence / Arrêt", alertDesc: "Décrivez le problème...", sendAlert: "Envoyer Alerte", optionalPhoto: "Photo (Optionnel)"
     },
     en: {
       welcome: "Field Office", foreman: "Site Foreman", noProject: "No Project Selected",
@@ -73,10 +100,14 @@ export default function ForemanDashboard() {
       cancel: "Cancel", photoTitle: "Upload Site Photo Report", desc: "Description / Notes",
       takePhoto: "Take / Upload Photo", sendReport: "Send to Contractor",
       bossMode: "Preview Mode (Field)", backToDash: "Back to Dashboard",
-      loadingProjects: "Loading projects..."
+      loadingProjects: "Loading projects...",
+      // ترجمات النوافذ الجديدة
+      pointageTitle: "Workers Attendance", validerPresence: "Confirm Attendance",
+      newBon: "New Delivery Receipt", supplierName: "Supplier Name (e.g., Cement Co.)", materialType: "Material Type (e.g., 50 bags)", sendToBureau: "Send to Office",
+      matRequest: "Urgent Material Request", whatDoYouNeed: "What materials do you need right now?",
+      alertTitle: "Emergency / Halt Alert", alertDesc: "Describe the problem (breakdown, injury, halt...)", sendAlert: "Send Urgent Alert", optionalPhoto: "Photo Evidence (Optional)"
     }
   };
-
   const t = translations[language] || translations.fr;
 
   // 🚀 1. جلب المستخدم وحماية مصفوفة المشاريع
@@ -209,6 +240,111 @@ export default function ForemanDashboard() {
       alert('📸 تم رفع التقرير الميداني بنجاح!');
     }
     setIsSubmitting(false);
+  };
+
+  // 🚀 دوال إرسال بيانات النوافذ الميدانية
+  
+  // 1. إرسال الحضور
+  const handleSubmitAttendance = async (e) => {
+    e.preventDefault();
+    if (!activeProject) return;
+    setIsSubmitting(true);
+    
+    const attendanceRecords = team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => ({
+      project_id: activeProject.id,
+      worker_id: worker.id,
+      worker_name: worker.worker_name || worker.name,
+      is_present: attendanceState[worker.id] !== false // الافتراضي حاضر ما لم يُلغَ تحديده
+    }));
+
+    const { error } = await supabase.from('field_attendance').insert(attendanceRecords);
+    setIsSubmitting(false);
+    if (!error) {
+      alert(language === 'ar' ? 'تم تسجيل الحضور بنجاح' : 'Pointage enregistré avec succès');
+      setShowPointage(false);
+    }
+  };
+
+  // 2. إرسال وصل استلام
+  const handleSubmitDelivery = async (e) => {
+    e.preventDefault();
+    if (!activeProject || !deliveryForm.supplier) return;
+    setIsSubmitting(true);
+    
+    let imageUrl = null;
+    if (deliveryForm.file) {
+      const filePath = `${activeProject.id}/delivery_${Date.now()}`;
+      const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, deliveryForm.file);
+      if (!uploadError) {
+        imageUrl = supabase.storage.from('project-files').getPublicUrl(filePath).data.publicUrl;
+      }
+    }
+
+    const { error } = await supabase.from('delivery_receipts').insert([{
+      project_id: activeProject.id,
+      supplier_name: deliveryForm.supplier,
+      material_type: deliveryForm.material,
+      image_url: imageUrl
+    }]);
+
+    setIsSubmitting(false);
+    if (!error) {
+      setShowDelivery(false);
+      setDeliveryForm({ supplier: '', material: '', file: null, preview: null });
+      alert(language === 'ar' ? 'تم إرسال الوصل' : 'Bon envoyé');
+    }
+  };
+
+  // 3. إرسال طلب مواد
+  const handleSubmitMaterial = async (e) => {
+    e.preventDefault();
+    if (!activeProject || !materialDesc) return;
+    setIsSubmitting(true);
+
+    const { error } = await supabase.from('field_alerts').insert([{
+      project_id: activeProject.id,
+      alert_type: 'demande_materiel',
+      priority: 'medium',
+      description: materialDesc
+    }]);
+
+    setIsSubmitting(false);
+    if (!error) {
+      setShowMaterial(false);
+      setMaterialDesc('');
+      alert(language === 'ar' ? 'تم إرسال الطلب' : 'Demande envoyée');
+    }
+  };
+
+  // 4. إرسال إنذار الطوارئ
+  const handleSubmitAlert = async (e) => {
+    e.preventDefault();
+    if (!activeProject || !alertForm.description) return;
+    setIsSubmitting(true);
+
+    let imageUrl = null;
+    if (alertForm.file) {
+      const filePath = `${activeProject.id}/alert_${Date.now()}`;
+      const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, alertForm.file);
+      if (!uploadError) {
+        imageUrl = supabase.storage.from('project-files').getPublicUrl(filePath).data.publicUrl;
+      }
+    }
+
+    const { error } = await supabase.from('field_alerts').insert([{
+      project_id: activeProject.id,
+      alert_type: 'urgence',
+      priority: 'critical',
+      description: alertForm.description,
+      image_url: imageUrl
+    }]);
+
+    setIsSubmitting(false);
+    if (!error) {
+      setShowAlert(false);
+      setAlertForm({ description: '', file: null, preview: null });
+      alert(language === 'ar' ? 'تم إرسال التنبيه للإدارة' : 'Alerte envoyée à la direction');
+    }
   };
 
   // قائمة المشاريع المعتمدة (إما من الـ store أو من الجلب المباشر)
@@ -533,30 +669,38 @@ export default function ForemanDashboard() {
         </div>
       )}
 
-    {/* ================= MODALS النوافذ المنبثقة ================= */}
+    {/* ================= MODALS النوافذ المنبثقة المربوطة ================= */}
+
       {/* 1. نافذة تسجيل الحضور (Pointage) */}
       {showPointage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
             <div className="flex justify-between items-center mb-6">
               <h3 className={`text-lg font-black flex items-center gap-2 ${textTitle}`}>
-                <ClipboardCheck className="text-blue-500" /> {language === 'ar' ? 'تسجيل حضور العمال' : 'Pointage'}
+                <ClipboardCheck className="text-blue-500" /> {t.pointageTitle}
               </h3>
-              <button onClick={() => setShowPointage(false)} className="text-slate-400 hover:text-red-500 transition-colors"><X size={24}/></button>
+              <button onClick={() => setShowPointage(false)} className="text-slate-400 hover:text-red-500"><X size={24}/></button>
             </div>
             
-            <div className="space-y-3 max-h-60 overflow-y-auto mb-6 pr-2">
-              {team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => (
-                <label key={worker.id} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors hover:border-blue-300 ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
-                  <span className={`font-bold text-sm ${textTitle}`}>{worker.worker_name}</span>
-                  <input type="checkbox" className="w-5 h-5 accent-blue-600 rounded" defaultChecked />
-                </label>
-              ))}
-            </div>
-            
-            <button className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all hover:scale-[1.02] shadow-lg shadow-blue-500/30">
-              {language === 'ar' ? 'تأكيد الحضور' : 'Valider Présence'}
-            </button>
+            <form onSubmit={handleSubmitAttendance}>
+              <div className="space-y-3 max-h-60 overflow-y-auto mb-6 pr-2">
+                {team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => (
+                  <label key={worker.id} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors hover:border-blue-300 ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
+                    <span className={`font-bold text-sm ${textTitle}`}>{worker.worker_name}</span>
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 accent-blue-600 rounded" 
+                      checked={attendanceState[worker.id] !== false}
+                      onChange={(e) => setAttendanceState(prev => ({...prev, [worker.id]: e.target.checked}))}
+                    />
+                  </label>
+                ))}
+              </div>
+              
+              <button type="submit" disabled={isSubmitting} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl flex justify-center items-center gap-2">
+                {isSubmitting ? <Loader2 className="animate-spin" size={20}/> : t.validerPresence}
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -567,24 +711,34 @@ export default function ForemanDashboard() {
           <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
             <div className="flex justify-between items-center mb-6">
               <h3 className={`text-lg font-black flex items-center gap-2 ${textTitle}`}>
-                <Truck className="text-emerald-500" /> {language === 'ar' ? 'إضافة وصل استلام' : 'Nouveau Bon'}
+                <Truck className="text-emerald-500" /> {t.newBon}
               </h3>
               <button onClick={() => setShowDelivery(false)} className="text-slate-400 hover:text-red-500"><X size={24}/></button>
             </div>
             
-            <div className="space-y-4 mb-6">
-              <input type="text" placeholder={language === 'ar' ? 'اسم المورد (مثال: شركة الإسمنت)' : 'Nom du Fournisseur'} className={`w-full p-3.5 rounded-xl border-2 outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-emerald-500' : 'bg-slate-50 border-slate-200 focus:border-emerald-500'}`} />
-              <input type="text" placeholder={language === 'ar' ? 'نوع السلعة (مثال: 50 كيس إسمنت)' : 'Type de matériel'} className={`w-full p-3.5 rounded-xl border-2 outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-emerald-500' : 'bg-slate-50 border-slate-200 focus:border-emerald-500'}`} />
+            <form onSubmit={handleSubmitDelivery} className="space-y-4 mb-6">
+              <input required type="text" placeholder={t.supplierName} value={deliveryForm.supplier} onChange={e=>setDeliveryForm({...deliveryForm, supplier: e.target.value})} className={`w-full p-3.5 rounded-xl border-2 outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-emerald-500' : 'bg-slate-50 border-slate-200 focus:border-emerald-500'}`} />
+              <input required type="text" placeholder={t.materialType} value={deliveryForm.material} onChange={e=>setDeliveryForm({...deliveryForm, material: e.target.value})} className={`w-full p-3.5 rounded-xl border-2 outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-emerald-500' : 'bg-slate-50 border-slate-200 focus:border-emerald-500'}`} />
               
-              <button className={`w-full p-6 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-emerald-500 hover:border-emerald-500 transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-300 bg-slate-50'}`}>
-                <Camera size={28} />
-                <span className="text-sm font-bold">{language === 'ar' ? 'التقاط صورة للوصل' : 'Prendre photo du bon'}</span>
+              <label className={`w-full p-6 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800/50 hover:border-emerald-500' : 'border-slate-300 bg-slate-50 hover:border-emerald-500'} ${deliveryForm.preview ? 'border-emerald-500' : ''}`}>
+                {deliveryForm.preview ? (
+                  <img src={deliveryForm.preview} alt="preview" className="h-20 object-contain rounded-lg" />
+                ) : (
+                  <>
+                    <Camera size={28} className="text-slate-400" />
+                    <span className="text-sm font-bold text-slate-400">{t.takePhoto}</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => {
+                  const file = e.target.files[0];
+                  if(file) setDeliveryForm({...deliveryForm, file, preview: URL.createObjectURL(file)});
+                }}/>
+              </label>
+
+              <button type="submit" disabled={isSubmitting} className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl flex justify-center items-center gap-2">
+                 {isSubmitting ? <Loader2 className="animate-spin" size={20}/> : t.sendToBureau}
               </button>
-            </div>
-            
-            <button className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl transition-all shadow-lg shadow-emerald-500/30">
-              {language === 'ar' ? 'إرسال للمقاول' : 'Envoyer au Bureau'}
-            </button>
+            </form>
           </div>
         </div>
       )}
@@ -595,14 +749,17 @@ export default function ForemanDashboard() {
           <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
             <div className="flex justify-between items-center mb-6">
               <h3 className={`text-lg font-black flex items-center gap-2 ${textTitle}`}>
-                <PackageSearch className="text-purple-500" /> {language === 'ar' ? 'طلب مواد عاجلة' : 'Demande Matériel'}
+                <PackageSearch className="text-purple-500" /> {t.matRequest}
               </h3>
               <button onClick={() => setShowMaterial(false)} className="text-slate-400 hover:text-red-500"><X size={24}/></button>
             </div>
-            <textarea rows="4" placeholder={language === 'ar' ? 'ما هي المواد التي تنقصك الآن؟' : 'De quoi avez-vous besoin ?'} className={`w-full p-4 rounded-xl border-2 outline-none font-bold resize-none mb-6 text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 focus:border-purple-500'}`}></textarea>
-            <button className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-xl transition-all shadow-lg shadow-purple-500/30">
-              {language === 'ar' ? 'إرسال الطلب' : 'Envoyer Demande'}
-            </button>
+            
+            <form onSubmit={handleSubmitMaterial}>
+              <textarea required rows="4" placeholder={t.whatDoYouNeed} value={materialDesc} onChange={e=>setMaterialDesc(e.target.value)} className={`w-full p-4 rounded-xl border-2 outline-none font-bold resize-none mb-6 text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 focus:border-purple-500'}`}></textarea>
+              <button type="submit" disabled={isSubmitting} className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-xl flex justify-center items-center gap-2">
+                {isSubmitting ? <Loader2 className="animate-spin" size={20}/> : t.sendReq}
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -613,20 +770,33 @@ export default function ForemanDashboard() {
           <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl border-2 border-red-500/30 ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-black flex items-center gap-2 text-red-600 dark:text-red-500">
-                <AlertTriangle className="animate-pulse" /> {language === 'ar' ? 'إنذار طوارئ / توقف' : 'Alerte Urgence'}
+                <AlertTriangle className="animate-pulse" /> {t.alertTitle}
               </h3>
               <button onClick={() => setShowAlert(false)} className="text-slate-400 hover:text-red-500"><X size={24}/></button>
             </div>
-            <textarea rows="3" placeholder={language === 'ar' ? 'صف المشكلة (مثال: عطل في الخلاطة، إصابة عامل، توقف بسبب المطر...)' : 'Décrivez le problème...'} className={`w-full p-4 rounded-xl border-2 outline-none font-bold resize-none mb-4 text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-red-500' : 'bg-red-50 border-red-100 focus:border-red-500'}`}></textarea>
             
-            <button className={`w-full p-4 mb-6 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-red-500 hover:border-red-500 transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-300 bg-slate-50'}`}>
-                <Camera size={24} />
-                <span className="text-xs font-bold">{language === 'ar' ? 'صورة للتوثيق (اختياري)' : 'Photo (Optionnel)'}</span>
-            </button>
+            <form onSubmit={handleSubmitAlert}>
+              <textarea required rows="3" placeholder={t.alertDesc} value={alertForm.description} onChange={e=>setAlertForm({...alertForm, description: e.target.value})} className={`w-full p-4 rounded-xl border-2 outline-none font-bold resize-none mb-4 text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-red-500' : 'bg-red-50 border-red-100 focus:border-red-500'}`}></textarea>
+              
+              <label className={`w-full p-4 mb-6 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800/50 hover:border-red-500' : 'border-slate-300 bg-slate-50 hover:border-red-500'} ${alertForm.preview ? 'border-red-500' : ''}`}>
+                 {alertForm.preview ? (
+                  <img src={alertForm.preview} alt="preview" className="h-20 object-contain rounded-lg" />
+                ) : (
+                  <>
+                    <Camera size={24} className="text-slate-400" />
+                    <span className="text-xs font-bold text-slate-400">{t.optionalPhoto}</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => {
+                  const file = e.target.files[0];
+                  if(file) setAlertForm({...alertForm, file, preview: URL.createObjectURL(file)});
+                }}/>
+              </label>
 
-            <button className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl transition-all shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
-              <AlertTriangle size={18} /> {language === 'ar' ? 'إرسال تنبيه عاجل للمقاول' : 'Envoyer Alerte'}
-            </button>
+              <button type="submit" disabled={isSubmitting} className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl flex justify-center items-center gap-2">
+                {isSubmitting ? <Loader2 className="animate-spin" size={20}/> : <><AlertTriangle size={18} /> {t.sendAlert}</>}
+              </button>
+            </form>
           </div>
         </div>
       )}
