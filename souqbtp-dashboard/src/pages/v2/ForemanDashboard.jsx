@@ -292,42 +292,98 @@ export default function ForemanDashboard() {
               </div>
             )}
 
-          {/* قسم فريق العمل الحالي */}
-          <div className="mt-6">
-            <h3 className={`text-sm font-black mb-3 flex items-center gap-2 ${textMuted}`}>
-              <HardHat size={16}/> {t.myTeam} ({team.length})
-            </h3>
+          {/* 🚀 قسم فريق العمل مقسم حسب المراحل والألوان وبدون رئيس الفريق */}
+            <div className="space-y-6 mt-6">
+              <h3 className={`text-sm font-black flex items-center gap-2 ${textMuted}`}>
+                <HardHat size={16} /> {t.myTeam} ({team.filter(w => !w.is_manager && w.status !== 'pending').length})
+              </h3>
 
-              {team.length === 0 ? (
-                <div className={`p-8 text-center rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
-                  <p className="font-bold text-slate-500 text-sm">{t.noWorkers}</p>
-          </div>
-            ) : (
-          <div className="space-y-2.5">
-              {team.map(worker => (
-          <div key={worker.id} className={`p-4 rounded-2xl border-2 flex items-center justify-between ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-                <CheckCircle2 size={20}/>
-                </div>
-                <div>
-                  <h4 className={`font-black text-sm ${textTitle}`}>{worker.worker_name || worker.name || 'بدون اسم'}</h4>
-                  <p className={`text-xs font-bold ${textMuted} flex items-center gap-1 mt-0.5`}>
-                    <Phone size={10}/> {worker.worker_phone || worker.phone || '---'}
-                  </p>
-                </div>
-              </div>
-                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                    {worker.role || 'Artisan'}
-                </span>
-              </div>
-            ))}
+              {(() => {
+                const approvedWorkers = team.filter(w => !w.is_manager && w.status !== 'pending');
+
+                if (approvedWorkers.length === 0) {
+                  return (
+                    <div className={`p-8 text-center rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
+                      <p className="font-bold text-slate-500 text-sm">{t.noWorkers}</p>
+                    </div>
+                  );
+                }
+
+                const stages = [
+                  {
+                    id: 2,
+                    name: language === 'ar' ? 'التنفيذ' : language === 'en' ? 'Execution' : 'Exécution',
+                    icon: '🏗️',
+                    headerText: 'text-orange-600 dark:text-orange-400',
+                    badgeBg: 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800',
+                    iconColor: 'text-orange-500'
+                  },
+                  {
+                    id: 3,
+                    name: language === 'ar' ? 'التشطيب' : language === 'en' ? 'Finishing' : 'Finition',
+                    icon: '🎨',
+                    headerText: 'text-purple-600 dark:text-purple-400',
+                    badgeBg: 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800',
+                    iconColor: 'text-purple-500'
+                  },
+                  {
+                    id: 4,
+                    name: language === 'ar' ? 'التسجيل والشهادات' : language === 'en' ? 'Handover & Permit' : 'Enregistrement',
+                    icon: '📜',
+                    headerText: 'text-emerald-600 dark:text-emerald-400',
+                    badgeBg: 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+                    iconColor: 'text-emerald-500'
+                  }
+                ];
+
+                return stages.map(stage => {
+                  const stageWorkers = approvedWorkers.filter(w => (Number(w.stage_id) || 2) === stage.id);
+                  if (stageWorkers.length === 0) return null;
+
+                  return (
+                    <div key={stage.id} className="space-y-3">
+                      <div className="flex items-center gap-2 pb-1 border-b-2" style={{ borderColor: 'rgba(148, 163, 184, 0.2)' }}>
+                        <span className="text-base">{stage.icon}</span>
+                        <span className={`text-xs font-black uppercase tracking-wider ${stage.headerText}`}>
+                          {stage.name}
+                        </span>
+                        <span className="text-[10px] font-bold opacity-40">({stageWorkers.length})</span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {stageWorkers.map(worker => (
+                          <div
+                            key={worker.id}
+                            className={`p-4 rounded-2xl border-2 flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} hover:border-slate-300`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                                <CheckCircle2 size={20} className={stage.iconColor} />
+                              </div>
+                              <div>
+                                <h4 className={`font-black text-sm ${textTitle}`}>
+                                  {worker.worker_name || worker.name}
+                                </h4>
+                                <p className={`text-xs font-bold ${textMuted} flex items-center gap-1 mt-0.5`} dir="ltr">
+                                  <Phone size={10} /> {worker.worker_phone || '---'}
+                                </p>
+                              </div>
+                            </div>
+
+                            <span className={`px-3 py-1 rounded-full text-[11px] font-black border ${stage.badgeBg}`}>
+                              {worker.role || 'Artisan'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
           </div>
         )}
       </div>
-    </div>
-  )}
-</div>
 
       {/* نافذة طلب حرفي */}
       {isAssignModalOpen && (
