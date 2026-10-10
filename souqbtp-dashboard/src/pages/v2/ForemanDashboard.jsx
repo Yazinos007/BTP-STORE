@@ -9,9 +9,14 @@ import {
 } from 'lucide-react';
 
 export default function ForemanDashboard() {
-  // 🚀 إصلاح الوضع الداكن والترجمة بالاعتماد على LocalStorage كبديل عند غياب Context
+  
   const outletContext = useOutletContext();
-  const [isDarkMode, setIsDarkMode] = useState(outletContext?.isDarkMode || localStorage.getItem('theme') === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (outletContext?.isDarkMode !== undefined) return outletContext.isDarkMode;
+    if (typeof document !== 'undefined') return document.documentElement.classList.contains('dark');
+    return localStorage.getItem('theme') === 'dark';
+  });
+
   const [language, setLanguage] = useState(outletContext?.language || localStorage.getItem('language') || 'ar');
   
   // تحديث فوري إذا تغيرت الإعدادات
@@ -67,7 +72,14 @@ export default function ForemanDashboard() {
       takePhoto: "التقاط صورة / رفع", sendReport: "إرسال التقرير للباترون",
       bossMode: "أنت في وضع المعاينة (الميدان)", backToDash: "العودة للوحة القيادة",
       loadingProjects: "جاري جلب الأوراش...",
-      // ترجمات النوافذ الجديدة
+      // 🚀 الأزرار الستة الجديدة
+      captureTerrain: "تقرير مصور",
+      bonLivraison: "استلام سلع",
+      demandeMateriel: "طلب مواد",
+      demanderArtisan: "طلب حرفي",
+      pointageOuvriers: "تسجيل حضور العمال (Pointage)",
+      alerteUrgenceBtn: "إبلاغ عن طوارئ / توقف",
+      // ترجمات النوافذ 
       pointageTitle: "تسجيل حضور العمال", validerPresence: "تأكيد الحضور",
       newBon: "إضافة وصل استلام", supplierName: "اسم المورد (مثال: شركة الإسمنت)", materialType: "نوع السلعة (مثال: 50 كيس)", sendToBureau: "إرسال للمقاول",
       matRequest: "طلب مواد عاجلة", whatDoYouNeed: "ما هي المواد التي تنقصك الآن؟",
@@ -84,7 +96,8 @@ export default function ForemanDashboard() {
       takePhoto: "Prendre / Choisir Photo", sendReport: "Envoyer au Patron",
       bossMode: "Mode Aperçu (Terrain)", backToDash: "Retour au Tableau",
       loadingProjects: "Chargement des chantiers...",
-      // ترجمات النوافذ الجديدة
+      captureTerrain: "Capture Terrain", bonLivraison: "Bon Livraison", demandeMateriel: "Demande Matériel",
+      demanderArtisan: "Demander Artisan", pointageOuvriers: "Pointage des Ouvriers", alerteUrgenceBtn: "Alerte Urgence / Arrêt",
       pointageTitle: "Pointage des Ouvriers", validerPresence: "Valider Présence",
       newBon: "Nouveau Bon de Livraison", supplierName: "Nom du Fournisseur", materialType: "Type de matériel", sendToBureau: "Envoyer au Bureau",
       matRequest: "Demande Matériel", whatDoYouNeed: "De quoi avez-vous besoin ?",
@@ -101,7 +114,8 @@ export default function ForemanDashboard() {
       takePhoto: "Take / Upload Photo", sendReport: "Send to Contractor",
       bossMode: "Preview Mode (Field)", backToDash: "Back to Dashboard",
       loadingProjects: "Loading projects...",
-      // ترجمات النوافذ الجديدة
+      captureTerrain: "Site Snapshot", bonLivraison: "Delivery Receipt", demandeMateriel: "Material Request",
+      demanderArtisan: "Request Artisan", pointageOuvriers: "Workers Attendance", alerteUrgenceBtn: "Emergency / Halt Alert",
       pointageTitle: "Workers Attendance", validerPresence: "Confirm Attendance",
       newBon: "New Delivery Receipt", supplierName: "Supplier Name (e.g., Cement Co.)", materialType: "Material Type (e.g., 50 bags)", sendToBureau: "Send to Office",
       matRequest: "Urgent Material Request", whatDoYouNeed: "What materials do you need right now?",
@@ -413,10 +427,10 @@ export default function ForemanDashboard() {
             <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-500/10 flex items-center justify-center mb-1">
               <Camera size={24} />
             </div>
-            <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'تقرير مصور' : 'Capture Terrain'}</span>
+            <span className={`text-xs font-black ${textTitle}`}>{t.captureTerrain}</span>
           </button>
 
-          {/* 2. استلام السلع (Bons de Livraison) - تم إضافة onClick */}
+          {/* 2. استلام السلع */}
           <button 
             onClick={() => setShowDelivery(true)}
             className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
@@ -424,10 +438,10 @@ export default function ForemanDashboard() {
             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10 flex items-center justify-center mb-1">
               <Truck size={24} />
             </div>
-            <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'استلام سلع' : 'Bon Livraison'}</span>
+            <span className={`text-xs font-black ${textTitle}`}>{t.bonLivraison}</span>
           </button>
 
-          {/* 3. طلب مواد عاجلة - تم إضافة onClick */}
+          {/* 3. طلب مواد عاجلة */}
           <button 
             onClick={() => setShowMaterial(true)}
             className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
@@ -435,7 +449,7 @@ export default function ForemanDashboard() {
             <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-500 dark:bg-purple-500/10 flex items-center justify-center mb-1">
               <PackageSearch size={24} />
             </div>
-            <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'طلب مواد' : 'Demande Matériel'}</span>
+            <span className={`text-xs font-black ${textTitle}`}>{t.demandeMateriel}</span>
           </button>
 
           {/* 4. طلب حرفي جديد */}
@@ -446,10 +460,10 @@ export default function ForemanDashboard() {
             <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 dark:bg-amber-500/10 flex items-center justify-center mb-1">
               <UserPlus size={24} />
             </div>
-            <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'طلب حرفي' : 'Demander Artisan'}</span>
+            <span className={`text-xs font-black ${textTitle}`}>{t.demanderArtisan}</span>
           </button>
           
-          {/* 5. تسجيل الحضور (Pointage) - تم إضافة onClick */}
+          {/* 5. تسجيل الحضور (Pointage) */}
           <button 
             onClick={() => setShowPointage(true)}
             className={`col-span-2 p-4 rounded-2xl border-2 border-dashed flex flex-row items-center justify-center gap-3 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-300 shadow-sm'}`}
@@ -457,18 +471,18 @@ export default function ForemanDashboard() {
             <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 flex items-center justify-center">
               <ClipboardCheck size={20} />
             </div>
-            <span className={`text-sm font-black ${textTitle}`}>{language === 'ar' ? 'تسجيل حضور العمال (Pointage)' : 'Pointage des Ouvriers'}</span>
+            <span className={`text-sm font-black ${textTitle}`}>{t.pointageOuvriers}</span>
           </button>
 
-          {/* 6. إنذار الطوارئ - تم إضافة onClick */}
+          {/* 6. إنذار الطوارئ */}
           <button 
             onClick={() => setShowAlert(true)}
-            className="col-span-2 p-4 rounded-2xl border-2 border-red-200 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:border-red-900/50 transition-all flex flex-row items-center justify-center gap-3 shadow-sm"
+            className={`col-span-2 p-4 rounded-2xl border-2 flex flex-row items-center justify-center gap-3 transition-all shadow-sm ${isDarkMode ? 'bg-red-950/30 border-red-900/50 hover:bg-red-900/40' : 'bg-red-50 border-red-200 hover:bg-red-100'}`}
           >
             <div className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center animate-pulse">
               <AlertTriangle size={20} />
             </div>
-            <span className="text-sm font-black text-red-600 dark:text-red-400">{language === 'ar' ? 'إبلاغ عن طوارئ / توقف' : 'Alerte Urgence / Arrêt'}</span>
+            <span className="text-sm font-black text-red-600 dark:text-red-400">{t.alerteUrgenceBtn}</span>
           </button>
         </div>
 
