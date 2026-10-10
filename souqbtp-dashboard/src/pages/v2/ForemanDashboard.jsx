@@ -225,7 +225,7 @@ export default function ForemanDashboard() {
         </Link>
       </div>
 
-      <div className="max-w-md mx-auto">
+      <div className="max-w-3xl mx-auto w-full">
         {/* رأس الصفحة: تصميم ميداني صارم ومحمي */}
         <div className={`p-6 rounded-[2rem] mb-6 border-2 shadow-lg relative overflow-hidden ${isDarkMode ? 'bg-slate-900 border-amber-500/30' : 'bg-amber-500 border-amber-600'}`}>
           <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none"><HardHat size={150} className={isDarkMode ? 'text-amber-500' : 'text-white'} /></div>
@@ -270,7 +270,10 @@ export default function ForemanDashboard() {
         <div className="grid grid-cols-2 gap-3 mt-6">
           
           {/* 1. التقاط صور الورش */}
-          <button className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+          <button 
+            onClick={() => setIsCameraModalOpen(true)}
+            className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+          >
             <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-500/10 flex items-center justify-center mb-1">
               <Camera size={24} />
             </div>
@@ -300,7 +303,10 @@ export default function ForemanDashboard() {
           </button>
 
           {/* 4. طلب حرفي جديد */}
-          <button className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+          <button 
+            onClick={() => setIsAssignModalOpen(true)}
+            className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+          >
             <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 dark:bg-amber-500/10 flex items-center justify-center mb-1">
               <UserPlus size={24} />
             </div>
@@ -329,7 +335,7 @@ export default function ForemanDashboard() {
             <span className="text-sm font-black text-red-600 dark:text-red-400">{language === 'ar' ? 'إبلاغ عن طوارئ / توقف' : 'Alerte Urgence / Arrêt'}</span>
           </button>
         </div>
-        
+
             {/* الطلبات المعلقة */}
             {team.filter(w => w.status === 'pending').length > 0 && (
               <div>

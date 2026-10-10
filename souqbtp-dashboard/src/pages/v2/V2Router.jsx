@@ -44,6 +44,7 @@ export default function V2Router({ session, supplier }) {
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : '?';
   
   return (
+
     <Routes>
       
       {/* 🚀 فخ التوجيه: خارج الـ Layout تماماً لمنع رسم أي واجهة بالخطأ */}
@@ -56,7 +57,6 @@ export default function V2Router({ session, supplier }) {
         
         {/* الرئيسية */}
         <Route path="contractor-dashboard" element={<ContractorDashboard />} />
-        <Route path="foreman-dashboard" element={<ForemanDashboard />} />
         
         {/* القيادة والميدان */}
         <Route path="project-path" element={<ProjectPath />} />
@@ -87,6 +87,7 @@ export default function V2Router({ session, supplier }) {
         {/* 🚨 التوجيه التلقائي للمسارات المجهولة داخل v2 */}
         <Route path="*" element={<Navigate to="contractor-dashboard" replace />} />
       </Route>
+      <Route path="foreman-dashboard" element={<ForemanDashboard />} />
     </Routes>
   );
 }
