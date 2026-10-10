@@ -92,7 +92,7 @@ export default function Login() {
         });
         if (loginError) throw loginError;
         
-        // 🚀 التوجيه الذكي الموحد بعد تسجيل الدخول
+        // 🚀 التوجيه الآمن بدون حلقة تكرار (Loop)
         if (authData?.user) {
           const userEmail = authData.user.email.toLowerCase();
 
@@ -102,10 +102,10 @@ export default function Login() {
             .ilike('email', userEmail)
             .maybeSingle();
 
-          // التحقق من صلاحية إدارة الورش (تدعم permDashboard أو التسمية السابقة permChantier)
-          const isForeman = employeeData?.permissions?.permDashboard || employeeData?.permissions?.permChantier;
+          // الشرط المحكم: رئيس الورش فقط يذهب للميدان، أما المقاول (Owner) فيذهب للداشبورد
+          const isForemanOnly = employeeData && employeeData.role === 'foreman' && !employeeData.permissions?.permDashboard;
 
-          if (isForeman) {
+          if (isForemanOnly) {
             window.location.href = '/v2/foreman-dashboard';
           } else {
             window.location.href = '/v2/dashboard';
