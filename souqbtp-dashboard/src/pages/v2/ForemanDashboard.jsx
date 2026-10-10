@@ -32,6 +32,12 @@ export default function ForemanDashboard() {
   const [reportForm, setReportForm] = useState({ file: null, preview: null, description: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // متغيرات النوافذ المنبثقة الميدانية
+  const [showPointage, setShowPointage] = useState(false);
+  const [showDelivery, setShowDelivery] = useState(false);
+  const [showMaterial, setShowMaterial] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
+
   const translations = {
     ar: {
       welcome: "مكتب الميدان", foreman: "رئيس الورش", noProject: "لا يوجد ورش محدد",
@@ -262,6 +268,7 @@ export default function ForemanDashboard() {
           <div className="space-y-6 animate-fade-in">
             {/* 🚀 لوحة الإجراءات الميدانية السريعة */}
         <div className="grid grid-cols-2 gap-3 mt-6">
+          
           {/* 1. التقاط صور الورش */}
           <button className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
             <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-500/10 flex items-center justify-center mb-1">
@@ -270,16 +277,22 @@ export default function ForemanDashboard() {
             <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'تقرير مصور' : 'Capture Terrain'}</span>
           </button>
 
-          {/* 2. استلام السلع (Bons de Livraison) */}
-          <button className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+          {/* 2. استلام السلع (Bons de Livraison) - تم إضافة onClick */}
+          <button 
+            onClick={() => setShowDelivery(true)}
+            className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+          >
             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10 flex items-center justify-center mb-1">
               <Truck size={24} />
             </div>
             <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'استلام سلع' : 'Bon Livraison'}</span>
           </button>
 
-          {/* 3. طلب مواد عاجلة */}
-          <button className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+          {/* 3. طلب مواد عاجلة - تم إضافة onClick */}
+          <button 
+            onClick={() => setShowMaterial(true)}
+            className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+          >
             <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-500 dark:bg-purple-500/10 flex items-center justify-center mb-1">
               <PackageSearch size={24} />
             </div>
@@ -294,23 +307,29 @@ export default function ForemanDashboard() {
             <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'طلب حرفي' : 'Demander Artisan'}</span>
           </button>
           
-          {/* 5. تسجيل الحضور (Pointage) - يأخذ العرض كاملاً */}
-          <button className={`col-span-2 p-4 rounded-2xl border-2 border-dashed flex flex-row items-center justify-center gap-3 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-300 shadow-sm'}`}>
+          {/* 5. تسجيل الحضور (Pointage) - تم إضافة onClick */}
+          <button 
+            onClick={() => setShowPointage(true)}
+            className={`col-span-2 p-4 rounded-2xl border-2 border-dashed flex flex-row items-center justify-center gap-3 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-300 shadow-sm'}`}
+          >
             <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 flex items-center justify-center">
               <ClipboardCheck size={20} />
             </div>
             <span className={`text-sm font-black ${textTitle}`}>{language === 'ar' ? 'تسجيل حضور العمال (Pointage)' : 'Pointage des Ouvriers'}</span>
           </button>
 
-          {/* 6. إنذار الطوارئ - يأخذ العرض كاملاً وبلون أحمر بارز */}
-          <button className="col-span-2 p-4 rounded-2xl border-2 border-red-200 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:border-red-900/50 transition-all flex flex-row items-center justify-center gap-3 shadow-sm">
+          {/* 6. إنذار الطوارئ - تم إضافة onClick */}
+          <button 
+            onClick={() => setShowAlert(true)}
+            className="col-span-2 p-4 rounded-2xl border-2 border-red-200 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:border-red-900/50 transition-all flex flex-row items-center justify-center gap-3 shadow-sm"
+          >
             <div className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center animate-pulse">
               <AlertTriangle size={20} />
             </div>
             <span className="text-sm font-black text-red-600 dark:text-red-400">{language === 'ar' ? 'إبلاغ عن طوارئ / توقف' : 'Alerte Urgence / Arrêt'}</span>
           </button>
         </div>
-
+        
             {/* الطلبات المعلقة */}
             {team.filter(w => w.status === 'pending').length > 0 && (
               <div>
@@ -504,6 +523,104 @@ export default function ForemanDashboard() {
                 {isSubmitting ? <Loader2 className="animate-spin" size={20}/> : <><UploadCloud size={20}/> {t.sendReport}</>}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+    {/* ================= MODALS النوافذ المنبثقة ================= */}
+      {/* 1. نافذة تسجيل الحضور (Pointage) */}
+      {showPointage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className={`text-lg font-black flex items-center gap-2 ${textTitle}`}>
+                <ClipboardCheck className="text-blue-500" /> {language === 'ar' ? 'تسجيل حضور العمال' : 'Pointage'}
+              </h3>
+              <button onClick={() => setShowPointage(false)} className="text-slate-400 hover:text-red-500 transition-colors"><X size={24}/></button>
+            </div>
+            
+            <div className="space-y-3 max-h-60 overflow-y-auto mb-6 pr-2">
+              {team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => (
+                <label key={worker.id} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors hover:border-blue-300 ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
+                  <span className={`font-bold text-sm ${textTitle}`}>{worker.worker_name}</span>
+                  <input type="checkbox" className="w-5 h-5 accent-blue-600 rounded" defaultChecked />
+                </label>
+              ))}
+            </div>
+            
+            <button className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all hover:scale-[1.02] shadow-lg shadow-blue-500/30">
+              {language === 'ar' ? 'تأكيد الحضور' : 'Valider Présence'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 2. نافذة استلام السلع (Bon de Livraison) */}
+      {showDelivery && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className={`text-lg font-black flex items-center gap-2 ${textTitle}`}>
+                <Truck className="text-emerald-500" /> {language === 'ar' ? 'إضافة وصل استلام' : 'Nouveau Bon'}
+              </h3>
+              <button onClick={() => setShowDelivery(false)} className="text-slate-400 hover:text-red-500"><X size={24}/></button>
+            </div>
+            
+            <div className="space-y-4 mb-6">
+              <input type="text" placeholder={language === 'ar' ? 'اسم المورد (مثال: شركة الإسمنت)' : 'Nom du Fournisseur'} className={`w-full p-3.5 rounded-xl border-2 outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-emerald-500' : 'bg-slate-50 border-slate-200 focus:border-emerald-500'}`} />
+              <input type="text" placeholder={language === 'ar' ? 'نوع السلعة (مثال: 50 كيس إسمنت)' : 'Type de matériel'} className={`w-full p-3.5 rounded-xl border-2 outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-emerald-500' : 'bg-slate-50 border-slate-200 focus:border-emerald-500'}`} />
+              
+              <button className={`w-full p-6 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-emerald-500 hover:border-emerald-500 transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-300 bg-slate-50'}`}>
+                <Camera size={28} />
+                <span className="text-sm font-bold">{language === 'ar' ? 'التقاط صورة للوصل' : 'Prendre photo du bon'}</span>
+              </button>
+            </div>
+            
+            <button className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl transition-all shadow-lg shadow-emerald-500/30">
+              {language === 'ar' ? 'إرسال للمقاول' : 'Envoyer au Bureau'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. نافذة طلب مواد (Demande Matériel) */}
+      {showMaterial && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className={`text-lg font-black flex items-center gap-2 ${textTitle}`}>
+                <PackageSearch className="text-purple-500" /> {language === 'ar' ? 'طلب مواد عاجلة' : 'Demande Matériel'}
+              </h3>
+              <button onClick={() => setShowMaterial(false)} className="text-slate-400 hover:text-red-500"><X size={24}/></button>
+            </div>
+            <textarea rows="4" placeholder={language === 'ar' ? 'ما هي المواد التي تنقصك الآن؟' : 'De quoi avez-vous besoin ?'} className={`w-full p-4 rounded-xl border-2 outline-none font-bold resize-none mb-6 text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 focus:border-purple-500'}`}></textarea>
+            <button className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-xl transition-all shadow-lg shadow-purple-500/30">
+              {language === 'ar' ? 'إرسال الطلب' : 'Envoyer Demande'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 4. نافذة إنذار الطوارئ (Alerte) */}
+      {showAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-red-900/40 backdrop-blur-sm p-4">
+          <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl border-2 border-red-500/30 ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-black flex items-center gap-2 text-red-600 dark:text-red-500">
+                <AlertTriangle className="animate-pulse" /> {language === 'ar' ? 'إنذار طوارئ / توقف' : 'Alerte Urgence'}
+              </h3>
+              <button onClick={() => setShowAlert(false)} className="text-slate-400 hover:text-red-500"><X size={24}/></button>
+            </div>
+            <textarea rows="3" placeholder={language === 'ar' ? 'صف المشكلة (مثال: عطل في الخلاطة، إصابة عامل، توقف بسبب المطر...)' : 'Décrivez le problème...'} className={`w-full p-4 rounded-xl border-2 outline-none font-bold resize-none mb-4 text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-red-500' : 'bg-red-50 border-red-100 focus:border-red-500'}`}></textarea>
+            
+            <button className={`w-full p-4 mb-6 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-red-500 hover:border-red-500 transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-300 bg-slate-50'}`}>
+                <Camera size={24} />
+                <span className="text-xs font-bold">{language === 'ar' ? 'صورة للتوثيق (اختياري)' : 'Photo (Optionnel)'}</span>
+            </button>
+
+            <button className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl transition-all shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
+              <AlertTriangle size={18} /> {language === 'ar' ? 'إرسال تنبيه عاجل للمقاول' : 'Envoyer Alerte'}
+            </button>
           </div>
         </div>
       )}
