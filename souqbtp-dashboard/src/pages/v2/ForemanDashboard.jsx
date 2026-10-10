@@ -4,7 +4,8 @@ import { supabase } from '../../lib/supabase';
 import useProjectStore from '../../store/useProjectStore';
 import { 
   HardHat, Camera, UserPlus, Clock, CheckCircle2, 
-  AlertCircle, Phone, X, UploadCloud, Loader2, ArrowRight
+  AlertCircle, Phone, X, UploadCloud, Loader2, ArrowRight, MessageCircle, 
+  Truck, AlertTriangle, PackageSearch, ClipboardCheck 
 } from 'lucide-react';
 
 export default function ForemanDashboard() {
@@ -259,18 +260,56 @@ export default function ForemanDashboard() {
         {/* جسم الصفحة بعد اختيار الورش */}
         {activeProject && (
           <div className="space-y-6 animate-fade-in">
-            {/* الأزرار الميدانية السريعة */}
-            <div className="grid grid-cols-2 gap-4">
-              <button onClick={() => setIsCameraModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-blue-500/30 hover:border-blue-500' : 'bg-white border-slate-200 shadow-sm hover:border-blue-400'}`}>
-                <div className="w-14 h-14 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center"><Camera size={28}/></div>
-                <span className={`font-black text-sm text-center ${textTitle}`}>{t.cameraBtn}</span>
-              </button>
-
-              <button onClick={() => setIsAssignModalOpen(true)} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-transform active:scale-95 ${isDarkMode ? 'bg-slate-900 border-amber-500/30 hover:border-amber-500' : 'bg-white border-slate-200 shadow-sm hover:border-amber-400'}`}>
-                <div className="w-14 h-14 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center"><UserPlus size={28}/></div>
-                <span className={`font-black text-sm text-center ${textTitle}`}>{t.addWorkerBtn}</span>
-              </button>
+            {/* 🚀 لوحة الإجراءات الميدانية السريعة */}
+        <div className="grid grid-cols-2 gap-3 mt-6">
+          {/* 1. التقاط صور الورش */}
+          <button className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-500/10 flex items-center justify-center mb-1">
+              <Camera size={24} />
             </div>
+            <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'تقرير مصور' : 'Capture Terrain'}</span>
+          </button>
+
+          {/* 2. استلام السلع (Bons de Livraison) */}
+          <button className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10 flex items-center justify-center mb-1">
+              <Truck size={24} />
+            </div>
+            <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'استلام سلع' : 'Bon Livraison'}</span>
+          </button>
+
+          {/* 3. طلب مواد عاجلة */}
+          <button className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+            <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-500 dark:bg-purple-500/10 flex items-center justify-center mb-1">
+              <PackageSearch size={24} />
+            </div>
+            <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'طلب مواد' : 'Demande Matériel'}</span>
+          </button>
+
+          {/* 4. طلب حرفي جديد */}
+          <button className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+            <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 dark:bg-amber-500/10 flex items-center justify-center mb-1">
+              <UserPlus size={24} />
+            </div>
+            <span className={`text-xs font-black ${textTitle}`}>{language === 'ar' ? 'طلب حرفي' : 'Demander Artisan'}</span>
+          </button>
+          
+          {/* 5. تسجيل الحضور (Pointage) - يأخذ العرض كاملاً */}
+          <button className={`col-span-2 p-4 rounded-2xl border-2 border-dashed flex flex-row items-center justify-center gap-3 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-300 shadow-sm'}`}>
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 flex items-center justify-center">
+              <ClipboardCheck size={20} />
+            </div>
+            <span className={`text-sm font-black ${textTitle}`}>{language === 'ar' ? 'تسجيل حضور العمال (Pointage)' : 'Pointage des Ouvriers'}</span>
+          </button>
+
+          {/* 6. إنذار الطوارئ - يأخذ العرض كاملاً وبلون أحمر بارز */}
+          <button className="col-span-2 p-4 rounded-2xl border-2 border-red-200 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:border-red-900/50 transition-all flex flex-row items-center justify-center gap-3 shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center animate-pulse">
+              <AlertTriangle size={20} />
+            </div>
+            <span className="text-sm font-black text-red-600 dark:text-red-400">{language === 'ar' ? 'إبلاغ عن طوارئ / توقف' : 'Alerte Urgence / Arrêt'}</span>
+          </button>
+        </div>
 
             {/* الطلبات المعلقة */}
             {team.filter(w => w.status === 'pending').length > 0 && (
@@ -364,9 +403,34 @@ export default function ForemanDashboard() {
                                 <h4 className={`font-black text-sm ${textTitle}`}>
                                   {worker.worker_name || worker.name}
                                 </h4>
-                                <p className={`text-xs font-bold ${textMuted} flex items-center gap-1 mt-0.5`} dir="ltr">
-                                  <Phone size={10} /> {worker.worker_phone || '---'}
-                                </p>
+                                <div className="flex items-center gap-2 mt-1.5" dir="ltr">
+                                  {worker.worker_phone ? (
+                                    <>
+                                      {/* زر الاتصال الهاتفي المباشر */}
+                                      <a
+                                        href={`tel:${worker.worker_phone.replace(/\s+/g, '')}`}
+                                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 transition-colors"
+                                        title="Appel direct"
+                                      >
+                                        <Phone size={11} className="text-emerald-500" />
+                                        <span>{worker.worker_phone}</span>
+                                      </a>
+
+                                      {/* زر واتساب السريع */}
+                                      <a
+                                        href={`https://wa.me/${worker.worker_phone.replace(/\D/g, '')}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="p-1 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 transition-colors"
+                                        title="WhatsApp"
+                                      >
+                                        <MessageCircle size={13} />
+                                      </a>
+                                    </>
+                                  ) : (
+                                    <span className="text-[11px] font-bold text-slate-400">---</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
