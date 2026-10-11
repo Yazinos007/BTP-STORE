@@ -312,42 +312,34 @@ export default function ForemanDashboard() {
     if (!activeProject) return;
     setIsSubmitting(true);
     
-    // توليد تاريخ اليوم بصيغة آمنة YYYY-MM-DD
     const d = new Date();
     const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-    const attendanceRecords = team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => ({
-      project_id: activeProject.id,
-      worker_id: worker.id,
-      worker_name: worker.worker_name || worker.name,
-      date: today, // إجبار قاعدة البيانات على استخدام تاريخ الواجهة
-      is_present: attendanceState[worker.id] !== false // الافتراضي حاضر ما لم يُلغَ تحديده
-    }));
+    const attendanceRecords = team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => {
+      // التحقق مما إذا كان قد تم إلغاء تحديده الآن، أو أنه مسجل مسبقاً كغائب ولم يتم إعادة تحديده
+      const isPresent = attendanceState[worker.id] !== false && !absentWorkers[worker.id];
+      
+      return {
+        project_id: activeProject.id,
+        worker_id: worker.id,
+        worker_name: worker.worker_name || worker.name,
+        date: today,
+        is_present: isPresent 
+      };
+    });
 
     try {
-      // 🚀 الخطوة السحرية: مسح أي تسجيلات سابقة لهذا اليوم لهذا الورش لمنع التضارب
-      await supabase.from('field_attendance')
-        .delete()
-        .eq('project_id', activeProject.id)
-        .eq('date', today);
-
-      // 🚀 إدخال التسجيلات الجديدة
+      await supabase.from('field_attendance').delete().eq('project_id', activeProject.id).eq('date', today);
       const { error } = await supabase.from('field_attendance').insert(attendanceRecords);
 
       if (!error) {
-        // تحديث الواجهة فوراً
         const newAbsentState = {};
         attendanceRecords.forEach(record => {
-          if (!record.is_present) {
-             newAbsentState[record.worker_id] = true;
-          }
+          if (!record.is_present) newAbsentState[record.worker_id] = true;
         });
         setAbsentWorkers(newAbsentState);
-
         alert(language === 'ar' ? 'تم تسجيل الحضور بنجاح' : 'Pointage enregistré avec succès');
         setShowPointage(false);
-      } else {
-        console.error("خطأ في الإدخال:", error);
       }
     } catch (err) {
       console.error(err);
@@ -837,10 +829,24 @@ export default function ForemanDashboard() {
                     <span className={`font-bold text-sm ${textTitle}`}>{worker.worker_name}</span>
                     <input 
                       type="checkbox" 
-                      className="w-5 h-5 accent-blue-600 rounded" 
-                      checked={attendanceState[worker.id] !== false}
-                      onChange={(e) => setAttendanceState(prev => ({...prev, [worker.id]: e.target.checked}))}
-                    />
+                      className="w-5 h-5 accent-blue-600 rounded cursor-pointer" 
+                      // 🚀 السحر هنا: نقرأ حالة الغياب مباشرة، فإذا كان غائباً نلغي التحديد، وإلا فهو محدد
+                      checked={!absentWorkers[worker.id] && attendanceState[worker.id] !== false}
+                      onChange={(e) => {
+                      // نحدث الحالتين معاً لضمان تجاوب الواجهة فوراً
+                      const isPresent = e.target.checked;
+                      setAttendanceState(prev => ({...prev, [worker.id]: isPresent}));
+    
+                      // إزالة الغياب مؤقتاً في الواجهة حتى يقوم المستخدم بالضغط على تأكيد
+                      if (isPresent) {
+                        setAbsentWorkers(prev => {
+                          const newState = {...prev};
+                          delete newState[worker.id];
+                          return newState;
+                        });
+                      }
+                    }}
+                   />
                   </label>
                 ))}
               </div>
