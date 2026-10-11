@@ -295,40 +295,35 @@ export default function ForemanDashboard() {
 
   // 🚀 دوال إرسال بيانات النوافذ الميدانية
   
-  // 1. إرسال الحضور (معالجة التضارب في نفس اليوم)
+  // 🚀 1. إرسال الحضور (معالجة ذكية)
   const handleSubmitAttendance = async (e) => {
     e.preventDefault();
     if (!activeProject) return;
     setIsSubmitting(true);
     
-    const d = new Date();
-    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const today = new Date().toISOString().split('T')[0];
 
-    const attendanceRecords = team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => {
-      // التحقق مما إذا كان قد تم إلغاء تحديده الآن، أو أنه مسجل مسبقاً كغائب ولم يتم إعادة تحديده
-      const isPresent = attendance[worker.id] !== false && !absentWorkers[worker.id];
-      
-      return {
-        project_id: activeProject.id,
-        worker_id: worker.id,
-        worker_name: worker.worker_name || worker.name,
-        date: today,
-        is_present: isPresent 
-      };
-    });
+    const attendanceRecords = team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => ({
+      project_id: activeProject.id,
+      worker_id: worker.id,
+      worker_name: worker.worker_name || worker.name,
+      date: today,
+      is_present: attendance[worker.id] !== false // إذا لم يتم تغييره، فهو حاضر افتراضياً
+    }));
 
     try {
+      // مسح السجلات القديمة لليوم لتفادي التضارب
       await supabase.from('field_attendance').delete().eq('project_id', activeProject.id).eq('date', today);
+      
       const { error } = await supabase.from('field_attendance').insert(attendanceRecords);
 
-      if (!error) {
-        const newAbsentState = {};
-        attendanceRecords.forEach(record => {
-          if (!record.is_present) newAbsentState[record.worker_id] = true;
-        });
-        setAbsentWorkers(newAbsentState);
+      if (error) {
+        console.error("❌ خطأ قاعدة البيانات:", error);
+        alert("حدث خطأ في قاعدة البيانات. تحقق من F12 أو تأكد أن جدول field_attendance متوافق.");
+      } else {
         alert(language === 'ar' ? 'تم تسجيل الحضور بنجاح' : 'Pointage enregistré avec succès');
         setShowPointage(false);
+        // الواجهة ستتحدث تلقائياً لأن حالة attendance تغيرت فورياً
       }
     } catch (err) {
       console.error(err);
@@ -684,15 +679,15 @@ export default function ForemanDashboard() {
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h4 className={`font-black text-sm ${absentWorkers[worker.id] ? 'text-red-500 line-through' : textTitle}`}>
+                                  <h4 className={`font-black text-sm ${attendance[worker.id] === false ? 'text-red-500 line-through' : textTitle}`}>
                                     {worker.worker_name || worker.name}
                                   </h4>
-                                    {absentWorkers[worker.id] && (
-                                  <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full dark:bg-red-900/30 dark:text-red-400">
-                                    {language === 'ar' ? 'غائب اليوم' : 'Absent'}
-                                  </span>
-                                )}
-                              </div>
+                                  {attendance[worker.id] === false && (
+                                    <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full dark:bg-red-900/30 dark:text-red-400">
+                                      {language === 'ar' ? 'غائب اليوم' : 'Absent'}
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-2 mt-1.5" dir="ltr">
                                   {worker.worker_phone ? (
                                     <>
@@ -813,32 +808,18 @@ export default function ForemanDashboard() {
             
             <form onSubmit={handleSubmitAttendance}>
               <div className="space-y-3 max-h-60 overflow-y-auto mb-6 pr-2">
-                {team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => (
-                  <label key={worker.id} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors hover:border-blue-300 ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
-                    <span className={`font-bold text-sm ${textTitle}`}>{worker.worker_name}</span>
-                    <input 
-                      type="checkbox" 
-                      className="w-5 h-5 accent-blue-600 rounded cursor-pointer" 
-                      // 🚀 السحر هنا: نقرأ حالة الغياب مباشرة، فإذا كان غائباً نلغي التحديد، وإلا فهو محدد
-                      checked={!absentWorkers[worker.id] && attendanceState[worker.id] !== false}
-                      onChange={(e) => {
-                      // نحدث الحالتين معاً لضمان تجاوب الواجهة فوراً
-                      const isPresent = e.target.checked;
-                      setAttendanceState(prev => ({...prev, [worker.id]: isPresent}));
-    
-                      // إزالة الغياب مؤقتاً في الواجهة حتى يقوم المستخدم بالضغط على تأكيد
-                      if (isPresent) {
-                        setAbsentWorkers(prev => {
-                          const newState = {...prev};
-                          delete newState[worker.id];
-                          return newState;
-                        });
-                      }
-                    }}
-                   />
-                  </label>
-                ))}
-              </div>
+              {team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => (
+                <label key={worker.id} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors hover:border-blue-300 ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
+                  <span className={`font-bold text-sm ${textTitle}`}>{worker.worker_name}</span>
+                  <input 
+                    type="checkbox" 
+                    className="w-5 h-5 accent-blue-600 rounded cursor-pointer" 
+                    checked={attendance[worker.id] !== false}
+                    onChange={(e) => setAttendance(prev => ({...prev, [worker.id]: e.target.checked}))}
+                  />
+                </label>
+              ))}
+            </div>
               
               <button type="submit" disabled={isSubmitting} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl flex justify-center items-center gap-2">
                 {isSubmitting ? <Loader2 className="animate-spin" size={20}/> : t.validerPresence}
