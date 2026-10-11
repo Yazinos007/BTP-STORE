@@ -210,8 +210,10 @@ export default function ForemanDashboard() {
 
       if (reportsData) setReports(reportsData);
 
-      // 🚀 3. جلب سجلات الحضور لليوم الحالي (الجديد)
-      const today = new Date().toISOString().split('T')[0]; // صيغة YYYY-MM-DD
+      // 🚀 3. جلب سجلات الحضور لليوم الحالي
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      
       const { data: attendanceData, error: attendanceErr } = await supabase
         .from('field_attendance')
         .select('worker_id, is_present')
@@ -220,7 +222,6 @@ export default function ForemanDashboard() {
 
       if (!attendanceErr && attendanceData) {
         const fetchedAbsentState = {};
-        // تهيئة الـ attendanceState لتعكس حالة قاعدة البيانات
         const fetchedAttendanceState = {}; 
         
         attendanceData.forEach(record => {
@@ -232,8 +233,6 @@ export default function ForemanDashboard() {
           }
         });
         setAbsentWorkers(fetchedAbsentState);
-        
-        // تحديث حالة الخانات (checkboxes) بناءً على ما جُلب من الداتا بيز
         setAttendanceState(prevState => ({...prevState, ...fetchedAttendanceState}));
       }
 
@@ -307,34 +306,53 @@ export default function ForemanDashboard() {
 
   // 🚀 دوال إرسال بيانات النوافذ الميدانية
   
-  // 1. إرسال الحضور
+  // 1. إرسال الحضور (معالجة التضارب في نفس اليوم)
   const handleSubmitAttendance = async (e) => {
     e.preventDefault();
     if (!activeProject) return;
     setIsSubmitting(true);
+    
+    // توليد تاريخ اليوم بصيغة آمنة YYYY-MM-DD
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-    // بناء سجلات الحضور
     const attendanceRecords = team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => ({
       project_id: activeProject.id,
       worker_id: worker.id,
       worker_name: worker.worker_name || worker.name,
+      date: today, // إجبار قاعدة البيانات على استخدام تاريخ الواجهة
       is_present: attendanceState[worker.id] !== false // الافتراضي حاضر ما لم يُلغَ تحديده
     }));
 
-    const { error } = await supabase.from('field_attendance').insert(attendanceRecords);
-    setIsSubmitting(false);
-    if (!error) {
-      // تحديث الواجهة لتظهر حالة الغياب
-      const newAbsentState = {};
-      attendanceRecords.forEach(record => {
-        if (!record.is_present) {
-           newAbsentState[record.worker_id] = true;
-        }
-      });
-      setAbsentWorkers(newAbsentState); // حفظ الغائبين
+    try {
+      // 🚀 الخطوة السحرية: مسح أي تسجيلات سابقة لهذا اليوم لهذا الورش لمنع التضارب
+      await supabase.from('field_attendance')
+        .delete()
+        .eq('project_id', activeProject.id)
+        .eq('date', today);
 
-      alert(language === 'ar' ? 'تم تسجيل الحضور بنجاح' : 'Pointage enregistré avec succès');
-      setShowPointage(false);
+      // 🚀 إدخال التسجيلات الجديدة
+      const { error } = await supabase.from('field_attendance').insert(attendanceRecords);
+
+      if (!error) {
+        // تحديث الواجهة فوراً
+        const newAbsentState = {};
+        attendanceRecords.forEach(record => {
+          if (!record.is_present) {
+             newAbsentState[record.worker_id] = true;
+          }
+        });
+        setAbsentWorkers(newAbsentState);
+
+        alert(language === 'ar' ? 'تم تسجيل الحضور بنجاح' : 'Pointage enregistré avec succès');
+        setShowPointage(false);
+      } else {
+        console.error("خطأ في الإدخال:", error);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -425,7 +443,7 @@ export default function ForemanDashboard() {
 
   return (
     
-      <div className={`min-h-screen pt-24 pb-28 px-4 sm:px-6 relative z-10 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-[#f0f4f8] text-slate-900'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+      <div className={`min-h-screen pt-24 pb-28 px-4 sm:px-6 relative z-10 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-900'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
       {/* تم التغيير إلى bg-white/80 لتأثير زجاجي نظيف */}
       <div className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between shadow-sm backdrop-blur-md border-b ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/80 border-slate-200'}`} dir={isRtl ? 'rtl' : 'ltr'}>
