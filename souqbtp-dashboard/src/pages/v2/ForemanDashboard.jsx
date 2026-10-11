@@ -450,73 +450,110 @@ export default function ForemanDashboard() {
         {/* جسم الصفحة بعد اختيار الورش */}
         {activeProject && (
           <div className="space-y-6 animate-fade-in">
-            {/* 🚀 لوحة الإجراءات الميدانية السريعة */}
-        <div className="grid grid-cols-2 gap-3 mt-6">
+            
+            {/* 🚀 لوحة الإجراءات الميدانية السريعة (تطابق تصميم الفيديو) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           
           {/* 1. التقاط صور الورش */}
           <button 
             onClick={() => setIsCameraModalOpen(true)}
-            className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+            className={`group p-5 rounded-[2rem] flex flex-col items-center justify-center gap-3 transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 ${
+              isDarkMode ? 'bg-slate-800 hover:bg-blue-600' : 'bg-white hover:bg-blue-600'
+            }`}
           >
-            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-500/10 flex items-center justify-center mb-1">
-              <Camera size={24} />
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+              isDarkMode ? 'bg-blue-500/20 text-blue-400 group-hover:bg-white/20 group-hover:text-white' : 'bg-blue-50 text-blue-600 group-hover:bg-white/20 group-hover:text-white'
+            }`}>
+              <Camera size={28} />
             </div>
-            <span className={`text-xs font-black ${textTitle}`}>{t.captureTerrain}</span>
+            <span className={`text-sm font-black text-center transition-colors duration-300 group-hover:text-white ${
+              isDarkMode ? 'text-slate-200' : 'text-slate-800'
+            }`}>{t.captureTerrain}</span>
           </button>
 
           {/* 2. استلام السلع */}
           <button 
             onClick={() => setShowDelivery(true)}
-            className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+            className={`group p-5 rounded-[2rem] flex flex-col items-center justify-center gap-3 transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 ${
+              isDarkMode ? 'bg-slate-800 hover:bg-emerald-500' : 'bg-white hover:bg-emerald-500'
+            }`}
           >
-            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10 flex items-center justify-center mb-1">
-              <Truck size={24} />
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+              isDarkMode ? 'bg-emerald-500/20 text-emerald-400 group-hover:bg-white/20 group-hover:text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-white/20 group-hover:text-white'
+            }`}>
+              <Truck size={28} />
             </div>
-            <span className={`text-xs font-black ${textTitle}`}>{t.bonLivraison}</span>
+            <span className={`text-sm font-black text-center transition-colors duration-300 group-hover:text-white ${
+              isDarkMode ? 'text-slate-200' : 'text-slate-800'
+            }`}>{t.bonLivraison}</span>
           </button>
 
           {/* 3. طلب مواد عاجلة */}
           <button 
             onClick={() => setShowMaterial(true)}
-            className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+            className={`group p-5 rounded-[2rem] flex flex-col items-center justify-center gap-3 transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 ${
+              isDarkMode ? 'bg-slate-800 hover:bg-purple-600' : 'bg-white hover:bg-purple-600'
+            }`}
           >
-            <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-500 dark:bg-purple-500/10 flex items-center justify-center mb-1">
-              <PackageSearch size={24} />
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+              isDarkMode ? 'bg-purple-500/20 text-purple-400 group-hover:bg-white/20 group-hover:text-white' : 'bg-purple-50 text-purple-600 group-hover:bg-white/20 group-hover:text-white'
+            }`}>
+              <PackageSearch size={28} />
             </div>
-            <span className={`text-xs font-black ${textTitle}`}>{t.demandeMateriel}</span>
+            <span className={`text-sm font-black text-center transition-colors duration-300 group-hover:text-white ${
+              isDarkMode ? 'text-slate-200' : 'text-slate-800'
+            }`}>{t.demandeMateriel}</span>
           </button>
 
           {/* 4. طلب حرفي جديد */}
           <button 
             onClick={() => setIsAssignModalOpen(true)}
-            className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+            className={`group p-5 rounded-[2rem] flex flex-col items-center justify-center gap-3 transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 ${
+              isDarkMode ? 'bg-slate-800 hover:bg-amber-500' : 'bg-white hover:bg-amber-500'
+            }`}
           >
-            <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 dark:bg-amber-500/10 flex items-center justify-center mb-1">
-              <UserPlus size={24} />
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+              isDarkMode ? 'bg-amber-500/20 text-amber-400 group-hover:bg-white/20 group-hover:text-white' : 'bg-amber-50 text-amber-600 group-hover:bg-white/20 group-hover:text-white'
+            }`}>
+              <UserPlus size={28} />
             </div>
-            <span className={`text-xs font-black ${textTitle}`}>{t.demanderArtisan}</span>
+            <span className={`text-sm font-black text-center transition-colors duration-300 group-hover:text-white ${
+              isDarkMode ? 'text-slate-200' : 'text-slate-800'
+            }`}>{t.demanderArtisan}</span>
           </button>
           
           {/* 5. تسجيل الحضور (Pointage) */}
           <button 
             onClick={() => setShowPointage(true)}
-            className={`col-span-2 p-4 rounded-2xl border-2 border-dashed flex flex-row items-center justify-center gap-3 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-300 shadow-sm'}`}
+            className={`col-span-2 md:col-span-4 p-5 rounded-[2rem] border-2 border-dashed flex flex-row items-center justify-center gap-4 transition-all duration-300 shadow-sm group hover:border-transparent hover:-translate-y-1 hover:shadow-xl ${
+              isDarkMode ? 'border-slate-700 bg-slate-800/50 hover:bg-slate-700' : 'border-slate-300 bg-white hover:bg-slate-800'
+            }`}
           >
-            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 flex items-center justify-center">
-              <ClipboardCheck size={20} />
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+              isDarkMode ? 'bg-slate-700 text-slate-300 group-hover:bg-white/20 group-hover:text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-white/20 group-hover:text-white'
+            }`}>
+              <ClipboardCheck size={24} />
             </div>
-            <span className={`text-sm font-black ${textTitle}`}>{t.pointageOuvriers}</span>
+            <span className={`text-base font-black transition-colors duration-300 group-hover:text-white ${
+              isDarkMode ? 'text-slate-300' : 'text-slate-800'
+            }`}>{t.pointageOuvriers}</span>
           </button>
 
           {/* 6. إنذار الطوارئ */}
           <button 
             onClick={() => setShowAlert(true)}
-            className={`col-span-2 p-4 rounded-2xl border-2 flex flex-row items-center justify-center gap-3 transition-all shadow-sm ${isDarkMode ? 'bg-red-950/30 border-red-900/50 hover:bg-red-900/40' : 'bg-red-50 border-red-200 hover:bg-red-100'}`}
+            className={`col-span-2 md:col-span-4 p-5 rounded-[2rem] flex flex-row items-center justify-center gap-4 transition-all duration-300 shadow-sm group hover:-translate-y-1 hover:shadow-xl ${
+              isDarkMode ? 'bg-red-500/10 hover:bg-red-600' : 'bg-red-50 hover:bg-red-500'
+            }`}
           >
-            <div className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center animate-pulse">
-              <AlertTriangle size={20} />
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+              isDarkMode ? 'bg-red-500 text-white group-hover:bg-white/20' : 'bg-red-400 text-white group-hover:bg-white/20 group-hover:text-white'
+            }`}>
+              <AlertTriangle size={24} className="animate-pulse" />
             </div>
-            <span className="text-sm font-black text-red-600 dark:text-red-400">{t.alerteUrgenceBtn}</span>
+            <span className={`text-base font-black transition-colors duration-300 group-hover:text-white ${
+              isDarkMode ? 'text-red-400' : 'text-red-600'
+            }`}>{t.alerteUrgenceBtn}</span>
           </button>
         </div>
 
