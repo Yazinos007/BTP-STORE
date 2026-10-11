@@ -81,6 +81,9 @@ export default function ForemanDashboard() {
   const [materialDesc, setMaterialDesc] = useState('');
   const [alertForm, setAlertForm] = useState({ description: '', file: null, preview: null });
 
+  // حفظ حالة الغياب لكل حرفي (بناءً على الـ ID) لعرضها في الواجهة
+  const [absentWorkers, setAbsentWorkers] = useState({});
+
   // 🚀 قاموس الترجمة المحدث يشمل النوافذ الجديدة
   const translations = {
     ar: {
@@ -285,7 +288,8 @@ export default function ForemanDashboard() {
     e.preventDefault();
     if (!activeProject) return;
     setIsSubmitting(true);
-    
+
+    // بناء سجلات الحضور
     const attendanceRecords = team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => ({
       project_id: activeProject.id,
       worker_id: worker.id,
@@ -296,6 +300,15 @@ export default function ForemanDashboard() {
     const { error } = await supabase.from('field_attendance').insert(attendanceRecords);
     setIsSubmitting(false);
     if (!error) {
+      // تحديث الواجهة لتظهر حالة الغياب
+      const newAbsentState = {};
+      attendanceRecords.forEach(record => {
+        if (!record.is_present) {
+           newAbsentState[record.worker_id] = true;
+        }
+      });
+      setAbsentWorkers(newAbsentState); // حفظ الغائبين
+
       alert(language === 'ar' ? 'تم تسجيل الحضور بنجاح' : 'Pointage enregistré avec succès');
       setShowPointage(false);
     }
@@ -387,10 +400,10 @@ export default function ForemanDashboard() {
   const displayedProjects = (projects && projects.length > 0) ? projects : localProjects;
 
   return (
-    <div className={`min-h-screen pt-28 pb-28 px-4 sm:px-6 relative z-10 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen pt-24 pb-28 px-4 sm:px-6 relative z-10 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-slate-100/60 text-slate-900'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
       {/* 🚀 الشريط العلوي المستقل (Top Navbar) */}
-      <div className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between shadow-sm backdrop-blur-md border-b ${isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-200'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+      <div className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between shadow-sm backdrop-blur-md border-b ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-100/90 border-slate-200'}`} dir={isRtl ? 'rtl' : 'ltr'}>
         
         {/* زر الرجوع للوحة القيادة (أسود في الفاتح، أبيض في الداكن) */}
         <Link to="/v2/dashboard" className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow-md ${isDarkMode ? 'bg-white text-slate-900 hover:bg-slate-200' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
@@ -646,9 +659,16 @@ export default function ForemanDashboard() {
                                 <CheckCircle2 size={20} className={stage.iconColor} />
                               </div>
                               <div>
-                                <h4 className={`font-black text-sm ${textTitle}`}>
-                                  {worker.worker_name || worker.name}
-                                </h4>
+                                <div className="flex items-center gap-2">
+                                  <h4 className={`font-black text-sm ${absentWorkers[worker.id] ? 'text-red-500 line-through' : textTitle}`}>
+                                    {worker.worker_name || worker.name}
+                                  </h4>
+                                    {absentWorkers[worker.id] && (
+                                  <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full dark:bg-red-900/30 dark:text-red-400">
+                                    {language === 'ar' ? 'غائب اليوم' : 'Absent'}
+                                  </span>
+                                )}
+                              </div>
                                 <div className="flex items-center gap-2 mt-1.5" dir="ltr">
                                   {worker.worker_phone ? (
                                     <>
