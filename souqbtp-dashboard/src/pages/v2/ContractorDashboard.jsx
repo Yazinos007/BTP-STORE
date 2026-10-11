@@ -80,6 +80,9 @@ export default function ContractorDashboard() {
   const [editingWorkerId, setEditingWorkerId] = useState(null);
   const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '', stage: 2, isManager: false, wage: '' });
 
+  // 🚀 حالات الطوارئ والإشعارات الحية الميدانية
+  const [fieldAlerts, setFieldAlerts] = useState([]);
+
   const translations = {
     ar: {
       pageTitle: "إدارة الأوراش والميدان", calcBtn: "الحاسبة الذكية لتكاليف الورش", rateBtn: "تقييم الحرفيين", projectPathBtn: "مسار الورش",
@@ -485,6 +488,15 @@ export default function ContractorDashboard() {
 
         const { data: appsData } = await supabase.from('appointments').select('*, services(name), providers(full_name)').eq('project_id', activeProject.id);
         if (appsData && isMounted) setAppointments(appsData);
+
+        // جلب الطوارئ التي لم يتم حلها بعد
+        const { data: alertsData } = await supabase
+          .from('field_alerts')
+          .select('*')
+          .eq('project_id', activeProject.id)
+          .eq('is_resolved', false)
+          .order('created_at', { ascending: false });
+        if (alertsData && isMounted) setFieldAlerts(alertsData);
         
       } else {
         syncedStages = [
@@ -954,6 +966,73 @@ export default function ContractorDashboard() {
             )}
           </div>
         </div>
+
+        {/* 🚨 شريط الإشعارات والطوارئ الميدانية (عين الباطرون) 🚨 */}
+        {fieldAlerts.length > 0 && (
+          <div className="mb-8 space-y-3 animate-slide-up">
+            {fieldAlerts.map(alert => (
+              <div key={alert.id} className="relative overflow-hidden rounded-3xl bg-red-600 shadow-[0_0_30px_rgba(220,38,38,0.4)] text-white p-6 border-2 border-red-400/50 flex flex-col md:flex-row gap-6 items-start md:items-center">
+                <div className="absolute -right-10 -top-10 opacity-10 pointer-events-none">
+                   <AlertTriangle size={150} />
+                </div>
+                
+                <div className="bg-white/20 p-4 rounded-full shrink-0">
+                  <AlertTriangle size={32} className="text-white animate-pulse" />
+                </div>
+                
+                <div className="flex-1 z-10">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="bg-red-900/50 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest text-red-100 border border-red-500/30">
+                      {alert.alert_type === 'demande_materiel' ? 'طلب مواد عاجل' : 'حالة طوارئ ميدانية'}
+                    </span>
+                    <span className="text-sm font-bold text-red-100 opacity-90 flex items-center gap-1">
+                      <Clock size={14} /> {new Date(alert.created_at).toLocaleTimeString(isRtl ? 'ar-MA' : 'fr-FR', {hour: '2-digit', minute:'2-digit'})}
+                    </span>
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-black mb-1 drop-shadow-md leading-tight">
+                    {alert.description}
+                  </h3>
+                  
+                  {/* 📍 الختم الجغرافي والزمني الصارم */}
+                  {alert.location_lat && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-red-100 bg-red-900/30 p-2.5 rounded-xl border border-red-500/20 inline-flex">
+                       <span className="flex items-center gap-1"><ShieldCheck size={14} className="text-green-400"/> تم توثيق الموقع (GPS)</span>
+                       <span className="opacity-50">|</span>
+                       <a href={`https://www.google.com/maps/search/?api=1&query=${alert.location_lat},${alert.location_lng}`} target="_blank" rel="noreferrer" className="underline hover:text-white transition-colors">
+                         عرض على الخريطة
+                       </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* عرض الميديا الموثقة (صورة أو فيديو) */}
+                {alert.image_url && (
+                  <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden shadow-lg border-2 border-white/20 shrink-0 bg-black relative z-10 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.open(alert.image_url, '_blank')}>
+                    {alert.media_type === 'video' ? (
+                      <video src={alert.image_url} className="w-full h-full object-cover opacity-90" />
+                    ) : (
+                      <img src={alert.image_url} alt="Alert Evidence" className="w-full h-full object-cover" />
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      {alert.media_type === 'video' && <div className="bg-black/50 p-2 rounded-full"><Camera size={20} className="text-white"/></div>}
+                    </div>
+                  </div>
+                )}
+                
+                {/* زر إنهاء الطوارئ */}
+                <button 
+                  onClick={async () => {
+                    await supabase.from('field_alerts').update({ is_resolved: true }).eq('id', alert.id);
+                    setFieldAlerts(prev => prev.filter(a => a.id !== alert.id));
+                  }}
+                  className="bg-white text-red-600 hover:bg-red-50 px-6 py-3 rounded-xl font-black text-sm transition-colors shadow-lg z-10 shrink-0 w-full md:w-auto"
+                >
+                  {language === 'ar' ? 'تم الحل (إغلاق)' : 'Marquer comme résolu'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* ==================================================== */}
         {/* 🚀 القطع الثابتة: تظهر دائماً حتى لو لم يكن هناك ورش */}

@@ -282,30 +282,47 @@ export default function ForemanDashboard() {
     setReportForm({ ...reportForm, file, preview: URL.createObjectURL(file) });
   };
 
+  // 🚀 إرسال تقرير الورش (مع الفيديو، والختم الزمني، والـ GPS)
   const handleSubmitReport = async (e) => {
     e.preventDefault();
     if (!reportForm.file || !activeProject || !user) return;
     setIsSubmitting(true);
 
-    const fileName = `field_${Date.now()}_${reportForm.file.name.replace(/\s+/g, '_')}`;
-    const filePath = `${activeProject.id}/${fileName}`;
-    const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, reportForm.file);
-    
-    if (!uploadError) {
-      const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
-      const { data } = await supabase.from('site_reports').insert([{ 
-        project_id: activeProject.id, 
-        image_url: urlData.publicUrl, 
-        description: reportForm.description,
-        provider_name: user?.user_metadata?.full_name || 'Chef de Chantier'
-      }]).select();
+    try {
+      // 📍 جلب الإحداثيات الدقيقة
+      const location = await getCurrentLocation();
+      
+      const mediaType = reportForm.file.type.startsWith('video/') ? 'video' : 'image';
+      const fileExt = reportForm.file.name.split('.').pop();
+      const fileName = `field_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${activeProject.id}/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, reportForm.file);
+      
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
+        const { data, error } = await supabase.from('site_reports').insert([{ 
+          project_id: activeProject.id, 
+          image_url: urlData.publicUrl, 
+          description: reportForm.description,
+          provider_name: user?.user_metadata?.full_name || 'Chef de Chantier',
+          media_type: mediaType,
+          location_lat: location.lat,
+          location_lng: location.lng
+        }]).select();
 
-      if (data) setReports(prev => [data[0], ...prev]);
-      setIsCameraModalOpen(false);
-      setReportForm({ file: null, preview: null, description: '' });
-      alert('📸 تم رفع التقرير الميداني بنجاح!');
+        if (!error && data) {
+          setReports(prev => [data[0], ...prev]);
+          setIsCameraModalOpen(false);
+          setReportForm({ file: null, preview: null, description: '', isVideo: false });
+          alert(language === 'ar' ? '📸 تم رفع التقرير الموثق بنجاح!' : 'Rapport certifié envoyé !');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   // 🚀 دوال إرسال بيانات النوافذ الميدانية
@@ -805,13 +822,18 @@ export default function ForemanDashboard() {
             <form onSubmit={handleSubmitReport} className="space-y-4">
               <label className={`block w-full h-48 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden relative ${isDarkMode ? 'border-slate-700 bg-slate-800 hover:border-blue-500' : 'border-slate-300 bg-slate-50 hover:border-blue-500'}`}>
                 {reportForm.preview ? (
-                  <img src={reportForm.preview} alt="Preview" className="w-full h-full object-cover" />
+                  reportForm.isVideo ? (
+                    <video src={reportForm.preview} controls className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={reportForm.preview} alt="Preview" className="w-full h-full object-cover" />
+                  )
                 ) : (
                   <>
                     <Camera size={40} className="text-slate-400 mb-2"/>
-                    <span className="font-bold text-slate-500 text-sm">{t.takePhoto}</span>
+                    <span className="font-bold text-slate-500 text-sm">{language === 'ar' ? 'التقط صورة أو فيديو (مباشر)' : 'Prendre Photo/Vidéo'}</span>
                   </>
                 )}
+                {/* السلاح السري: إجبار الكاميرا الحية وقبول الفيديو */}
                 <input 
                   type="file" 
                   accept="image/*,video/*" 
@@ -819,12 +841,11 @@ export default function ForemanDashboard() {
                   className="hidden" 
                   onChange={(e) => {
                     const file = e.target.files[0];
-                     if(file) {
-                    const isVideo = file.type.startsWith('video/');
-                    // تحديث الحالة بنوع الملف والصورة المصغرة (أو الفيديو)
-                    setAlertForm({...alertForm, file, isVideo, preview: URL.createObjectURL(file)});
-                   }
-                 }}
+                    if(file) {
+                      const isVideo = file.type.startsWith('video/');
+                      setReportForm({...reportForm, file, isVideo, preview: URL.createObjectURL(file)});
+                    }
+                  }} 
                 />
               </label>
 
