@@ -188,9 +188,7 @@ export default function ForemanDashboard() {
 
     setLoading(true);
     try {
-      console.log("🔍 جاري جلب فريق الورش ذو المعرف:", currentProjectId);
-
-      // 1. جلب التعيينات الخاصة بهذا المشروع
+      // 1. جلب الفريق
       const { data: teamData, error: teamErr } = await supabase
         .from('milestone_assignments')
         .select('*')
@@ -199,7 +197,6 @@ export default function ForemanDashboard() {
       if (teamErr) {
         console.error("❌ خطأ Supabase في جلب الفريق:", teamErr);
       } else {
-        console.log("✅ الفريق المجلوب من milestone_assignments:", teamData);
         setTeam(teamData || []);
       }
 
@@ -212,6 +209,33 @@ export default function ForemanDashboard() {
         .limit(5);
 
       if (reportsData) setReports(reportsData);
+
+      // 🚀 3. جلب سجلات الحضور لليوم الحالي (الجديد)
+      const today = new Date().toISOString().split('T')[0]; // صيغة YYYY-MM-DD
+      const { data: attendanceData, error: attendanceErr } = await supabase
+        .from('field_attendance')
+        .select('worker_id, is_present')
+        .eq('project_id', currentProjectId)
+        .eq('date', today);
+
+      if (!attendanceErr && attendanceData) {
+        const fetchedAbsentState = {};
+        // تهيئة الـ attendanceState لتعكس حالة قاعدة البيانات
+        const fetchedAttendanceState = {}; 
+        
+        attendanceData.forEach(record => {
+          if (!record.is_present) {
+            fetchedAbsentState[record.worker_id] = true;
+            fetchedAttendanceState[record.worker_id] = false; // تحديث حالة الـ checkbox
+          } else {
+            fetchedAttendanceState[record.worker_id] = true;
+          }
+        });
+        setAbsentWorkers(fetchedAbsentState);
+        
+        // تحديث حالة الخانات (checkboxes) بناءً على ما جُلب من الداتا بيز
+        setAttendanceState(prevState => ({...prevState, ...fetchedAttendanceState}));
+      }
 
     } catch (err) {
       console.error("خطأ غير متوقع:", err);
@@ -400,27 +424,28 @@ export default function ForemanDashboard() {
   const displayedProjects = (projects && projects.length > 0) ? projects : localProjects;
 
   return (
-    <div className={`min-h-screen pt-24 pb-28 px-4 sm:px-6 relative z-10 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-slate-100/60 text-slate-900'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+    
+      <div className={`min-h-screen pt-24 pb-28 px-4 sm:px-6 relative z-10 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-[#f0f4f8] text-slate-900'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 الشريط العلوي المستقل (Top Navbar) */}
-      <div className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between shadow-sm backdrop-blur-md border-b ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-100/90 border-slate-200'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* تم التغيير إلى bg-white/80 لتأثير زجاجي نظيف */}
+      <div className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between shadow-sm backdrop-blur-md border-b ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/80 border-slate-200'}`} dir={isRtl ? 'rtl' : 'ltr'}>
         
         {/* زر الرجوع للوحة القيادة (أسود في الفاتح، أبيض في الداكن) */}
-        <Link to="/v2/dashboard" className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow-md ${isDarkMode ? 'bg-white text-slate-900 hover:bg-slate-200' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
-          <ArrowRight size={14} className={isRtl ? 'rotate-180' : ''}/>
+      <Link to="/v2/dashboard" className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow-md ${isDarkMode ? 'bg-white text-slate-900 hover:bg-slate-200' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
+        <ArrowRight size={14} className={isRtl ? 'rotate-180' : ''}/>
           {t.backToDash}
         </Link>
 
         {/* أزرار اللغة والوضع الداكن */}
-        <div className="flex items-center gap-2" dir="ltr">
-           <button onClick={toggleLanguage} className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800 text-white hover:bg-slate-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
-              {language.toUpperCase()}
-           </button>
-           <button onClick={toggleTheme} className={`p-2 rounded-xl border transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800 text-amber-400 hover:bg-slate-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-           </button>
-        </div>
+      <div className="flex items-center gap-2" dir="ltr">
+        <button onClick={toggleLanguage} className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800 text-white hover:bg-slate-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
+          {language.toUpperCase()}
+        </button>
+        <button onClick={toggleTheme} className={`p-2 rounded-xl border transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800 text-amber-400 hover:bg-slate-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
+          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
       </div>
+    </div>
 
       <div className="max-w-3xl mx-auto w-full">
         {/* رأس الصفحة: تصميم ميداني صارم ومحمي */}
