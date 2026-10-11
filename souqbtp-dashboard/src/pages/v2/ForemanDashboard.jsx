@@ -83,6 +83,21 @@ export default function ForemanDashboard() {
   const [materialDesc, setMaterialDesc] = useState('');
   const [alertForm, setAlertForm] = useState({ description: '', file: null, preview: null });
 
+  // 🚀 دالة سحرية لجلب موقع رئيس الورش بدقة عبر GPS
+  const getCurrentLocation = () => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ lat: null, lng: null });
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve({ lat: position.coords.latitude, lng: position.coords.longitude }),
+        (error) => resolve({ lat: null, lng: null }), // في حال رفض الصلاحية
+        { enableHighAccuracy: true } // إجبار الهاتف على أعلى دقة
+      );
+    });
+  };
+
   // 🚀 قاموس الترجمة المحدث يشمل النوافذ الجديدة
   const translations = {
     ar: {
@@ -383,34 +398,51 @@ export default function ForemanDashboard() {
     }
   };
 
-  // 4. إرسال إنذار الطوارئ
+  // 4. إرسال إنذار الطوارئ (مع الموقع والفيديو)
   const handleSubmitAlert = async (e) => {
     e.preventDefault();
     if (!activeProject || !alertForm.description) return;
     setIsSubmitting(true);
 
-    let imageUrl = null;
-    if (alertForm.file) {
-      const filePath = `${activeProject.id}/alert_${Date.now()}`;
-      const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, alertForm.file);
-      if (!uploadError) {
-        imageUrl = supabase.storage.from('project-files').getPublicUrl(filePath).data.publicUrl;
+    try {
+      // 📍 جلب الإحداثيات لحظة الإرسال
+      const location = await getCurrentLocation();
+
+      let fileUrl = null;
+      let mediaType = 'text';
+
+      if (alertForm.file) {
+        // تحديد نوع الملف (فيديو أم صورة)
+        mediaType = alertForm.file.type.startsWith('video/') ? 'video' : 'image';
+        const fileExt = alertForm.file.name.split('.').pop();
+        const filePath = `${activeProject.id}/alert_${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, alertForm.file);
+        if (!uploadError) {
+          fileUrl = supabase.storage.from('project-files').getPublicUrl(filePath).data.publicUrl;
+        }
       }
-    }
 
-    const { error } = await supabase.from('field_alerts').insert([{
-      project_id: activeProject.id,
-      alert_type: 'urgence',
-      priority: 'critical',
-      description: alertForm.description,
-      image_url: imageUrl
-    }]);
+      const { error } = await supabase.from('field_alerts').insert([{
+        project_id: activeProject.id,
+        alert_type: 'urgence',
+        priority: 'critical',
+        description: alertForm.description,
+        image_url: fileUrl,
+        media_type: mediaType,
+        location_lat: location.lat,
+        location_lng: location.lng
+      }]);
 
-    setIsSubmitting(false);
-    if (!error) {
-      setShowAlert(false);
-      setAlertForm({ description: '', file: null, preview: null });
-      alert(language === 'ar' ? 'تم إرسال التنبيه للإدارة' : 'Alerte envoyée à la direction');
+      if (!error) {
+        setShowAlert(false);
+        setAlertForm({ description: '', file: null, preview: null });
+        alert(language === 'ar' ? 'تم إرسال التنبيه الموثق للإدارة' : 'Alerte certifiée envoyée');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -780,7 +812,20 @@ export default function ForemanDashboard() {
                     <span className="font-bold text-slate-500 text-sm">{t.takePhoto}</span>
                   </>
                 )}
-                <input type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} className="hidden" />
+                <input 
+                  type="file" 
+                  accept="image/*,video/*" 
+                  capture="environment" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                     if(file) {
+                    const isVideo = file.type.startsWith('video/');
+                    // تحديث الحالة بنوع الملف والصورة المصغرة (أو الفيديو)
+                    setAlertForm({...alertForm, file, isVideo, preview: URL.createObjectURL(file)});
+                   }
+                 }}
+                />
               </label>
 
               <textarea placeholder={t.desc} rows="3" value={reportForm.description} onChange={e=>setReportForm({...reportForm, description: e.target.value})} className={`w-full p-4 rounded-xl border-2 outline-none font-bold resize-none ${isDarkMode?'bg-slate-950 border-slate-800 text-white':'bg-slate-50 border-slate-200'}`}></textarea>
@@ -911,10 +956,20 @@ export default function ForemanDashboard() {
                     <span className="text-xs font-bold text-slate-400">{t.optionalPhoto}</span>
                   </>
                 )}
-                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => {
-                  const file = e.target.files[0];
-                  if(file) setAlertForm({...alertForm, file, preview: URL.createObjectURL(file)});
-                }}/>
+                <input 
+                  type="file" 
+                  accept="image/*,video/*" 
+                  capture="environment" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                      if(file) {
+                    const isVideo = file.type.startsWith('video/');
+                    // تحديث الحالة بنوع الملف والصورة المصغرة (أو الفيديو)
+                      setAlertForm({...alertForm, file, isVideo, preview: URL.createObjectURL(file)});
+                    }
+                  }}
+                />
               </label>
 
               <button type="submit" disabled={isSubmitting} className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl flex justify-center items-center gap-2">
