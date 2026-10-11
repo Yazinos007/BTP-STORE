@@ -76,13 +76,12 @@ export default function ForemanDashboard() {
   const [assignForm, setAssignForm] = useState({ name: '', phone: '', role: '', wage: '' });
   const [reportForm, setReportForm] = useState({ file: null, preview: null, description: '' });
   
-  const [attendanceState, setAttendanceState] = useState({});
+  // 🚀 حالة واحدة فقط موحدة للحضور والغياب (تغني عن كل الحالات القديمة)
+  const [attendance, setAttendance] = useState({});
+  
   const [deliveryForm, setDeliveryForm] = useState({ supplier: '', material: '', file: null, preview: null });
   const [materialDesc, setMaterialDesc] = useState('');
   const [alertForm, setAlertForm] = useState({ description: '', file: null, preview: null });
-
-  // حفظ حالة الغياب لكل حرفي (بناءً على الـ ID) لعرضها في الواجهة
-  const [absentWorkers, setAbsentWorkers] = useState({});
 
   // 🚀 قاموس الترجمة المحدث يشمل النوافذ الجديدة
   const translations = {
@@ -210,30 +209,20 @@ export default function ForemanDashboard() {
 
       if (reportsData) setReports(reportsData);
 
-      // 🚀 3. جلب سجلات الحضور لليوم الحالي
-      const d = new Date();
-      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      
-      const { data: attendanceData, error: attendanceErr } = await supabase
+      // 🚀 3. جلب سجلات الحضور لليوم الحالي (بطريقة مبسطة)
+      const today = new Date().toISOString().split('T')[0];
+      const { data: attendanceData } = await supabase
         .from('field_attendance')
         .select('worker_id, is_present')
         .eq('project_id', currentProjectId)
         .eq('date', today);
 
-      if (!attendanceErr && attendanceData) {
-        const fetchedAbsentState = {};
-        const fetchedAttendanceState = {}; 
-        
+      if (attendanceData) {
+        const fetchedAttendance = {}; 
         attendanceData.forEach(record => {
-          if (!record.is_present) {
-            fetchedAbsentState[record.worker_id] = true;
-            fetchedAttendanceState[record.worker_id] = false; // تحديث حالة الـ checkbox
-          } else {
-            fetchedAttendanceState[record.worker_id] = true;
-          }
+          fetchedAttendance[record.worker_id] = record.is_present;
         });
-        setAbsentWorkers(fetchedAbsentState);
-        setAttendanceState(prevState => ({...prevState, ...fetchedAttendanceState}));
+        setAttendance(fetchedAttendance); // تحديث الحالة الموحدة
       }
 
     } catch (err) {
@@ -317,7 +306,7 @@ export default function ForemanDashboard() {
 
     const attendanceRecords = team.filter(w => !w.is_manager && w.status !== 'pending').map(worker => {
       // التحقق مما إذا كان قد تم إلغاء تحديده الآن، أو أنه مسجل مسبقاً كغائب ولم يتم إعادة تحديده
-      const isPresent = attendanceState[worker.id] !== false && !absentWorkers[worker.id];
+      const isPresent = attendance[worker.id] !== false && !absentWorkers[worker.id];
       
       return {
         project_id: activeProject.id,
