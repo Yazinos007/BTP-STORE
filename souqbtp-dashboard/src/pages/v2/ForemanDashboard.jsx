@@ -5,19 +5,45 @@ import useProjectStore from '../../store/useProjectStore';
 import { 
   HardHat, Camera, UserPlus, Clock, CheckCircle2, 
   AlertCircle, Phone, X, UploadCloud, Loader2, ArrowRight, MessageCircle, 
-  Truck, AlertTriangle, PackageSearch, ClipboardCheck 
+  Truck, AlertTriangle, PackageSearch, ClipboardCheck, Sun, Moon
 } from 'lucide-react';
 
 export default function ForemanDashboard() {
   
   const outletContext = useOutletContext();
+
+  // 🚀 حالات اللغة والوضع الداكن المستقلة
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (outletContext?.isDarkMode !== undefined) return outletContext.isDarkMode;
     if (typeof document !== 'undefined') return document.documentElement.classList.contains('dark');
     return localStorage.getItem('theme') === 'dark';
   });
 
-  const [language, setLanguage] = useState(outletContext?.language || localStorage.getItem('language') || 'ar');
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem('language') || 'ar';
+  });
+
+  // دالة تبديل الوضع الداكن
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+    if (newTheme) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // دالة تبديل اللغة
+  const toggleLanguage = () => {
+    const nextLang = language === 'ar' ? 'fr' : language === 'fr' ? 'en' : 'ar';
+    setLanguage(nextLang);
+    localStorage.setItem('language', nextLang);
+  };
+
+  const isRtl = language === 'ar';
+  const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
+  const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
   
   // تحديث فوري إذا تغيرت الإعدادات
   useEffect(() => {
@@ -28,10 +54,6 @@ export default function ForemanDashboard() {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
-
-  const isRtl = language === 'ar';
-  const textTitle = isDarkMode ? 'text-white' : 'text-slate-900';
-  const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
 
   const { activeProject, projects, setActiveProject, fetchProjects } = useProjectStore();
   
@@ -367,12 +389,24 @@ export default function ForemanDashboard() {
   return (
     <div className={`min-h-screen pt-28 pb-28 px-4 sm:px-6 relative z-10 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* 🚀 شريط العودة للمقاول الموضع بوضوح أسفل شريط العنوان العام */}
-      <div className="max-w-md mx-auto mb-6 p-4 bg-slate-900 text-white rounded-2xl flex justify-between items-center font-black text-sm shadow-xl border border-slate-800">
-        <span className="flex items-center gap-2"><HardHat className="text-amber-500" size={20}/> {t.bossMode}</span>
-        <Link to="/v2/dashboard" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-xs">
-          {t.backToDash} <ArrowRight size={14} className={isRtl ? 'rotate-180' : ''}/>
+      {/* 🚀 الشريط العلوي المستقل (Top Navbar) */}
+      <div className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between shadow-sm backdrop-blur-md border-b ${isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-200'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+        
+        {/* زر الرجوع للوحة القيادة (أسود في الفاتح، أبيض في الداكن) */}
+        <Link to="/v2/dashboard" className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow-md ${isDarkMode ? 'bg-white text-slate-900 hover:bg-slate-200' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
+          <ArrowRight size={14} className={isRtl ? 'rotate-180' : ''}/>
+          {t.backToDash}
         </Link>
+
+        {/* أزرار اللغة والوضع الداكن */}
+        <div className="flex items-center gap-2" dir="ltr">
+           <button onClick={toggleLanguage} className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800 text-white hover:bg-slate-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
+              {language.toUpperCase()}
+           </button>
+           <button onClick={toggleTheme} className={`p-2 rounded-xl border transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800 text-amber-400 hover:bg-slate-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+           </button>
+        </div>
       </div>
 
       <div className="max-w-3xl mx-auto w-full">
