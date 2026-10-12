@@ -449,7 +449,7 @@ export default function ForemanDashboard() {
     }
   };
 
-  // 4. إرسال إنذار الطوارئ (مع الموقع والفيديو)
+  // 4. إرسال إنذار الطوارئ (مع الموقع والفيديو والشفافية التامة)
   const handleSubmitAlert = async (e) => {
     e.preventDefault();
     if (!activeProject || !alertForm.description) return;
@@ -461,26 +461,27 @@ export default function ForemanDashboard() {
 
       let fileUrl = null;
       let mediaType = 'text';
+      let sourceType = 'none';
 
       if (alertForm.file) {
-        // تحديد نوع الملف (فيديو أم صورة)
         mediaType = alertForm.file.type.startsWith('video/') ? 'video' : 'image';
         const fileExt = alertForm.file.name.split('.').pop();
         const filePath = `${activeProject.id}/alert_${Date.now()}.${fileExt}`;
-        // 🚀 التحقق من أصالة الصورة (كاميرا أم معرض)
-        // نقارن وقت تعديل الملف بالوقت الحالي
+        
+        // التحقق من أصالة الملف
         const fileTime = alertForm.file.lastModified;
-        const currentTime = Date.now();
-        const timeDiffInMinutes = (currentTime - fileTime) / (1000 * 60);
-        // إذا كان الفارق أقل من دقيقتين، نعتبره التقط للتو بالكاميرا
-        const sourceType = timeDiffInMinutes < 2 ? 'camera' : 'gallery';
+        const timeDiffInMinutes = (Date.now() - fileTime) / (1000 * 60);
+        sourceType = timeDiffInMinutes < 2 ? 'camera' : 'gallery';
         
         const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, alertForm.file);
         if (!uploadError) {
           fileUrl = supabase.storage.from('project-files').getPublicUrl(filePath).data.publicUrl;
+        } else {
+          console.error("Upload error:", uploadError);
         }
       }
 
+      // إرسال البيانات لقاعدة البيانات
       const { error } = await supabase.from('field_alerts').insert([{
         project_id: activeProject.id,
         alert_type: 'urgence',
@@ -493,13 +494,18 @@ export default function ForemanDashboard() {
         source_type: sourceType                                                   
       }]);
 
-      if (!error) {
+      if (error) {
+        // 🚀 تنبيه فورى إذا رفضت قاعدة البيانات الإرسال
+        console.error("DB Error:", error);
+        alert(`❌ فشل الإرسال: ${error.message}`);
+      } else {
         setShowAlert(false);
         setAlertForm({ description: '', file: null, preview: null });
-        alert(language === 'ar' ? 'تم إرسال التنبيه الموثق للإدارة' : 'Alerte certifiée envoyée');
+        alert(language === 'ar' ? '🚨 تم إرسال التنبيه العاجل للمقاول بنجاح!' : 'Alerte certifiée envoyée');
       }
     } catch (err) {
-      console.error(err);
+      console.error("Submission Error:", err);
+      alert("❌ حدث خطأ غير متوقع أثناء الإرسال.");
     } finally {
       setIsSubmitting(false);
     }
