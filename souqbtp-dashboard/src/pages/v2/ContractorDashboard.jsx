@@ -1128,25 +1128,25 @@ export default function ContractorDashboard() {
                     <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
                       <p className={`text-sm font-bold truncate mb-3 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>{r.description || t.interactiveShot}</p>
                       
-                      {/* 📍 ختم الموقع الجغرافي والمصدر (السلاح السري للمقاول) */}
+                      {/* 📍 ختم الموقع الجغرافي والمصدر */}
                       <div className="flex flex-wrap items-center gap-2 mb-3">
                         {r.location_lat ? (
                           <a href={`https://www.google.com/maps/search/?api=1&query=${r.location_lat},${r.location_lng}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-1.5 rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors">
-                            <ShieldCheck size={14} /> (GPS) مؤكد
+                            <ShieldCheck size={14} /> (GPS) موقع موثق
                           </a>
                         ) : (
                           <span className="flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-1.5 rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-                            <AlertCircle size={14} /> لا يوجد GPS
+                            <AlertCircle size={14} /> موقع غير متوفر
                           </span>
                         )}
 
-                        {/* 🚀 شارة المصدر (كاميرا أم معرض) */}
+                        {/* 🚀 شارة المصدر الصادقة 100% (كاميرا أم معرض) */}
                         {r.source_type === 'camera' ? (
                            <span className="flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-500/10 px-2 py-1.5 rounded-lg border border-blue-500/20">
                              <Camera size={14} /> التقاط مباشر
                            </span>
                         ) : (
-                           <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-500/10 px-2 py-1.5 rounded-lg border border-amber-500/20" title="تم اختيار هذه الصورة من ملفات الجهاز وليس عبر الكاميرا المباشرة">
+                           <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-500/10 px-2 py-1.5 rounded-lg border border-amber-500/20" title="تم رفع هذه الصورة من المعرض">
                              <FolderOpen size={14} /> من المعرض
                            </span>
                         )}

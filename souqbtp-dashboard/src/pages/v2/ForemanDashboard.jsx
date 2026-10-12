@@ -316,14 +316,15 @@ export default function ForemanDashboard() {
           media_type: mediaType,
           location_lat: location.lat,
           location_lng: location.lng,
-          source_type: sourceType
+          source_type: reportForm.sourceType || 'camera' // 🚀 السلاح السري: إرسال الخيار للمقاول
         }]).select();
 
         if (!error && data) {
           setReports(prev => [data[0], ...prev]);
           setIsCameraModalOpen(false);
-          setReportForm({ file: null, preview: null, description: '', isVideo: false });
-          alert(language === 'ar' ? '📸 تم رفع التقرير الموثق بنجاح!' : 'Rapport certifié envoyé !');
+          // تصفير الـ Form مع المتغير الجديد
+          setReportForm({ file: null, preview: null, description: '', isVideo: false, sourceType: null });
+          alert(language === 'ar' ? '📸 تم رفع التقرير وتوثيق الموقع بنجاح!' : 'Rapport certifié envoyé !');
         }
       }
     } catch (err) {
@@ -826,49 +827,91 @@ export default function ForemanDashboard() {
         </div>
       )}
 
-      {/* نافذة الكاميرا */}
+      {/* نافذة الكاميرا (النسخة المتطورة بخيارين) */}
       {isCameraModalOpen && (
         <div className="fixed inset-0 bg-black/90 z-[10000] flex items-center justify-center p-4">
           <div className={`w-full max-w-md rounded-[2rem] p-6 animate-fade-in ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
             <div className="flex justify-between items-center mb-6">
               <h3 className={`font-black text-lg ${textTitle}`}>{t.photoTitle}</h3>
-              <button onClick={() => setIsCameraModalOpen(false)} className={`p-2 rounded-full ${isDarkMode ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}><X size={20}/></button>
+              <button 
+                onClick={() => {
+                   setIsCameraModalOpen(false);
+                   setReportForm({ file: null, preview: null, description: '', isVideo: false, sourceType: null });
+                }} 
+                className={`p-2 rounded-full hover:scale-110 transition-transform ${isDarkMode ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}
+              >
+                <X size={20}/>
+              </button>
             </div>
             
             <form onSubmit={handleSubmitReport} className="space-y-4">
-              <label className={`block w-full h-48 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden relative ${isDarkMode ? 'border-slate-700 bg-slate-800 hover:border-blue-500' : 'border-slate-300 bg-slate-50 hover:border-blue-500'}`}>
+              <div className="w-full mb-4">
                 {reportForm.preview ? (
-                  reportForm.isVideo ? (
-                    <video src={reportForm.preview} controls className="w-full h-full object-cover" />
-                  ) : (
-                    <img src={reportForm.preview} alt="Preview" className="w-full h-full object-cover" />
-                  )
+                  <div className="relative w-full h-48 rounded-2xl overflow-hidden border-2 border-blue-500 shadow-sm bg-black">
+                    {reportForm.isVideo ? (
+                      <video src={reportForm.preview} controls className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={reportForm.preview} alt="Preview" className="w-full h-full object-cover" />
+                    )}
+                    <button type="button" onClick={() => setReportForm({...reportForm, file: null, preview: null, isVideo: false, sourceType: null})} className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full shadow-lg hover:scale-110 transition-transform">
+                      <X size={16} />
+                    </button>
+                    {/* شارة توضح للمستخدم ما اختاره */}
+                    <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full flex items-center gap-1 font-bold">
+                      {reportForm.sourceType === 'camera' ? <><Camera size={12}/> {language === 'ar' ? 'التقاط مباشر' : 'Prise Directe'}</> : <><FolderOpen size={12}/> {language === 'ar' ? 'من المعرض' : 'De la Galerie'}</>}
+                    </div>
+                  </div>
                 ) : (
-                  <>
-                    <Camera size={40} className="text-slate-400 mb-2"/>
-                    <span className="font-bold text-slate-500 text-sm">{language === 'ar' ? 'التقط صورة أو فيديو (مباشر)' : 'Prendre Photo/Vidéo'}</span>
-                  </>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* 🚀 الخيار الأول: الكاميرا المباشرة */}
+                    <label className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all hover:-translate-y-1 ${isDarkMode ? 'border-blue-500/50 bg-blue-900/20 hover:border-blue-400' : 'border-blue-300 bg-blue-50 hover:border-blue-400 hover:shadow-md'}`}>
+                      <Camera size={32} className="text-blue-500 mb-2" />
+                      <span className="text-sm font-black text-blue-600 dark:text-blue-400 text-center">{language === 'ar' ? 'التقاط مباشر' : 'Caméra'}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*,video/*" 
+                        capture="environment" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if(file) setReportForm({...reportForm, file, isVideo: file.type.startsWith('video/'), preview: URL.createObjectURL(file), sourceType: 'camera'});
+                        }} 
+                      />
+                    </label>
+
+                    {/* 🚀 الخيار الثاني: معرض الصور */}
+                    <label className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all hover:-translate-y-1 ${isDarkMode ? 'border-amber-500/50 bg-amber-900/20 hover:border-amber-400' : 'border-amber-300 bg-amber-50 hover:border-amber-400 hover:shadow-md'}`}>
+                      <FolderOpen size={32} className="text-amber-500 mb-2" />
+                      <span className="text-sm font-black text-amber-600 dark:text-amber-400 text-center">{language === 'ar' ? 'من المعرض' : 'Galerie'}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*,video/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if(file) setReportForm({...reportForm, file, isVideo: file.type.startsWith('video/'), preview: URL.createObjectURL(file), sourceType: 'gallery'});
+                        }} 
+                      />
+                    </label>
+                  </div>
                 )}
-                {/* السلاح السري: إجبار الكاميرا الحية وقبول الفيديو */}
-                <input 
-                  type="file" 
-                  accept="image/*,video/*" 
-                  capture="environment" 
-                  className="hidden" 
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if(file) {
-                      const isVideo = file.type.startsWith('video/');
-                      setReportForm({...reportForm, file, isVideo, preview: URL.createObjectURL(file)});
-                    }
-                  }} 
-                />
-              </label>
+              </div>
 
-              <textarea placeholder={t.desc} rows="3" value={reportForm.description} onChange={e=>setReportForm({...reportForm, description: e.target.value})} className={`w-full p-4 rounded-xl border-2 outline-none font-bold resize-none ${isDarkMode?'bg-slate-950 border-slate-800 text-white':'bg-slate-50 border-slate-200'}`}></textarea>
-
-              <button type="submit" disabled={isSubmitting || !reportForm.file} className="w-full py-4 bg-blue-600 text-white font-black rounded-xl mt-4 flex items-center justify-center gap-2 disabled:opacity-50">
-                {isSubmitting ? <Loader2 className="animate-spin" size={20}/> : <><UploadCloud size={20}/> {t.sendReport}</>}
+              <textarea 
+                rows="3" 
+                placeholder={t.desc} 
+                value={reportForm.description}
+                onChange={e => setReportForm({...reportForm, description: e.target.value})}
+                className={`w-full p-4 rounded-xl border outline-none font-bold resize-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-slate-50 border-slate-200 focus:border-blue-500'}`}
+              ></textarea>
+              
+              <button 
+                type="submit" 
+                disabled={isSubmitting || !reportForm.file} 
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-black py-4 rounded-xl shadow-lg transition-transform hover:-translate-y-1 flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? <Loader2 className="animate-spin" size={20}/> : <UploadCloud size={20}/>}
+                {t.sendReport}
               </button>
             </form>
           </div>
