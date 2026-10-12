@@ -869,12 +869,12 @@ export default function ForemanDashboard() {
                       <span className="text-sm font-black text-blue-600 dark:text-blue-400 text-center">{language === 'ar' ? 'التقاط مباشر' : 'Caméra'}</span>
                       <input 
                         type="file" 
-                        accept="image/*,video/*" 
+                        accept="image/*" /* 🚀 السلاح السري: طلب الصور فقط يجبر الهاتف على تخطي المعرض وفتح الكاميرا فوراً */
                         capture="environment" 
                         className="hidden" 
                         onChange={(e) => {
                           const file = e.target.files[0];
-                          if(file) setReportForm({...reportForm, file, isVideo: file.type.startsWith('video/'), preview: URL.createObjectURL(file), sourceType: 'camera'});
+                          if(file) setReportForm({...reportForm, file, isVideo: false, preview: URL.createObjectURL(file), sourceType: 'camera'});
                         }} 
                       />
                     </label>
