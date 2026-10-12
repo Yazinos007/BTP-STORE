@@ -98,6 +98,15 @@ export default function ForemanDashboard() {
     });
   };
 
+  // 🚀 اكتشاف ما إذا كان المستخدم يفتح التطبيق من هاتف أو حاسوب
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // فحص الـ User Agent لمعرفة نوع الجهاز
+    const checkMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobile(checkMobile);
+  }, []);
+
   // 🚀 قاموس الترجمة المحدث يشمل النوافذ الجديدة
   const translations = {
     ar: {
@@ -184,68 +193,40 @@ export default function ForemanDashboard() {
     return () => { isMounted = false; };
   }, [projects.length]); // نراقب طول المصفوفة
 
-  // 🚀 2. جلب بيانات الميدان عند اختيار ورش
+  // 🚀 2. جلب بيانات الميدان عند اختيار ورش + الاستماع اللحظي (Realtime)
   useEffect(() => {
+    // تعريف متغير القناة هنا لنتمكن من إغلاقه عند الخروج
+    let realtimeChannel;
+
     if (activeProject) {
+      const currentProjectId = activeProject?.id || activeProject;
+      
+      // جلب البيانات الأولية
       fetchFieldData();
+
+      // 🚀 السلاح السري: تفعيل الاستماع اللحظي للتقارير
+      realtimeChannel = supabase.channel('realtime_reports')
+        .on(
+          'postgres_changes', 
+          { event: 'INSERT', schema: 'public', table: 'site_reports', filter: `project_id=eq.${currentProjectId}` }, 
+          (payload) => {
+            // إضافة التقرير الجديد فوراً لأعلى القائمة بدون تحديث الصفحة
+            setReports(currentReports => [payload.new, ...currentReports]);
+          }
+        )
+        .subscribe();
+
     } else {
       setLoading(false);
     }
+
+    // 🚀 التنظيف (Cleanup): إغلاق القناة عند تغيير الورش أو الخروج لتوفير طاقة الهاتف
+    return () => {
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
+    };
   }, [activeProject]);
-
-  const fetchFieldData = async () => {
-    const currentProjectId = activeProject?.id || activeProject;
-    if (!currentProjectId) {
-      console.warn("⚠️ لا يوجد معرف ورش محدد لجلب الفريق!");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // 1. جلب الفريق
-      const { data: teamData, error: teamErr } = await supabase
-        .from('milestone_assignments')
-        .select('*')
-        .eq('project_id', currentProjectId);
-
-      if (teamErr) {
-        console.error("❌ خطأ Supabase في جلب الفريق:", teamErr);
-      } else {
-        setTeam(teamData || []);
-      }
-
-      // 2. جلب التقارير
-      const { data: reportsData } = await supabase
-        .from('site_reports')
-        .select('*')
-        .eq('project_id', currentProjectId)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (reportsData) setReports(reportsData);
-
-      // 🚀 3. جلب سجلات الحضور لليوم الحالي (بطريقة مبسطة)
-      const today = new Date().toISOString().split('T')[0];
-      const { data: attendanceData } = await supabase
-        .from('field_attendance')
-        .select('worker_id, is_present')
-        .eq('project_id', currentProjectId)
-        .eq('date', today);
-
-      if (attendanceData) {
-        const fetchedAttendance = {}; 
-        attendanceData.forEach(record => {
-          fetchedAttendance[record.worker_id] = record.is_present;
-        });
-        setAttendance(fetchedAttendance); // تحديث الحالة الموحدة
-      }
-
-    } catch (err) {
-      console.error("خطأ غير متوقع:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRequestWorker = async (e) => {
     e.preventDefault();
@@ -862,25 +843,27 @@ export default function ForemanDashboard() {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* 🚀 الخيار الأول: الكاميرا المباشرة */}
-                    <label className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all hover:-translate-y-1 ${isDarkMode ? 'border-blue-500/50 bg-blue-900/20 hover:border-blue-400' : 'border-blue-300 bg-blue-50 hover:border-blue-400 hover:shadow-md'}`}>
-                      <Camera size={32} className="text-blue-500 mb-2" />
-                      <span className="text-sm font-black text-blue-600 dark:text-blue-400 text-center">{language === 'ar' ? 'التقاط مباشر' : 'Caméra'}</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" /* 🚀 السلاح السري: طلب الصور فقط يجبر الهاتف على تخطي المعرض وفتح الكاميرا فوراً */
-                        capture="environment" 
-                        className="hidden" 
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if(file) setReportForm({...reportForm, file, isVideo: false, preview: URL.createObjectURL(file), sourceType: 'camera'});
-                        }} 
-                      />
-                    </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 🚀 يظهر فقط في الهواتف */}
+                    {isMobile && (
+                      <label className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all hover:-translate-y-1 ${isDarkMode ? 'border-blue-500/50 bg-blue-900/20 hover:border-blue-400' : 'border-blue-300 bg-blue-50 hover:border-blue-400 hover:shadow-md'}`}>
+                        <Camera size={32} className="text-blue-500 mb-2" />
+                        <span className="text-sm font-black text-blue-600 dark:text-blue-400 text-center">{language === 'ar' ? 'التقاط مباشر' : 'Caméra'}</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          capture="environment" 
+                          className="hidden" 
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if(file) setReportForm({...reportForm, file, isVideo: false, preview: URL.createObjectURL(file), sourceType: 'camera'});
+                          }} 
+                        />
+                      </label>
+                    )}
 
-                    {/* 🚀 الخيار الثاني: معرض الصور */}
-                    <label className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all hover:-translate-y-1 ${isDarkMode ? 'border-amber-500/50 bg-amber-900/20 hover:border-amber-400' : 'border-amber-300 bg-amber-50 hover:border-amber-400 hover:shadow-md'}`}>
+                    {/* 🚀 يظهر دائماً (خيار المعرض) - يأخذ العرض كاملاً إذا اختفى زر الكاميرا */}
+                    <label className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all hover:-translate-y-1 ${!isMobile ? 'md:col-span-2' : ''} ${isDarkMode ? 'border-amber-500/50 bg-amber-900/20 hover:border-amber-400' : 'border-amber-300 bg-amber-50 hover:border-amber-400 hover:shadow-md'}`}>
                       <FolderOpen size={32} className="text-amber-500 mb-2" />
                       <span className="text-sm font-black text-amber-600 dark:text-amber-400 text-center">{language === 'ar' ? 'من المعرض' : 'Galerie'}</span>
                       <input 

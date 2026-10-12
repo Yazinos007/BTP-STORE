@@ -329,9 +329,12 @@ export default function ContractorDashboard() {
     return () => { isMounted = false; };
   }, []);
 
-  // 🚀 3. جلب بيانات الورش النشط (Active Project) فقط!
+  // 🚀 3. جلب بيانات الورش النشط (Active Project) + الاستماع اللحظي (Realtime) 👁️
   useEffect(() => {
     let isMounted = true;
+    let reportsChannel; // قناة استماع التقارير المصورة
+    let alertsChannel;  // قناة استماع إنذارات الطوارئ
+
     const initializeDashboard = async () => {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
@@ -339,6 +342,37 @@ export default function ContractorDashboard() {
 
       if (activeProject) {
         await fetchDashboardData(session?.user || null, isMounted);
+        
+        const currentProjectId = activeProject.id || activeProject;
+
+        // 🚀 1. تفعيل الاستماع اللحظي للتقارير (صور/فيديو)
+        reportsChannel = supabase.channel('contractor_realtime_reports')
+          .on(
+            'postgres_changes', 
+            { event: 'INSERT', schema: 'public', table: 'site_reports', filter: `project_id=eq.${currentProjectId}` }, 
+            (payload) => {
+              if (isMounted) {
+                // إظهار التقرير الجديد فوراً
+                setReports(currentReports => [payload.new, ...currentReports]);
+              }
+            }
+          )
+          .subscribe();
+
+        // 🚀 2. تفعيل الاستماع اللحظي للطوارئ (لإظهار الشريط الأحمر فوراً)
+        alertsChannel = supabase.channel('contractor_realtime_alerts')
+          .on(
+            'postgres_changes', 
+            { event: 'INSERT', schema: 'public', table: 'field_alerts', filter: `project_id=eq.${currentProjectId}` }, 
+            (payload) => {
+              if (isMounted) {
+                // إظهار الطارئ الجديد فوراً
+                setFieldAlerts(currentAlerts => [payload.new, ...currentAlerts]);
+              }
+            }
+          )
+          .subscribe();
+
       } else {
         if (isMounted) setLoading(false);
       }
@@ -350,11 +384,14 @@ export default function ContractorDashboard() {
       if (isMounted && activeProject) fetchDashboardData(session?.user || null, isMounted);
     });
 
+    // 🧹 التنظيف (Cleanup): مهم جداً لمنع تكرار الإشعارات وتسرب الذاكرة
     return () => { 
       isMounted = false;
-      if(authListener) authListener.subscription.unsubscribe(); 
+      if (authListener) authListener.subscription.unsubscribe(); 
+      if (reportsChannel) supabase.removeChannel(reportsChannel);
+      if (alertsChannel) supabase.removeChannel(alertsChannel);
     };
-  }, [activeProject, language]); 
+  }, [activeProject, language]);
 
   const fetchDashboardData = async (currentUser, isMounted) => {
     try {
@@ -1099,8 +1136,8 @@ export default function ContractorDashboard() {
                 reports.map(r => (
                   <div key={r.id} className={`min-w-[280px] rounded-2xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
                     
-                    {/* زر الحذف */}
-                    <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id, r.image_url); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-20 backdrop-blur-sm`}>
+                    {/* زر الحذف - مرئي دائماً في الهاتف، ويظهر بالمرور في الحاسوب */}
+                    <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id, r.image_url); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-20 backdrop-blur-sm`}>
                       <Trash2 size={16}/>
                     </button>
 
