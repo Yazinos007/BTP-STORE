@@ -705,10 +705,41 @@ export default function ContractorDashboard() {
     setDocuments(documents.filter(d => d.id !== id));
   };
 
-  const deleteSiteReport = async (id) => {
-    if (!confirm('⚠️ هل أنت متأكد أنك تريد حذف هذه اللقطة الميدانية نهائياً؟')) return;
-    await supabase.from('site_reports').delete().eq('id', id);
-    setReports(reports.filter(r => r.id !== id));
+  // 🚀 دالة الحذف النهائي للتقارير المصورة
+  const deleteSiteReport = async (id, imageUrl) => {
+    if (!confirm(language === 'ar' ? '⚠️ هل أنت متأكد أنك تريد حذف هذا التقرير نهائياً؟' : 'Supprimer ce rapport définitivement ?')) return;
+    
+    try {
+      // 1. استخراج مسار الملف من الرابط (URL)
+      // الرابط يكون عادة بهذا الشكل: https://.../storage/v1/object/public/project-files/project_id/filename.ext
+      const urlParts = imageUrl.split('/project-files/');
+      if (urlParts.length > 1) {
+        const filePath = urlParts[1];
+        
+        // 2. حذف الملف الفعلي من Storage
+        const { error: storageError } = await supabase.storage
+          .from('project-files')
+          .remove([filePath]);
+          
+        if (storageError) console.error("Storage delete error:", storageError);
+      }
+
+      // 3. حذف السجل من قاعدة البيانات
+      const { error: dbError } = await supabase
+        .from('site_reports')
+        .delete()
+        .eq('id', id);
+
+      if (dbError) {
+         console.error("Database delete error:", dbError);
+         alert(language === 'ar' ? 'حدث خطأ أثناء الحذف.' : 'Erreur lors de la suppression.');
+      } else {
+         // 4. تحديث الواجهة (إزالة العنصر من المصفوفة)
+         setReports(prev => prev.filter(r => r.id !== id));
+      }
+    } catch (err) {
+      console.error("Delete function error:", err);
+    }
   };
 
   const changeMonth = (offset) => {
@@ -1069,7 +1100,7 @@ export default function ContractorDashboard() {
                   <div key={r.id} className={`min-w-[280px] rounded-2xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
                     
                     {/* زر الحذف */}
-                    <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-20 backdrop-blur-sm`}>
+                    <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id, r.image_url); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-20 backdrop-blur-sm`}>
                       <Trash2 size={16}/>
                     </button>
 
@@ -1097,18 +1128,31 @@ export default function ContractorDashboard() {
                     <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
                       <p className={`text-sm font-bold truncate mb-3 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>{r.description || t.interactiveShot}</p>
                       
-                      {/* 📍 ختم الموقع الجغرافي (GPS) */}
-                      {r.location_lat ? (
-                        <a href={`https://www.google.com/maps/search/?api=1&query=${r.location_lat},${r.location_lng}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors mb-2 w-max">
-                          <ShieldCheck size={14} /> تم تأكيد الموقع (GPS)
-                        </a>
-                      ) : (
-                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 mb-2 w-max dark:bg-slate-800 dark:border-slate-700">
-                          <AlertCircle size={14} /> موقع GPS غير متوفر
-                        </span>
-                      )}
+                      {/* 📍 ختم الموقع الجغرافي والمصدر (السلاح السري للمقاول) */}
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        {r.location_lat ? (
+                          <a href={`https://www.google.com/maps/search/?api=1&query=${r.location_lat},${r.location_lng}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-1.5 rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors">
+                            <ShieldCheck size={14} /> (GPS) مؤكد
+                          </a>
+                        ) : (
+                          <span className="flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-1.5 rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+                            <AlertCircle size={14} /> لا يوجد GPS
+                          </span>
+                        )}
 
-                      <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1 border-t border-slate-100 dark:border-slate-800 pt-2 mt-1">
+                        {/* 🚀 شارة المصدر (كاميرا أم معرض) */}
+                        {r.source_type === 'camera' ? (
+                           <span className="flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-500/10 px-2 py-1.5 rounded-lg border border-blue-500/20">
+                             <Camera size={14} /> التقاط مباشر
+                           </span>
+                        ) : (
+                           <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-500/10 px-2 py-1.5 rounded-lg border border-amber-500/20" title="تم اختيار هذه الصورة من ملفات الجهاز وليس عبر الكاميرا المباشرة">
+                             <FolderOpen size={14} /> من المعرض
+                           </span>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1 border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
                         👷 {r.provider_name || t.souqTeam}
                       </p>
                     </div>

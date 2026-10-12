@@ -296,6 +296,13 @@ export default function ForemanDashboard() {
       const fileExt = reportForm.file.name.split('.').pop();
       const fileName = `field_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `${activeProject.id}/${fileName}`;
+      // 🚀 التحقق من أصالة الصورة (كاميرا أم معرض)
+      // نقارن وقت تعديل الملف بالوقت الحالي
+      const fileTime = reportForm.file.lastModified;
+      const currentTime = Date.now();
+      const timeDiffInMinutes = (currentTime - fileTime) / (1000 * 60);
+      // إذا كان الفارق أقل من دقيقتين، نعتبره التقط للتو بالكاميرا
+      const sourceType = timeDiffInMinutes < 2 ? 'camera' : 'gallery';
       
       const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, reportForm.file);
       
@@ -308,7 +315,8 @@ export default function ForemanDashboard() {
           provider_name: user?.user_metadata?.full_name || 'Chef de Chantier',
           media_type: mediaType,
           location_lat: location.lat,
-          location_lng: location.lng
+          location_lng: location.lng,
+          source_type: sourceType
         }]).select();
 
         if (!error && data) {
@@ -433,6 +441,13 @@ export default function ForemanDashboard() {
         mediaType = alertForm.file.type.startsWith('video/') ? 'video' : 'image';
         const fileExt = alertForm.file.name.split('.').pop();
         const filePath = `${activeProject.id}/alert_${Date.now()}.${fileExt}`;
+        // 🚀 التحقق من أصالة الصورة (كاميرا أم معرض)
+        // نقارن وقت تعديل الملف بالوقت الحالي
+        const fileTime = alertForm.file.lastModified;
+        const currentTime = Date.now();
+        const timeDiffInMinutes = (currentTime - fileTime) / (1000 * 60);
+        // إذا كان الفارق أقل من دقيقتين، نعتبره التقط للتو بالكاميرا
+        const sourceType = timeDiffInMinutes < 2 ? 'camera' : 'gallery';
         
         const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, alertForm.file);
         if (!uploadError) {
@@ -448,7 +463,8 @@ export default function ForemanDashboard() {
         image_url: fileUrl,
         media_type: mediaType,
         location_lat: location.lat,
-        location_lng: location.lng
+        location_lng: location.lng,
+        source_type: sourceType                                                   
       }]);
 
       if (!error) {
