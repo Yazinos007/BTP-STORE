@@ -1066,20 +1066,51 @@ export default function ContractorDashboard() {
                 <div className={`w-full text-center py-10 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-700 text-slate-400 bg-slate-900/50' : 'border-slate-300 text-slate-500 bg-white/50'}`}>{t.noReports}</div>
               ) : (
                 reports.map(r => (
-                  <div key={r.id} className={`min-w-[260px] rounded-xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
-                    <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10 backdrop-blur-sm`}>
+                  <div key={r.id} className={`min-w-[280px] rounded-2xl overflow-hidden snap-start relative group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)] ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200 shadow-md'}`}>
+                    
+                    {/* زر الحذف */}
+                    <button onClick={(e) => { e.stopPropagation(); deleteSiteReport(r.id); }} className={`absolute top-2 ${isRtl ? 'left-2' : 'right-2'} bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-20 backdrop-blur-sm`}>
                       <Trash2 size={16}/>
                     </button>
-                    <div className="relative h-40 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
-                      <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-                      <span className={`absolute bottom-2 ${isRtl ? 'right-2' : 'left-2'} text-white text-[11px] font-bold`}>
-                        🕒 {new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
-                      </span>
+
+                    {/* الصورة / الفيديو مع الختم الزمني فوقها */}
+                    <div className="relative h-48 bg-black" onClick={() => window.open(r.image_url, '_blank')}>
+                      {r.media_type === 'video' ? (
+                         <video src={r.image_url} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                      ) : (
+                         <img src={r.image_url} alt="report" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none"></div>
+                      
+                      {/* 📍 ختم الوقت والتاريخ الصارم */}
+                      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">
+                        <div className="text-white">
+                          <span className="block text-[10px] font-bold text-blue-300 mb-0.5 flex items-center gap-1"><CheckCircle2 size={10}/> موثق ميدانياً</span>
+                          <span className="block text-sm font-black drop-shadow-md">
+                            {new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' })}
+                          </span>
+                        </div>
+                        {r.media_type === 'video' && <div className="bg-red-500 text-white p-1.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"><Camera size={14}/></div>}
+                      </div>
                     </div>
+
                     <div className="p-4" onClick={() => window.open(r.image_url, '_blank')}>
-                      <p className={`text-sm font-bold truncate mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>{r.description || t.interactiveShot}</p>
-                      <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1">👷 {r.provider_name || t.souqTeam}</p>
+                      <p className={`text-sm font-bold truncate mb-3 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} title={r.description}>{r.description || t.interactiveShot}</p>
+                      
+                      {/* 📍 ختم الموقع الجغرافي (GPS) */}
+                      {r.location_lat ? (
+                        <a href={`https://www.google.com/maps/search/?api=1&query=${r.location_lat},${r.location_lng}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors mb-2 w-max">
+                          <ShieldCheck size={14} /> تم تأكيد الموقع (GPS)
+                        </a>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 mb-2 w-max dark:bg-slate-800 dark:border-slate-700">
+                          <AlertCircle size={14} /> موقع GPS غير متوفر
+                        </span>
+                      )}
+
+                      <p className="text-[11px] text-amber-500 font-bold flex items-center gap-1 border-t border-slate-100 dark:border-slate-800 pt-2 mt-1">
+                        👷 {r.provider_name || t.souqTeam}
+                      </p>
                     </div>
                   </div>
                 ))
