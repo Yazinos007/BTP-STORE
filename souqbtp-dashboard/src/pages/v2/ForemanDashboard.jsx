@@ -5,7 +5,7 @@ import useProjectStore from '../../store/useProjectStore';
 import { 
   HardHat, Camera, UserPlus, Clock, CheckCircle2, 
   AlertCircle, Phone, X, UploadCloud, Loader2, ArrowRight, MessageCircle, 
-  Truck, AlertTriangle, PackageSearch, ClipboardCheck, Sun, Moon
+  Truck, AlertTriangle, PackageSearch, ClipboardCheck, Sun, Moon, FolderOpen
 } from 'lucide-react';
 
 export default function ForemanDashboard() {
