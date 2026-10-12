@@ -193,24 +193,69 @@ export default function ForemanDashboard() {
     return () => { isMounted = false; };
   }, [projects.length]); // نراقب طول المصفوفة
 
-  // 🚀 2. جلب بيانات الميدان عند اختيار ورش + الاستماع اللحظي (Realtime)
+ // 🚀 2. جلب بيانات الميدان عند اختيار ورش + الاستماع اللحظي (Realtime)
   useEffect(() => {
-    // تعريف متغير القناة هنا لنتمكن من إغلاقه عند الخروج
     let realtimeChannel;
+
+    const fetchFieldData = async () => {
+      const currentProjectId = activeProject?.id || activeProject;
+      if (!currentProjectId) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        // جلب الفريق (العمال)
+        const { data: teamData } = await supabase
+          .from('milestone_assignments')
+          .select('*')
+          .eq('project_id', currentProjectId);
+        if (teamData) setTeam(teamData);
+
+        // جلب التقارير القديمة
+        const { data: reportsData } = await supabase
+          .from('site_reports')
+          .select('*')
+          .eq('project_id', currentProjectId)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        if (reportsData) setReports(reportsData);
+
+        // جلب سجلات الحضور لليوم الحالي
+        const today = new Date().toISOString().split('T')[0];
+        const { data: attendanceData } = await supabase
+          .from('field_attendance')
+          .select('worker_id, is_present')
+          .eq('project_id', currentProjectId)
+          .eq('date', today);
+
+        if (attendanceData) {
+          const fetchedAttendance = {}; 
+          attendanceData.forEach(record => {
+            fetchedAttendance[record.worker_id] = record.is_present;
+          });
+          setAttendance(fetchedAttendance);
+        }
+      } catch (err) {
+        console.error("خطأ في جلب البيانات:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
     if (activeProject) {
       const currentProjectId = activeProject?.id || activeProject;
       
-      // جلب البيانات الأولية
+      // 🚀 استدعاء دالة الجلب الآن بعد أن عرفناها
       fetchFieldData();
 
       // 🚀 السلاح السري: تفعيل الاستماع اللحظي للتقارير
-      realtimeChannel = supabase.channel('realtime_reports')
+      realtimeChannel = supabase.channel('foreman_realtime_reports')
         .on(
           'postgres_changes', 
           { event: 'INSERT', schema: 'public', table: 'site_reports', filter: `project_id=eq.${currentProjectId}` }, 
           (payload) => {
-            // إضافة التقرير الجديد فوراً لأعلى القائمة بدون تحديث الصفحة
             setReports(currentReports => [payload.new, ...currentReports]);
           }
         )
@@ -220,7 +265,6 @@ export default function ForemanDashboard() {
       setLoading(false);
     }
 
-    // 🚀 التنظيف (Cleanup): إغلاق القناة عند تغيير الورش أو الخروج لتوفير طاقة الهاتف
     return () => {
       if (realtimeChannel) {
         supabase.removeChannel(realtimeChannel);
