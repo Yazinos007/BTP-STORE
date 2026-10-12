@@ -101,7 +101,8 @@ export default function ContractorDashboard() {
       team: "فريق الورش", role: "الصفة / التخصص", edit: "تعديل", delete: "حذف", assignTitle: "تعيين مسؤول أو حرفي", assignType: "طريقة التعيين", typeManual: "إدخال يدوي (فريق خاص)", 
       typeFavorites: "كناش العناوين (فريقي المفضل)", typeMarketplace: "بحث ذكي في الماركت بليس", artisanName: "اسم الحرفي", artisanPhone: "رقم الهاتف", 
       whatsappHint: "💡 سيقوم النظام بإرسال دعوة عبر WhatsApp لهذا الرقم لربطه بالورش مباشرة.", save: "حفظ وتعيين", cancel: "إلغاء", selectFavorite: "اختر من فريقك المفضل...",
-      rolePlaceholder: "مثال: صباغ، سباك، بناء...", addMember: "أضف عضو", leadershipTitle: "الإشراف والقيادة", contactChef: "مراسلة القائد", openBureau: "ولوج مكتب الميدان"
+      rolePlaceholder: "مثال: صباغ، سباك، بناء...", addMember: "أضف عضو", leadershipTitle: "الإشراف والقيادة", contactChef: "مراسلة القائد", openBureau: "ولوج مكتب الميدان",
+      urgentMatReq: "طلب مواد عاجل", fieldEmergency: "حالة طوارئ ميدانية", gpsVerified: "تم توثيق الموقع (GPS)", viewOnMap: "عرض على الخريطة", markResolved: "تم الحل (إغلاق)"
     },
     fr: {
       pageTitle: "Gestion des Chantiers", calcBtn: "Calculateur Intelligent", rateBtn: "Évaluation Artisans", projectPathBtn: "Parcours du Projet",
@@ -121,7 +122,8 @@ export default function ContractorDashboard() {
       typeManual: "Saisie Manuelle (Équipe privée)", typeFavorites: "Mes Favoris (Carnet d'adresses)", typeMarketplace: "Recherche IA (Marketplace)", artisanName: "Nom de l'artisan",
       artisanPhone: "Numéro de téléphone", whatsappHint: "💡 Un message WhatsApp sera envoyé à ce numéro pour l'inviter à rejoindre le chantier.", save: "Enregistrer",
       cancel: "Annuler", selectFavorite: "Sélectionnez un profil...", rolePlaceholder: "ex: Plombier, Peintre...", addMember: "Ajouter un membre", leadershipTitle: "Supervision & Direction",
-      contactChef: "Contacter Chef", openBureau: "Ouvrir Bureau"
+      contactChef: "Contacter Chef", openBureau: "Ouvrir Bureau", urgentMatReq: "Demande Matériel Urgente", fieldEmergency: "Urgence Terrain", gpsVerified: "Emplacement vérifié (GPS)", 
+      viewOnMap: "Voir sur la carte", markResolved: "Marquer comme résolu"
     },
     en: {
       pageTitle: "Site Management", calcBtn: "Smart Cost Calculator", rateBtn: "Artisan Ratings", projectPathBtn: "Project Path", inboxTitle: "Inbox",
@@ -140,7 +142,8 @@ export default function ContractorDashboard() {
       typeManual: "Manual Entry (Private team)", typeFavorites: "My Favorites (Address book)", typeMarketplace: "AI Search (Marketplace)", artisanName: "Contractor name",
       artisanPhone: "Phone number", whatsappHint: "💡 A WhatsApp message will be sent to this number inviting them to join the project.", save: "Save", cancel: "Cancel",
       selectFavorite: "Select a profile...", rolePlaceholder: "ex: Plumber, Painter...", addMember: "Add member", leadershipTitle: "Supervision & Leadership",
-      contactChef: "Message Foreman", openBureau: "Open Field Office"
+      contactChef: "Message Foreman", openBureau: "Open Field Office", urgentMatReq: "Urgent Material Request", fieldEmergency: "Field Emergency", gpsVerified: "Location Verified (GPS)", 
+      viewOnMap: "View on map", markResolved: "Mark as resolved"
     }
   };
 
@@ -1051,7 +1054,7 @@ export default function ContractorDashboard() {
                 <div className="flex-1 z-10">
                   <div className="flex items-center gap-3 mb-2">
                     <span className="bg-red-900/50 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest text-red-100 border border-red-500/30">
-                      {alert.alert_type === 'demande_materiel' ? 'طلب مواد عاجل' : 'حالة طوارئ ميدانية'}
+                      {alert.alert_type === 'demande_materiel' ? t.urgentMatReq : t.fieldEmergency}
                     </span>
                     <span className="text-sm font-bold text-red-100 opacity-90 flex items-center gap-1">
                       <Clock size={14} /> {new Date(alert.created_at).toLocaleTimeString(isRtl ? 'ar-MA' : 'fr-FR', {hour: '2-digit', minute:'2-digit'})}
@@ -1061,13 +1064,13 @@ export default function ContractorDashboard() {
                     {alert.description}
                   </h3>
                   
-                  {/* 📍 الختم الجغرافي والزمني الصارم */}
+                  {/* 📍 الختم الجغرافي والزمني الصارم (مترجم) */}
                   {alert.location_lat && (
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-red-100 bg-red-900/30 p-2.5 rounded-xl border border-red-500/20 inline-flex">
-                       <span className="flex items-center gap-1"><ShieldCheck size={14} className="text-green-400"/> تم توثيق الموقع (GPS)</span>
+                       <span className="flex items-center gap-1"><ShieldCheck size={14} className="text-green-400"/> {t.gpsVerified}</span>
                        <span className="opacity-50">|</span>
                        <a href={`https://www.google.com/maps/search/?api=1&query=${alert.location_lat},${alert.location_lng}`} target="_blank" rel="noreferrer" className="underline hover:text-white transition-colors">
-                         عرض على الخريطة
+                         {t.viewOnMap}
                        </a>
                     </div>
                   )}
@@ -1087,7 +1090,7 @@ export default function ContractorDashboard() {
                   </div>
                 )}
                 
-                {/* زر إنهاء الطوارئ */}
+                {/* زر إنهاء الطوارئ (مترجم) */}
                 <button 
                   onClick={async () => {
                     await supabase.from('field_alerts').update({ is_resolved: true }).eq('id', alert.id);
@@ -1095,7 +1098,7 @@ export default function ContractorDashboard() {
                   }}
                   className="bg-white text-red-600 hover:bg-red-50 px-6 py-3 rounded-xl font-black text-sm transition-colors shadow-lg z-10 shrink-0 w-full md:w-auto"
                 >
-                  {language === 'ar' ? 'تم الحل (إغلاق)' : 'Marquer comme résolu'}
+                  {t.markResolved}
                 </button>
               </div>
             ))}
