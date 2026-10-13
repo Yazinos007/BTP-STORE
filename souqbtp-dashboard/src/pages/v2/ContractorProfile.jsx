@@ -5,7 +5,7 @@ import useSettingsStore from '../../store/useSettingsStore';
 import useSupplierStore from '../../store/useSupplierStore';
 import { 
   ShieldCheck, UploadCloud, FileText, CheckCircle2, AlertTriangle, 
-  Lock, Award, Building2, CreditCard, Loader2, Star, Save, Camera, 
+  Award, Building2, CreditCard, Loader2, Star, Save, Camera, 
   MessageCircle, UserPlus, Check, X, Edit2, Trash2, Mail, User, Minus
 } from 'lucide-react';
 
@@ -22,7 +22,7 @@ const translations = {
     saveInfo: 'حفظ التعديلات', successVerify: '✅ تم إرسال ملفاتك بنجاح!', successSave: '✅ تم الحفظ بنجاح!',
     errorSave: 'حدث خطأ أثناء الحفظ.', connectTelegram: 'ربط الحساب بالتلغرام (VIP)',
     teamTitle: 'لوحة تحكم الصلاحيات', addUserBtn: 'إضافة موظف', userCol: 'المستخدم', actionsCol: 'إجراءات',
-    modalTitle: 'إضافة موظف جديد', name: 'الاسم الكامل', email: 'البريد الإلكتروني', password: 'كلمة المرور',
+    modalTitle: 'إضافة موظف جديد', name: 'الاسم الكامل', email: 'البريد الإلكتروني',
     permissions: 'صلاحيات الوصول الدقيقة', saveUser: 'حفظ المستخدم', cancel: 'إلغاء', boss: 'المالك (Boss)',
     fullAccess: 'وصول كامل', partialAccess: 'وصول جزئي', noAccess: 'بدون صلاحيات', deleteConfirm: 'حذف هذا المستخدم؟',
     colChantier: 'الأوراش والميدان', permChantier: 'إدارة الأوراش (رئيس ورش)',
@@ -60,7 +60,7 @@ const translations = {
     saveInfo: 'Enregistrer', successVerify: '✅ Documents envoyés !', successSave: '✅ Informations enregistrées !',
     errorSave: 'Erreur de sauvegarde.', connectTelegram: 'Lier avec Telegram (VIP)',
     teamTitle: 'Panneau des Permissions', addUserBtn: 'Ajouter Employé', userCol: 'Utilisateur', actionsCol: 'Actions',
-    modalTitle: 'Nouvel Employé', name: 'Nom complet', email: 'Email', password: 'Mot de passe',
+    modalTitle: 'Nouvel Employé', name: 'Nom complet', email: 'Email',
     permissions: 'Permissions détaillées', saveUser: 'Enregistrer', cancel: 'Annuler', boss: 'Propriétaire',
     fullAccess: 'Accès complet', partialAccess: 'Accès partiel', noAccess: 'Aucun accès', deleteConfirm: 'Supprimer cet utilisateur ?',
     colChantier: 'Chantiers & Terrain', permChantier: 'Gestion de Chantier (Chef)',
@@ -97,7 +97,7 @@ const translations = {
     saveInfo: 'Save', successVerify: '✅ Documents sent!', successSave: '✅ Saved successfully!',
     errorSave: 'Error saving.', connectTelegram: 'Connect Telegram (VIP)',
     teamTitle: 'Permissions Panel', addUserBtn: 'Add Employee', userCol: 'User', actionsCol: 'Actions',
-    modalTitle: 'New Employee', name: 'Full Name', email: 'Email', password: 'Password',
+    modalTitle: 'New Employee', name: 'Full Name', email: 'Email',
     permissions: 'Access Permissions', saveUser: 'Save User', cancel: 'Cancel', boss: 'Owner',
     fullAccess: 'Full access', partialAccess: 'Partial access', noAccess: 'No access', deleteConfirm: 'Delete user?',
     colChantier: 'Field & Sites', permChantier: 'Site Management (Foreman)',
@@ -179,20 +179,20 @@ export default function ContractorProfile() {
 };
 
   const [formData, setFormData] = useState({
-    id: null, full_name: '', email: '', password: '', permissions: defaultPermissions
+    id: null, full_name: '', email: '', permissions: defaultPermissions
   });
 
   // 🚀 المعالج السحري: جلب البيانات مباشرة دون انتظار المتاهات
   useEffect(() => {
     let isMounted = true;
     const initializeProfile = async () => {
-      setIsTeamLoading(true); // تبدأ عجلة التحميل
+      setIsTeamLoading(true); 
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user && isMounted) {
           setUserObj(user);
           
-          // 1. جلب بيانات المقاولة مباشرة من قاعدة البيانات
+          // جلب بيانات المقاولة مباشرة من قاعدة البيانات
           const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
           
           if (profileData) {
@@ -209,7 +209,7 @@ export default function ContractorProfile() {
             });
           }
           
-          // 2. جلب الموظفين والصلاحيات
+          // جلب الموظفين والصلاحيات
           const targetId = profileData?.id || user.id;
           const { data: teamData } = await supabase.from('employees').select('*').eq('supplier_id', targetId);
           if (teamData) setTeam(teamData);
@@ -217,7 +217,7 @@ export default function ContractorProfile() {
       } catch (err) {
         console.error("Error loading profile:", err);
       } finally {
-        if (isMounted) setIsTeamLoading(false); // 🚀 الإغلاق القاطع لعجلة التحميل مهما حصل!
+        if (isMounted) setIsTeamLoading(false); 
       }
     };
 
@@ -275,6 +275,7 @@ export default function ContractorProfile() {
     e.preventDefault();
     if (!userObj) return;
     setIsSavingUser(true);
+    
     try {
       if (formData.id) {
         // تحديث موظف موجود
@@ -285,10 +286,12 @@ export default function ContractorProfile() {
             permissions: formData.permissions 
           })
           .eq('id', formData.id);
+          
+        alert(language === 'ar' ? '✅ تم التحديث بنجاح!' : '✅ Mis à jour avec succès !');
       } else {
-        // 🚀 إضافة موظف جديد: هنا يجب التفكير في طريقة إنشاء الحساب الفعلي
-        // حالياً، نقوم بحفظه كبيانات فقط. يجب على الموظف تسجيل حساب بنفس الإيميل.
-        const { error } = await supabase.from('employees').insert({ 
+        // 🚀 إضافة موظف جديد (نظام الدعوات Magic Link)
+        
+        const { error: dbError } = await supabase.from('employees').insert({ 
           supplier_id: userObj.id, 
           full_name: formData.full_name, 
           email: formData.email, 
@@ -297,10 +300,24 @@ export default function ContractorProfile() {
           permissions: formData.permissions 
         });
         
-        if (error) throw error;
-        
-        // تنبيه ذكي للمقاول
-        alert("✅ تم حفظ الصلاحيات! يرجى إخبار الموظف بإنشاء حساب باستخدام نفس البريد الإلكتروني للوصول إلى مكتبه.");
+        if (dbError) throw dbError;
+
+        // السلاح السري: إرسال رابط تسجيل دخول سحري (Magic Link) للموظف
+        const { error: authError } = await supabase.auth.signInWithOtp({
+          email: formData.email,
+          options: {
+            emailRedirectTo: window.location.origin + '/v2/dashboard', 
+          }
+        });
+
+        if (authError) {
+           console.error("فشل إرسال الدعوة:", authError);
+           alert(language === 'ar' ? "تم حفظ الموظف، لكن فشل إرسال بريد الدعوة." : "L'employé est enregistré, mais l'envoi de l'e-mail a échoué.");
+        } else {
+           alert(language === 'ar' 
+             ? "✅ تم حفظ الصلاحيات وإرسال رابط دعوة (Magic Link) لبريد الموظف! بمجرد ضغطه عليه سيتمكن من الدخول لمكتبه." 
+             : "✅ Permissions enregistrées et lien d'invitation envoyé !");
+        }
       }
       setIsModalOpen(false);
       refreshTeam(userObj.id);
@@ -318,9 +335,9 @@ export default function ContractorProfile() {
 
   const openModal = (user = null) => {
     if (user) {
-      setFormData({ id: user.id, full_name: user.full_name || '', email: user.email || '', password: '', permissions: { ...defaultPermissions, ...(user.permissions || {}) } });
+      setFormData({ id: user.id, full_name: user.full_name || '', email: user.email || '', permissions: { ...defaultPermissions, ...(user.permissions || {}) } });
     } else {
-      setFormData({ id: null, full_name: '', email: '', password: '', permissions: defaultPermissions });
+      setFormData({ id: null, full_name: '', email: '', permissions: defaultPermissions });
     }
     setIsModalOpen(true);
   };
@@ -420,7 +437,7 @@ export default function ContractorProfile() {
               <h5 className={`text-2xl font-black ${textMain}`}>Starter B2B</h5>
             </div>
             <button onClick={() => navigate('/v2/subscription')} className={`w-full py-3.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-300'} font-black rounded-xl transition-all border-2 flex justify-center items-center gap-2`}>
-              <Lock size={18} /> {t.upgradeBtn}
+              <ShieldCheck size={18} /> {t.upgradeBtn}
             </button>
           </div>
 
@@ -486,13 +503,13 @@ export default function ContractorProfile() {
                 {/* الأوراش والميدان: برتقالي */}
                 <th className="pb-4 font-black text-orange-500 text-center">{t.colChantier}</th>
                 {/* العمليات والمخزون: أخضر */}
-                <th className="pb-4 font-black text-emerald-500 text-center">{t.colOps}</th>
+                <th className="pb-4 font-black text-emerald-500 text-center">Ops</th>
                 {/* التجارة والمبيعات: أخضر (لأنها تابعة للـ Communication & Achats) */}
-                <th className="pb-4 font-black text-emerald-500 text-center">{t.colCommercial}</th>
+                <th className="pb-4 font-black text-emerald-500 text-center">Comm</th>
                 {/* الموارد البشرية: وردي */}
-                <th className="pb-4 font-black text-pink-500 text-center">{t.colHR}</th>
+                <th className="pb-4 font-black text-pink-500 text-center">RH</th>
                 {/* المالية والمحاسبة: أزرق */}
-                <th className="pb-4 font-black text-blue-500 text-center">{t.colFinance}</th>
+                <th className="pb-4 font-black text-blue-500 text-center">Finance</th>
                 <th className={`pb-4 font-black ${textMuted} text-center`}>{t.actionsCol}</th>
               </tr>
             </thead>
@@ -511,13 +528,14 @@ export default function ContractorProfile() {
                 <td className="py-5 text-center"><ClusterStatus isBoss={true} /></td>
                 <td className="py-5 text-center"><ClusterStatus isBoss={true} /></td>
                 <td className="py-5 text-center"><ClusterStatus isBoss={true} /></td>
+                <td className="py-5 text-center"><ClusterStatus isBoss={true} /></td>
                 <td className="py-5 text-center">
-                   <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-slate-200 text-slate-400'}`}><Lock size={14}/></div>
+                   <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-slate-200 text-slate-400'}`}><ShieldCheck size={14}/></div>
                 </td>
               </tr>
 
               {isTeamLoading ? (
-                <tr><td colSpan="6" className="py-8 text-center"><Loader2 size={30} className="animate-spin text-blue-500 mx-auto"/></td></tr>
+                <tr><td colSpan="7" className="py-8 text-center"><Loader2 size={30} className="animate-spin text-blue-500 mx-auto"/></td></tr>
               ) : (
                 team.map(user => (
                   <tr key={user.id} className={`transition-colors group ${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'}`}>
@@ -530,10 +548,10 @@ export default function ContractorProfile() {
                         </div>
                       </div>
                     </td>
-                    <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.chantier} /></td>
-                    <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.operations} /></td>
-                    <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.commercial} /></td>
-                    <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.hr} /></td> 
+                    <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.terrain} /></td>
+                    <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.achats} /></td>
+                    <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.achats} /></td>
+                    <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.finance} /></td> 
                     <td className="py-5 text-center"><ClusterStatus permissions={user.permissions} clusterKeys={permissionClusters.finance} /></td>
                     <td className="py-5 text-center">
                       <div className="flex items-center justify-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
@@ -565,6 +583,7 @@ export default function ContractorProfile() {
             </div>
             
             <form onSubmit={handleSaveUser} className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar space-y-8">
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="relative">
                   <User className={`absolute ${isRtl ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 ${textMuted}`} size={18} />
@@ -574,12 +593,6 @@ export default function ContractorProfile() {
                   <Mail className={`absolute ${isRtl ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 ${textMuted}`} size={18} />
                   <input required type="email" placeholder={t.email} value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={`w-full py-4 ${isRtl ? 'pr-12 pl-4' : 'pl-12 pr-4'} rounded-xl border-2 outline-none focus:border-blue-500 font-bold ${bgInput}`} />
                 </div>
-                {!formData.id && (
-                  <div className="relative md:col-span-2">
-                    <Lock className={`absolute ${isRtl ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 ${textMuted}`} size={18} />
-                    <input required type="password" placeholder={t.password} value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className={`w-full py-4 ${isRtl ? 'pr-12 pl-4' : 'pl-12 pr-4'} rounded-xl border-2 outline-none focus:border-blue-500 font-bold ${bgInput}`} />
-                  </div>
-                )}
               </div>
 
               <div>
@@ -589,7 +602,7 @@ export default function ContractorProfile() {
                     const isChecked = formData.permissions[key];
                     let theme = { bg: 'bg-slate-500/10', border: 'border-slate-500/30', check: 'bg-slate-500 border-slate-500', text: 'text-slate-500' };
 
-                     // 1. Direction & Terrain -> برتقالي
+                    // 1. Direction & Terrain -> برتقالي
                     if (['permDashboard', 'permProjectPath', 'permCalculator', 'permCamera'].includes(key)) {
                       theme = { bg: 'bg-orange-500/10', border: 'border-orange-500/30', check: 'bg-orange-500 border-orange-500', text: 'text-orange-500' };
                     }

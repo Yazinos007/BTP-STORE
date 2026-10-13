@@ -30,6 +30,8 @@ export default function ContractorDashboard() {
   const [loading, setLoading] = useState(true);
   const [startAnimation, setStartAnimation] = useState(false);
   const [user, setUser] = useState(null);
+
+  const [userPermissions, setUserPermissions] = useState(['all']);
   
   // 🚀 حالة الأرقام الحقيقية (الهدف)
   const [stats, setStats] = useState({ progress: 0, completed: 0, remaining: 0, total: 0 });
@@ -317,20 +319,36 @@ export default function ContractorDashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  // 🚀 جلب بيانات المقاول الأساسية بشكل مستقل (تعمل دائماً حتى لو لم يكن هناك ورش)
+  // 🚀 جلب بيانات المقاول أو الموظف الأساسية والصلاحيات
   useEffect(() => {
     let isMounted = true;
     const fetchBaseData = async () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (currentUser && isMounted) {
         setUser(currentUser);
-        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
-        if (profileData && isMounted) setProfile(profileData);
+        // جلب البروفايل والصلاحيات
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*, permissions')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+          
+        if (profileData && isMounted) {
+          setProfile(profileData);
+          // إذا كان مقاولاً نعطيه كل الصلاحيات ('all')، وإلا نعطيه الصلاحيات المحددة له
+          setUserPermissions(profileData.role === 'contractor' ? ['all'] : (profileData.permissions || []));
+        }
       }
     };
     fetchBaseData();
     return () => { isMounted = false; };
   }, []);
+
+  // 🚀 حارس الصلاحيات: يسأل إن كان المستخدم يمتلك المفتاح لفتح القسم
+  const hasPermission = (permissionKey) => {
+    if (userPermissions.includes('all')) return true;
+    return userPermissions.includes(permissionKey);
+  };
 
   // 🚀 3. جلب بيانات الورش النشط (Active Project) + الاستماع اللحظي (Realtime) 👁️
   useEffect(() => {
@@ -1110,6 +1128,7 @@ export default function ContractorDashboard() {
         {/* ==================================================== */}
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {hasPermission('settings_view') && (
           <div className={cardClass}>
             <h2 className="text-xl font-black flex items-center gap-2 mb-6 pb-4 border-b border-slate-200/20"><Briefcase className="text-blue-500" /> {t.compData}</h2>
             <form onSubmit={handleProfileUpdate} className="space-y-5">
@@ -1121,7 +1140,9 @@ export default function ContractorDashboard() {
               </button>
             </form>
           </div>
+          )}
 
+          {hasPermission('site_camera') && (
           <div className={`${cardClass} border-t-4 border-t-blue-500 overflow-hidden`}>
             <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
               <div>
@@ -1201,8 +1222,10 @@ export default function ContractorDashboard() {
               )}
             </div>
           </div>
+          )}
         </div>
 
+        {hasPermission('inbox_view') && (
         <div className={`${cardClass} border-t-4 border-t-blue-500`}>
           <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
             <h2 className="text-xl font-black flex items-center gap-2"><MessageCircle className="text-blue-500" /> {t.inboxTitle}</h2>
@@ -1239,6 +1262,7 @@ export default function ContractorDashboard() {
             )}
           </div>
         </div>
+        )}
 
         {/* ==================================================== */}
         {/* 🚀 الشرط الذكي: القطع المتعلقة بالورش النشط فقط */}
@@ -1265,44 +1289,49 @@ export default function ContractorDashboard() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
-                <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
-                <span className="text-6xl font-black drop-shadow-md">{displayStats.progress}%</span>
+            {hasPermission('progress_view') && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(99,102,241,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
+                  <span className="text-sm font-bold opacity-90 mb-2">{t.progTitle}</span>
+                  <span className="text-6xl font-black drop-shadow-md">{displayStats.progress}%</span>
+                </div>
+                <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
+                  <span className="text-sm font-bold opacity-90 mb-2">{t.tasksDone}</span>
+                  <span className="text-6xl font-black drop-shadow-md">{displayStats.completed}</span>
+                </div>
+                <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(6,182,212,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
+                  <span className="text-sm font-bold opacity-90 mb-2">{t.tasksLeft}</span>
+                  <span className="text-6xl font-black drop-shadow-md">{displayStats.remaining}</span>
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
-                <span className="text-sm font-bold opacity-90 mb-2">{t.tasksDone}</span>
-                <span className="text-6xl font-black drop-shadow-md">{displayStats.completed}</span>
-              </div>
-              <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl p-8 text-white shadow-[0_10px_30px_rgba(6,182,212,0.4)] flex flex-col items-center justify-center transform transition-transform duration-300 hover:-translate-y-3 border border-white/10">
-                <span className="text-sm font-bold opacity-90 mb-2">{t.tasksLeft}</span>
-                <span className="text-6xl font-black drop-shadow-md">{displayStats.remaining}</span>
-              </div>
-            </div>
 
-            <div className={`${cardClass} mb-6`}>
-              <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
-              <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {displayStages.map(stage => (
-                  <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all flex flex-col items-center justify-center group ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
-                    <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
-                      {t.stageNames[stage.id]} {stage.icon}
-                    </div>
-                    <div className="relative w-32 h-32 rounded-full flex items-center justify-center mb-4 shadow-inner group-hover:shadow-[0_0_20px_rgba(0,0,0,0.1)] transition-shadow duration-500" style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}>
-                      <div className={`absolute rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`} style={{ width: '82%', height: '82%' }}>
-                        <span className="text-2xl font-black animate-pulse" style={{ color: stage.color }}>{stage.percent}%</span>
+              <div className={`${cardClass} mb-6`}>
+                <h2 className="text-xl font-black mb-2 flex items-center gap-2">📊 {t.statsTitle}</h2>
+                <p className={`font-bold mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t.progByStage}</p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {displayStages.map(stage => (
+                    <div key={stage.id} className={`p-6 rounded-2xl border text-center transition-all flex flex-col items-center justify-center group ${isDarkMode ? 'bg-slate-900/50 border-slate-700 shadow-inner' : 'bg-white border-slate-100 shadow-sm'}`}>
+                      <div className="font-bold mb-4 text-lg flex items-center gap-2 justify-center">
+                        {t.stageNames[stage.id]} {stage.icon}
+                      </div>
+                      <div className="relative w-32 h-32 rounded-full flex items-center justify-center mb-4 shadow-inner group-hover:shadow-[0_0_20px_rgba(0,0,0,0.1)] transition-shadow duration-500" style={{ background: `conic-gradient(${stage.color} ${stage.percent}%, ${isDarkMode ? '#1e293b' : '#f1f5f9'} ${stage.percent}%)` }}>
+                        <div className={`absolute rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`} style={{ width: '82%', height: '82%' }}>
+                          <span className="text-2xl font-black animate-pulse" style={{ color: stage.color }}>{stage.percent}%</span>
+                        </div>
+                      </div>
+                      <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                        {stage.completed} / {stage.total} {t.taskUnit}
                       </div>
                     </div>
-                    <div className={`text-sm font-bold px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                      {stage.completed} / {stage.total} {t.taskUnit}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            </>
+            )}
 
+            {hasPermission('finance_view') && (
             <div className={cardClass}>
               <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
                 <h2 className="text-xl font-black flex items-center gap-2">{t.budgetTitle}</h2>
@@ -1333,8 +1362,10 @@ export default function ContractorDashboard() {
                 </div>
               )}
             </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              {hasPermission('finance_view') && (
               <div className={cardClass}>
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
                   <h2 className="text-xl font-black flex items-center gap-2"><Wallet className="text-blue-500" /> {t.radarTitle}</h2>
@@ -1369,7 +1400,9 @@ export default function ContractorDashboard() {
                   </div>
                 )}
               </div>
+              )}
 
+              {hasPermission('calendar_view') && (
               <div className={cardClass}>
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
                   <button onClick={() => changeMonth(-1)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 bg-slate-800' : 'hover:bg-slate-200 bg-slate-100'}`}>
@@ -1387,8 +1420,10 @@ export default function ContractorDashboard() {
                   {renderCalendarDays()}
                 </div>
               </div>
+              )}
             </div>
 
+            {hasPermission('team_management') && (
             <div className={`${cardClass} mt-6`}>
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/20">
                 <h2 className="text-xl font-black flex items-center gap-2">👷 {t.teamTitle}</h2>
@@ -1533,7 +1568,9 @@ export default function ContractorDashboard() {
                 </div>
               )}
             </div>
+            )}
 
+            {hasPermission('documents_view') && (
             <div className={`${cardClass} mt-6`}>
               <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-200/20">
                 <h2 className="text-xl font-black flex items-center gap-2"><FolderOpen className="text-blue-500" /> {t.vaultTitle}</h2>
@@ -1579,6 +1616,7 @@ export default function ContractorDashboard() {
                 }
               </div>
             </div>
+            )}
           </>
         )}
       </div>
