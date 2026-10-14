@@ -307,6 +307,10 @@ export default function ContractorProfile() {
           email: formData.email,
           options: {
             emailRedirectTo: window.location.origin + '/v2/dashboard', 
+            // 🚀 التعديل هنا: نمرر اسم الموظف ليتم تسجيله رسمياً في Supabase Auth
+            data: {
+              full_name: formData.full_name
+            }
           }
         });
 
