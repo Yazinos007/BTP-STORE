@@ -324,19 +324,35 @@ export default function ContractorDashboard() {
     let isMounted = true;
     const fetchBaseData = async () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
       if (currentUser && isMounted) {
         setUser(currentUser);
-        // جلب البروفايل والصلاحيات
+        
+        // 1. نبحث أولاً هل هو (باطرون / مقاول) في جدول profiles
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*, permissions')
           .eq('id', currentUser.id)
           .maybeSingle();
-          
-        if (profileData && isMounted) {
+
+        if (profileData) {
+          // إذا وجدناه، نعطيه كل الصلاحيات
           setProfile(profileData);
-          // إذا كان مقاولاً نعطيه كل الصلاحيات ('all')، وإلا نعطيه الصلاحيات المحددة له
           setUserPermissions(profileData.role === 'contractor' ? ['all'] : (profileData.permissions || []));
+        } else {
+          // 2. إذا لم يكن باطرون، إذن هو (موظف) مسجل في جدول employees
+          const { data: employeeData } = await supabase
+            .from('employees')
+            .select('*, permissions')
+            .eq('email', currentUser.email) // نبحث بالبريد لأن auth.users والـ employees قد لا يملكان نفس الـ ID في البداية
+            .maybeSingle();
+
+          if (employeeData) {
+            // نمرر اسم המوظف (للعرض)
+            setProfile({ store_name: employeeData.full_name }); 
+            // نعطيه الصلاحيات التي حددها له المقاول
+            setUserPermissions(employeeData.permissions || []);
+          }
         }
       }
     };
