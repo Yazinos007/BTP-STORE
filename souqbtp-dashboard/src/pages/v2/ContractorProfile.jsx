@@ -306,7 +306,7 @@ export default function ContractorProfile() {
         const { error: authError } = await supabase.auth.signInWithOtp({
           email: formData.email,
           options: {
-            emailRedirectTo: 'http://localhost:5173/v2/dashboard', 
+            emailRedirectTo: 'http://127.0.0.1:5173/v2/dashboard', 
             // 🚀 التعديل هنا: نمرر اسم الموظف ليتم تسجيله رسمياً في Supabase Auth
             data: {
               full_name: formData.full_name
