@@ -1,7 +1,7 @@
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import useSettingsStore from '../../store/useSettingsStore';
-import useArchitectStore from '../../store/useArchitectStore';
-import { supabase } from '../../lib/supabase';
+import useSettingsStore from '../../../store/useSettingsStore';
+import useArchitectStore from '../../../store/useArchitectStore';
+import { supabase } from '../../../lib/supabase';
 import { Building, ClipboardCheck, FolderOpen, Crown, Star, ShieldCheck, Zap, Server, ChevronRight, Activity } from 'lucide-react';
 
 const translations = {
