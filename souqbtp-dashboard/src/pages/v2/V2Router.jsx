@@ -86,10 +86,12 @@ export default function V2Router({ session, supplier }) {
         <Route path="profile" element={<ContractorProfile />} />
         <Route path="subscription" element={<ContractorSubscription />} />
 
+        {/* 🏛️ قسم المهندس (الجديد) */}
+        <Route path="architect-dashboard" element={<ArchitectDashboard />} />
+
         {/* 🚨 التوجيه التلقائي للمسارات المجهولة داخل v2 */}
         <Route path="*" element={<Navigate to="contractor-dashboard" replace />} />
       </Route>
-      <Route path="architect-dashboard" element={<ArchitectDashboard />} />
       <Route path="foreman-dashboard" element={<ForemanDashboard />} />
     </Routes>
   );
