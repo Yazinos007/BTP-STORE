@@ -355,8 +355,11 @@ export default function ArchitectProjects() {
         <button onClick={() => setShowNewModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg transition-transform hover:-translate-y-1">
           <Plus size={18} /> {t.newWorkshopBtn}
         </button>
-        <button onClick={() => navigate('/v2/architect/archive')} className={`px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 border shadow-sm transition-transform hover:-translate-y-1 ${isDarkMode ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>
-          <Archive size={18} /> {t.archiveBtn}
+        <button
+           onClick={() => navigate('/v2/architect-archive')}
+           className="bg-white text-slate-700 border border-slate-200 px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-sm transition-transform hover:-translate-y-1"
+        >
+           <Archive size={18} /> {t.archiveBtn}
         </button>
       </div>
 
