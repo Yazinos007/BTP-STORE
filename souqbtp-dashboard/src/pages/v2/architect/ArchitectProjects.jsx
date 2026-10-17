@@ -193,20 +193,17 @@ export default function ArchitectProjects() {
 
   useEffect(() => {
     const initPage = async () => {
-      // إذا لم يكن البروفايل موجوداً في الذاكرة، نجلبه من قاعدة البيانات أولاً
       if (!profile?.id) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await fetchArchitectData(user.id);
         } else {
-          setIsLoading(false); // لإيقاف التحميل إذا لم يكن هناك مستخدم
+          setIsLoading(false); 
         }
       } else {
-        // إذا كان البروفايل موجوداً، نجلب المشاريع مباشرة
-        loadData();
+        loadArchiveData();
       }
     };
-    
     initPage();
   }, [profile]);
 
