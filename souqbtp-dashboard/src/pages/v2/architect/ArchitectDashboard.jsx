@@ -21,7 +21,12 @@ const translations = {
     upgradeBtn: 'ترقية الحساب / إدارة الاشتراك',
     simulatorTitle: 'محاكي العمليات الميدانية (Simulator)',
     simulatorDesc: 'بيئة تدريب آمنة 100%. اختبر أدوات الرسم، ارفع مخططاتك (PDF/Image)، جرب المطابقة المعمارية، واستخرج تقارير تجريبية قبل الدخول في جلسة حقيقية مع العميل.',
-    openSimulator: 'فتح محاكي التدريب'
+
+    openSimulator: 'فتح محاكي التدريب',
+    defaultEngineer: 'مهندس',
+    planVip: '👑 النخبة (Elite VIP)',
+    planPro: '🔥 المحترف (Pro)',
+    planBasic: '🌱 الأساسية (Basic)'
   },
   fr: {
     pageTitle: 'Bureau d\'études (Aperçu)',
@@ -38,7 +43,12 @@ const translations = {
     upgradeBtn: 'Mettre à niveau / Gérer l\'abonnement',
     simulatorTitle: 'Simulateur d\'Opérations (Simulator)',
     simulatorDesc: 'Environnement d\'entraînement 100% sûr. Testez les outils de dessin, téléchargez vos plans, essayez la superposition architecturale et générez des rapports de test avant une vraie session client.',
-    openSimulator: 'Ouvrir le Simulateur'
+
+    openSimulator: 'Ouvrir le Simulateur',
+    defaultEngineer: 'Architecte',
+    planVip: '👑 Élite (VIP)',
+    planPro: '🔥 Professionnel (Pro)',
+    planBasic: '🌱 Basique (Basic)'
   },
   en: {
     pageTitle: 'Design Office (Overview)',
@@ -55,7 +65,12 @@ const translations = {
     upgradeBtn: 'Upgrade / Manage Subscription',
     simulatorTitle: 'Field Operations Simulator',
     simulatorDesc: '100% safe training environment. Test drawing tools, upload plans, try architectural matching, and generate test reports before a real client session.',
-    openSimulator: 'Open Simulator'
+
+    openSimulator: 'Open Simulator',
+    defaultEngineer: 'Architect',
+    planVip: '👑 Elite (VIP)',
+    planPro: '🔥 Professional (Pro)',
+    planBasic: '🌱 Basic'
   }
 };
 
@@ -83,13 +98,17 @@ export default function ArchitectDashboard() {
     return () => { isMounted = false; };
   }, [fetchArchitectData]);
 
-  const userName = architectProfile?.full_name || currentUser?.user_metadata?.full_name || 'مهندس';
+
+  const userName = architectProfile?.full_name || currentUser?.user_metadata?.full_name || t.defaultEngineer;
   const currentPlan = architectProfile?.subscription_plan || 'basic';
 
   const planDetails = {
-    vip: { name: '👑 النخبة (Elite VIP)', color: 'from-amber-400 to-amber-600', text: 'text-amber-500' },
-    pro: { name: '🔥 المحترف (Pro)', color: 'from-purple-500 to-fuchsia-500', text: 'text-purple-500' },
-    basic: { name: '🌱 الأساسية (Basic)', color: 'from-slate-400 to-slate-600', text: 'text-slate-500' }
+
+    vip: { name: t.planVip, color: 'from-amber-400 to-amber-600', text: 'text-amber-500' },
+
+    pro: { name: t.planPro, color: 'from-purple-500 to-fuchsia-500', text: 'text-purple-500' },
+
+    basic: { name: t.planBasic, color: 'from-slate-400 to-slate-600', text: 'text-slate-500' }
   };
   const planInfo = planDetails[currentPlan] || planDetails.basic;
 
