@@ -82,7 +82,7 @@ export default function ArchitectProfile() {
 
   // Stores
   const { lang = 'ar' } = useSettingsStore();
-  const { profile, fetchArchitectProfile, updateArchitectProfile } = useArchitectStore();
+  const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
   const t = translations[lang] || translations.ar;
 
   // Local Form State
@@ -107,22 +107,26 @@ export default function ArchitectProfile() {
 
   // Load profile into form state
   useEffect(() => {
-    if (!profile) {
-      fetchArchitectProfile();
-    } else {
-      setFormData({
-        agency_name: profile.agency_name || '',
-        full_name: profile.full_name || '',
-        specialty: profile.specialty || '',
-        license_number: profile.license_number || '',
-        phone: profile.phone || '',
-        email: profile.email || '',
-        address: profile.address || '',
-        logo_url: profile.logo_url || ''
-      });
-      setLogoPreview(profile.logo_url || '');
-    }
-  }, [profile, fetchArchitectProfile]);
+    const loadProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!profile && user) {
+        fetchArchitectData(user.id);
+      } else if (profile) {
+        setFormData({
+          agency_name: profile.agency_name || '',
+          full_name: profile.full_name || '',
+          specialty: profile.specialty || '',
+          license_number: profile.license_number || '',
+          phone: profile.phone || '',
+          email: profile.email || '',
+          address: profile.address || '',
+          logo_url: profile.logo_url || ''
+        });
+        setLogoPreview(profile.logo_url || '');
+      }
+    };
+    loadProfile();
+  }, [profile, fetchArchitectData]);
 
   // Handle Text Input Changes
   const handleChange = (e) => {
@@ -184,8 +188,8 @@ export default function ArchitectProfile() {
       if (error) throw error;
 
       // Update Zustand local state
-      if (updateArchitectProfile) {
-        updateArchitectProfile(updatedPayload);
+      if (profile?.user_id) {
+        fetchArchitectData(profile.user_id);
       }
       setStatusMessage({ type: 'success', text: t.successMsg });
     } catch (err) {
