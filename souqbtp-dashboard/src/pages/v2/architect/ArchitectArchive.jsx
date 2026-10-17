@@ -56,7 +56,7 @@ export default function ArchitectArchive() {
   const t = translations[lang] || translations.ar;
   const navigate = useNavigate();
 
-  const { architectProfile: profile } = useArchitectStore();
+  const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
   const [archives, setArchives] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -113,7 +113,20 @@ export default function ArchitectArchive() {
   };
 
   useEffect(() => {
-    loadArchiveData();
+    const initPage = async () => {
+      if (!profile?.id) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await fetchArchitectData(user.id);
+        } else {
+          setIsLoading(false); 
+        }
+      } else {
+        loadArchiveData();
+      }
+    };
+    
+    initPage();
   }, [profile]);
 
   const handleDelete = async (projectId) => {
