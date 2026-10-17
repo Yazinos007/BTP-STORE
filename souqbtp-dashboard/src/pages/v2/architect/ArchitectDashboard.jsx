@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import useSettingsStore from '../../../store/useSettingsStore';
 import useArchitectStore from '../../../store/useArchitectStore';
@@ -22,7 +23,6 @@ const translations = {
     simulatorDesc: 'بيئة تدريب آمنة 100%. اختبر أدوات الرسم، ارفع مخططاتك (PDF/Image)، جرب المطابقة المعمارية، واستخرج تقارير تجريبية قبل الدخول في جلسة حقيقية مع العميل.',
     openSimulator: 'فتح محاكي التدريب'
   },
-
   fr: {
     pageTitle: 'Bureau d\'études (Aperçu)',
     welcome: 'Bienvenue,',
@@ -40,7 +40,6 @@ const translations = {
     simulatorDesc: 'Environnement d\'entraînement 100% sûr. Testez les outils de dessin, téléchargez vos plans, essayez la superposition architecturale et générez des rapports de test avant une vraie session client.',
     openSimulator: 'Ouvrir le Simulateur'
   },
-
   en: {
     pageTitle: 'Design Office (Overview)',
     welcome: 'Welcome,',
@@ -62,17 +61,18 @@ const translations = {
 
 export default function ArchitectDashboard() {
   const context = useOutletContext() || {};
-  const isDarkMode = context.isDarkMode ?? true;
+  const isDarkMode = context.isDarkMode !== undefined ? context.isDarkMode : true;
   const { language } = useSettingsStore();
   const isRtl = language === 'ar';
   const t = translations[language] || translations.ar;
   const navigate = useNavigate();
+
   const [currentUser, setCurrentUser] = useState(null);
   const { architectProfile, stats, isLoading, fetchArchitectData } = useArchitectStore();
 
   useEffect(() => {
     let isMounted = true;
-      const loadUser = async () => {
+    const loadUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user && isMounted) {
         setCurrentUser(user);
@@ -82,15 +82,17 @@ export default function ArchitectDashboard() {
     loadUser();
     return () => { isMounted = false; };
   }, [fetchArchitectData]);
+
   const userName = architectProfile?.full_name || currentUser?.user_metadata?.full_name || 'مهندس';
   const currentPlan = architectProfile?.subscription_plan || 'basic';
+
   const planDetails = {
     vip: { name: '👑 النخبة (Elite VIP)', color: 'from-amber-400 to-amber-600', text: 'text-amber-500' },
     pro: { name: '🔥 المحترف (Pro)', color: 'from-purple-500 to-fuchsia-500', text: 'text-purple-500' },
     basic: { name: '🌱 الأساسية (Basic)', color: 'from-slate-400 to-slate-600', text: 'text-slate-500' }
   };
-
   const planInfo = planDetails[currentPlan] || planDetails.basic;
+
   const aiPercent = Math.min((stats.aiUsed / 5) * 100, 100);
   const storageLimit = 5 * 1024 * 1024 * 1024; // 5GB
   const storageMB = (stats.storageUsedBytes / (1024 * 1024)).toFixed(1);
@@ -100,8 +102,8 @@ export default function ArchitectDashboard() {
   const bgMain = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textMain = isDarkMode ? 'text-white' : 'text-slate-900';
   const textMuted = isDarkMode ? 'text-slate-400' : 'text-slate-500';
-  if (isLoading && !architectProfile) {
 
+  if (isLoading && !architectProfile) {
     return (
       <div className={`flex justify-center items-center h-[70vh] ${textMain}`}>
         <Activity className="animate-pulse text-purple-500" size={48} />
@@ -109,10 +111,8 @@ export default function ArchitectDashboard() {
     );
   }
 
-    return (
+  return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-24" dir={isRtl ? 'rtl' : 'ltr'}>
-
-      {/* Header */}
       <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-200'} pb-6`}>
         <div>
           <h2 className={`text-3xl font-black ${textMain} tracking-tight flex items-center gap-3`}>
@@ -122,19 +122,13 @@ export default function ArchitectDashboard() {
           <p className={`${textMuted} mt-2 font-medium`}>{t.welcome} <span className="font-black text-purple-500">{userName}</span>، {t.subWelcome}</p>
         </div>
       </div>
-
-      {/* Grid Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-        {/* Completed Reports */}
         <div className={`bg-gradient-to-br from-purple-700 to-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-purple-500/20 relative overflow-hidden group`}>
            <div className={`absolute -right-6 -bottom-6 opacity-10 transform group-hover:scale-110 transition-transform duration-500`}><ClipboardCheck size={140} /></div>
            <h3 className="text-lg font-bold opacity-90 mb-2">{t.completedReports}</h3>
            <p className="text-6xl font-black mb-2 drop-shadow-md">{stats.completedReports}</p>
            <span className="text-sm font-bold opacity-80">{t.reportsDesc}</span>
         </div>
-
-        {/* Open Requests */}
         <div className={`${bgMain} border-2 rounded-3xl p-6 shadow-lg flex flex-col justify-between group hover:border-purple-500 transition-colors`}>
           <div className="text-center">
             <h3 className={`text-lg font-bold mb-2 ${textMuted}`}>{t.openRequests}</h3>
@@ -147,8 +141,6 @@ export default function ArchitectDashboard() {
             {t.browseRequests} <FolderOpen size={16} />
           </button>
         </div>
-
-        {/* Plan & Subscription */}
         <div className={`${bgMain} border-2 rounded-3xl p-6 shadow-lg flex flex-col justify-between relative overflow-hidden`}>
           {currentPlan === 'vip' && <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center rounded-bl-3xl shadow-lg"><Crown className="text-white" size={24} /></div>}
           <div className="mb-4">
@@ -160,8 +152,6 @@ export default function ArchitectDashboard() {
           </div>
           {(currentPlan === 'pro' || currentPlan === 'vip') && (
             <div className="space-y-4 mb-6 flex-1">
-
-               {/* AI Progress */}
                <div>
                   <div className="flex justify-between text-xs font-bold mb-1.5">
                      <span className={`${textMuted} flex items-center gap-1`}><Zap size={12} className="text-purple-500"/> {t.aiUsage}</span>
@@ -171,8 +161,6 @@ export default function ArchitectDashboard() {
                      <div className={`h-full rounded-full bg-gradient-to-r ${currentPlan === 'vip' ? 'from-amber-400 to-amber-600' : 'from-purple-500 to-fuchsia-500'} transition-all duration-1000`} style={{ width: currentPlan === 'vip' ? '100%' : `${aiPercent}%` }}></div>
                   </div>
                </div>
-
-               {/* Storage Progress */}
                <div>
                   <div className="flex justify-between text-xs font-bold mb-1.5">
                      <span className={`${textMuted} flex items-center gap-1`}><Server size={12} className="text-emerald-500"/> {t.storageUsage}</span>
@@ -192,11 +180,7 @@ export default function ArchitectDashboard() {
           </button>
         </div>
       </div>
-
-      {/* Simulator Banner */}
       <div className={`mt-8 relative overflow-hidden rounded-[2rem] border-2 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-6 p-8 lg:p-10 ${isDarkMode ? 'bg-slate-900 border-purple-500/30' : 'bg-white border-purple-200'}`}>
-
-         {/* Background Decoration */}
          <div className="absolute -left-20 -top-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
          <div className={`absolute ${isRtl ? 'left-0' : 'right-0'} bottom-0 opacity-5 pointer-events-none`}><Building size={300} /></div>
          <div className="flex-1 relative z-10">
