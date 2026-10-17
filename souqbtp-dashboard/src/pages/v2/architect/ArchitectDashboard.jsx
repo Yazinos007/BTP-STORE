@@ -154,7 +154,7 @@ export default function ArchitectDashboard() {
             <p className={`text-6xl font-black ${textMain}`}>{stats.openRequests}</p>
           </div>
           <button 
-            onClick={() => navigate('/v2/architect/projects')}
+            onClick={() => navigate('/v2/architect-projects')}
             className={`mt-6 py-3 w-full rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'}`}
           >
             {t.browseRequests} <FolderOpen size={16} />

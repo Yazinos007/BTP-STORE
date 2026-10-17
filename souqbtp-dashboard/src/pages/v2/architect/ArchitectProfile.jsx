@@ -73,7 +73,6 @@ const translations = {
     successMsg: 'Professional identity updated successfully!',
     errorMsg: 'Failed to save. Reason:',
   }
-
 };
 
 export default function ArchitectProfile() {
@@ -81,7 +80,8 @@ export default function ArchitectProfile() {
   const fileInputRef = useRef(null);
 
   // Stores
-  const { lang = 'ar' } = useSettingsStore();
+  const { language } = useSettingsStore();
+  const lang = language || 'ar';
   const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
   const t = translations[lang] || translations.ar;
 
