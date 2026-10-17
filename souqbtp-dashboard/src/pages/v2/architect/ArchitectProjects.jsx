@@ -136,7 +136,7 @@ export default function ArchitectProjects() {
   const t = translations[language] || translations.ar;
   const navigate = useNavigate();
 
-  const { architectProfile: profile } = useArchitectStore();
+  const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
   const isVip = profile?.subscription_plan?.toLowerCase() === 'vip';
 
   // --- States ---
@@ -192,7 +192,22 @@ export default function ArchitectProjects() {
   };
 
   useEffect(() => {
-    loadData();
+    const initPage = async () => {
+      // إذا لم يكن البروفايل موجوداً في الذاكرة، نجلبه من قاعدة البيانات أولاً
+      if (!profile?.id) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await fetchArchitectData(user.id);
+        } else {
+          setIsLoading(false); // لإيقاف التحميل إذا لم يكن هناك مستخدم
+        }
+      } else {
+        // إذا كان البروفايل موجوداً، نجلب المشاريع مباشرة
+        loadData();
+      }
+    };
+    
+    initPage();
   }, [profile]);
 
   // --- Handlers ---
