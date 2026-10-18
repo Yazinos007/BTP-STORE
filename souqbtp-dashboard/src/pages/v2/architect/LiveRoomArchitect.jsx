@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
 Camera, FlipHorizontal, Pencil, Eraser, RotateCcw, Sliders, Sparkles, X, Layers, Check, Volume2, VolumeX, AlertCircle, Loader2, Maximize2
 } from 'lucide-react';
-import { useArchitectStore } from '../stores/useArchitectStore';
+import useArchitectStore from '../../../store/useArchitectStore';
 
 // Multilingual Translations Object
 const translations = {
@@ -80,10 +80,7 @@ const lang = searchParams.get('lang') || 'en'
 ;
 const isRtl = lang === 'ar';
 
-const { profile, generateLiveRender } = useArchitectStore((state) => ({
-profile: state.profile,
-generateLiveRender: state.generateLiveRender
-}));
+const { architectProfile: profile } = useArchitectStore();
 
 // Subscription Gate Check
 const currentPlan = profile?.subscription_plan?.toLowerCase() || 'free';
@@ -156,6 +153,45 @@ window.addEventListener('resize', handleResize);
 return () => window.removeEventListener('resize', handleResize);
 }, []);
 
+// --- WebRTC Signaling Logic ---
+useEffect(() => {
+  if (mode === 'simulator' || !conversationId) return;
+
+  const signalingChannel = supabase.channel(`live_room_${conversationId}`);
+  const peerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+
+  // ربط الكاميرا المحلية بالاتصال
+  if (stream) {
+    stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+  } else {
+    peerConnection.addTransceiver('video', { direction: 'recvonly' });
+  }
+
+  // استقبال فيديو العميل
+  peerConnection.ontrack = e => {
+    if (videoRef.current && videoRef.current.srcObject !== e.streams[0]) {
+      videoRef.current.srcObject = e.streams[0];
+    }
+  };
+
+  // إعداد قنوات الاتصال
+  signalingChannel.on('broadcast', { event: 'offer' }, async ({ payload }) => {
+    if (payload.sender !== 'architect') {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.offer));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      signalingChannel.send({ type: 'broadcast', event: 'answer', payload: { answer, sender: 'architect' } });
+    }
+  });
+
+  signalingChannel.subscribe();
+
+  return () => {
+    peerConnection.close();
+    supabase.removeChannel(signalingChannel);
+  };
+}, [conversationId, mode, stream]);
+
 // 2. Interactive Canvas Drawing Handlers
 const startDrawing = (e) => {
 const canvas = canvasRef.current;
@@ -172,26 +208,36 @@ setIsDrawing(true);
 };
 
 const draw = (e) => {
-if (!isDrawing) return;
-const canvas = canvasRef.current;
-if (!canvas) return;
-const ctx = canvas.getContext('2d');
-const rect = canvas.getBoundingClientRect();
-const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;ctx.lineWidth = brushSize;
+  if (!isDrawing || !canvasRef.current) return;
+  const canvas = canvasRef.current;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+  const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
-ctx.lineCap = 'round';
-ctx.lineJoin = 'round'; 
-if (activeTool === 'erase') {
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
-  ctx.fill();
-} else {
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.strokeStyle = 'rgba(59, 130, 246, 0.65)'; // Semi-transparent blue highlight mask
-  ctx.lineTo(x, y);
-  ctx.stroke();
-}
+  ctx.lineWidth = brushSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (activeTool === 'erase') {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  } else {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)'; 
+    // دعم أدوات الرسم المختلفة
+    if (activeTool === 'rect') {
+      ctx.strokeRect(x - 50, y - 50, 100, 100);
+    } else if (activeTool === 'circle') {
+      ctx.beginPath();
+      ctx.arc(x, y, 50, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+  }
 };
 
 const stopDrawing = () => {
