@@ -4,6 +4,7 @@ import {
 Camera, FlipHorizontal, Pencil, Eraser, RotateCcw, Sliders, Sparkles, X, Layers, Check, Volume2, VolumeX, AlertCircle, Loader2, Maximize2
 } from 'lucide-react';
 import useArchitectStore from '../../../store/useArchitectStore';
+import { supabase } from '../../../lib/supabase';
 
 // Multilingual Translations Object
 const translations = {
