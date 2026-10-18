@@ -25,6 +25,7 @@ import ArchitectDashboard from './architect/ArchitectDashboard';
 import ArchitectProfile from './architect/ArchitectProfile';
 import ArchitectProjects from './architect/ArchitectProjects';
 import ArchitectArchive from './architect/ArchitectArchive';
+import LiveRoomArchitect from './architect/LiveRoomArchitect';
 
 // استيراد صفحات الهبوط (المغناطيس)
 import EmpireLanding from '../../landing-pages/EmpireLanding';
@@ -56,6 +57,9 @@ export default function V2Router({ session, supplier }) {
       <Route path="empire" element={<Navigate to="/empire" replace />} />
       <Route path="pro" element={<Navigate to="/pro" replace />} />
       <Route path="contractor" element={<Navigate to="/contractor" replace />} />
+
+      {/* 🚀 الغرفة الحية للمهندس (شاشة كاملة خارج الـ Layout) */}
+      <Route path="architect/live-room/:cid" element={<LiveRoomArchitect />} />
 
       {/* 🛡️ مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout */}
       <Route element={<V2Layout accountType={accountType} storeName={storeName} storeInitial={storeInitial} />}>
