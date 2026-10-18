@@ -15,16 +15,16 @@ export default function LiveRoomArchitect() {
 
   const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
 
-  // جلب بيانات المهندس عند فتح الغرفة في تبويب جديد
+  // جلب وتحديث بيانات المهندس إجبارياً عند فتح الغرفة (لضمان قراءة أحدث باقة)
   useEffect(() => {
-    const loadProfile = async () => {
-      if (!profile?.id) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) await fetchArchitectData(user.id);
+    const forceLoadProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await fetchArchitectData(user.id);
       }
     };
-    loadProfile();
-  }, [profile, fetchArchitectData]);
+    forceLoadProfile();
+  }, [fetchArchitectData]); // أزلنا profile من هنا لمنع التكرار اللانهائي
 
   const roomPlan = profile?.subscription_plan?.toLowerCase() || 'basic';
   const architectUserId = profile?.user_id || '';
