@@ -13,21 +13,33 @@ export default function LiveRoomArchitect() {
   // قراءة رقم الغرفة سواء من الرابط المباشر (/live-room/0) أو من (?cid=0)
   const roomId = cid || searchParams.get('cid') || '0';
 
-  const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
+  // استخدام State محلي للاتصال المباشر بالقاعدة (لتجاوز عناد الذاكرة المؤقتة)
+  const [localProfile, setLocalProfile] = useState({ plan: 'basic', uid: '' });
 
-  // جلب وتحديث بيانات المهندس إجبارياً عند فتح الغرفة (لضمان قراءة أحدث باقة)
   useEffect(() => {
-    const forceLoadProfile = async () => {
+    const fetchDirectProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await fetchArchitectData(user.id);
+        // استجواب Supabase مباشرة لجلب الباقة الحقيقية في هذه اللحظة!
+        const { data } = await supabase
+          .from('architects')
+          .select('subscription_plan, user_id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (data) {
+          setLocalProfile({
+            plan: data.subscription_plan?.toLowerCase() || 'basic',
+            uid: data.user_id
+          });
+        }
       }
     };
-    forceLoadProfile();
-  }, [fetchArchitectData]); // أزلنا profile من هنا لمنع التكرار اللانهائي
+    fetchDirectProfile();
+  }, []);
 
-  const roomPlan = profile?.subscription_plan?.toLowerCase() || 'basic';
-  const architectUserId = profile?.user_id || '';
+  const roomPlan = localProfile.plan;
+  const architectUserId = localProfile.uid;
 
   const initializedRef = useRef(false);
 
