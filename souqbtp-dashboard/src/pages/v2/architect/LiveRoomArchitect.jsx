@@ -1279,6 +1279,12 @@ export default function LiveRoomArchitect() {
             )}
           </div>
 
+          <div id="boq-panel" style={{ display: 'none', position: 'fixed', left: '280px', top: '50%', transform: 'translateY(-50%)', width: '280px', background: 'var(--glass-bg)', backdropFilter: 'blur(20px)', border: '1px solid var(--vip-purple)', borderRadius: '16px', padding: '20px', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', zIndex: 10000 }}>
+            <h3 style={{ color: 'var(--vip-purple)', fontSize: '1rem', marginTop: 0, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>🧮 حساب الكميات التقديري</h3>
+            <div id="boq-result" style={{ fontSize: '0.9rem', lineHeight: 1.6 }}></div>
+            <button className="btn-vip" style={{ background: 'var(--vip-purple)', marginTop: '15px' }} onClick={() => { document.getElementById('boq-panel').style.display = 'none'; }}>إغلاق الحساب</button>
+          </div>
+
           <h4 style={{ color: '#38bdf8', borderBottom: '1px solid rgba(56, 189, 248, 0.3)', paddingBottom: '8px', marginBottom: '12px' }}>📏 المسطرة الذكية</h4>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
             {roomPlan === 'pro' || roomPlan === 'vip' ? (
