@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import useArchitectStore from '../../../store/useArchitectStore';
 import { supabase } from '../../../lib/supabase';
