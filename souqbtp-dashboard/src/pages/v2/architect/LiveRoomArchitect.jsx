@@ -76,6 +76,7 @@ const navigate = useNavigate();
 
 // URL Params & Store Integration
 const conversationId = searchParams.get('cid');
+const mode = searchParams.get('mode');
 
 const lang = searchParams.get('lang') || 'en';
 const isRtl = lang === 'ar';
