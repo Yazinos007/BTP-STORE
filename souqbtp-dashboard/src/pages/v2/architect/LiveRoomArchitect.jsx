@@ -82,11 +82,22 @@ const lang = searchParams.get('lang') || 'en';
 const isRtl = lang === 'ar';
 const t = translations[lang] || translations.ar; 
 
-const { architectProfile: profile } = useArchitectStore();
+const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
+
+useEffect(() => {
+  const loadProfileInNewTab = async () => {
+    if (!profile?.id) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) await fetchArchitectData(user.id);
+    }
+  };
+  loadProfileInNewTab();
+}, [profile]);
 
 // Subscription Gate Check
-const currentPlan = profile?.subscription_plan?.toLowerCase() || 'free';
-const hasAccess = ['pro', 'enterprise', 'studio'].includes(currentPlan);
+// Subscription Gate Check
+const currentPlan = profile?.subscription_plan?.toLowerCase() || 'basic';
+const hasAccess = ['basic', 'pro', 'vip', 'enterprise', 'studio'].includes(currentPlan);
 
 // Element Refs
 const videoRef = useRef(null);
