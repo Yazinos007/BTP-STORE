@@ -76,9 +76,9 @@ const navigate = useNavigate();
 // URL Params & Store Integration
 const conversationId = searchParams.get('cid');
 
-const lang = searchParams.get('lang') || 'en'
-;
+const lang = searchParams.get('lang') || 'en';
 const isRtl = lang === 'ar';
+const t = translations[lang] || translations.ar; 
 
 const { architectProfile: profile } = useArchitectStore();
 
