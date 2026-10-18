@@ -61,7 +61,7 @@ export default function V2Router({ session, supplier }) {
 
       {/* 🚀 الغرفة الحية للمهندس (شاشة كاملة خارج الـ Layout) */}
       <Route path="architect/live-room/:cid" element={<LiveRoomArchitect />} />
-      <Route path="architect/register" element={<ArchitectRegister />} />
+      <Route path="architect-register" element={<ArchitectRegister />} />
 
       {/* 🛡️ مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout */}
       <Route element={<V2Layout accountType={accountType} storeName={storeName} storeInitial={storeInitial} />}>
