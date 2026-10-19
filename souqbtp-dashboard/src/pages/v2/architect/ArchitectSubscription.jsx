@@ -160,7 +160,7 @@ export default function ArchitectSubscription() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [statusNotification, setStatusNotification] = useState({ type: '', message: '' });
 
-  // Accordion State for FAQs
+  // Accordion State for FAQsq
   const [openFaq, setOpenFaq] = useState(null);
 
   // AI Chat Widget States
