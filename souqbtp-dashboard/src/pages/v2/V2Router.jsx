@@ -29,6 +29,8 @@ import ArchitectArchive from './architect/ArchitectArchive';
 import LiveRoomArchitect from './architect/LiveRoomArchitect';
 import ArchitectRegister from './architect/ArchitectRegister';
 
+import UnifiedMessages from './shared/UnifiedMessages';
+
 // استيراد صفحات الهبوط (المغناطيس)
 import EmpireLanding from '../../landing-pages/EmpireLanding';
 import RetailLanding from '../../landing-pages/RetailLanding';
@@ -102,6 +104,8 @@ export default function V2Router({ session, supplier }) {
         <Route path="architect-profile" element={<ArchitectProfile />} />
         <Route path="architect-projects" element={<ArchitectProjects />} />
         <Route path="architect-archive" element={<ArchitectArchive />} />
+        <Route path="messages" element={<UnifiedMessages />} />
+        <Route path="architect-messages" element={<UnifiedMessages />} />
         {/* 🚨 التوجيه التلقائي للمسارات المجهولة داخل v2 */}
         <Route path="*" element={<Navigate to="contractor-dashboard" replace />} />
       </Route>
