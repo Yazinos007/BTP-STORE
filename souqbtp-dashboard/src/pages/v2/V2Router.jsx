@@ -21,6 +21,7 @@ import ContractorProfile from './ContractorProfile';
 import ContractorSubscription from './ContractorSubscription';
 import ForemanDashboard from './ForemanDashboard';
 
+import ArchitectSubscription from './architect/ArchitectSubscription';
 import ArchitectDashboard from './architect/ArchitectDashboard';
 import ArchitectProfile from './architect/ArchitectProfile';
 import ArchitectProjects from './architect/ArchitectProjects';
@@ -96,6 +97,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="subscription" element={<ContractorSubscription />} />
 
         {/* 🏛️ قسم المهندس (الجديد) */}
+        <Route path="architect-subscription" element={<ArchitectSubscription />} />
         <Route path="architect-dashboard" element={<ArchitectDashboard />} />
         <Route path="architect-profile" element={<ArchitectProfile />} />
         <Route path="architect-projects" element={<ArchitectProjects />} />
