@@ -146,11 +146,14 @@ const PLANS = [
 ];
 
 export default function ArchitectSubscription() {
+  const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
+  const { language = 'ar' } = useSettingsStore();
+  
+  const isRtl = language === 'ar'; // 👈 هذا هو السطر المفقود!
+  const t = translations[language] || translations.ar;
 
-  // Global Store Integrations
-  const { currentArchitect, updateArchitect, fetchArchitect } = useArchitectStore();
-  const { language = 'ar' } = useSettingsStore();
-  const t = translations[language] || translations.ar;
+  // Global Store Integrations
+  const { currentArchitect, updateArchitect, fetchArchitect } = useArchitectStore();
 
   // State Management
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'annual'
