@@ -4,7 +4,6 @@ import { supabase } from '../../../lib/supabase';
 import useArchitectStore from '../../../store/useArchitectStore';
 import useSettingsStore from '../../../store/useSettingsStore';
 
-// Translations dictionary for UI localization
 const translations = {
   ar: {
     pageTitle: "حوّل مكتبك الهندسي إلى قوة تكنولوجية 📐",
@@ -15,21 +14,29 @@ const translations = {
     annual: "دفع سنوي",
     saveBadge: "🎁 وفّر 30% مع خطة الدفع السنوي + شهرين مجانا",
     currentPlan: "خطتك الحالية",
-    upgradeNow: "ترقية",
+    upgradeNow: "اختر الباقة",
+    upgradePro: "اشترك كـ محترف",
+    upgradeVip: "انضم للنخبة الآن",
     activePlan: "✅ الباقة مفعلة الآن",
     checkoutTitle: "تأكيد الاشتراك",
-    payWithCard: "💳 البطاقة (قريباً)",
+    payWithCard: "💳 البطاقة (Utajir) - قريباً",
     payBank: "🏦 تحويل بنكي",
     processing: "⏳ جاري التفعيل السحري...",
     confirmPayment: "✅ تأكيد ودفع الاشتراك",
     close: "✖",
-    
+
+    // Tooltips
+    proAiTooltip: "أبهر عملاءك بصور واقعية لغرفهم من خلال رفع مخططاتهم!",
+    vipAiTooltipTitle: "بلا قيود!",
+    vipAiTooltipDesc: "أنشئ تصاميم لا نهائية من الاقتراحات الواقعية لعملائك.",
+
     // Whitelabel
     whitelabelTitle: "وثّق عملك بعلامتك التجارية الخاصة 🏢",
     whitelabelDesc: "حصرياً في باقة النخبة (Elite): لن يرى عميلك شعار منصة SouqBTP بعد الآن. ستصدر جميع التقارير الهندسية، محاضر الزيارات، وإثباتات الـ GPS حاملة لـ شعار مكتبك الهندسي واسمك كعلامة مائية (Whitelabel). اجعل تقاريرك تبدو مصممة بأنظمة مكتبك الداخلية وكلف بمشاريعك باحترافية مطلقة.",
     yourLogo: "Your Logo",
+    wlImagePlaceholder: "[صورة الورشة مع المطابقة]",
     engineerSeal: "ختم المهندس: ✔️",
-    
+
     // Comparison
     comparisonTitle: "مقارنة الميزات بالتفصيل",
     featColumn: "الميزة الهندسية",
@@ -40,270 +47,284 @@ const translations = {
     feat5: "الذكاء الاصطناعي (AI)",
     feat6: "تسجيل الجلسة (فيديو MP4)",
     feat7: "العلامة التجارية الشخصية (Whitelabel)",
-    feat8: "مدير حساب شخصي للدعم",
+    feat8: "مدير حساب شخصي ومستشار ذكي",
+    val3Month: "3 شهرياً",
     valLimit: "محدود (5 مرات)",
     valUnlimitAI: "✔ لا محدود",
-    valMonthly: "شهرياً",
     valUnlimit: "غير محدود",
-    
+
     // FAQ
     faqTitle: "الأسئلة الشائعة حول الاشتراكات",
     faqs: [
       { q: 'هل يمكنني إلغاء الاشتراك أو تغيير الباقة لاحقاً؟', a: 'بالتأكيد! المنصة لا تلزمك بعقود احتكارية. يمكنك الترقية، التخفيض، أو إيقاف اشتراكك في أي وقت مباشرة من إعدادات حسابك. عند الإلغاء، ستستمر في الاستفادة من الميزات حتى نهاية دورتك المدفوعة.' },
       { q: 'كيف تعمل ميزة "المصادقة القانونية بختم GPS"؟', a: 'في باقات (Pro و Elite)، يقوم التطبيق بتسجيل إحداثيات الموقع الدقيقة (Latitude/Longitude) وتوقيت الزيارة، ويقوم بتشفيرها وطباعتها على التقرير الهندسي (PDF) المدمج مع اللقطة الحية، مما يمنح التقرير حجية وإثباتاً لزيارة الموقع.' },
-      { q: 'ما هو الـ AI Render وكيف سيفيدني كمهندس؟', a: 'هي أداة مدمجة بالغرفة الحية. تخيل أن تصور صالوناً غير مكتمل بالآجور، وتقوم المنصة في ثوانٍ بتحويله لصورة واقعية (3D Render) تظهر للعميل كيف سيبدو بعد التبليط والصباغة والفرش!' },
-      { q: 'هل بيانات وتصاميم عملائي آمنة على المنصة؟', a: 'نعم، نستخدم تشفيراً من الدرجة العسكرية (AES-256) لحماية جميع المخططات والتقارير المرفوعة على خوادم سحابية مؤمنة بالكامل لا يمكن لأحد الوصول إليها سواك.' },
-      { q: 'ما هي وسائل الدفع المدعومة في الوقت الحالي؟', a: 'ندعم حالياً الدفع عبر التحويل البنكي المباشر الآمن، وقريباً جداً سيتم توفير الدفع عبر البطاقات البنكية المحلية والدولية (CMI).' }
+      { q: 'ما هو الـ AI Render وكيف سيفيدني كمهندس؟', a: 'هي أداة مدمجة بالغرفة الحية. تخيل أن تصور صالوناً غير مكتمل بالآجور، وتقوم المنصة في ثوانٍ بتحويله لصورة واقعية (3D Render) تظهر للعميل كيف سيبدو بعد التبليط والصباغة والفرش، مما يسهل إقناع العميل بقراراتك الهندسية!' },
+      { q: 'ماذا يقدم لي "المستشار الهندسي الذكي" في باقة VIP؟', a: 'هو شريك استراتيجي خاص بمكتبك يعمل بالذكاء الاصطناعي؛ يحلل ورشاتك النشطة، يصيغ لك الإنذارات والمحاضر القانونية بضغطة زر، ويقدم لك استشارات فورية في ضوابط التعمير، حساب الكميات، وتقسيم أتعاب العقود.' },
+      { q: 'هل بيانات وتصاميم عملائي آمنة على المنصة؟', a: 'نعم، نستخدم تشفيراً سحابياً متقدماً لحماية جميع المخططات الهندسية والتقارير المرفوعة، ولا يمكن لأي طرف خارجي الاطلاع عليها.' }
     ],
 
-    // Chat
-    chatHeader: "🤖 المساعد الذكي",
-    chatPlaceholder: "اكتب استفسارك هنا...",
+    // VIP AI Co-Pilot
+    chatHeader: "👑 الشريك الهندسي الذكي (VIP)",
+    chatSubHeader: "متصل ببيانات مكتبك مباشرة",
+    chatPlaceholder: "استشر شريكك (مثال: صغ إنذاراً للمقاول، احسب أتعاب فيلا...)",
     chatSend: "إرسال",
-    chatWelcome: "أهلاً بك يا مهندس! أنا مساعدك الذكي من منصة SouqBTP. كيف يمكنني مساعدتك اليوم لاختيار الباقة الأنسب لمكتبك؟",
-    chatQuick1: "❓ هل تقارير الـ GPS معترف بها قانونياً؟",
-    chatQuick2: "❓ كيف تتم الترقية وتفعيل الميزات؟",
-    chatQuick3: "❓ هل أستطيع الإلغاء متى شئت؟",
-    
+    copyBtn: "📋 نسخ النص",
+    copiedBtn: "✅ تم النسخ!",
+    chatQuick1: "⚖️ صياغة إنذار تقني لمقاول بسبب مخالفة",
+    chatQuick2: "📊 تحليل وضعية ورشاتي النشطة وتوصيات اليوم",
+    chatQuick3: "💼 هيكلة دفعات أتعاب المكتب لحماية حقوقي",
+    chatQuick4: "📐 المعايير القياسية لخلطة الخرسانة والحديد",
+
     // Checkout
     checkoutTotal: "المبلغ الإجمالي للاقتطاع:",
-    perMonth: "شهرياً",
-    perYear: "سنوياً",
+    perMonth: "شهر",
+    perYear: "سنة",
+    periodMonthly: "شهرياً",
+    periodAnnual: "سنوياً",
     agencyNameLabel: "اسم المكتب الهندسي / الشركة",
     agencyNamePlace: "مثال: Bureau d'Architecture Al Omran",
     iceLabel: "رقم التعريف الموحد ICE (للفوترة - اختياري)",
     icePlace: "000000000000000",
-    secureData: "🔒 بياناتك مشفرة ومحمية بالكامل.",
-    
-    successMsg: "تم ترقية اشتراكك بنجاح! استمتع بكافة الميزات الجديدة.",
-    errorMsg: "حدث خطأ أثناء معالجة الطلب. يرجى المحاولة لاحقاً."
+    secureData: "🔒 بياناتك مشفرة ومحمية بالكامل."
   },
 
   fr: {
     pageTitle: "Transformez votre cabinet en puissance technologique 📐",
-    pageSubtitle: "Investissez dans votre interface professionnelle. Rejoignez l'élite des architectes utilisant la réalité augmentée.",
+    pageSubtitle: "Investissez dans votre image professionnelle. Rejoignez l'élite des architectes au Maroc utilisant la réalité augmentée.",
     badgeNew: "Édition Ingénierie v2.0 🚀",
     socialProof: "Plus de 200 bureaux d'études font confiance à notre plateforme.",
-    monthly: "Mensuel",
-    annual: "Annuel",
+    monthly: "Paiement mensuel",
+    annual: "Paiement annuel",
     saveBadge: "🎁 Économisez 30% en annuel + 2 mois offerts",
     currentPlan: "Plan Actuel",
-    upgradeNow: "S'abonner",
+    upgradeNow: "Choisir ce plan",
+    upgradePro: "Devenir Pro",
+    upgradeVip: "Rejoindre l'Élite VIP",
     activePlan: "✅ Plan Actif",
     checkoutTitle: "Confirmer l'Abonnement",
-    payWithCard: "💳 Carte (Bientôt)",
+    payWithCard: "💳 Carte (Utajir) - Bientôt",
     payBank: "🏦 Virement Bancaire",
     processing: "⏳ Activation en cours...",
     confirmPayment: "✅ Confirmer et Payer",
     close: "✖",
-    
+
+    proAiTooltip: "Impressionnez vos clients avec des rendus réalistes à partir de leurs plans !",
+    vipAiTooltipTitle: "Sans limites !",
+    vipAiTooltipDesc: "Créez une infinité de propositions réalistes pour vos clients.",
+
     whitelabelTitle: "Documentez avec votre propre marque 🏢",
-    whitelabelDesc: "Exclusivement en Elite : Vos clients ne verront plus le logo SouqBTP. Tous vos rapports d'ingénierie et preuves GPS porteront le logo de votre cabinet en filigrane (Whitelabel).",
+    whitelabelDesc: "Exclusivement dans le pack Élite (VIP) : Vos clients ne verront plus le logo SouqBTP. Tous les rapports, PV de chantier et preuves GPS porteront le logo et le nom de votre cabinet en filigrane (Whitelabel).",
     yourLogo: "Votre Logo",
-    engineerSeal: "Sceau Ingénieur: ✔️",
-    
-    comparisonTitle: "Comparaison Détaillée",
+    wlImagePlaceholder: "[Photo du chantier avec superposition]",
+    engineerSeal: "Sceau de l'architecte : ✔️",
+
+    comparisonTitle: "Comparaison Détaillée des Fonctionnalités",
     featColumn: "Fonctionnalité",
     feat1: "Gestion des chantiers",
     feat2: "Salle Live (AR)",
-    feat3: "Règle & Mesures",
+    feat3: "Outil Règle & Mesures",
     feat4: "Rapports PDF (Sceau GPS)",
     feat5: "Intelligence Artificielle (AI)",
     feat6: "Enregistrement vidéo (MP4)",
     feat7: "Marque Blanche (Whitelabel)",
-    feat8: "Gestionnaire de compte dédié",
-    valLimit: "Limité (5/mois)",
+    feat8: "Partenaire IA & Gestionnaire dédié",
+    val3Month: "3 / mois",
+    valLimit: "Limité (5 fois)",
     valUnlimitAI: "✔ Illimité",
-    valMonthly: "/mois",
     valUnlimit: "Illimité",
-    
-    faqTitle: "Foire Aux Questions",
+
+    faqTitle: "Questions Fréquentes sur les Abonnements",
     faqs: [
-      { q: 'Puis-je annuler ou modifier mon abonnement ?', a: 'Absolument ! Aucun engagement à long terme. Vous pouvez annuler ou modifier votre plan à tout moment.' },
-      { q: 'Comment fonctionne le "Sceau Légal GPS" ?', a: 'L\'application enregistre les coordonnées exactes et les crypte sur le rapport PDF pour fournir une preuve irréfutable.' },
-      { q: 'Qu\'est-ce que l\'AI Render ?', a: 'L\'IA transforme un salon brut en un rendu 3D réaliste en quelques secondes pour convaincre vos clients.' },
-      { q: 'Mes données sont-elles sécurisées ?', a: 'Oui, nous utilisons un cryptage (AES-256) pour protéger tous vos plans et rapports sur le cloud.' },
-      { q: 'Quels sont les moyens de paiement ?', a: 'Nous acceptons les virements bancaires, et bientôt le paiement par carte (CMI).' }
+      { q: 'Puis-je annuler ou modifier mon abonnement plus tard ?', a: 'Absolument ! Aucun contrat abusif. Vous pouvez évoluer, réduire ou arrêter votre abonnement à tout moment depuis vos paramètres.' },
+      { q: 'Comment fonctionne la "Certification Légale GPS" ?', a: 'Dans les packs Pro et Elite, l\'application enregistre les coordonnées exactes (Lat/Long) et l\'heure, puis les imprime sur le PV PDF avec la capture en direct.' },
+      { q: 'Qu\'est-ce que l\'AI Render et comment m\'aide-t-il ?', a: 'C\'est un outil intégré à la salle live. Photographiez une pièce brute en briques et transformez-la en quelques secondes en rendu 3D réaliste.' },
+      { q: 'Que m\'apporte le "Partenaire IA VIP" ?', a: 'Un copilote stratégique exclusif : il analyse vos chantiers actifs, rédige vos mises en demeure et réserves techniques en un clic, et structure vos contrats d\'honoraires.' },
+      { q: 'Les données et plans de mes clients sont-ils sécurisés ?', a: 'Oui, toutes vos données et plans sont cryptés sur des serveurs cloud hautement sécurisés.' }
     ],
 
-    chatHeader: "🤖 Assistant IA",
-    chatPlaceholder: "Posez votre question...",
+    chatHeader: "👑 Co-Pilote Architectural (VIP)",
+    chatSubHeader: "Connecté aux données de votre cabinet",
+    chatPlaceholder: "Consultez votre partenaire (ex: Rédiger une mise en demeure...)",
     chatSend: "Envoyer",
-    chatWelcome: "Bonjour ! Je suis l'assistant intelligent. Comment puis-je vous aider à choisir le bon plan ?",
-    chatQuick1: "❓ Les rapports GPS sont-ils légaux ?",
-    chatQuick2: "❓ Comment se passe l'activation ?",
-    chatQuick3: "❓ Puis-je annuler à tout moment ?",
-    
-    checkoutTotal: "Montant total :",
-    perMonth: "Mensuel",
-    perYear: "Annuel",
-    agencyNameLabel: "Nom du cabinet d'études / Agence",
+    copyBtn: "📋 Copier",
+    copiedBtn: "✅ Copié !",
+    chatQuick1: "⚖️ Rédiger une mise en demeure technique (PV)",
+    chatQuick2: "📊 Bilan de mes chantiers actifs & priorités",
+    chatQuick3: "💼 Structurer mes tranches d'honoraires",
+    chatQuick4: "📐 Dosages béton & ratios d'armatures standards",
+
+    checkoutTotal: "Montant total à régler :",
+    perMonth: "mois",
+    perYear: "an",
+    periodMonthly: "mensuellement",
+    periodAnnual: "annuellement",
+    agencyNameLabel: "Nom du cabinet d'études / Société",
     agencyNamePlace: "Ex: Bureau d'Architecture Al Omran",
-    iceLabel: "Numéro ICE (Optionnel)",
+    iceLabel: "Identifiant Commun de l'Entreprise ICE (Optionnel)",
     icePlace: "000000000000000",
-    secureData: "🔒 Vos données sont entièrement cryptées.",
-    
-    successMsg: "Abonnement mis à niveau avec succès!",
-    errorMsg: "Une erreur est survenue lors du traitement."
+    secureData: "🔒 Vos données sont entièrement cryptées et protégées."
   },
 
   en: {
     pageTitle: "Turn your firm into a technological powerhouse 📐",
-    pageSubtitle: "Invest in your professional interface. Join the elite architects using AR.",
+    pageSubtitle: "Invest in your professional interface. Join the elite architects in Morocco using AR to elevate projects and save time.",
     badgeNew: "Engineering Edition v2.0 🚀",
     socialProof: "Over 200 engineering firms trust our platform today.",
-    monthly: "Monthly",
-    annual: "Annually",
-    saveBadge: "🎁 Save 30% Annually + 2 months free",
+    monthly: "Monthly billing",
+    annual: "Annual billing",
+    saveBadge: "🎁 Save 30% with Annual Billing + 2 months free",
     currentPlan: "Current Plan",
-    upgradeNow: "Upgrade",
-    activePlan: "✅ Currently Active",
+    upgradeNow: "Select Plan",
+    upgradePro: "Subscribe as Pro",
+    upgradeVip: "Join Elite VIP Now",
+    activePlan: "✅ Plan Active Now",
     checkoutTitle: "Confirm Subscription",
-    payWithCard: "💳 Card (Soon)",
+    payWithCard: "💳 Card (Utajir) - Soon",
     payBank: "🏦 Bank Transfer",
     processing: "⏳ Magic Activation...",
     confirmPayment: "✅ Confirm & Pay",
     close: "✖",
-    
-    whitelabelTitle: "Document with your own brand 🏢",
-    whitelabelDesc: "Exclusive to Elite: Your clients won't see the SouqBTP logo. Reports & GPS proofs will carry your own logo as a watermark (Whitelabel).",
+
+    proAiTooltip: "Impress clients with realistic room renders by uploading their plans!",
+    vipAiTooltipTitle: "Unlimited!",
+    vipAiTooltipDesc: "Generate endless realistic design proposals for your clients.",
+
+    whitelabelTitle: "Document your work with your own brand 🏢",
+    whitelabelDesc: "Exclusively in the Elite (VIP) tier: Your clients will never see the SouqBTP logo. All engineering reports, site PVs, and GPS proofs will carry your firm's logo and name as a watermark (Whitelabel).",
     yourLogo: "Your Logo",
-    engineerSeal: "Engineer Seal: ✔️",
-    
-    comparisonTitle: "Detailed Comparison",
-    featColumn: "Feature",
+    wlImagePlaceholder: "[Site photo with AR overlay]",
+    engineerSeal: "Architect Seal: ✔️",
+
+    comparisonTitle: "Detailed Feature Comparison",
+    featColumn: "Engineering Feature",
     feat1: "Workshops Management",
-    feat2: "Live Room (AR)",
-    feat3: "Ruler & Measurements",
-    feat4: "PDF Reports (GPS Seal)",
-    feat5: "AI Render",
-    feat6: "Session Recording (MP4)",
-    feat7: "Whitelabel Branding",
-    feat8: "Dedicated Account Manager",
-    valLimit: "Limited (5/mo)",
+    feat2: "Field Live Room (AR)",
+    feat3: "Smart Ruler & Measurement",
+    feat4: "PDF Reports with GPS Seal",
+    feat5: "Artificial Intelligence (AI)",
+    feat6: "Session Recording (MP4 Video)",
+    feat7: "Custom Branding (Whitelabel)",
+    feat8: "Personal AI Partner & Account Manager",
+    val3Month: "3 / month",
+    valLimit: "Limited (5 times)",
     valUnlimitAI: "✔ Unlimited",
-    valMonthly: "/month",
     valUnlimit: "Unlimited",
-    
+
     faqTitle: "Frequently Asked Questions",
     faqs: [
-      { q: 'Can I cancel or switch my plan later?', a: 'Absolutely! No long-term contracts. Cancel, upgrade, or downgrade anytime from your dashboard.' },
-      { q: 'How does the "GPS Legal Seal" work?', a: 'The app records exact coordinates and time, encrypting them into the PDF report to provide undeniable proof.' },
-      { q: 'What is AI Render?', a: 'The AI transforms an unfinished brick room into a realistic 3D render in seconds.' },
-      { q: 'Are my clients data secure?', a: 'Yes, we use military-grade encryption (AES-256) to protect all files on secure cloud servers.' },
-      { q: 'What payment methods are supported?', a: 'We currently support direct bank transfers, and will soon enable credit cards.' }
+      { q: 'Can I cancel or change my plan later?', a: 'Absolutely! No lock-in contracts. You can upgrade, downgrade, or cancel anytime directly from your account settings.' },
+      { q: 'How does the "GPS Legal Seal" work?', a: 'In Pro and Elite plans, the app records exact coordinates and timestamps, encrypting and printing them onto the PDF report alongside the live capture.' },
+      { q: 'What is AI Render and how does it help me?', a: 'Built into the live room, it transforms unfinished brick rooms into realistic 3D renders in seconds, helping clients visualize your decisions.' },
+      { q: 'What does the "VIP AI Partner" do for my office?', a: 'An exclusive strategic co-pilot: it analyzes your active workshops, drafts legal technical notices in one click, and advises on structural ratios and fee contracts.' },
+      { q: 'Are my clients\' designs and data secure?', a: 'Yes, we use advanced cloud encryption to protect all uploaded blueprints and reports.' }
     ],
 
-    chatHeader: "🤖 Smart Assistant",
-    chatPlaceholder: "Type your query...",
+    chatHeader: "👑 VIP Architectural Co-Pilot",
+    chatSubHeader: "Synced with your firm's live data",
+    chatPlaceholder: "Ask your partner (e.g., Draft contractor notice, fee stages...)",
     chatSend: "Send",
-    chatWelcome: "Hello! I am your SouqBTP smart assistant. How can I help you choose the right plan today?",
-    chatQuick1: "❓ Are GPS reports legally recognized?",
-    chatQuick2: "❓ How does activation work?",
-    chatQuick3: "❓ Can I cancel anytime?",
-    
-    checkoutTotal: "Total Amount:",
-    perMonth: "Monthly",
-    perYear: "Annually",
+    copyBtn: "📋 Copy Text",
+    copiedBtn: "✅ Copied!",
+    chatQuick1: "⚖️ Draft formal technical notice for contractor",
+    chatQuick2: "📊 Analyze my active workshops & priorities",
+    chatQuick3: "💼 Structure architectural fee milestones",
+    chatQuick4: "📐 Standard concrete & steel reinforcement ratios",
+
+    checkoutTotal: "Total amount due:",
+    perMonth: "month",
+    perYear: "year",
+    periodMonthly: "monthly",
+    periodAnnual: "annually",
     agencyNameLabel: "Engineering Firm / Company Name",
     agencyNamePlace: "E.g.: Bureau d'Architecture Al Omran",
-    iceLabel: "ICE ID Number (Optional)",
+    iceLabel: "ICE Tax ID (Optional)",
     icePlace: "000000000000000",
-    secureData: "🔒 Your data is fully encrypted and protected.",
-    
-    successMsg: "Subscription upgraded successfully!",
-    errorMsg: "An error occurred while processing."
+    secureData: "🔒 Your data is fully encrypted and protected."
   }
 };
-
-const PLANS = [
-  {
-    id: 'basic',
-    name: { ar: 'الباقة الأساسية', fr: 'Basse (Basic)', en: 'Basic' },
-    priceMonthly: 139,
-    priceAnnual: 1390,
-    icon: '🌱',
-    badge: null,
-    features: {
-      ar: ['3 ورشات عمل نشطة شهرياً', 'الغرفة التفاعلية الميدانية (AR)', 'رفع مخطط واحد لكل ورشة', 'دعم عبر البريد الإلكتروني'],
-      fr: ['3 chantiers actifs/mois', 'Salle interactive (AR)', '1 plan par chantier', 'Support par e-mail'],
-      en: ['3 active projects/month', 'Interactive Live Room (AR)', '1 plan per project', 'Email Support']
-    }
-  },
-  {
-    id: 'pro',
-    name: { ar: 'باقة المحترفين (Pro)', fr: 'Professionnel (Pro)', en: 'Pro' },
-    priceMonthly: 349,
-    priceAnnual: 3490,
-    icon: '🔥',
-    badge: { ar: 'الأكثر طلباً 🔥', fr: 'Populaire 🔥', en: 'Most Popular 🔥' },
-    features: {
-      ar: ['ورشات عمل غير محدودة', 'ميزة الطبقات الشفافة (Layers)', 'تفعيل المسطرة والقياس الدقيق', 'تقارير PDF بختم GPS الرسمي', '5 رندر ذكاء اصطناعي/شهر', '5 جيجابايت تخزين سحابي'],
-      fr: ['Chantiers illimités', 'Fonction calques (Layers)', 'Règle et mesures précises', 'Rapports PDF (Sceau GPS)', '5 Rendu IA/mois', '5 Go Stockage Cloud'],
-      en: ['Unlimited Projects', 'Transparent Layers', 'Accurate Ruler Tool', 'PDF Reports with GPS', '5 AI Renders/month', '5GB Cloud Storage']
-    }
-  },
-  {
-    id: 'vip',
-    name: { ar: 'النخبة (Elite VIP)', fr: 'Élite (VIP)', en: 'Elite VIP' },
-    priceMonthly: 699,
-    priceAnnual: 6990,
-    icon: '👑',
-    badge: { ar: '👑 VIP حصري', fr: '👑 VIP Exclusif', en: '👑 VIP Exclusive' },
-    features: {
-      ar: ['كل مميزات باقة المحترفين', 'ذكاء اصطناعي (لا محدود)', 'تسجيل الجلسات (فيديو MP4)', 'شعار مكتبك على التقارير (Whitelabel)', 'مدير حساب شخصي للدعم'],
-      fr: ['Toutes les fonctionnalités Pro', 'IA illimitée', 'Enregistrement de sessions (MP4)', 'Marque Blanche (Whitelabel)', 'Gestionnaire de compte dédié'],
-      en: ['All Pro Features', 'Unlimited AI Renders', 'Session Recording (MP4)', 'Whitelabel Reports', 'Dedicated Account Manager']
-    }
-  }
-];
 
 export default function ArchitectSubscription() {
   const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
   const { language = 'ar' } = useSettingsStore();
-  
-  const isRtl = language === 'ar'; 
-  const t = translations[language] || translations.en;
+
+  const isRtl = language === 'ar';
+  const t = translations[language] || translations.ar;
 
   const [isAnnual, setIsAnnual] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   const [agencyName, setAgencyName] = useState('');
   const [agencyICE, setAgencyICE] = useState('');
 
+  // VIP AI Partner State
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState([]);
-  const messagesEndRef = useRef(null);
   const [chatInput, setChatInput] = useState('');
+  const [copiedIndex, setCopiedIndex] = useState(null);
+  const [officeStats, setOfficeStats] = useState({ activeCount: 0, projectNames: [] });
+  const messagesEndRef = useRef(null);
 
+  // Animated Prices State
   const [priceBasic, setPriceBasic] = useState(139);
   const [pricePro, setPricePro] = useState(349);
   const [priceVip, setPriceVip] = useState(699);
-  const [openFaq, setOpenFaq] = useState(null);
 
   const [currentPlanId, setCurrentPlanId] = useState('basic');
 
+  // جلب الباقة الحقيقية + إحصائيات المكتب الحية للمستشار الذكي
   useEffect(() => {
-    setMessages([{ sender: 'bot', text: t.chatWelcome }]);
-  }, [language]);
+    const loadArchitectContext = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const targetUserId = profile?.user_id || user?.id;
 
-  useEffect(() => {
-    const fetchDirectPlan = async () => {
-      if (profile?.id) {
-        const { data } = await supabase.from('architects').select('subscription_plan').eq('user_id', profile.id).single();
-        if (data) setCurrentPlanId(data.subscription_plan?.toLowerCase() || 'basic');
-      } else {
-         const { data: { user } } = await supabase.auth.getUser();
-         if(user) {
-            const { data } = await supabase.from('architects').select('subscription_plan').eq('user_id', user.id).single();
-            if (data) setCurrentPlanId(data.subscription_plan?.toLowerCase() || 'basic');
-         }
+      if (targetUserId) {
+        const { data: archData } = await supabase
+          .from('architects')
+          .select('*')
+          .eq('user_id', targetUserId)
+          .maybeSingle();
+
+        if (archData) {
+          setCurrentPlanId(archData.subscription_plan?.toLowerCase() || 'basic');
+          setAgencyName(archData.agency_name || '');
+        }
+
+        const archId = archData?.id || profile?.id || targetUserId;
+        const { data: convs } = await supabase
+          .from('conversations')
+          .select('project_name, status')
+          .eq('architect_id', archId);
+
+        if (convs) {
+          const active = convs.filter(c => c.project_name && c.project_name.trim() !== '');
+          setOfficeStats({
+            activeCount: active.length,
+            projectNames: active.slice(0, 3).map(c => c.project_name)
+          });
+        }
       }
     };
-    fetchDirectPlan();
+    loadArchitectContext();
   }, [profile]);
+
+  // رسالة الترحيب الذكية المخصصة باسم المهندس ومكتبه
+  useEffect(() => {
+    const engName = profile?.full_name || (isRtl ? 'يا باشمهندس' : 'Architecte');
+    const firm = profile?.agency_name || agencyName || (isRtl ? 'مكتبكم الهندسي' : 'votre cabinet');
+
+    let welcomeText = '';
+    if (language === 'ar') {
+      welcomeText = `أهلاً بك يا ${engName} 👑! أنا شريكك الاستراتيجي ومستشارك الهندسي الخاص بـ (${firm}). لدي وصول مباشر لبيانات مكتبك (${officeStats.activeCount} ورشات نشطة). كيف نرفع إنتاجية المكتب اليوم؟`;
+    } else if (language === 'fr') {
+      welcomeText = `Bienvenue ${engName} 👑 ! Je suis votre copilote stratégique dédié au cabinet (${firm}). Vous avez actuellement ${officeStats.activeCount} chantiers actifs. Que préparons-nous aujourd'hui ?`;
+    } else {
+      welcomeText = `Welcome ${engName} 👑! I am your strategic AI co-pilot for (${firm}). You currently have ${officeStats.activeCount} active workshops. How can I assist your practice today?`;
+    }
+
+    setMessages([{ sender: 'bot', text: welcomeText }]);
+  }, [language, profile, agencyName, officeStats.activeCount, isRtl]);
 
   useEffect(() => {
     if (messagesEndRef.current && isChatOpen) {
@@ -357,7 +378,10 @@ export default function ArchitectSubscription() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const updates = { subscription_plan: selectedPlan.code };
+          const updates = {
+            subscription_plan: selectedPlan.code,
+            updated_at: new Date().toISOString()
+          };
           if (agencyName) updates.agency_name = agencyName;
           await supabase.from('architects').update(updates).eq('user_id', user.id);
           if (fetchArchitectData) await fetchArchitectData(user.id);
@@ -370,27 +394,89 @@ export default function ArchitectSubscription() {
     }, 1500);
   };
 
-  const sendAiQuestion = (qText) => {
-    setMessages(prev => [...prev, { sender: 'user', text: qText }]);
-    setMessages(prev => [...prev, { sender: 'bot', text: '...', isTyping: true }]);
+  // 🧠 المحرك العبقري للمستشار الهندسي (VIP Co-Pilot Engine)
+  const generateSmartPartnerReply = (typeOrQuery) => {
+    const firm = profile?.agency_name || agencyName || 'المكتب الهندسي';
+    const eng = profile?.full_name || 'المهندس المشرف';
+    const today = new Date().toLocaleDateString(isRtl ? 'ar-MA' : 'fr-MA');
+
+    if (typeOrQuery === 1 || String(typeOrQuery).includes('إنذار') || String(typeOrQuery).includes('مقاول') || String(typeOrQuery).includes('mise en demeure')) {
+      if (language === 'fr') {
+        return {
+          text: `Voici un modèle de réserve technique officielle prêt à être inséré dans votre PV ou envoyé à l'entreprise :`,
+          copyable: `📌 AVIS TECHNIQUE & MISE EN DEMEURE\nDate : ${today}\nCabinet : ${firm} (${eng})\n\nSuite à notre inspection visuelle et vérification par superposition AR, nous constatons une non-conformité par rapport aux plans d'exécution validés.\n⚠️ Il est demandé à l'entreprise d'arrêter immédiatement le coulage sur la zone concernée et de procéder aux rectifications sous 48h avant nouvelle réception.\n\n[Sceau Officiel - ${firm}]`
+        };
+      }
+      return {
+        text: `إليك صياغة قانونية وتقنية شديدة اللهجة وجاهزة للنسخ لإرسالها للمقاول أو إدراجها في محضر الورش (PV) لحماية مسؤوليتك العشرية:`,
+        copyable: `📌 إشعار تقني وإنذار بعدم المطابقة\nالتاريخ: ${today}\nصادر عن: ${firm} - إشراف: ${eng}\n\nبناءً على المعاينة الميدانية والمطابقة الرقمية للمخططات المرخصة، سجلنا مخالفة صريحة للضوابط التقنية في الأشغال الجارية.\n⚠️ يُطلب من المقاول التوقف الفوري عن إتمام هذه المرحلة وتصحيح الوضعية وفق المخطط التنفيذي في أجل أقصاه 48 ساعة، مع إخلاء مسؤولية مكتب الدراسات عن أي تجاوز غير مصادق عليه.\n\n[ختم ومصادقة: ${firm}]`
+      };
+    }
+
+    if (typeOrQuery === 2 || String(typeOrQuery).includes('ورشات') || String(typeOrQuery).includes('تحليل') || String(typeOrQuery).includes('chantiers')) {
+      const listStr = officeStats.projectNames.length > 0 ? officeStats.projectNames.join('، ') : (isRtl ? 'لا توجد ورشات مسماة بعد' : 'Aucun chantier nommé');
+      if (language === 'fr') {
+        return {
+          text: `📊 Bilan en temps réel pour (${firm}) :\n• Chantiers actifs supervisés : ${officeStats.activeCount}\n• Projets récents : ${listStr}\n\n💡 Conseil du partenaire : Planifiez une session Live AR de 10 minutes avec vos clients actifs avant chaque coulage de dalle pour générer un PV horodaté GPS. Cela réduit les litiges de 85%.`
+        };
+      }
+      return {
+        text: `📊 تقرير النبض الحي لـ (${firm}):\n• عدد الورشات النشطة حالياً: ${officeStats.activeCount} ورشات.\n• أبرز الملفات المفتوحة: (${listStr}).\n\n💡 توصية شريكك الذكي اليوم:\nقبل صب أي سقف (Dalle) هذا الأسبوع، اطلب من العميل فتح الغرفة الحية (Live AR) لمدة 5 دقائق، وفعّل المخطط الشفاف للتحقق من أماكن الأعمدة، ثم اضغط "ختم GPS". هذا الإجراء يوثق أتعابك ويحميك قانونياً 100%!`
+      };
+    }
+
+    if (typeOrQuery === 3 || String(typeOrQuery).includes('أتعاب') || String(typeOrQuery).includes('عقد') || String(typeOrQuery).includes('honoraires')) {
+      if (language === 'fr') {
+        return {
+          text: `💼 Répartition optimale des honoraires recommandée pour protéger votre trésorerie :`,
+          copyable: `📋 ÉCHÉANCIER DES HONORAIRES (${firm}) :\n1. Signature & Esquisse (APS) : 20%\n2. Dépôt Autorisation de Construire (APD) : 30%\n3. Obtention du Permis & Plans d'exécution : 20%\n4. Suivi de chantier (fondations à gros œuvres) : 20%\n5. Réception provisoire & Permis d'habiter : 10%`
+        };
+      }
+      return {
+        text: `💼 كشريكك الإداري، أنصحك باعتماد هذه الهيكلة الذكية للأتعاب في عقودك الجديدة لضمان السيولة وعدم تأخر العملاء في الأداء:`,
+        copyable: `📋 جدول استحقاق الأتعاب الهندسية (${firm}):\n1️⃣ الدفعة الأولى (20%): عند فتح الملف والمصادقة على التصميم الأولي (Esquisse).\n2️⃣ الدفعة الثانية (30%): عند إيداع ملف رخصة البناء بالمنصة.\n3️⃣ الدفعة الثالثة (20%): فور استصدار رخصة البناء وتسليم المخططات التنفيذية.\n4️⃣ الدفعة الرابعة (20%): مقسمة على زيارات تتبع الأشغال الكبرى (الأساسات والخرسانة).\n5️⃣ الدفعة الأخيرة (10%): عند التسليم النهائي وشهادة المطابقة (Permis d'habiter).`
+      };
+    }
+
+    if (typeOrQuery === 4 || String(typeOrQuery).includes('خرسانة') || String(typeOrQuery).includes('حديد') || String(typeOrQuery).includes('béton')) {
+      return {
+        text: isRtl
+          ? `📐 المرجع السريع للمعايير القياسية في الورش:\n• خرسانة المسلحة (Béton Armé B25): 350 كغ إسمنت CPJ45 لكل متر مكعب + 800 لتر حصى (Gravier) + 400 لتر رمل + ~175 لتر ماء.\n• خرسانة النظافة (Béton de propreté): 250 كغ إسمنت/م³ بسمك 10 سم.\n• نسبة الحديد التقديرية: الألواح (Dalles) 80-100 كغ/م³ | الأعمدة (Poteaux) 120-150 كغ/م³.\n• الارتداد القانوني للأبنية السكنية: لا يقل الفناء (Patio/Cour) عن 3x3 متر أو حسب ضابط التعمير المحلي.`
+          : `📐 Mémo Technique Chantier :\n• Béton Armé (B25) : Dosage 350 kg/m³ (CPJ45), 800L gravier, 400L sable.\n• Béton de propreté : 250 kg/m³ (épaisseur 10cm).\n• Ratios d'acier moyens : Dalles 80-100 kg/m³ | Poteaux 120-150 kg/m³ | Semelles 90-110 kg/m³.`
+      };
+    }
+
+    // استجابة ذكية لأي سؤال حر يكتبه المهندس
+    return {
+      text: isRtl
+        ? `🧠 تحليل الشريك الهندسي لطلبك ("${typeOrQuery}"):\nبصفتك عضواً في نخبة VIP (${firm})، أنصحك بتوثيق هذه النقطة فوراً عبر الغرفة الميدانية (AR) وإرفاقها بختم الإحداثيات (GPS). هل ترغب في أن أصيغ لك بنداً قانونياً مخصصاً حول "${typeOrQuery}" لإدراجه في محضر الورشة؟`
+        : `🧠 Analyse du Co-Pilote pour ("${typeOrQuery}") :\nEn tant que membre VIP (${firm}), je vous recommande de documenter ce point via la Salle Live AR avec sceau GPS.`
+    };
+  };
+
+  const triggerPartnerAction = (actionKey, displayQuestion) => {
+    setMessages(prev => [...prev, { sender: 'user', text: displayQuestion }]);
+    setMessages(prev => [...prev, { sender: 'bot', text: '⏳ ...', isTyping: true }]);
 
     setTimeout(() => {
-      let answer = isRtl ? "سأقوم بتوصيلك بفريق الدعم التقني لمزيد من التفاصيل 📞" : "I will connect you with our tech support for more details 📞";
-      
-      if(qText.includes('GPS') || qText.includes('légal')) answer = isRtl ? "نعم بكل تأكيد! ⚖️ تقارير الـ GPS في منصتنا تقوم بتشفير (خط العرض، الطول، والتاريخ) كعلامة مائية لا يمكن تزويرها." : "Yes! GPS reports encrypt coordinates and timestamps providing undeniable legal proof.";
-      if(qText.includes('تفعيل') || qText.includes('activation')) answer = isRtl ? "الأمر يحدث في لمح البصر ⚡! بمجرد تأكيد الدفع يفتح النظام الميزات الجديدة فوراً." : "Instant activation ⚡! The system unlocks new features immediately upon payment confirmation.";
-      if(qText.includes('إلغاء') || qText.includes('cancel') || qText.includes('annuler')) answer = isRtl ? "راحتك هي أولويتنا 🤝. نعم، يمكنك إيقاف التجديد متى شئت من إعدادات حسابك." : "Your comfort is our priority 🤝. You can cancel renewal anytime from your settings.";
-
+      const replyObj = generateSmartPartnerReply(actionKey);
       setMessages(prev => prev.filter(m => !m.isTyping));
-      setMessages(prev => [...prev, { sender: 'bot', text: answer }]);
-    }, 1200);
+      setMessages(prev => [...prev, { sender: 'bot', text: replyObj.text, copyable: replyObj.copyable }]);
+    }, 900);
   };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
-    sendAiQuestion(chatInput);
+    const q = chatInput;
     setChatInput('');
+    triggerPartnerAction(q, q);
+  };
+
+  const handleCopyText = (text, idx) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(idx);
+    setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   return (
@@ -428,7 +514,7 @@ export default function ArchitectSubscription() {
         .sub-header p { color: #94a3b8; font-size: 1.15rem; max-width: 700px; margin: 0 auto; line-height: 1.6; }
 
         .social-proof { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 25px; font-size: 0.9rem; color: #cbd5e1; background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 30px; width: fit-content; margin-left: auto; margin-right: auto; border: 1px solid var(--glass-border); backdrop-filter: blur(5px); }
-        .pulse-dot { width: 10px; height: 10px; background: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px #10b981; animation: pulse 1.5s infinite; }
+        .pulse-dot { width: 10px; height: 10px; background: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px #10b981; animation: pulse 1.5s infinite; margin: 0 6px; }
         @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
 
         .billing-toggle-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 60px; }
@@ -477,7 +563,7 @@ export default function ArchitectSubscription() {
         .basic-btn:hover { background: rgba(255,255,255,0.2); }
 
         .pro-card { border: 2px solid #38bdf8; border-top: 4px solid #38bdf8; transform: scale(1.05); background: rgba(15, 23, 42, 0.8); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15); z-index: 5; }
-        .popular-ribbon { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: #f59e0b; color: #000; padding: 5px 25px; border-radius: 50px; font-weight: 900; font-size: 0.9rem; box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4); }
+        .popular-ribbon { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: #f59e0b; color: #000; padding: 5px 25px; border-radius: 50px; font-weight: 900; font-size: 0.9rem; box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4); white-space: nowrap; }
         .pro-btn { background: #38bdf8; color: #0f172a; box-shadow: 0 10px 25px rgba(56, 189, 248, 0.3); }
         .pro-btn:hover { background: #0ea5e9; color: white; }
 
@@ -491,8 +577,6 @@ export default function ArchitectSubscription() {
         .wl-text h2 { color: var(--gold); font-size: 2rem; margin-top: 0; }
         .wl-text p { color: #cbd5e1; line-height: 1.8; font-size: 1.05rem; }
         .wl-image { flex: 1; min-width: 300px; text-align: center; position: relative; }
-        .wl-image img { max-width: 100%; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); transform: rotate(2deg); transition: 0.3s; }
-        .wl-image img:hover { transform: rotate(0deg) scale(1.05); }
 
         .comparison-section { background: var(--navy-card); padding: 50px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); backdrop-filter: blur(15px); margin-bottom: 60px; }
         .comparison-section h2 { text-align: center; margin-bottom: 40px; font-weight: 900; color: #fff; font-size: 2rem; }
@@ -535,19 +619,30 @@ export default function ArchitectSubscription() {
         .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 15px 25px rgba(16,185,129,0.5); }
         .close-modal { position: absolute; top: 15px; right: 20px; background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; }
 
-        .ai-widget-btn { position: fixed; bottom: 30px; ${isRtl ? 'left: 30px;' : 'right: 30px;'} width: 60px; height: 60px; background: linear-gradient(135deg, #38bdf8, #8b5cf6); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; cursor: pointer; box-shadow: 0 10px 25px rgba(56,189,248,0.5); z-index: 1000; animation: floatBot 3s ease-in-out infinite; border: 2px solid rgba(255,255,255,0.2); }
+        /* 🤖 المساعد الذكي الحصري للنخبة VIP */
+        .ai-widget-btn { position: fixed; bottom: 30px; ${isRtl ? 'left: 30px;' : 'right: 30px;'} width: 65px; height: 65px; background: linear-gradient(135deg, #fbbf24, #d97706); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; cursor: pointer; box-shadow: 0 10px 30px rgba(251, 191, 36, 0.5); z-index: 1000; animation: floatBot 3s ease-in-out infinite; border: 2px solid #fff; }
         @keyframes floatBot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         
-        .ai-chat-window { display: none; position: fixed; bottom: 100px; ${isRtl ? 'left: 30px;' : 'right: 30px;'} width: 320px; background: var(--navy-card); border: 1px solid #38bdf8; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); z-index: 1000; backdrop-filter: blur(15px); overflow: hidden; animation: slideUp 0.3s ease-out; }
-        .ai-header { background: rgba(56, 189, 248, 0.1); padding: 15px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
-        .ai-header h4 { margin: 0; color: #38bdf8; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
-        .ai-messages { padding: 15px; height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
-        .msg-bot { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 15px 15px 0 15px; color: #e2e8f0; font-size: 0.9rem; align-self: flex-start; max-width: 85%; border: 1px solid var(--glass-border); }
-        .msg-user { background: rgba(56, 189, 248, 0.2); padding: 10px 15px; border-radius: 15px 15px 15px 0; color: #fff; font-size: 0.9rem; align-self: flex-end; max-width: 85%; border: 1px solid #38bdf8; }
+        .ai-chat-window { position: fixed; bottom: 110px; ${isRtl ? 'left: 30px;' : 'right: 30px;'} width: 370px; max-width: 92vw; background: rgba(15, 23, 42, 0.96); border: 2px solid var(--gold); border-radius: 22px; box-shadow: 0 25px 60px rgba(0,0,0,0.9); z-index: 1000; backdrop-filter: blur(20px); overflow: hidden; animation: slideUp 0.3s ease-out; display: flex; flex-direction: column; }
+        .ai-header { background: linear-gradient(90deg, rgba(251, 191, 36, 0.15), rgba(56, 189, 248, 0.1)); padding: 14px 18px; border-bottom: 1px solid rgba(251, 191, 36, 0.3); display: flex; justify-content: space-between; align-items: center; }
+        .ai-header h4 { margin: 0; color: var(--gold); font-size: 1rem; font-weight: 900; }
+        .ai-messages { padding: 15px; height: 270px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+        .msg-bot { background: rgba(255,255,255,0.06); padding: 12px 15px; border-radius: 15px 15px 0 15px; color: #e2e8f0; font-size: 0.88rem; align-self: flex-start; max-width: 90%; border: 1px solid var(--glass-border); line-height: 1.6; white-space: pre-line; }
+        .msg-user { background: rgba(251, 191, 36, 0.2); padding: 10px 15px; border-radius: 15px 15px 15px 0; color: #fff; font-size: 0.88rem; align-self: flex-end; max-width: 85%; border: 1px solid var(--gold); }
         
-        .ai-options { padding: 10px 15px 15px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--glass-border); }
-        .ai-option-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #38bdf8; padding: 8px; border-radius: 8px; font-family: 'Cairo'; cursor: pointer; transition: 0.2s; font-size: 0.85rem; text-align: ${isRtl ? 'right' : 'left'}; }
-        .ai-option-btn:hover { background: rgba(56, 189, 248, 0.1); border-color: #38bdf8; }
+        .copy-box { background: rgba(2, 6, 23, 0.85); border: 1px dashed var(--gold); border-radius: 10px; padding: 10px; margin-top: 8px; font-size: 0.8rem; color: #cbd5e1; white-space: pre-line; }
+        .copy-btn { margin-top: 8px; width: 100%; background: rgba(251, 191, 36, 0.2); color: var(--gold); border: 1px solid var(--gold); border-radius: 8px; padding: 6px; font-family: 'Cairo'; font-weight: bold; font-size: 0.8rem; cursor: pointer; transition: 0.2s; }
+        .copy-btn:hover { background: var(--gold); color: #000; }
+
+        .ai-options { padding: 10px 15px; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--glass-border); max-height: 145px; overflow-y: auto; }
+        .ai-option-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); color: #38bdf8; padding: 7px 10px; border-radius: 8px; font-family: 'Cairo'; cursor: pointer; transition: 0.2s; font-size: 0.8rem; text-align: ${isRtl ? 'right' : 'left'}; font-weight: bold; }
+        .ai-option-btn:hover { background: rgba(251, 191, 36, 0.15); border-color: var(--gold); color: var(--gold); }
+
+        @media (max-width: 900px) {
+            .pricing-cards { grid-template-columns: 1fr; }
+            .pro-card { transform: none; }
+            .sub-header h1 { font-size: 2rem; }
+        }
       `}</style>
 
       <div className="subscription-container">
@@ -574,60 +669,109 @@ export default function ArchitectSubscription() {
         </div>
 
         <div className="pricing-cards">
-          {PLANS.map((plan) => {
-            const isCurrent = currentPlanId === plan.id;
-            const price = plan.id === 'basic' ? priceBasic : plan.id === 'pro' ? pricePro : priceVip;
-            
-            return (
-              <div key={plan.id} className={`card ${plan.id}-card`}>
-                {plan.badge && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-sm font-black px-6 py-1.5 rounded-full">
-                    {plan.badge[language] || plan.badge.en}
-                  </div>
-                )}
-                <div className="card-header">
-                  <div className="tier-icon">{plan.icon}</div>
-                  <h3 style={plan.id === 'vip' ? { color: 'var(--gold)' } : {}}>{plan.name[language] || plan.name.en}</h3>
-                  <div className="price">
-                    <span className="currency">د.م</span>
-                    <span className="amount">{price}</span>
-                    <span className="period">/ {isAnnual ? t.perYear : t.perMonth}</span>
-                  </div>
-                </div>
-
-                <ul className="features-list">
-                  {(plan.features[language] || plan.features.en).map((feat, idx) => (
-                    <li key={idx}>
-                      <span className="check shrink-0 text-lg">✔️</span> {feat}
-                    </li>
-                  ))}
-                  
-                  {/* Dynamic Disabled Features for Lower Tiers */}
-                  {plan.id === 'basic' && (
-                    <>
-                      <li className="disabled">🔒 {t.feat3}</li>
-                      <li className="disabled">🔒 {t.feat4}</li>
-                      <li className="disabled">🔒 {t.feat5}</li>
-                    </>
-                  )}
-                  {plan.id === 'pro' && (
-                    <li className="disabled">🔒 {t.feat7}</li>
-                  )}
-                </ul>
-
-                <button 
-                  disabled={isCurrent}
-                  onClick={() => openCheckout(plan.id, plan.name[language] || plan.name.en, plan.id === 'basic' ? 139 : plan.id === 'pro' ? 349 : 699)}
-                  className={`sub-btn ${plan.id}-btn`}
-                  style={isCurrent ? { background: '#10b981', color: '#fff', border: 'none', cursor: 'not-allowed' } : {}}
-                >
-                  {isCurrent ? t.activePlan : t.upgradeNow}
-                </button>
+          {/* Basic Card */}
+          <div className="card basic-card">
+            <div className="card-header">
+              <div className="tier-icon icon-basic">🌱</div>
+              <h3>{ language === 'ar' ? 'الباقة الأساسية' : language === 'fr' ? 'Pack Basique (Basic)' : 'Basic Plan' }</h3>
+              <div className="price">
+                <span className="currency">د.م</span>
+                <span className="amount">{priceBasic}</span>
+                <span className="period">/ {t.perMonth}</span>
               </div>
-            );
-          })}
+            </div>
+            <ul className="features-list">
+              <li>✔️ { language === 'ar' ? '3 ورشات عمل نشطة شهرياً' : language === 'fr' ? '3 chantiers actifs / mois' : '3 active workshops / month' }</li>
+              <li>✔️ { language === 'ar' ? 'الغرفة التفاعلية الميدانية (AR)' : language === 'fr' ? 'Salle interactive terrain (AR)' : 'Interactive Field Room (AR)' }</li>
+              <li>✔️ { language === 'ar' ? 'رفع مخطط واحد لكل ورشة' : language === 'fr' ? '1 plan par chantier' : '1 blueprint per workshop' }</li>
+              <li className="disabled">🔒 {t.feat3}</li>
+              <li className="disabled">🔒 {t.feat4}</li>
+              <li className="disabled">🔒 {t.feat5}</li>
+              <li className="disabled">🔒 {t.feat8}</li>
+            </ul>
+            <button 
+              className="sub-btn basic-btn" 
+              disabled={currentPlanId === 'basic'}
+              onClick={() => openCheckout('basic', 'Basic 🌱', 139)}
+              style={currentPlanId === 'basic' ? { background: '#10b981', color: '#fff', border: 'none', cursor: 'default' } : {}}
+            >
+              {currentPlanId === 'basic' ? t.activePlan : t.upgradeNow}
+            </button>
+          </div>
+
+          {/* Pro Card */}
+          <div className="card pro-card">
+            <div className="popular-ribbon">{ language === 'ar' ? 'الأكثر طلباً 🔥' : language === 'fr' ? 'Le plus demandé 🔥' : 'Most Popular 🔥' }</div>
+            <div className="card-header">
+              <div className="tier-icon icon-pro">🔥</div>
+              <h3>{ language === 'ar' ? 'باقة المحترفين (Pro)' : language === 'fr' ? 'Pack Professionnel (Pro)' : 'Pro Plan' }</h3>
+              <div className="price">
+                <span className="currency">د.م</span>
+                <span className="amount">{pricePro}</span>
+                <span className="period">/ {t.perMonth}</span>
+              </div>
+            </div>
+            <ul className="features-list">
+              <li>✔️ { language === 'ar' ? <>ورشات عمل <b>غير محدودة</b></> : language === 'fr' ? <>Chantiers <b>illimités</b></> : <><b>Unlimited</b> workshops</> }</li>
+              <li>✔️ { language === 'ar' ? 'ميزة الطبقات الشفافة (Layers)' : language === 'fr' ? 'Calques transparents (Layers)' : 'Transparent Layers' }</li>
+              <li>✔️ <b>{t.feat3}</b></li>
+              <li>✔️ <b>{t.feat4}</b></li>
+              <li className="has-tooltip">🧠 <b>{ language === 'ar' ? '5 رندر ذكاء اصطناعي/شهر' : language === 'fr' ? '5 Rendus IA / mois' : '5 AI Renders / month' }</b>
+                <div className="tooltip-box">
+                  <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="AI Preview" />
+                  <span>{t.proAiTooltip}</span>
+                </div>
+              </li>
+              <li>✔️ { language === 'ar' ? '5 جيجابايت تخزين سحابي' : '5 GB Cloud Storage' }</li>
+              <li className="disabled">🔒 {t.feat7}</li>
+              <li className="disabled">🔒 {t.feat8}</li>
+            </ul>
+            <button 
+              className="sub-btn pro-btn" 
+              disabled={currentPlanId === 'pro'}
+              onClick={() => openCheckout('pro', 'Pro 🔥', 349)}
+              style={currentPlanId === 'pro' ? { background: '#10b981', color: '#fff', border: 'none', boxShadow: 'none', cursor: 'default' } : {}}
+            >
+              {currentPlanId === 'pro' ? t.activePlan : t.upgradePro}
+            </button>
+          </div>
+
+          {/* VIP Card */}
+          <div className="card vip-card">
+            <div className="card-header">
+              <div className="tier-icon icon-vip">👑</div>
+              <h3>{ language === 'ar' ? 'النخبة (Elite VIP)' : 'Élite (VIP)' }</h3>
+              <div className="price">
+                <span className="currency">د.م</span>
+                <span className="amount">{priceVip}</span>
+                <span className="period">/ {t.perMonth}</span>
+              </div>
+            </div>
+            <ul className="features-list">
+              <li>✔️ { language === 'ar' ? 'كل مميزات باقة المحترفين' : language === 'fr' ? 'Tout le pack Professionnel' : 'All Pro features included' }</li>
+              <li className="has-tooltip">✨ <b style={{color:'var(--gold)'}}>{ language === 'ar' ? 'ذكاء اصطناعي (لا محدود)' : language === 'fr' ? 'IA Render (Illimité)' : 'Unlimited AI Render' }</b>
+                <div className="tooltip-box" style={{borderColor:'var(--gold)'}}>
+                  <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="VIP AI" style={{border:'1px solid var(--gold)'}} />
+                  <span style={{color:'var(--gold)', fontWeight:'bold', display:'block', marginBottom:'5px'}}>{t.vipAiTooltipTitle}</span>
+                  <span>{t.vipAiTooltipDesc}</span>
+                </div>
+              </li>
+              <li>✨ <b>{t.feat6}</b></li>
+              <li>✨ <b style={{color:'var(--gold)'}}>{t.feat7}</b></li>
+              <li>✨ <b style={{color:'#38bdf8'}}>{t.feat8}</b></li>
+            </ul>
+            <button 
+              className="sub-btn vip-btn" 
+              disabled={currentPlanId === 'vip'}
+              onClick={() => openCheckout('vip', 'Elite VIP 👑', 699)}
+              style={currentPlanId === 'vip' ? { background: '#10b981', color: '#fff', border: 'none', cursor: 'default' } : {}}
+            >
+              {currentPlanId === 'vip' ? t.activePlan : t.upgradeVip}
+            </button>
+          </div>
         </div>
 
+        {/* Whitelabel Preview */}
         <div className="whitelabel-section">
           <div className="wl-text">
             <h2>{t.whitelabelTitle}</h2>
@@ -637,8 +781,12 @@ export default function ArchitectSubscription() {
             <div style={{background: 'white', padding: '20px', borderRadius: '8px', textAlign: isRtl ? 'right' : 'left', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', transform: 'rotate(3deg)'}}>
               <div style={{display:'flex', justifyContent:'space-between', borderBottom:'2px solid #1e293b', paddingBottom:'10px', marginBottom:'10px'}}>
                 <div style={{width: '50px', height: '50px', background: '#cbd5e1', borderRadius: '5px', display: 'flex', alignItems:'center', justifyContent:'center', color:'#0f172a', fontWeight:'bold', fontSize:'0.7rem'}}>{t.yourLogo}</div>
+                <div style={{textAlign:'left'}}>
+                  <div style={{width:'100px', height:'10px', background:'#e2e8f0', marginBottom:'5px'}}></div>
+                  <div style={{width:'60px', height:'10px', background:'#e2e8f0'}}></div>
+                </div>
               </div>
-              <div style={{width:'100%', height:'150px', background:'#f1f5f9', border:'1px dashed #cbd5e1', marginBottom:'10px'}} />
+              <div style={{width:'100%', height:'150px', background:'#f1f5f9', border:'1px dashed #cbd5e1', marginBottom:'10px', display:'flex', alignItems:'center', justifyContent:'center', color:'#94a3b8'}}>{t.wlImagePlaceholder}</div>
               <div style={{display:'flex', justifyContent:'space-between'}}>
                 <div style={{width:'40%', height:'10px', background:'#e2e8f0'}}></div>
                 <div style={{fontWeight:'bold', color:'#1e293b', fontSize:'0.8rem'}}>{t.engineerSeal}</div>
@@ -647,6 +795,7 @@ export default function ArchitectSubscription() {
           </div>
         </div>
 
+        {/* Comparison Section */}
         <div className="comparison-section">
           <h2>{t.comparisonTitle}</h2>
           <div className="table-responsive">
@@ -654,15 +803,15 @@ export default function ArchitectSubscription() {
               <thead>
                 <tr>
                   <th>{t.featColumn}</th>
-                  <th>{PLANS[0].name[language] || PLANS[0].name.en} 🌱</th>
-                  <th>{PLANS[1].name[language] || PLANS[1].name.en} 🔥</th>
-                  <th>{PLANS[2].name[language] || PLANS[2].name.en} 👑</th>
+                  <th>Basic 🌱</th>
+                  <th>Pro 🔥</th>
+                  <th>VIP 👑</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td>{t.feat1}</td>
-                  <td>3</td>
+                  <td>{t.val3Month}</td>
                   <td>{t.valUnlimit}</td>
                   <td>{t.valUnlimit}</td>
                 </tr>
@@ -713,35 +862,29 @@ export default function ArchitectSubscription() {
           </div>
         </div>
 
+        {/* FAQ Section */}
         <div className="faq-section">
           <h2>{t.faqTitle}</h2>
           {t.faqs.map((faq, idx) => (
             <div key={idx} className="faq-item">
-              <button 
-                onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                style={{width:'100%', padding:'20px', background:'none', border:'none', color:'#38bdf8', fontWeight:'bold', fontSize:'1.1rem', textAlign: isRtl ? 'right' : 'left', display:'flex', justifyContent:'space-between', cursor:'pointer'}}
-              >
-                <span>{faq.q}</span>
-                <span>{openFaq === idx ? '-' : '+'}</span>
-              </button>
-              {openFaq === idx && (
-                <div style={{padding:'0 20px 20px', color:'#cbd5e1', lineHeight:'1.7', borderTop:'1px solid rgba(255,255,255,0.05)', paddingTop:'15px'}}>
-                  {faq.a}
-                </div>
-              )}
+              <details>
+                <summary>{faq.q}</summary>
+                <p>{faq.a}</p>
+              </details>
             </div>
           ))}
         </div>
       </div>
 
+      {/* Checkout Modal */}
       {isCheckoutOpen && selectedPlan && (
         <div className="modal-overlay">
           <div className="checkout-modal">
             <button className="close-modal" onClick={() => setIsCheckoutOpen(false)}>✖</button>
-            <h2>{t.checkoutTitle}</h2>
+            <h2>{t.checkoutTitle} ({selectedPlan.name})</h2>
             
             <p style={{color:'#94a3b8', textAlign:'center', fontSize:'0.9rem', marginBottom:'25px'}}>
-              {t.checkoutTotal} <b style={{color:'#38bdf8', fontSize:'1.2rem'}}>{selectedPlan.price}</b> د.م / <span>{isAnnual ? t.perYear : t.perMonth}</span>
+              {t.checkoutTotal} <b style={{color:'#38bdf8', fontSize:'1.2rem'}}>{selectedPlan.price}</b> د.م / <span>{isAnnual ? t.periodAnnual : t.periodMonthly}</span>
             </p>
 
             <div className="payment-methods">
@@ -767,28 +910,62 @@ export default function ArchitectSubscription() {
         </div>
       )}
 
-      <div className="ai-widget-btn" onClick={() => setIsChatOpen(!isChatOpen)}>🤖</div>
+      {/* 👑 الشريك الهندسي الذكي - يظهر حصرياً لأصحاب باقة VIP فقط! */}
+      {currentPlanId === 'vip' && (
+        <>
+          <div className="ai-widget-btn" onClick={() => setIsChatOpen(!isChatOpen)} title={t.chatHeader}>
+            🤖
+          </div>
 
-      {isChatOpen && (
-        <div className="ai-chat-window" style={{display: 'flex'}}>
-          <div className="ai-header">
-            <h4>{t.chatHeader}</h4>
-            <button onClick={() => setIsChatOpen(false)} style={{background:'none', border:'none', color:'#94a3b8', cursor:'pointer'}}>✖</button>
-          </div>
-          <div className="ai-messages">
-            {messages.map((msg, index) => (
-              <div key={index} className={msg.sender === 'bot' ? 'msg-bot' : 'msg-user'}>
-                {msg.text}
+          {isChatOpen && (
+            <div className="ai-chat-window">
+              <div className="ai-header">
+                <div>
+                  <h4>{t.chatHeader}</h4>
+                  <span style={{fontSize:'0.72rem', color:'#10b981', display:'block'}}>● {t.chatSubHeader}</span>
+                </div>
+                <button onClick={() => setIsChatOpen(false)} style={{background:'none', border:'none', color:'#94a3b8', fontSize:'1.2rem', cursor:'pointer'}}>✖</button>
               </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-          <div className="ai-options" style={{opacity: messages.some(m => m.isTyping) ? 0.5 : 1, pointerEvents: messages.some(m => m.isTyping) ? 'none' : 'auto'}}>
-            <button className="ai-option-btn" onClick={() => sendAiQuestion(1, t.chatQuick1)}>{t.chatQuick1}</button>
-            <button className="ai-option-btn" onClick={() => sendAiQuestion(2, t.chatQuick2)}>{t.chatQuick2}</button>
-            <button className="ai-option-btn" onClick={() => sendAiQuestion(3, t.chatQuick3)}>{t.chatQuick3}</button>
-          </div>
-        </div>
+
+              <div className="ai-messages">
+                {messages.map((msg, index) => (
+                  <div key={index} className={msg.sender === 'bot' ? 'msg-bot' : 'msg-user'}>
+                    <div>{msg.text}</div>
+                    {msg.copyable && (
+                      <div className="copy-box">
+                        <div>{msg.copyable}</div>
+                        <button className="copy-btn" onClick={() => handleCopyText(msg.copyable, index)}>
+                          {copiedIndex === index ? t.copiedBtn : t.copyBtn}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="ai-options">
+                <button className="ai-option-btn" onClick={() => triggerPartnerAction(1, t.chatQuick1)}>{t.chatQuick1}</button>
+                <button className="ai-option-btn" onClick={() => triggerPartnerAction(2, t.chatQuick2)}>{t.chatQuick2}</button>
+                <button className="ai-option-btn" onClick={() => triggerPartnerAction(3, t.chatQuick3)}>{t.chatQuick3}</button>
+                <button className="ai-option-btn" onClick={() => triggerPartnerAction(4, t.chatQuick4)}>{t.chatQuick4}</button>
+              </div>
+
+              <form onSubmit={handleSendMessage} style={{display:'flex', padding:'10px', background:'#020617', borderTop:'1px solid rgba(255,255,255,0.1)', gap:'8px'}}>
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder={t.chatPlaceholder}
+                  style={{flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:'10px', padding:'8px 12px', color:'#fff', outline:'none', fontFamily:'Cairo', fontSize:'0.85rem'}}
+                />
+                <button type="submit" style={{background:'var(--gold)', color:'#000', fontWeight:'900', border:'none', borderRadius:'10px', padding:'8px 14px', fontFamily:'Cairo', cursor:'pointer', fontSize:'0.85rem'}}>
+                  {t.chatSend}
+                </button>
+              </form>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
