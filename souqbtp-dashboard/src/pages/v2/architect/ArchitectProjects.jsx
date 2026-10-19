@@ -193,19 +193,19 @@ export default function ArchitectProjects() {
 
   useEffect(() => {
     const initPage = async () => {
+      // 1. التأكد من وجود بيانات المهندس أولاً
       if (!profile?.id) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await fetchArchitectData(user.id);
-        } else {
-          setIsLoading(false); 
         }
-      } else {
-        loadArchiveData();
       }
+      // 2. جلب المشاريع بعد التأكد
+      fetchProjects();
     };
+    
     initPage();
-  }, [profile]);
+  }, [profile, fetchArchitectData, fetchProjects]);
 
   // --- Handlers ---
   const handleAutoFill = async (clientName, clientId) => {
