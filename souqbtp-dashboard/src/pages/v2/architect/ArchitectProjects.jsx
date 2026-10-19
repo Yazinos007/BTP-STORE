@@ -26,20 +26,17 @@ const translations = {
     copyLink: 'نسخ الرابط',
     uploadFiles: 'رفع الملفات',
     report: 'محضر',
-    // Modal
     modalNewTitle: 'تأسيس ملف ورشة جديد',
     projectName: 'اسم المشروع / الورشة:',
     clientName: 'اسم العميل (الخارجي أو المسجل):',
     clientPhone: 'رقم هاتف العميل (واتساب):',
     saveStart: 'حفظ وبدء الرقابة',
     cancel: 'إلغاء',
-    // Upload Modal
     modalUploadTitle: 'إدارة ملفات بوابة العميل',
     panoImage: 'صورة الرندر (360 درجة) - JPG/PNG:',
     planPdf: 'مخطط الطابق (2D) - PDF:',
     reportPdf: 'محضر الرقابة - PDF:',
     uploadAndSync: 'رفع الملفات وتحديث البوابة',
-    // Report Modal
     modalReportTitle: 'صياغة محضر رقابة قانوني',
     stage: 'مرحلة الأشغال الحالية:',
     status: 'حالة الورشة:',
@@ -103,20 +100,17 @@ const translations = {
     copyLink: 'Copy Link',
     uploadFiles: 'Upload Files',
     report: 'Report',
-    // Modal
     modalNewTitle: 'Create New Project',
     projectName: 'Project / Workshop Name:',
     clientName: 'Client Name (External or Registered):',
     clientPhone: 'Client Phone (WhatsApp):',
     saveStart: 'Save & Start Supervision',
     cancel: 'Cancel',
-    // Upload Modal
     modalUploadTitle: 'Manage Client Portal Files',
     panoImage: 'Render Image (360) - JPG/PNG:',
     planPdf: 'Floor Plan (2D) - PDF:',
     reportPdf: 'Supervision Report - PDF:',
     uploadAndSync: 'Upload Files & Sync Portal',
-    // Report Modal
     modalReportTitle: 'Draft Legal Supervision Report',
     stage: 'Current Work Stage:',
     status: 'Project Status:',
@@ -136,7 +130,8 @@ export default function ArchitectProjects() {
   const t = translations[language] || translations.ar;
   const navigate = useNavigate();
 
-  const { projects: storeProjects, fetchProjects, deleteProject, architectProfile: profile, fetchArchitectData } = useArchitectStore();
+  const { projects: storeProjects, fetchArchitectData } = useArchitectStore();
+  const [profile, setProfile] = useState(useArchitectStore.getState().architectProfile);
   const isVip = profile?.subscription_plan?.toLowerCase() === 'vip';
 
   // --- States ---
@@ -157,75 +152,71 @@ export default function ArchitectProjects() {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
 
-  // --- Fetch Data ---
-  const loadData = async () => {
-    if (!profile?.id) return;
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('architect_id', profile.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const activeProjects = data.filter(p => p.project_name && p.project_name.trim() !== '');
-      
-      const seenClients = new Set();
-      const radar = [];
-      data.forEach(c => {
-        const isConsultation = (!c.project_name || c.project_name.trim() === '');
-        if (isConsultation && c.client_id && !activeProjects.some(p => p.client_id === c.client_id) && !seenClients.has(c.client_id)) {
-          seenClients.add(c.client_id);
-          radar.push({ id: c.client_id, name: c.client_name || 'عميل منصة' });
-        }
-      });
-
-      setProjects(activeProjects);
-      setRadarClients(radar);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // --- Fetch Data Directly ---
   useEffect(() => {
-    const initPage = async () => {
-      // 1. التأكد من هوية المهندس
-      let currentUserId = profile?.id;
-      if (!currentUserId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          if (fetchArchitectData) await fetchArchitectData(user.id);
-          currentUserId = user.id;
+    const loadPageData = async () => {
+      setIsLoading(true);
+      try {
+        let currentUserId = profile?.id;
+        
+        // 1. التأكد من الهوية
+        if (!currentUserId) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await fetchArchitectData(user.id);
+            currentUserId = user.id;
+            setProfile(useArchitectStore.getState().architectProfile);
+          } else {
+            setIsLoading(false);
+            return;
+          }
         }
-      }
 
-      // 2. جلب المشاريع مباشرة وبشكل آمن
-      if (currentUserId) {
-        try {
+        // 2. جلب المشاريع والرادار
+        if (currentUserId) {
           const { data, error } = await supabase
             .from('conversations')
             .select('*')
             .eq('architect_id', currentUserId)
             .order('created_at', { ascending: false });
-            
+
           if (error) throw error;
+
+          const activeProjects = data.filter(p => p.project_name && p.project_name.trim() !== '');
           
-          if (data) {
-             // تحديث متجر Zustand مباشرة
-             useArchitectStore.setState({ projects: data });
-          }
-        } catch (err) {
-          console.error('خطأ في جلب المشاريع:', err);
+          const seenClients = new Set();
+          const radar = [];
+          data.forEach(c => {
+            const isConsultation = (!c.project_name || c.project_name.trim() === '');
+            if (isConsultation && c.client_id && !activeProjects.some(p => p.client_id === c.client_id) && !seenClients.has(c.client_id)) {
+              seenClients.add(c.client_id);
+              radar.push({ id: c.client_id, name: c.client_name || 'عميل منصة' });
+            }
+          });
+
+          setProjects(activeProjects);
+          setRadarClients(radar);
+          useArchitectStore.setState({ projects: activeProjects });
         }
+      } catch (err) {
+        console.error("Error loading page data:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
-    
-    initPage();
-  }, [profile, fetchArchitectData]); // لاحظ أننا أزلنا fetchProjects من هنا
+
+    loadPageData();
+  }, [fetchArchitectData]);
+
+  const loadData = async () => {
+    // تحديث يدوي بعد الحذف أو الإضافة
+    const { data } = await supabase.from('conversations').select('*').eq('architect_id', profile?.id).order('created_at', { ascending: false });
+    if(data) {
+        const activeProjects = data.filter(p => p.project_name && p.project_name.trim() !== '');
+        setProjects(activeProjects);
+        useArchitectStore.setState({ projects: activeProjects });
+    }
+  };
 
   // --- Handlers ---
   const handleAutoFill = async (clientName, clientId) => {
@@ -281,7 +272,7 @@ export default function ArchitectProjects() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('هل أنت متأكد أنك تريد حذف ملف هذه الورشة بالكامل؟')) return;
+    if (!window.confirm('هل أنت متأكد أنك تريد حذف ملف هذه الورشة بالكامل؟')) return;
     try {
       await supabase.from('conversations').delete().eq('id', id);
       loadData();
@@ -310,7 +301,6 @@ export default function ArchitectProjects() {
 
   const handleUploadFiles = async () => {
     if (!uploadForm.pano && !uploadForm.plan && !uploadForm.report) return alert('لم تقم باختيار أي ملف للرفع!');
-    // Simplified logic for UI representation. In full production, loop over files, upload to 'portal_assets' bucket, get URL, and update 'client_portals' table.
     alert('تم الرفع بنجاح! (محاكاة)');
     setShowUploadModal(false);
   };
@@ -346,7 +336,6 @@ export default function ArchitectProjects() {
   };
 
   const generatePDF = () => {
-    // Requires html2pdf.js to be included in index.html, or we mock it.
     alert('جاري توليد الـ PDF... تأكد من تضمين مكتبة html2pdf.js في المشروع ليعمل الحفظ الفعلي.');
     setShowReportModal(false);
   };
