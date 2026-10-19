@@ -198,12 +198,12 @@ export default function ArchitectProjects() {
       if (!currentUserId) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          await fetchArchitectData(user.id);
+          if (fetchArchitectData) await fetchArchitectData(user.id);
           currentUserId = user.id;
         }
       }
 
-      // 2. جلب المشاريع مباشرة من قاعدة البيانات إذا تم التعرف على المهندس
+      // 2. جلب المشاريع مباشرة وبشكل آمن
       if (currentUserId) {
         try {
           const { data, error } = await supabase
@@ -212,20 +212,20 @@ export default function ArchitectProjects() {
             .eq('architect_id', currentUserId)
             .order('created_at', { ascending: false });
             
-          if (!error && data) {
-            // تحديث المشاريع في الصفحة (تأكد من استخدام الدالة الصحيحة من الـ State الخاص بك)
-            // إذا كان لديك setProjects في الـ Store، استخدمها: setProjects(data);
-            // أو إذا كنت تستخدم state محلي، أضف: const [localProjects, setLocalProjects] = useState([]); واستخدمها
-            useArchitectStore.setState({ projects: data }); 
+          if (error) throw error;
+          
+          if (data) {
+             // تحديث متجر Zustand مباشرة
+             useArchitectStore.setState({ projects: data });
           }
         } catch (err) {
-          console.error('Error fetching projects:', err);
+          console.error('خطأ في جلب المشاريع:', err);
         }
       }
     };
     
     initPage();
-  }, [profile, fetchArchitectData]);
+  }, [profile, fetchArchitectData]); // لاحظ أننا أزلنا fetchProjects من هنا
 
   // --- Handlers ---
   const handleAutoFill = async (clientName, clientId) => {
