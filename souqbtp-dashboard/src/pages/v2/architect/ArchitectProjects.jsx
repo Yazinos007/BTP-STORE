@@ -136,7 +136,7 @@ export default function ArchitectProjects() {
   const t = translations[language] || translations.ar;
   const navigate = useNavigate();
 
-  const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
+  const { projects: storeProjects, fetchProjects, deleteProject, architectProfile: profile, fetchArchitectData } = useArchitectStore();
   const isVip = profile?.subscription_plan?.toLowerCase() === 'vip';
 
   // --- States ---

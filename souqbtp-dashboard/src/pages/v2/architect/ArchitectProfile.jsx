@@ -94,7 +94,7 @@ export default function ArchitectProfile() {
     phone: '',
     email: '',
     address: '',
-    logo_url: ''
+    agency_logo_url: ''
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -120,9 +120,9 @@ export default function ArchitectProfile() {
           phone: profile.phone || '',
           email: profile.email || '',
           address: profile.address || '',
-          logo_url: profile.logo_url || ''
+          agency_logo_url: profile.agency_logo_url || ''
         });
-        setLogoPreview(profile.logo_url || '');
+        setLogoPreview(profile.agency_logo_url || '');
       }
     };
     loadProfile();
@@ -145,7 +145,7 @@ export default function ArchitectProfile() {
 
   // Upload Logo to Supabase Storage
   const uploadLogo = async (userId) => {
-    if (!logoFile) return formData.logo_url;
+    if (!logoFile) return formData.agency_logo_url;
 
   const fileExt = logoFile.name.split('.').pop();
   const filePath = `architect_logos/${userId}_${Date.now()}.${fileExt}`;
@@ -168,7 +168,7 @@ export default function ArchitectProfile() {
     setIsSaving(true);
     setStatusMessage(null);
     try {
-      let finalLogoUrl = formData.logo_url;
+      let finalLogoUrl = formData.agency_logo_url;
 
       // Only upload logo if user is VIP and selected a file
       if (isVip && logoFile) {
@@ -176,7 +176,7 @@ export default function ArchitectProfile() {
       }
   const updatedPayload = {
         ...formData,
-        logo_url: finalLogoUrl,
+        agency_logo_url: finalLogoUrl,
         updated_at: new Date().toISOString()
       };
 
