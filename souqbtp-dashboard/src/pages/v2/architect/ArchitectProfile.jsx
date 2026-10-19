@@ -286,7 +286,7 @@ export default function ArchitectProfile() {
 
                   <button
                     type="button"
-                    onClick={() => navigate('/subscription')}
+                    onClick={() => window.open('/v2/architect-subscription', '_blank')}
                     className="mt-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
                   >
                     {t.vipUpgradeBtn}

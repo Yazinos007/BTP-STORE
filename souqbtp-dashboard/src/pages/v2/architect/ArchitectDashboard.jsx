@@ -192,7 +192,7 @@ export default function ArchitectDashboard() {
             </div>
           )}
           <button 
-            onClick={() => navigate('/v2/architect-subscription')}
+            onClick={() => window.open('/v2/architect-subscription', '_blank')}
             className={`mt-auto py-3 w-full rounded-xl font-black text-sm transition-all ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
           >
             {t.upgradeBtn}

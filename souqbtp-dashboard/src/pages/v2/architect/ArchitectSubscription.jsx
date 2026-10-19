@@ -157,8 +157,10 @@ export default function ArchitectSubscription() {
 
   // State Management
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'annual'
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [statusNotification, setStatusNotification] = useState({ type: '', message: '' });
+  const [selectedPlan, setSelectedPlan] = useState(null); 
+  const [isModalOpen, setIsModalOpen] = useState(false); 
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [statusNotification, setStatusNotification] = useState({ type: '', message: '' });
 
   // Accordion State for FAQsq
   const [openFaq, setOpenFaq] = useState(null);
