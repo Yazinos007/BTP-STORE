@@ -68,6 +68,9 @@ export default function V2Router({ session, supplier }) {
 
       {/* 🛡️ مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout */}
       <Route element={<V2Layout accountType={accountType} storeName={storeName} storeInitial={storeInitial} />}>
+
+        {/* مسار عام للرسائل */}
+        <Route path="messages" element={<UnifiedMessages />} />
         
         {/* الرئيسية */}
         <Route path="contractor-dashboard" element={<ContractorDashboard />} />
@@ -104,8 +107,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="architect-profile" element={<ArchitectProfile />} />
         <Route path="architect-projects" element={<ArchitectProjects />} />
         <Route path="architect-archive" element={<ArchitectArchive />} />
-        <Route path="messages" element={<UnifiedMessages />} />
-        <Route path="architect-messages" element={<UnifiedMessages />} />
+
         {/* 🚨 التوجيه التلقائي للمسارات المجهولة داخل v2 */}
         <Route path="*" element={<Navigate to="contractor-dashboard" replace />} />
       </Route>
