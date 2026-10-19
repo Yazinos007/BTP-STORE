@@ -147,406 +147,588 @@ const PLANS = [
 
 export default function ArchitectSubscription() {
   const { architectProfile: profile, fetchArchitectData } = useArchitectStore();
-  const { language = 'ar' } = useSettingsStore();
   
-  const isRtl = language === 'ar'; // 👈 هذا هو السطر المفقود!
-  const t = translations[language] || translations.ar;
-
-  // Global Store Integrations
-  const { currentArchitect, updateArchitect, fetchArchitect } = useArchitectStore();
-
-  // State Management
-  const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'annual'
-  const [selectedPlan, setSelectedPlan] = useState(null); 
-  const [isModalOpen, setIsModalOpen] = useState(false); 
+  const [isAnnual, setIsAnnual] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [statusNotification, setStatusNotification] = useState({ type: '', message: '' });
+  const [currentPlan, setCurrentPlan] = useState('basic');
 
-  // Accordion State for FAQsq
-  const [openFaq, setOpenFaq] = useState(null);
+  // Checkout Form State
+  const [agencyName, setAgencyName] = useState('');
+  const [agencyICE, setAgencyICE] = useState('');
 
-  // AI Chat Widget States
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { sender: 'bot', text: isRtl ? 'مرحباً! كيف يمكنني مساعدتك في اختيار الخطة المناسبة اليوم؟' : 'Hello! How can I assist you in choosing the right plan today?' }
-  ]);
+  // AI Chat State
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { sender: 'bot', text: 'أهلاً بك يا مهندس! أنا مساعدك الذكي من منصة SouqBTP. كيف يمكنني مساعدتك اليوم لاختيار الباقة الأنسب لمكتبك؟' }
+  ]);
+  const messagesEndRef = useRef(null);
 
-  const [chatInput, setChatInput] = useState('');
-  const chatBottomRef = useRef(null);
-  const currentPlanId = currentArchitect?.subscription_plan || 'basic';
+  // Animated Prices State
+  const [priceBasic, setPriceBasic] = useState(139);
+  const [pricePro, setPricePro] = useState(349);
+  const [priceVip, setPriceVip] = useState(699);
 
-  useEffect(() => {
-    if (chatBottomRef.current && isChatOpen) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [chatMessages, isChatOpen]);
+  // استحضار خطة المستخدم الحالية
+  useEffect(() => {
+    if (profile?.subscription_plan) {
+      setCurrentPlan(profile.subscription_plan.toLowerCase());
+      setAgencyName(profile.agency_name || '');
+    }
+  }, [profile]);
 
-  // Open Checkout Modal
-  const handleOpenCheckout = (plan) => {
-    setSelectedPlan(plan);
-    setIsModalOpen(true);
-  };
+  // التمرير التلقائي لرسائل الذكاء الاصطناعي
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
-  // Process Upgrade / Supabase Update
-  const processInstantUpgrade = async () => {
-    if (!selectedPlan || !currentArchitect?.id) return;
-    setIsProcessing(true);
-    try {
+  // دالة تحريك الأرقام تماماً كما في الـ PHP
+  const animateValue = (setter, start, end, duration) => {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      setter(Math.floor(progress * (end - start) + start));
+      if (progress < 1) window.requestAnimationFrame(step);
+    };
+    window.requestAnimationFrame(step);
+  };
 
-      // Direct Supabase call or store method
-      const { error } = await supabase
-        .from('architects')
-        .update({
-          subscription_plan: selectedPlan.id,
-          billing_cycle: billingCycle,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentArchitect.id);
-      if (error) throw error;
+  const handleToggleBilling = (checked) => {
+    setIsAnnual(checked);
+    const targets = checked ? { basic: 139, pro: 349, vip: 699 } : { basic: 199, pro: 499, vip: 999 };
+    animateValue(setPriceBasic, priceBasic, targets.basic, 300);
+    animateValue(setPricePro, pricePro, targets.pro, 300);
+    animateValue(setPriceVip, priceVip, targets.vip, 300);
+  };
 
-      // Local State Refresh
-      if (fetchArchitect) {
-        await fetchArchitect(currentArchitect.id);
-      } else if (updateArchitect) {
-        updateArchitect({ subscription_plan: selectedPlan.id, billing_cycle: billingCycle });
-      }
+  const openCheckout = (planCode, planName, basePrice) => {
+    setSelectedPlan({
+      code: planCode,
+      name: planName,
+      price: isAnnual ? basePrice * 12 : basePrice
+    });
+    setIsCheckoutOpen(true);
+  };
 
-      // Success FX (Confetti)
-      try {
-        confetti({
-          particleCount: 120,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-      } catch (e) {
+  const processInstantUpgrade = () => {
+    setIsProcessing(true);
+    setTimeout(async () => {
+      setIsCheckoutOpen(false);
 
-        // Fallback if confetti library fails
-      }
-      setStatusNotification({ type: 'success', message: t.successMsg });
-      setIsModalOpen(false);
-    } catch (err) {
-      console.error('Upgrade Error:', err);
-      setStatusNotification({ type: 'error', message: t.errorMsg });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+      // 1. الاحتفال البصري
+      const duration = 3 * 1000;
+      const end = Date.now() + duration;
+      (function frame() {
+        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#fbbf24', '#38bdf8'] });
+        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#fbbf24', '#38bdf8'] });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      }());
 
-  // AI Chat Handling
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
-    const userText = chatInput;
-    setChatMessages((prev) => [...prev, { sender: 'user', text: userText }]);
-    setChatInput('');
-    setTimeout(() => {
-      let botResponse = isRtl 
-        ? "بناءً على طلبك، نوصي بخطة Pro للحصول على أفضل توازن بين السعر والميزات المعمارية." 
-        : "Based on your query, we recommend the Pro plan for optimal architectural features.";
+      // 2. تحديث الواجهة فوراً (Optimistic UI)
+      setCurrentPlan(selectedPlan.code);
 
-      if (userText.toLowerCase().includes('whitelabel') || userText.includes('هوية')) {
-        botResponse = isRtl
-          ? "خدمة Whitelabel تتيح لك تخصيص المنصة برابطك الخاص وإزالة جميع حقوق المنصة."
-          : "The Whitelabel option allows full domain customization and complete platform white-labeling.";
-      }
-      setChatMessages((prev) => [...prev, { sender: 'bot', text: botResponse }]);
-    }, 800);
-  };
+      // 3. التحديث الفعلي في Supabase
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const updates = { subscription_plan: selectedPlan.code };
+          if (agencyName) updates.agency_name = agencyName;
+          await supabase.from('architects').update(updates).eq('user_id', user.id);
+          
+          // تحديث مخزن Zustand
+          if (fetchArchitectData) await fetchArchitectData(user.id);
+        }
+      } catch (error) {
+        console.error("DB Update Error", error);
+      } finally {
+        setIsProcessing(false);
+      }
+    }, 1500);
+  };
 
-  return (
-    <div className={`min-h-screen bg-[#0B1120] text-slate-100 p-4 md:p-8 font-sans ${isRtl ? 'rtl' : 'ltr'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+  const sendAiQuestion = (qId, questionText) => {
+    setMessages(prev => [...prev, { sender: 'user', text: questionText }]);
+    setMessages(prev => [...prev, { sender: 'bot', text: 'يكتب... ✍️', isTyping: true }]);
 
-      {/* Top Banner / Header */}
-      <div className="max-w-7xl mx-auto text-center mb-12">
-        <h1 className="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400 mb-4">
-          {t.pageTitle}
-        </h1>
-        <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto">
-          {t.pageSubtitle}
-        </p>
+    setTimeout(() => {
+      let answer = '';
+      if(qId === 1) answer = "نعم بكل تأكيد! ⚖️ تقارير الـ GPS في منصتنا تقوم بتشفير (خط العرض، خط الطول، وتاريخ الزيارة بالثانية) على صورة الورشة كعلامة مائية لا يمكن تزويرها، مما يعطي محاضرك قوة إثبات قاطعة أمام الجهات المانحة للرخص.";
+      if(qId === 2) answer = "الأمر يحدث في لمح البصر ⚡! بمجرد إتمام الدفع أو إرسال وصل التحويل، يقوم نظام (God Mode) بفتح جميع الميزات المقفلة (المسطرة، التقارير، الـ AI) في نفس اللحظة دون الحاجة لانتظار الموافقة اليدوية.";
+      if(qId === 3) answer = "راحتك هي أولويتنا 🤝. نعم، يمكنك إيقاف التجديد متى شئت بضغطة زر من إعدادات حسابك. لكن تذكر أن الدفع السنوي يوفر لك 30% من ميزانية المكتب ويمنحك شهرين مجاناً!";
 
-        {/* Billing Toggle */}
-        <div className="flex items-center justify-center gap-4 mt-8">
-          <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-cyan-400' : 'text-slate-400'}`}>
-            {t.monthly}
-          </span>
+      setMessages(prev => prev.filter(m => !m.isTyping));
+      setMessages(prev => [...prev, { sender: 'bot', text: answer }]);
+    }, 1200);
+  };
 
-          <button
-            onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-            className="w-14 h-8 bg-slate-800 rounded-full p-1 border border-slate-700 relative transition-colors duration-300 focus:outline-none"
-          >
-            <div className={`w-6 h-6 bg-cyan-500 rounded-full transition-transform duration-300 transform ${billingCycle === 'annual' ? (isRtl ? '-translate-x-6' : 'translate-x-6') : 'translate-x-0'}`} />
-          </button>
+  return (
+    <div className="blueprint-theme-wrapper" dir="rtl">
+      <style>{`
+        /* ========================================= */
+        /* 🌌 الهوية البصرية الهندسية (Blueprint Theme) */
+        /* ========================================= */
+        .blueprint-theme-wrapper {
+            --navy-bg: #0f172a;
+            --navy-card: rgba(30, 41, 59, 0.7);
+            --orange-glow: rgba(245, 158, 11, 0.15);
+            --blue-glow: rgba(56, 189, 248, 0.15);
+            --blueprint-line: rgba(56, 189, 248, 0.07);
+            --gold: #fbbf24;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --danger: #ef4444;
 
-          <span className={`text-sm font-medium flex items-center gap-2 ${billingCycle === 'annual' ? 'text-cyan-400' : 'text-slate-400'}`}>
-            {t.annual}
-            <span className="bg-cyan-500/10 text-cyan-400 text-xs px-2 py-0.5 rounded-full border border-cyan-500/30">
-              {t.saveBadge}
-            </span>
-          </span>
-        </div>
-      </div>
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--navy-bg);
+            background-image: 
+                radial-gradient(circle at 80% -20%, var(--orange-glow) 0%, transparent 50%),
+                radial-gradient(circle at 20% 120%, var(--blue-glow) 0%, transparent 50%),
+                linear-gradient(var(--blueprint-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--blueprint-line) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
 
-      {/* Dynamic Alert Banner */}
-      {statusNotification.message && (
-        <div className={`max-w-7xl mx-auto mb-8 p-4 rounded-xl border flex items-center justify-between ${statusNotification.type === 'success' ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300' : 'bg-rose-950/40 border-rose-500/50 text-rose-300'}`}>
-          <span>{statusNotification.message}</span>
+        .subscription-container { max-width: 1250px; margin: 0 auto; padding: 60px 20px; position: relative; z-index: 10; }
 
-          <button onClick={() => setStatusNotification({ type: '', message: '' })} className="text-sm underline">
-            {t.close}
-          </button>
-        </div>
-      )}
+        .sub-header { text-align: center; margin-bottom: 40px; }
+        .badge-new { display: inline-block; background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid #38bdf8; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; margin-bottom: 15px; box-shadow: 0 0 15px rgba(56,189,248,0.2); }
+        .sub-header h1 { font-size: 2.8rem; color: #ffffff; font-weight: 900; margin-bottom: 15px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .sub-header p { color: #94a3b8; font-size: 1.15rem; max-width: 700px; margin: 0 auto; line-height: 1.6; }
 
-      {/* Pricing Cards Grid */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-        {PLANS.map((plan) => {
-          const isCurrent = currentPlanId === plan.id;
-          const price = billingCycle === 'monthly' ? plan.priceMonthly : plan.priceAnnual;
+        .social-proof { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 25px; font-size: 0.9rem; color: #cbd5e1; background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 30px; width: fit-content; margin-left: auto; margin-right: auto; border: 1px solid var(--glass-border); backdrop-filter: blur(5px); }
+        .pulse-dot { width: 10px; height: 10px; background: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px #10b981; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
 
-          return (
-            <div
-              key={plan.id}
-              className={`relative bg-slate-900/60 backdrop-blur-xl rounded-2xl border ${plan.borderClass} ${plan.glowClass} p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1`}
-            >
-              {plan.badge && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500 to-indigo-500 text-slate-950 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                  {plan.badge[language] || plan.badge.en}
-                </div>
+        .billing-toggle-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 60px; }
+        .save-badge { background: linear-gradient(90deg, #f59e0b, #d97706); color: white; padding: 6px 20px; border-radius: 30px; font-weight: bold; font-size: 0.9rem; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); border: 1px solid #fbbf24; }
+        .toggle-wrapper { display: flex; align-items: center; gap: 20px; background: rgba(15, 23, 42, 0.8); padding: 10px 25px; border-radius: 50px; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+        .toggle-label { font-weight: bold; color: #64748b; transition: 0.3s; cursor: pointer; }
+        .toggle-label.active { color: #38bdf8; text-shadow: 0 0 10px rgba(56,189,248,0.5); }
+        
+        .switch { position: relative; display: inline-block; width: 60px; height: 30px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 30px; }
+        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        .switch input:checked + .slider { background-color: #38bdf8; box-shadow: 0 0 10px #38bdf8; }
+        .switch input:checked + .slider:before { transform: translateX(30px); }
 
-              )}
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2">{plan.name[language] || plan.name.en}</h3>
-                <div className="flex items-baseline gap-1 my-4">
-                  <span className="text-4xl font-extrabold text-white">${price}</span>
-                  <span className="text-slate-400 text-sm">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
-                </div>
-                <hr className="border-slate-800 my-4" />
-                <ul className="space-y-3 mb-6">
-                  {(plan.features[language] || plan.features.en).map((feat, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-sm text-slate-300">
-                      <svg className="w-4 h-4 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        .pricing-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; margin-bottom: 80px; align-items: stretch; }
+        .card { background: var(--navy-card); backdrop-filter: blur(15px); border-radius: 24px; padding: 40px 30px; border: 1px solid var(--glass-border); transition: all 0.4s ease; position: relative; display: flex; flex-direction: column; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .card:hover { transform: translateY(-15px); border-color: rgba(255,255,255,0.3); }
 
-              <button
-                disabled={isCurrent}
-                onClick={() => handleOpenCheckout(plan)}
-                className={`w-full py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
-                  isCurrent
-                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                    : 'bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-lg shadow-cyan-500/20'
-                }`}
-              >
-                {isCurrent ? t.activePlan : t.upgradeNow}
-              </button>
-            </div>
-          );
-        })}
-      </div>
+        .tier-icon { font-size: 3rem; margin-bottom: 5px; line-height: 1; text-align: center; }
+        .icon-basic { text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
+        .icon-pro { text-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+        .icon-vip { text-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
 
-      {/* Whitelabel Solution Section */}
-      <div className="max-w-7xl mx-auto mb-16 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
-        <div className="space-y-2 text-center md:text-right">
-          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
-            Enterprise Add-on
-          </span>
+        .card-header { text-align: center; margin-bottom: 25px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; }
+        .card-header h3 { font-size: 1.5rem; color: #f8fafc; margin: 0 0 15px 0; }
+        .price { display: flex; justify-content: center; align-items: baseline; gap: 5px; color: #fff; }
+        .price .amount { font-size: 4rem; font-weight: 900; transition: 0.3s; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .price .currency, .price .period { font-size: 1.1rem; color: #94a3b8; font-weight: bold; }
 
-          <h2 className="text-2xl font-bold text-white">{t.whitelabelTitle}</h2>
-          <p className="text-slate-400 text-sm max-w-xl">{t.whitelabelDesc}</p>
-        </div>
+        .features-list { list-style: none; padding: 0; margin: 0 0 30px 0; text-align: right; flex-grow: 1; }
+        .features-list li { margin-bottom: 16px; color: #cbd5e1; font-size: 0.95rem; display: flex; align-items: center; gap: 12px; position: relative; }
+        .features-list li b { color: #fff; }
+        .features-list li.disabled { color: #475569; text-decoration: line-through; }
+        
+        .sub-btn { width: 100%; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 1.1rem; cursor: pointer; border: none; transition: 0.3s; font-family: 'Cairo'; text-align: center; }
 
-        <button
-          onClick={() => handleOpenCheckout({ id: 'whitelabel', name: { ar: 'خدمة الهوية المستقلة', fr: 'Marque Blanche', en: 'Whitelabel Addon' }, priceMonthly: 299, priceAnnual: 2990 })}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl text-sm transition shadow-lg shadow-indigo-600/30 shrink-0"
-        >
-          {t.whitelabelBtn}
-        </button>
-      </div>
+        .has-tooltip { cursor: help; border-bottom: 1px dashed rgba(255,255,255,0.3); display: inline-flex !important; }
+        .tooltip-box { visibility: hidden; opacity: 0; position: absolute; bottom: 120%; right: 0; background: #000; border: 1px solid #38bdf8; border-radius: 12px; padding: 10px; width: 220px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 100; transition: 0.3s; text-align: center; }
+        .has-tooltip:hover .tooltip-box { visibility: visible; opacity: 1; transform: translateY(-5px); }
+        .tooltip-box img { width: 100%; border-radius: 8px; margin-bottom: 8px; }
+        .tooltip-box span { display: block; font-size: 0.8rem; color: #cbd5e1; }
 
-      {/* Detailed Feature Comparison Table */}
-      <div className="max-w-7xl mx-auto mb-16">
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">{t.comparisonTitle}</h2>
-        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/40">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/80 text-slate-300 text-xs uppercase">
-                <th className="p-4">{t.feature}</th>
-                <th className="p-4 text-center">{t.basicTier}</th>
-                <th className="p-4 text-center">{t.proTier}</th>
-                <th className="p-4 text-center">{t.vipTier}</th>
-              </tr>
-            </thead>
+        .basic-card { border-top: 4px solid #10b981; }
+        .basic-btn { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+        .basic-btn:hover { background: rgba(255,255,255,0.2); }
 
-            <tbody className="divide-y divide-slate-800 text-sm text-slate-300">
-              <tr>
-                <td className="p-4 font-medium text-white">عدد المشاريع</td>
-                <td className="p-4 text-center text-slate-400">5 مشاريع</td>
-                <td className="p-4 text-center text-cyan-400 font-semibold">غير محدود</td>
-                <td className="p-4 text-center text-amber-400 font-semibold">غير محدود</td>
-              </tr>
+        .pro-card { border: 2px solid #38bdf8; border-top: 4px solid #38bdf8; transform: scale(1.05); background: rgba(15, 23, 42, 0.8); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15); z-index: 5; }
+        .popular-ribbon { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: #f59e0b; color: #000; padding: 5px 25px; border-radius: 50px; font-weight: 900; font-size: 0.9rem; box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4); }
+        .pro-btn { background: #38bdf8; color: #0f172a; box-shadow: 0 10px 25px rgba(56, 189, 248, 0.3); }
+        .pro-btn:hover { background: #0ea5e9; color: white; }
 
-              <tr>
-                <td className="p-4 font-medium text-white">دقة التصدير (PDF/Render)</td>
-                <td className="p-4 text-center text-slate-400">1080p</td>
-                <td className="p-4 text-center text-cyan-400 font-semibold">4K Ultra HD</td>
-                <td className="p-4 text-center text-amber-400 font-semibold">8K Raw Render</td>
-              </tr>
+        .vip-card { border: 2px solid var(--gold); border-top: 4px solid var(--gold); background: linear-gradient(180deg, rgba(30,41,59,0.9), rgba(0,0,0,0.9)); box-shadow: 0 0 40px rgba(251, 191, 36, 0.1); }
+        .vip-card .card-header h3 { color: var(--gold); }
+        .vip-btn { background: transparent; color: var(--gold); border: 2px solid var(--gold); }
+        .vip-btn:hover { background: var(--gold); color: #000; box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3); }
 
-              <tr>
-                <td className="p-4 font-medium text-white">خوادم الذكاء الاصطناعي</td>
-                <td className="p-4 text-center text-slate-400">مشتركة</td>
-                <td className="p-4 text-center text-slate-300">فائقة السرعة</td>
-                <td className="p-4 text-center text-amber-400 font-semibold">خوادم خاصة مخصصة</td>
-              </tr>
+        .whitelabel-section { display: flex; flex-wrap: wrap; gap: 30px; background: var(--navy-card); border: 1px solid var(--glass-border); padding: 40px; border-radius: 24px; margin-bottom: 60px; align-items: center; backdrop-filter: blur(10px); }
+        .wl-text { flex: 1; min-width: 300px; }
+        .wl-text h2 { color: var(--gold); font-size: 2rem; margin-top: 0; }
+        .wl-text p { color: #cbd5e1; line-height: 1.8; font-size: 1.05rem; }
+        .wl-image { flex: 1; min-width: 300px; text-align: center; position: relative; }
+        .wl-image img { max-width: 100%; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); transform: rotate(2deg); transition: 0.3s; }
+        .wl-image img:hover { transform: rotate(0deg) scale(1.05); }
 
-              <tr>
-                <td className="p-4 font-medium text-white">دعم الهوية المستقلة</td>
-                <td className="p-4 text-center text-rose-500">✕</td>
-                <td className="p-4 text-center text-rose-500">✕</td>
-                <td className="p-4 text-center text-emerald-400">✓ متاح</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        .comparison-section { background: var(--navy-card); padding: 50px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); backdrop-filter: blur(15px); margin-bottom: 60px; }
+        .comparison-section h2 { text-align: center; margin-bottom: 40px; font-weight: 900; color: #fff; font-size: 2rem; }
+        .table-responsive { overflow-x: auto; }
+        .comparison-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        .comparison-table th, .comparison-table td { padding: 20px; text-align: center; border-bottom: 1px solid var(--glass-border); }
+        .comparison-table th { background: rgba(0,0,0,0.4); color: #38bdf8; font-weight: bold; font-size: 1.1rem; }
+        .comparison-table th:first-child { text-align: right; border-radius: 0 15px 0 0; color: #cbd5e1; }
+        .comparison-table th:last-child { border-radius: 15px 0 0 0; color: var(--gold); }
+        .comparison-table td:first-child { text-align: right; font-weight: bold; color: #f8fafc; }
+        .check { color: var(--success); font-weight: bold; font-size: 1.2rem; }
+        .cross { color: var(--danger); opacity: 0.5; font-weight: bold; font-size: 1.2rem; }
 
-      {/* FAQ Accordion */}
-      <div className="max-w-4xl mx-auto mb-16">
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">{t.faqTitle}</h2>
-        <div className="space-y-4">
-          {[
-            {
-              q: isRtl ? 'هل يمكنني إلغاء الاشتراكات في أي وقت؟' : 'Can I cancel my subscription anytime?',
-              a: isRtl ? 'نعم، يمكنك إلغاء أو تغيير خطة اشتراكك في أي وقت مباشرة من لوحة التحكم.' : 'Yes, you can cancel or switch your subscription tier at any time from your settings.'
-            },
-            {
-              q: isRtl ? 'ما هي وسائل الدفع المدعومة؟' : 'What payment options are supported?',
-              a: isRtl ? 'ندعم البطاقات البنكية Visa, MasterCard, بالإضافة إلى Apple Pay و Stripe.' : 'We support major credit cards, Apple Pay, and secure Stripe checkouts.'
-            }
-          ].map((faq, idx) => (
-            <div key={idx} className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden">
+        .faq-section { margin-bottom: 60px; }
+        .faq-section h2 { text-align: center; color: #fff; font-size: 2rem; margin-bottom: 40px; }
+        .faq-item { background: var(--navy-card); border: 1px solid var(--glass-border); margin-bottom: 15px; border-radius: 15px; overflow: hidden; backdrop-filter: blur(10px); }
+        .faq-item details { padding: 20px; }
+        .faq-item summary { font-weight: bold; color: #38bdf8; font-size: 1.1rem; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        .faq-item summary::-webkit-details-marker { display: none; }
+        .faq-item summary::after { content: '+'; color: #64748b; font-size: 1.5rem; transition: 0.3s; }
+        .faq-item details[open] summary::after { content: '-'; color: var(--gold); transform: rotate(180deg); }
+        .faq-item p { margin: 15px 0 0 0; color: #cbd5e1; line-height: 1.7; font-size: 0.95rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
 
-              <button
-                onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                className="w-full p-4 text-right flex justify-between items-center text-white font-medium hover:bg-slate-800/50 transition"
-              >
-                <span>{faq.q}</span>
-                <span className="text-cyan-400">{openFaq === idx ? '-' : '+'}</span>
-              </button>
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(8px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
+        .checkout-modal { background: #0f172a; width: 90%; max-width: 450px; border-radius: 24px; border: 1px solid #38bdf8; box-shadow: 0 20px 50px rgba(0,0,0,0.8); padding: 30px; position: relative; animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .checkout-modal h2 { color: #fff; margin-top: 0; text-align: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; }
+        .form-group { margin-bottom: 20px; text-align: right; }
+        .form-group label { display: block; color: #94a3b8; font-size: 0.9rem; margin-bottom: 8px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; font-family: 'Cairo'; outline: none; box-sizing: border-box; text-align: right; }
+        .form-group input:focus { border-color: #38bdf8; background: rgba(255,255,255,0.1); }
+        
+        .payment-methods { display: flex; gap: 10px; margin-bottom: 25px; }
+        .pay-method { flex: 1; padding: 15px 10px; text-align: center; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); cursor: pointer; transition: 0.3s; font-weight: bold; color: #cbd5e1; }
+        .pay-method.active { background: rgba(56, 189, 248, 0.1); border-color: #38bdf8; color: #38bdf8; }
+        .pay-method.disabled { opacity: 0.5; cursor: not-allowed; }
 
-              {openFaq === idx && (
-                <div className="p-4 bg-slate-950/40 text-slate-400 text-sm border-t border-slate-800">
-                  {faq.a}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+        .btn-confirm { width: 100%; padding: 15px; background: linear-gradient(90deg, #10b981, #059669); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; font-family: 'Cairo'; transition: 0.3s; box-shadow: 0 10px 20px rgba(16,185,129,0.3); }
+        .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 15px 25px rgba(16,185,129,0.5); }
+        .btn-confirm:disabled { background: #64748b; cursor: not-allowed; transform: none; box-shadow: none; }
+        .close-modal { position: absolute; top: 15px; right: 20px; background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; }
 
-      {/* Checkout Modal */}
-      {isModalOpen && selectedPlan && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-2">{t.checkoutTitle}</h3>
-            <p className="text-slate-400 text-sm mb-4">
-              الخطة المختارة: <span className="text-cyan-400 font-semibold">{selectedPlan.name[language] || selectedPlan.name.en}</span>
-            </p>
+        .ai-widget-btn { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background: linear-gradient(135deg, #38bdf8, #8b5cf6); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; cursor: pointer; box-shadow: 0 10px 25px rgba(56,189,248,0.5); z-index: 1000; animation: floatBot 3s ease-in-out infinite; border: 2px solid rgba(255,255,255,0.2); }
+        @keyframes floatBot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        .ai-chat-window { position: fixed; bottom: 100px; left: 30px; width: 320px; background: var(--navy-card); border: 1px solid #38bdf8; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); z-index: 1000; backdrop-filter: blur(15px); overflow: hidden; animation: slideUp 0.3s ease-out; }
+        .ai-header { background: rgba(56, 189, 248, 0.1); padding: 15px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
+        .ai-header h4 { margin: 0; color: #38bdf8; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .ai-messages { padding: 15px; height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+        .msg-bot { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 15px 15px 0 15px; color: #e2e8f0; font-size: 0.9rem; align-self: flex-start; max-width: 85%; border: 1px solid var(--glass-border); }
+        .msg-user { background: rgba(56, 189, 248, 0.2); padding: 10px 15px; border-radius: 15px 15px 15px 0; color: #fff; font-size: 0.9rem; align-self: flex-end; max-width: 85%; border: 1px solid #38bdf8; }
+        
+        .ai-options { padding: 10px 15px 15px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--glass-border); }
+        .ai-option-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #38bdf8; padding: 8px; border-radius: 8px; font-family: 'Cairo'; cursor: pointer; transition: 0.2s; font-size: 0.85rem; text-align: right; }
+        .ai-option-btn:hover { background: rgba(56, 189, 248, 0.1); border-color: #38bdf8; }
 
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 mb-6">
-              <div className="flex justify-between text-sm text-slate-300 mb-2">
-                <span>المبلغ الإجمالي</span>
-                <span className="font-bold text-white">
-                  ${billingCycle === 'monthly' ? selectedPlan.priceMonthly : selectedPlan.priceAnnual}
-                </span>
-              </div>
+        @media (max-width: 900px) {
+            .pricing-cards { grid-template-columns: 1fr; }
+            .pro-card { transform: none; }
+            .sub-header h1 { font-size: 2rem; }
+        }
+      `}</style>
 
-              <div className="text-xs text-slate-500">{t.payWithCard}</div>
+      <div className="subscription-container">
+        <div className="sub-header">
+          <div className="badge-new">الإصدار الهندسي v2.0 🚀</div>
+          <h1>حوّل مكتبك الهندسي إلى قوة تكنولوجية 📐</h1>
+          <p>استثمر في واجهتك المهنية. انضم إلى نخبة المعماريين في المغرب الذين يستخدمون الواقع المعزز لرفع قيمة مشاريعهم وتوفير وقتهم.</p>
+          
+          <div className="social-proof">
+            <span><span className="pulse-dot"></span> أكثر من <b>200 مكتب دراسات</b> يثقون في منصتنا اليوم.</span>
+          </div>
+        </div>
 
-            </div>
+        <div className="billing-toggle-container">
+          <div className="save-badge">🎁 وفّر 30% مع خطة الدفع السنوي + شهرين مجانا</div>
+          <div className="toggle-wrapper">
+            <span className={`toggle-label ${!isAnnual ? 'active' : ''}`} onClick={() => handleToggleBilling(false)}>دفع شهري</span>
+            <label className="switch">
+              <input type="checkbox" checked={isAnnual} onChange={(e) => handleToggleBilling(e.target.checked)} />
+              <span className="slider"></span>
+            </label>
+            <span className={`toggle-label ${isAnnual ? 'active' : ''}`} onClick={() => handleToggleBilling(true)}>دفع سنوي</span>
+          </div>
+        </div>
 
-            <div className="flex gap-3">
+        <div className="pricing-cards">
+          
+          {/* Basic Card */}
+          <div className="card basic-card">
+            <div className="card-header">
+              <div className="tier-icon icon-basic">🌱</div>
+              <h3>الباقة الأساسية</h3>
+              <div className="price">
+                <span className="currency">د.م</span>
+                <span className="amount">{priceBasic}</span>
+                <span className="period">/ شهر</span>
+              </div>
+            </div>
+            <ul className="features-list">
+              <li>✔️ 3 ورشات عمل نشطة شهرياً</li>
+              <li>✔️ الغرفة التفاعلية الميدانية (AR)</li>
+              <li>✔️ رفع مخطط واحد لكل ورشة</li>
+              <li className={currentPlan === 'basic' ? 'disabled' : ''}>
+                {currentPlan === 'basic' ? '🔒 أدوات المسطرة والقياس' : '✔️ أدوات المسطرة والقياس'}
+              </li>
+              <li className={currentPlan === 'basic' ? 'disabled' : ''}>
+                {currentPlan === 'basic' ? '🔒 تقارير PDF بختم GPS' : '✔️ تقارير PDF بختم GPS'}
+              </li>
+              <li className={currentPlan === 'basic' ? 'disabled' : ''}>
+                {currentPlan === 'basic' ? '🔒 الذكاء الاصطناعي (AI Render)' : '✔️ الذكاء الاصطناعي (AI Render)'}
+              </li>
+            </ul>
+            <button 
+              className="sub-btn basic-btn" 
+              onClick={() => openCheckout('basic', 'الباقة الأساسية 🌱', 139)}
+              style={currentPlan === 'basic' ? { background: '#10b981', color: '#fff', border: 'none' } : {}}
+            >
+              {currentPlan === 'basic' ? '✅ الباقة مفعلة الآن' : 'اختر الباقة'}
+            </button>
+          </div>
 
-              <button
-                onClick={processInstantUpgrade}
-                disabled={isProcessing}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold py-3 rounded-xl text-sm transition flex items-center justify-center"
-              >
-                {isProcessing ? t.processing : t.confirmPayment}
-              </button>
+          {/* Pro Card */}
+          <div className="card pro-card">
+            <div className="popular-ribbon">الأكثر طلباً 🔥</div>
+            <div className="card-header">
+              <div className="tier-icon icon-pro">🔥</div>
+              <h3>باقة المحترفين (Pro)</h3>
+              <div className="price">
+                <span className="currency">د.م</span>
+                <span className="amount">{pricePro}</span>
+                <span className="period">/ شهر</span>
+              </div>
+            </div>
+            <ul className="features-list">
+              <li>✔️ ورشات عمل <b>غير محدودة</b></li>
+              <li>✔️ ميزة الطبقات الشفافة (Layers)</li>
+              <li>✔️ <b>تفعيل المسطرة والقياس الدقيق</b></li>
+              <li>✔️ <b>تقارير PDF بختم GPS الرسمي</b></li>
+              <li className="has-tooltip">🧠 <b>5 رندر ذكاء اصطناعي/شهر</b>
+                <div className="tooltip-box">
+                  <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="AI Preview" />
+                  <span>أبهر عملاءك بصور واقعية لغرفهم من خلال رفع مخططاتهم!</span>
+                </div>
+              </li>
+              <li>✔️ 5 جيجابايت تخزين سحابي</li>
+              <li className={currentPlan === 'vip' ? '' : 'disabled'}>
+                {currentPlan === 'vip' ? '✨ شعار مكتبك (Whitelabel)' : '🔒 شعار مكتبك (Whitelabel)'}
+              </li>
+            </ul>
+            <button 
+              className="sub-btn pro-btn" 
+              onClick={() => openCheckout('pro', 'باقة المحترفين 🔥', 349)}
+              style={currentPlan === 'pro' ? { background: '#10b981', color: '#fff', border: 'none', boxShadow: 'none' } : {}}
+            >
+              {currentPlan === 'pro' ? '✅ الباقة مفعلة الآن' : 'اشترك كـ محترف'}
+            </button>
+          </div>
 
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-3 rounded-xl text-sm transition"
-              >
-                {t.close}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          {/* VIP Card */}
+          <div className="card vip-card">
+            <div className="card-header">
+              <div className="tier-icon icon-vip">👑</div>
+              <h3>النخبة (Elite VIP)</h3>
+              <div className="price">
+                <span className="currency">د.م</span>
+                <span className="amount">{priceVip}</span>
+                <span className="period">/ شهر</span>
+              </div>
+            </div>
+            <ul className="features-list">
+              <li>✔️ كل مميزات باقة المحترفين</li>
+              <li className="has-tooltip">✨ <b style={{color:'var(--gold)'}}>ذكاء اصطناعي (لا محدود)</b>
+                <div className="tooltip-box" style={{borderColor:'var(--gold)'}}>
+                  <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="VIP AI" style={{border:'1px solid var(--gold)'}} />
+                  <span style={{color:'var(--gold)', fontWeight:'bold', display:'block', marginBottom:'5px'}}>بلا قيود!</span>
+                  <span>أنشئ تصاميم لا نهائية من الاقتراحات الواقعية لعملائك.</span>
+                </div>
+              </li>
+              <li>✨ <b>تسجيل الجلسات (فيديو MP4)</b></li>
+              <li>✨ <b style={{color:'var(--gold)'}}>شعار مكتبك على التقارير (Whitelabel)</b></li>
+              <li>✨ مدير حساب شخصي للدعم</li>
+            </ul>
+            <button 
+              className="sub-btn vip-btn" 
+              onClick={() => openCheckout('vip', 'النخبة (Elite VIP) 👑', 699)}
+              style={currentPlan === 'vip' ? { background: '#10b981', color: '#fff', border: 'none' } : {}}
+            >
+              {currentPlan === 'vip' ? '✅ الباقة مفعلة الآن' : 'انضم للنخبة الآن'}
+            </button>
+          </div>
 
-      {/* AI Chat Floating Widget */}
-      <div className={`fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-40`}>
-        {!isChatOpen ? (
+        </div>
 
-          <button
-            onClick={() => setIsChatOpen(true)}
-            className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 p-4 rounded-full shadow-lg shadow-cyan-500/30 flex items-center justify-center transition-transform hover:scale-105"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </button>
+        <div className="whitelabel-section">
+          <div className="wl-text">
+            <h2>وثّق عملك بعلامتك التجارية الخاصة 🏢</h2>
+            <p>حصرياً في باقة <b>النخبة (Elite)</b>: لن يرى عميلك شعار منصة SouqBTP بعد الآن. ستصدر جميع التقارير الهندسية، محاضر الزيارات، وإثباتات الـ GPS حاملة لـ <b>شعار مكتبك الهندسي واسمك</b> كعلامة مائية (Whitelabel). اجعل تقاريرك تبدو مصممة بأنظمة مكتبك الداخلية وكلف بمشاريعك باحترافية مطلقة.</p>
+          </div>
+          <div className="wl-image">
+            <div style={{background: 'white', padding: '20px', borderRadius: '8px', textAlign: 'right', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', transform: 'rotate(3deg)'}}>
+              <div style={{display:'flex', justifyContent:'space-between', borderBottom:'2px solid #1e293b', paddingBottom:'10px', marginBottom:'10px'}}>
+                <div style={{width: '50px', height: '50px', background: '#cbd5e1', borderRadius: '5px', display: 'flex', alignItems:'center', justifyContent:'center', color:'#0f172a', fontWeight:'bold', fontSize:'0.7rem'}}>Your Logo</div>
+                <div style={{textAlign:'left'}}>
+                  <div style={{width:'100px', height:'10px', background:'#e2e8f0', marginBottom:'5px'}}></div>
+                  <div style={{width:'60px', height:'10px', background:'#e2e8f0'}}></div>
+                </div>
+              </div>
+              <div style={{width:'100%', height:'150px', background:'#f1f5f9', border:'1px dashed #cbd5e1', marginBottom:'10px', display:'flex', alignItems:'center', justifyContent:'center', color:'#94a3b8'}}>[صورة الورشة مع المطابقة]</div>
+              <div style={{display:'flex', justifyContent:'space-between'}}>
+                <div style={{width:'40%', height:'10px', background:'#e2e8f0'}}></div>
+                <div style={{fontWeight:'bold', color:'#1e293b', fontSize:'0.8rem'}}>ختم المهندس: ✔️</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        ) : (
+        <div className="comparison-section">
+          <h2>مقارنة الميزات بالتفصيل</h2>
+          <div className="table-responsive">
+            <table className="comparison-table">
+              <thead>
+                <tr>
+                  <th>الميزة الهندسية</th>
+                  <th>الأساسية 🌱</th>
+                  <th>المحترف (Pro) 🔥</th>
+                  <th>النخبة (VIP) 👑</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>إدارة الورشات</td>
+                  <td>3 شهرياً</td>
+                  <td>غير محدود</td>
+                  <td>غير محدود</td>
+                </tr>
+                <tr>
+                  <td>الغرفة الميدانية (AR)</td>
+                  <td><span className="check">✔</span></td>
+                  <td><span className="check">✔</span></td>
+                  <td><span className="check">✔</span></td>
+                </tr>
+                <tr>
+                  <td>أداة المسطرة والقياس</td>
+                  <td><span className="cross">✖</span></td>
+                  <td><span className="check">✔</span></td>
+                  <td><span className="check">✔</span></td>
+                </tr>
+                <tr>
+                  <td>تقارير PDF بختم (GPS)</td>
+                  <td><span className="cross">✖</span></td>
+                  <td><span className="check">✔</span></td>
+                  <td><span className="check">✔</span></td>
+                </tr>
+                <tr>
+                  <td>الذكاء الاصطناعي (AI)</td>
+                  <td><span className="cross">✖</span></td>
+                  <td>محدود (5 مرات)</td>
+                  <td><span className="check">✔ لا محدود</span></td>
+                </tr>
+                <tr>
+                  <td>تسجيل الجلسة (فيديو MP4)</td>
+                  <td><span className="cross">✖</span></td>
+                  <td><span className="cross">✖</span></td>
+                  <td><span className="check">✔</span></td>
+                </tr>
+                <tr>
+                  <td>العلامة التجارية الشخصية (Whitelabel)</td>
+                  <td><span className="cross">✖</span></td>
+                  <td><span className="cross">✖</span></td>
+                  <td><span className="check">✔</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-80 sm:w-96 shadow-2xl flex flex-col h-[400px] overflow-hidden">
+        <div className="faq-section">
+          <h2>الأسئلة الشائعة حول الاشتراكات</h2>
+          <div className="faq-item">
+            <details>
+              <summary>هل يمكنني إلغاء الاشتراك أو تغيير الباقة لاحقاً؟</summary>
+              <p>بالتأكيد! المنصة لا تلزمك بعقود احتكارية. يمكنك الترقية، التخفيض، أو إيقاف اشتراكك في أي وقت مباشرة من إعدادات حسابك. عند الإلغاء، ستستمر في الاستفادة من الميزات حتى نهاية دورتك المدفوعة.</p>
+            </details>
+          </div>
+          <div className="faq-item">
+            <details>
+              <summary>كيف تعمل ميزة "المصادقة القانونية بختم GPS"؟</summary>
+              <p>في باقات (Pro و Elite)، يقوم التطبيق بتسجيل إحداثيات الموقع الدقيقة (Latitude/Longitude) وتوقيت الزيارة، ويقوم بتشفيرها وطباعتها على التقرير الهندسي (PDF) المدمج مع اللقطة الحية، مما يمنح التقرير حجية وإثباتاً لزيارة الموقع.</p>
+            </details>
+          </div>
+          <div className="faq-item">
+            <details>
+              <summary>ما هو الـ AI Render وكيف سيفيدني كمهندس؟</summary>
+              <p>هي أداة مدمجة بالغرفة الحية. تخيل أن تصور صالوناً غير مكتمل بالآجور، وتقوم المنصة في ثوانٍ بتحويله لصورة واقعية (3D Render) تظهر للعميل كيف سيبدو بعد التبليط والصباغة والفرش، مما يسهل إقناع العميل بقراراتك الهندسية!</p>
+            </details>
+          </div>
+        </div>
 
-            {/* Header */}
-            <div className="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
-              <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                {t.chatHeader}
-              </h4>
-              <button onClick={() => setIsChatOpen(false)} className="text-slate-400 hover:text-white">✕</button>
-            </div>
+      </div>
 
-            {/* Body */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-950/50">
-              {chatMessages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-3 rounded-xl text-xs leading-relaxed ${msg.sender === 'user' ? 'bg-cyan-600 text-white' : 'bg-slate-800 text-slate-200 border border-slate-700'}`}>
-                    {msg.text}
-                  </div>
-                </div>
-              ))}
+      {/* Checkout Modal */}
+      {isCheckoutOpen && selectedPlan && (
+        <div className="modal-overlay">
+          <div className="checkout-modal">
+            <button className="close-modal" onClick={() => setIsCheckoutOpen(false)}>✖</button>
+            <h2>تأكيد الاشتراك</h2>
+            
+            <p style={{color:'#94a3b8', textAlign:'center', fontSize:'0.9rem', marginBottom:'25px'}}>
+              المبلغ الإجمالي للاقتطاع: <b style={{color:'#38bdf8', fontSize:'1.2rem'}}>{selectedPlan.price}</b> د.م / <span>{isAnnual ? 'سنوياً' : 'شهرياً'}</span>
+            </p>
 
-              <div ref={chatBottomRef} />
-            </div>
+            <div className="payment-methods">
+              <div className="pay-method active">🏦 تحويل بنكي</div>
+              <div className="pay-method disabled" title="سيتم تفعيل بوابة الدفع الإلكتروني قريباً">💳 البطاقة (Utajir) <br/><small>قريباً</small></div>
+            </div>
 
-            {/* Input Form */}
-            <form onSubmit={handleSendMessage} className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder={t.chatPlaceholder}
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
-              />
-              <button type="submit" className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs transition">
-                {t.chatSend}
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+            <div className="form-group">
+              <label>اسم المكتب الهندسي / الشركة</label>
+              <input type="text" placeholder="مثال: Bureau d'Architecture Al Omran" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} />
+            </div>
+            
+            <div className="form-group">
+              <label>رقم التعريف الموحد ICE (للفوترة - اختياري)</label>
+              <input type="text" placeholder="000000000000000" value={agencyICE} onChange={(e) => setAgencyICE(e.target.value)} />
+            </div>
+
+            <button className="btn-confirm" disabled={isProcessing} onClick={processInstantUpgrade}>
+              {isProcessing ? '⏳ جاري التفعيل السحري...' : '✅ تأكيد ودفع الاشتراك'}
+            </button>
+            <p style={{textAlign:'center', fontSize:'0.8rem', color:'#64748b', marginTop:'15px'}}>🔒 بياناتك مشفرة ومحمية بالكامل.</p>
+          </div>
+        </div>
+      )}
+
+      {/* AI Assistant Widget */}
+      <div className="ai-widget-btn" onClick={() => setIsChatOpen(!isChatOpen)}>🤖</div>
+
+      {isChatOpen && (
+        <div className="ai-chat-window">
+          <div className="ai-header">
+            <h4>🤖 مدير الحسابات الذكي</h4>
+            <button onClick={() => setIsChatOpen(false)} style={{background:'none', border:'none', color:'#94a3b8', cursor:'pointer'}}>✖</button>
+          </div>
+          <div className="ai-messages">
+            {messages.map((msg, index) => (
+              <div key={index} className={msg.sender === 'bot' ? 'msg-bot' : 'msg-user'}>
+                {msg.text}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+          <div className="ai-options" style={{opacity: messages.some(m => m.isTyping) ? 0.5 : 1, pointerEvents: messages.some(m => m.isTyping) ? 'none' : 'auto'}}>
+            <button className="ai-option-btn" onClick={() => sendAiQuestion(1, 'هل تقارير الـ GPS معترف بها قانونياً؟')}>❓ هل تقارير الـ GPS معترف بها قانونياً؟</button>
+            <button className="ai-option-btn" onClick={() => sendAiQuestion(2, 'كيف تتم الترقية وتفعيل الميزات؟')}>❓ كيف تتم الترقية وتفعيل الميزات؟</button>
+            <button className="ai-option-btn" onClick={() => sendAiQuestion(3, 'هل يمكنني إلغاء الاشتراك لاحقاً؟')}>❓ هل أستطيع الإلغاء متى شئت؟</button>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
 }
