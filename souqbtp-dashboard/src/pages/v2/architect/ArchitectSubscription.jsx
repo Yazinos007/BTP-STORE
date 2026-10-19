@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { supabase } from '../supabaseClient'; // Adjust import path as needed
-import { useArchitectStore } from '../stores/useArchitectStore'; // Adjust import path
-import { useSettingsStore } from '../stores/useSettingsStore';   // Adjust import path
+import { supabase } from '../../../lib/supabase';
+import useArchitectStore from '../../../store/useArchitectStore';
+import useSettingsStore from '../../../store/useSettingsStore';
 
 // Translations dictionary for UI localization
 const translations = {
