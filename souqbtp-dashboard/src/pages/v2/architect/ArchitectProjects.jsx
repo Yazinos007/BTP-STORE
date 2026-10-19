@@ -193,19 +193,39 @@ export default function ArchitectProjects() {
 
   useEffect(() => {
     const initPage = async () => {
-      // 1. التأكد من وجود بيانات المهندس أولاً
-      if (!profile?.id) {
+      // 1. التأكد من هوية المهندس
+      let currentUserId = profile?.id;
+      if (!currentUserId) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await fetchArchitectData(user.id);
+          currentUserId = user.id;
         }
       }
-      // 2. جلب المشاريع بعد التأكد
-      fetchProjects();
+
+      // 2. جلب المشاريع مباشرة من قاعدة البيانات إذا تم التعرف على المهندس
+      if (currentUserId) {
+        try {
+          const { data, error } = await supabase
+            .from('conversations')
+            .select('*')
+            .eq('architect_id', currentUserId)
+            .order('created_at', { ascending: false });
+            
+          if (!error && data) {
+            // تحديث المشاريع في الصفحة (تأكد من استخدام الدالة الصحيحة من الـ State الخاص بك)
+            // إذا كان لديك setProjects في الـ Store، استخدمها: setProjects(data);
+            // أو إذا كنت تستخدم state محلي، أضف: const [localProjects, setLocalProjects] = useState([]); واستخدمها
+            useArchitectStore.setState({ projects: data }); 
+          }
+        } catch (err) {
+          console.error('Error fetching projects:', err);
+        }
+      }
     };
     
     initPage();
-  }, [profile, fetchArchitectData, fetchProjects]);
+  }, [profile, fetchArchitectData]);
 
   // --- Handlers ---
   const handleAutoFill = async (clientName, clientId) => {
