@@ -1,18 +1,33 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Calculator, UserCircle, MessageCircle, Store, Map, Users, Wallet, 
-  Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package, ShieldCheck, Zap, ImageIcon
+  Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package, ShieldCheck, Zap, 
+  ImageIcon, Compass, FileCheck2, Archive, Award, HardHat
 } from 'lucide-react';
 import useSettingsStore from '../../store/useSettingsStore';
 
 export default function SmartSidebar({ accountType, storeName, logoUrl }) {
   const { language = 'ar' } = useSettingsStore();
+  const location = useLocation();
 
   const isRtl = language === 'ar';
-  
+
+  // 🧠 تحديد الرتبة الفعالة بذكاء (من الـ Props أو من الرابط الحالي لمنع أي اختلاط)
+  const effectiveRole = (() => {
+    const path = location.pathname;
+    if (accountType === 'architect' || path.includes('/architect')) return 'architect';
+    if (accountType === 'provider' || path.includes('/provider-')) return 'provider';
+    return accountType || 'contractor';
+  })();
+
   const t = {
     ar: {
-      roleTitle: "مكتب المقاول",
+      // ألقاب الحسابات
+      roleContractor: "مكتب المقاول",
+      roleArchitect: "مكتب الدراسات الهندسية",
+      roleProvider: "فضاء الحرفي المعتمد",
+
+      // تصنيفات وأزرار المقاول العام
       premium: "الترقية والـ VIP 👑",
       sub: "الترقية للإمبراطورية ⚡",
       cat1: "القيادة والميدان",
@@ -31,14 +46,32 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "المصاريف والرسوم",
       tax: "النظام الجبائي",
       cpc: "المحاسبة العامة",
-      b2bInvoices: 'فواتير B2B',
-      freight: 'بورصة الشحن',
-      liveOrders: 'الطلبات اللحظية',
-      audit: 'التدقيق الذكي (Audit)',
-      prof: "الملف الشخصي"
+      b2bInvoices: "فواتير B2B",
+      freight: "بورصة الشحن",
+      liveOrders: "الطلبات اللحظية",
+      audit: "التدقيق الذكي (Audit)",
+      prof: "الملف الشخصي",
+
+      // تصنيفات وأزرار المهندس المعماري
+      archSub: "باقات النخبة (VIP) 👑",
+      archCat1: "الإشراف الهندسي",
+      archCat2: "التواصل والسوق",
+      archDash: "مكتب الدراسات (الرئيسية)",
+      archProjects: "الرقابة والمصادقات",
+      archArchive: "الأرشيف والتقارير",
+      archProfile: "الهوية الهندسية (البرستيج)",
+
+      // تصنيفات وأزرار الحرفي
+      provCat1: "إدارة أعمالي",
+      provDash: "لوحة الحرفي (الرئيسية)",
+      provProfile: "بيانات الحرفي",
+      provPortfolio: "معرض المشاريع (Portfolio)"
     },
     fr: {
-      roleTitle: "Bureau d'Entrepreneur",
+      roleContractor: "Bureau d'Entrepreneur",
+      roleArchitect: "Bureau d'Architecture",
+      roleProvider: "Espace Artisan Pro",
+
       premium: "Abonnement VIP 👑",
       sub: "Passer à l'Enterprise ⚡",
       cat1: "Direction & Terrain",
@@ -57,14 +90,30 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "Dépenses & Frais",
       tax: "Système Fiscal",
       cpc: "Comptabilité Générale",
-      b2bInvoices: 'Factures B2B',
-      freight: 'Bourse de Fret',
-      liveOrders: 'Commandes Live',
-      audit: 'Audit IA',
-      prof: "Profil"
+      b2bInvoices: "Factures B2B",
+      freight: "Bourse de Fret",
+      liveOrders: "Commandes Live",
+      audit: "Audit IA",
+      prof: "Profil",
+
+      archSub: "Plans Élite (VIP) 👑",
+      archCat1: "Direction Architecturale",
+      archCat2: "Communication & Marché",
+      archDash: "Bureau d'Études (Accueil)",
+      archProjects: "Contrôle & Approbations",
+      archArchive: "Archives & Rapports",
+      archProfile: "Identité & Prestige",
+
+      provCat1: "Gestion Artisan",
+      provDash: "Tableau Artisan (Accueil)",
+      provProfile: "Mes Informations",
+      provPortfolio: "Mon Portfolio"
     },
     en: {
-      roleTitle: "Contractor Office",
+      roleContractor: "Contractor Office",
+      roleArchitect: "Architectural Firm",
+      roleProvider: "Certified Artisan Hub",
+
       premium: "Upgrade & VIP 👑",
       sub: "Upgrade to Enterprise ⚡",
       cat1: "Leadership & Field",
@@ -83,16 +132,28 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       exp: "Expenses & Fees",
       tax: "Tax System",
       cpc: "General Accounting",
-      b2bInvoices: 'B2B Invoices',
-      freight: 'Freight Exchange',
-      liveOrders: 'Live Orders',
-      audit: 'Smart Audit',
-      prof: "Profile"
+      b2bInvoices: "B2B Invoices",
+      freight: "Freight Exchange",
+      liveOrders: "Live Orders",
+      audit: "Smart Audit",
+      prof: "Profile",
+
+      archSub: "Elite VIP Plans 👑",
+      archCat1: "Architectural Supervision",
+      archCat2: "Communication & Market",
+      archDash: "Engineering Office (Home)",
+      archProjects: "Supervision & Approvals",
+      archArchive: "Archive & Reports",
+      archProfile: "Architectural Identity",
+
+      provCat1: "My Practice",
+      provDash: "Artisan Dashboard",
+      provProfile: "Artisan Profile",
+      provPortfolio: "Project Portfolio"
     }
   }[language] || {};
 
   const colorMap = {
-    // 🌟 اللون الخاص بالترقية (VIP) المغناطيسي
     vip: {
       active: 'bg-orange-500/20 border-orange-500 text-orange-400 active-pulse-vip',
       icon: 'text-orange-400 drop-shadow-[0_0_12px_rgba(249,115,22,0.9)] animate-pulse',
@@ -130,9 +191,44 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
     }
   };
 
+  // 🚦 قوائم كل رتبة مفصولة بدقة تامة
   const roleMenus = {
+    // 1. قائمة المهندس المعماري (Architect)
+    architect: [
+      { category: t.premium, color: 'vip', items: [
+        { name: t.archSub, icon: Zap, path: '/v2/architect-subscription', isVIP: true },
+      ]},
+      { category: t.archCat1, color: 'purple', items: [
+        { name: t.archDash, icon: Compass, path: '/v2/architect-dashboard' },
+        { name: t.archProjects, icon: FileCheck2, path: '/v2/architect-projects' },
+        { name: t.archArchive, icon: Archive, path: '/v2/architect-archive' },
+      ]},
+      { category: t.archCat2, color: 'emerald', items: [
+        { name: t.msg, icon: MessageCircle, path: '/v2/messages' },
+        { name: t.market, icon: Store, path: '/v2/marketplace' },
+      ]},
+      { category: t.cat4, color: 'blue', items: [
+        { name: t.archProfile, icon: Award, path: '/v2/architect-profile' },
+      ]}
+    ],
+
+    // 2. قائمة الحرفي / المعلم (Provider)
+    provider: [
+      { category: t.provCat1, color: 'orange', items: [
+        { name: t.provDash, icon: HardHat, path: '/v2/provider-dashboard' },
+        { name: t.provPortfolio, icon: ImageIcon, path: '/v2/provider-portfolio' },
+      ]},
+      { category: t.cat2, color: 'emerald', items: [
+        { name: t.msg, icon: MessageCircle, path: '/v2/messages' },
+        { name: t.market, icon: Store, path: '/v2/marketplace' },
+      ]},
+      { category: t.cat4, color: 'purple', items: [
+        { name: t.provProfile, icon: UserCircle, path: '/v2/provider-profile' },
+      ]}
+    ],
+
+    // 3. قائمة المقاول العام (Contractor)
     contractor: [
-      // 🚀 تمييز قسم الـ VIP بقوة في الأعلى
       { category: t.premium, color: 'vip', items: [
         { name: t.sub, icon: Zap, path: '/v2/subscription', isVIP: true },
       ]},
@@ -159,17 +255,26 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
         { name: t.audit, icon: ShieldCheck, path: '/v2/audit' },
       ]},
       { category: t.cat4, color: 'purple', items: [
-        { name: t.prof, icon: UserCircle, path: '/v2/provider-profile' },
-        { 
-          name: language === 'ar' ? 'معرض المشاريع' : language === 'fr' ? 'Portfolio' : 'Portfolio', 
-          icon: ImageIcon, 
-          path: '/v2/provider-portfolio' 
-        },
+        { name: t.prof, icon: UserCircle, path: '/v2/profile' },
       ]}
     ]
   };
 
-  const currentMenu = roleMenus[accountType] || roleMenus['contractor'];
+  const currentMenu = roleMenus[effectiveRole] || roleMenus.contractor;
+
+  const currentRoleLabel =
+    effectiveRole === 'architect'
+      ? t.roleArchitect
+      : effectiveRole === 'provider'
+      ? t.roleProvider
+      : t.roleContractor;
+
+  const badgeColors =
+    effectiveRole === 'architect'
+      ? 'text-purple-300 bg-purple-500/15 border-purple-500/30'
+      : effectiveRole === 'provider'
+      ? 'text-orange-300 bg-orange-500/15 border-orange-500/30'
+      : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
 
   return (
     <>
@@ -178,7 +283,6 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
           @keyframes shimmer-sweep { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
           .text-shimmer { background-size: 200% auto; animation: shimmer-sweep 5s linear infinite; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
           
-          /* 🌟 تأثير النبض الجذاب للـ VIP */
           @keyframes pulse-border-vip { 
             0% { box-shadow: 0 0 0 0 rgba(249,115,22,0.6); background-color: rgba(249,115,22,0.1); } 
             70% { box-shadow: 0 0 0 10px rgba(249,115,22,0); background-color: rgba(249,115,22,0.2); } 
@@ -214,7 +318,9 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
           </div>
           <div className="flex flex-col truncate">
             <h2 className="text-white font-black text-lg tracking-wide truncate">SouqBTP V2</h2>
-            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded-full w-max mt-1 border border-emerald-500/20">{t.roleTitle}</span>
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full w-max mt-1 border ${badgeColors}`}>
+              {currentRoleLabel}
+            </span>
           </div>
         </div>
 
@@ -245,7 +351,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
                   ))}
                 </div>
               </div>
-            )
+            );
           })}
         </nav>
       </div>
