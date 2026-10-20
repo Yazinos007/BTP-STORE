@@ -80,7 +80,7 @@ export default function ProviderPortfolio() {
   const isRtl = language === 'ar';
   const t = translations[language] || translations.ar;
 
-  const [providerId, setProviderId] = useState(null);
+  const [providerIds, setProviderIds] = useState([]); // مصفوفة لجمع كل المعرفات الممكنة
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -94,42 +94,57 @@ export default function ProviderPortfolio() {
   
   const fileInputRef = useRef(null);
 
-  // 1. تحديد الهوية وجلب المشاريع
+  // 1. تحديد الهوية بشكل شامل وجلب المشاريع
   useEffect(() => {
     const fetchPortfolio = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
 
+      // البحث عن الآيدي الرقمي إن وجد
       const { data: provRow } = await supabase
         .from('providers')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (!provRow) {
-        setIsLoading(false);
-        return;
-      }
+      // دمج المعرف الرقمي والـ UUID معاً للبحث بهما
+      const allIds = Array.from(new Set([
+        String(provRow?.id || ''),
+        String(user.id)
+      ])).filter(Boolean);
 
-      setProviderId(provRow.id);
-      loadProjects(provRow.id);
+      setProviderIds(allIds);
+      loadProjects(allIds);
     };
 
     fetchPortfolio();
   }, []);
 
-  const loadProjects = async (pId) => {
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from('provider_portfolio')
-      .select('*')
-      .eq('provider_id', pId)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setProjects(data);
+  const loadProjects = async (idsArray) => {
+    if (!idsArray || idsArray.length === 0) {
+      setIsLoading(false);
+      return;
     }
-    setIsLoading(false);
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('provider_portfolio')
+        .select('*')
+        .in('provider_id', idsArray)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setProjects(data);
+      }
+    } catch (err) {
+      console.error("Error loading portfolio:", err);
+    } finally {
+      setIsLoading(false); // ضمان إيقاف دائرة التحميل دائماً!
+    }
   };
 
   const handleFileChange = (e) => {
@@ -153,7 +168,7 @@ export default function ProviderPortfolio() {
   // 2. إضافة مشروع جديد
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!providerId) return;
+    if (providerIds.length === 0) return;
     if (!file) {
       showAlert('error', t.errorFile);
       return;
@@ -161,10 +176,11 @@ export default function ProviderPortfolio() {
 
     setIsSubmitting(true);
     try {
+      const primaryId = providerIds[0]; // نستخدم أول معرف للإدراج (يفضل الرقمي إن وجد)
       const fileExt = file.name.split('.').pop();
-      const fileName = `port_${providerId}_${Date.now()}.${fileExt}`;
+      const fileName = `port_${primaryId}_${Date.now()}.${fileExt}`;
 
-      // رفع الصورة لمجلد project-files
+      // رفع الصورة
       const { error: uploadError } = await supabase.storage
         .from('project-files')
         .upload(fileName, file);
@@ -174,11 +190,11 @@ export default function ProviderPortfolio() {
       const { data: pubData } = supabase.storage.from('project-files').getPublicUrl(fileName);
       const imageUrl = pubData.publicUrl;
 
-      // إدراج البيانات في الجدول
+      // إدراج البيانات
       const { error: dbError } = await supabase
         .from('provider_portfolio')
         .insert([{
-          provider_id: providerId,
+          provider_id: primaryId,
           image_path: imageUrl,
           title: formData.title.trim(),
           city: formData.city.trim(),
@@ -195,7 +211,7 @@ export default function ProviderPortfolio() {
       setFormData({ title: '', city: '', year: new Date().getFullYear() });
       if (fileInputRef.current) fileInputRef.current.value = '';
       
-      loadProjects(providerId);
+      loadProjects(providerIds);
 
     } catch (err) {
       showAlert('error', t.errorMsg);
@@ -209,7 +225,6 @@ export default function ProviderPortfolio() {
     if (!window.confirm(t.confirmDelete)) return;
 
     try {
-      // حذف من قاعدة البيانات
       const { error: dbError } = await supabase
         .from('provider_portfolio')
         .delete()
@@ -217,7 +232,7 @@ export default function ProviderPortfolio() {
 
       if (dbError) throw dbError;
 
-      // محاولة حذف الصورة من الستوراج (استخراج اسم الملف من الرابط)
+      // محاولة حذف الصورة من الستوراج
       if (imagePath) {
         const fileNameMatch = imagePath.match(/\/project-files\/(.+)$/);
         if (fileNameMatch && fileNameMatch[1]) {
@@ -250,17 +265,13 @@ export default function ProviderPortfolio() {
       {/* تخطيط الشبكة (Grid Layout) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* ========================================================= */}
-        {/* العمود الأيمن: نموذج إضافة مشروع (Sticky) */}
-        {/* ========================================================= */}
+        {/* العمود الأيمن: نموذج إضافة مشروع */}
         <div className="lg:col-span-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 sticky top-6 order-1 lg:order-2">
           <h3 className="text-lg font-black text-orange-600 mb-5 border-b-2 border-orange-100 pb-3 flex items-center gap-2">
             <Plus className="w-5 h-5" /> {t.addTitle}
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            
-            {/* الصورة */}
             <div>
               <label className="block font-bold text-slate-600 text-sm mb-2">{t.imgLabel}</label>
               <input 
@@ -294,7 +305,6 @@ export default function ProviderPortfolio() {
               )}
             </div>
 
-            {/* العنوان */}
             <div>
               <label className="block font-bold text-slate-600 text-sm mb-2">{t.titleLabel}</label>
               <input 
@@ -307,7 +317,6 @@ export default function ProviderPortfolio() {
               />
             </div>
 
-            {/* المدينة والسنة */}
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block font-bold text-slate-600 text-sm mb-2">{t.cityLabel}</label>
@@ -343,9 +352,7 @@ export default function ProviderPortfolio() {
           </form>
         </div>
 
-        {/* ========================================================= */}
         {/* العمود الأيسر: معرض المشاريع الحالية */}
-        {/* ========================================================= */}
         <div className="lg:col-span-8 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 order-2 lg:order-1">
           <div className="flex justify-between items-center mb-6 border-b-2 border-slate-100 pb-4">
             <h3 className="text-xl font-black text-slate-800 m-0 flex items-center gap-2">
