@@ -35,6 +35,7 @@ import ProviderProfile from './provider/ProviderProfile';
 import ProviderPortfolio from './provider/ProviderPortfolio';
 
 import UnifiedMessages from './shared/UnifiedMessages';
+import LiveRoom from './shared/LiveRoom';
 
 // استيراد صفحات الهبوط (المغناطيس)
 import EmpireLanding from '../../landing-pages/EmpireLanding';
@@ -68,6 +69,7 @@ export default function V2Router({ session, supplier }) {
       <Route path="contractor" element={<Navigate to="/contractor" replace />} />
 
       {/* 🚀 الغرفة الحية للمهندس (شاشة كاملة خارج الـ Layout) */}
+      <Route path="live-room/:cid" element={<LiveRoom />} />
       <Route path="architect/live-room/:cid" element={<LiveRoomArchitect />} />
       <Route path="architect-register" element={<ArchitectRegister />} />
 
