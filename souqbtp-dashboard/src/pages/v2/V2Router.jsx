@@ -114,7 +114,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="architect-archive" element={<ArchitectArchive />} />
 
         {/* مسارات الحرفي / المقاول */}
-        <Route path="contractor-dashboard" element={<ProviderDashboard />} />
+        <Route path="provider-dashboard" element={<ProviderDashboard />} />
         <Route path="provider-profile" element={<ProviderProfile />} />
         <Route path="provider-portfolio" element={<ProviderPortfolio />} />
 
