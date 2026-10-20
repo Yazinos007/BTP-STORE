@@ -268,38 +268,22 @@ export default function UnifiedMessages() {
   const recordIntervalRef = useRef(null);
   const audioElementsRef = useRef({});
 
-  // 1. استخراج المعرف الدقيق وتحديد الرتبة (Architect vs Provider)
+  // 1. تحديد الهوية بشكل آمن بدون خلط أنواع البيانات (UUID vs Integer)
   useEffect(() => {
     const resolveIdentity = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // فحص جدول المهندسين مباشرة لمعرفة هل المستخدم مهندس واستخراج كافة معرفاته
-      const { data: archRow } = await supabase
-        .from('architects')
-        .select('id, user_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
       const isArchitect = Boolean(
-        archRow ||
         profile?.id ||
         user.user_metadata?.role === 'architect' ||
         window.location.pathname.includes('architect')
       );
 
       if (isArchitect) {
-        const primaryId = String(archRow?.id || profile?.id || user.id);
-        const allIds = Array.from(new Set([
-          String(archRow?.id || ''),
-          String(profile?.id || ''),
-          String(user.id)
-        ])).filter(Boolean);
-
         setIdentity({
           role: 'architect',
-          trackId: primaryId,
-          allIds,
+          trackId: profile?.id || user.id, // معرف المهندس (UUID)
           userUuid: user.id
         });
       } else {
@@ -309,22 +293,15 @@ export default function UnifiedMessages() {
           .eq('user_id', user.id)
           .maybeSingle();
 
-        const primaryId = String(provRow?.id || user.id);
-        const allIds = Array.from(new Set([
-          String(provRow?.id || ''),
-          String(user.id)
-        ])).filter(Boolean);
-
         setIdentity({
           role: 'provider',
-          trackId: primaryId,
-          allIds,
+          trackId: provRow?.id, // معرف المقاول (رقمي)
           userUuid: user.id
         });
       }
     };
     resolveIdentity();
-  }, [profile, fetchArchitectData]);
+  }, [profile]);
 
   // 2. تشغيل الرادار العالمي للحضور المباشر (global_radar_room)
   useEffect(() => {
@@ -391,20 +368,32 @@ export default function UnifiedMessages() {
     };
   }, [fetchLeads]);
 
-  // 4. جلب وتحديث قائمة المحادثات (صندوق الرسائل) بكافة المعرفات الممكنة
+  // 4. جلب وتحديث قائمة المحادثات (صندوق الرسائل) بطريقة آمنة
   const fetchConversationsList = useCallback(async () => {
-    if (!identity.trackId) return;
+    if (!identity.userUuid) return;
+    
     try {
-      const colName = identity.role === 'architect' ? 'architect_id' : 'provider_id';
-      const searchIds = identity.allIds?.length ? identity.allIds : [identity.trackId];
+      let query = supabase.from('conversations').select('*').order('created_at', { ascending: false });
 
-      const { data: convs, error } = await supabase
-        .from('conversations')
-        .select('*')
-        .in(colName, searchIds)
-        .order('created_at', { ascending: false });
+      if (identity.role === 'architect') {
+        // المهندس: نبحث عن الـ UUID الخاص بالحساب أو البروفايل
+        const id1 = identity.userUuid;
+        const id2 = identity.trackId || id1;
+        query = query.or(`architect_id.eq.${id1},architect_id.eq.${id2}`);
+      } else {
+        // المقاول: إذا لم يكتمل حسابه (ليس لديه ID)، نوقف البحث
+        if (!identity.trackId) {
+          setConversations([]);
+          setLoadingList(false);
+          return;
+        }
+        query = query.eq('provider_id', identity.trackId);
+      }
+
+      const { data: convs, error } = await query;
 
       if (error || !convs) {
+        console.error("Fetch error:", error);
         setConversations([]);
         setLoadingList(false);
         return;
@@ -456,7 +445,7 @@ export default function UnifiedMessages() {
     } finally {
       setLoadingList(false);
     }
-  }, [identity.trackId, identity.allIds, identity.role]);
+  }, [identity.trackId, identity.userUuid, identity.role]);
 
   useEffect(() => {
     fetchConversationsList();
