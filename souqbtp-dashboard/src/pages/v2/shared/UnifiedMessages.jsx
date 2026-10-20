@@ -227,6 +227,7 @@ export default function UnifiedMessages() {
   const [conversations, setConversations] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
   const [leads, setLeads] = useState([]);
+  const [loadingLeads, setLoadingLeads] = useState(true);
   const [onlineClientIds, setOnlineClientIds] = useState([]);
 
   // حالة الدفتر المالي (Ledger Modal)
@@ -273,30 +274,51 @@ export default function UnifiedMessages() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const roleMeta = user.user_metadata?.role || 'architect';
+      // فحص جدول المهندسين مباشرة لمعرفة هل المستخدم مهندس واستخراج كافة معرفاته
+      const { data: archRow } = await supabase
+        .from('architects')
+        .select('id, user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (roleMeta === 'architect' || window.location.pathname.includes('architect')) {
-        let archId = profile?.id;
-        if (!archId) {
-          await fetchArchitectData(user.id);
-          const { data: archRow } = await supabase
-            .from('architects')
-            .select('id')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          archId = archRow?.id || user.id;
-        }
-        setIdentity({ role: 'architect', trackId: String(archId), userUuid: user.id });
+      const isArchitect = Boolean(
+        archRow ||
+        profile?.id ||
+        user.user_metadata?.role === 'architect' ||
+        window.location.pathname.includes('architect')
+      );
+
+      if (isArchitect) {
+        const primaryId = String(archRow?.id || profile?.id || user.id);
+        const allIds = Array.from(new Set([
+          String(archRow?.id || ''),
+          String(profile?.id || ''),
+          String(user.id)
+        ])).filter(Boolean);
+
+        setIdentity({
+          role: 'architect',
+          trackId: primaryId,
+          allIds,
+          userUuid: user.id
+        });
       } else {
-        // إذا كان حرفياً أو مقاولاً
         const { data: provRow } = await supabase
           .from('providers')
           .select('id')
           .eq('user_id', user.id)
           .maybeSingle();
+
+        const primaryId = String(provRow?.id || user.id);
+        const allIds = Array.from(new Set([
+          String(provRow?.id || ''),
+          String(user.id)
+        ])).filter(Boolean);
+
         setIdentity({
           role: 'provider',
-          trackId: String(provRow?.id || user.id),
+          trackId: primaryId,
+          allIds,
           userUuid: user.id
         });
       }
@@ -336,13 +358,20 @@ export default function UnifiedMessages() {
 
   // 3. تشغيل رادار الصفقات الحية (project_leads)
   const fetchLeads = useCallback(async () => {
-    const { data } = await supabase
-      .from('project_leads')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(4);
-    if (data) setLeads(data);
+    setLoadingLeads(true);
+    try {
+      const { data } = await supabase
+        .from('project_leads')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(4);
+      if (data) setLeads(data);
+    } catch (err) {
+      console.error('Radar error:', err);
+    } finally {
+      setLoadingLeads(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -362,15 +391,17 @@ export default function UnifiedMessages() {
     };
   }, [fetchLeads]);
 
-  // 4. جلب وتحديث قائمة المحادثات (صندوق الرسائل)
+  // 4. جلب وتحديث قائمة المحادثات (صندوق الرسائل) بكافة المعرفات الممكنة
   const fetchConversationsList = useCallback(async () => {
     if (!identity.trackId) return;
     try {
       const colName = identity.role === 'architect' ? 'architect_id' : 'provider_id';
+      const searchIds = identity.allIds?.length ? identity.allIds : [identity.trackId];
+
       const { data: convs, error } = await supabase
         .from('conversations')
         .select('*')
-        .eq(colName, identity.trackId)
+        .in(colName, searchIds)
         .order('created_at', { ascending: false });
 
       if (error || !convs) {
@@ -379,7 +410,7 @@ export default function UnifiedMessages() {
         return;
       }
 
-      // جلب آخر رسالة وعدد الرسائل غير المقروءة لكل محادثة
+      // جلب آخر رسالة ورقم هاتف العميل وعدد الرسائل غير المقروءة لكل محادثة
       const enriched = await Promise.all(
         convs.map(async (c) => {
           const { data: lastMsgData } = await supabase
@@ -397,8 +428,19 @@ export default function UnifiedMessages() {
             .eq('sender_type', 'client')
             .eq('is_read', false);
 
+          let phone = c.client_phone;
+          if (!phone && c.client_id) {
+            const { data: profData } = await supabase
+              .from('profiles')
+              .select('phone')
+              .eq('id', c.client_id)
+              .maybeSingle();
+            if (profData?.phone) phone = profData.phone;
+          }
+
           return {
             ...c,
+            client_phone: phone || '---',
             message_text: lastMsgData?.content || c.last_message || '...',
             sender_type: lastMsgData?.sender_type || 'client',
             last_time: lastMsgData?.created_at || c.created_at,
@@ -414,7 +456,7 @@ export default function UnifiedMessages() {
     } finally {
       setLoadingList(false);
     }
-  }, [identity.trackId, identity.role]);
+  }, [identity.trackId, identity.allIds, identity.role]);
 
   useEffect(() => {
     fetchConversationsList();
@@ -1019,9 +1061,13 @@ export default function UnifiedMessages() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-              {leads.length === 0 ? (
+              {loadingLeads ? (
                 <p style={{ textAlign: 'center', color: '#92400e', width: '100%', gridColumn: '1 / -1', margin: 0 }}>
                   {t.scanningRadar}
+                </p>
+              ) : leads.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#94a3b8', fontWeight: 'bold', width: '100%', gridColumn: '1 / -1', margin: 0 }}>
+                  {t.noLeads}
                 </p>
               ) : (
                 leads.map((l) => (
