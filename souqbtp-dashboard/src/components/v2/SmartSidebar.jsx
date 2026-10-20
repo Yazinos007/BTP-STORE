@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Calculator, UserCircle, MessageCircle, Store, Map, Users, Wallet, 
-  Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package, ShieldCheck, Zap 
+  Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package, ShieldCheck, Zap, ImageIcon
 } from 'lucide-react';
 import useSettingsStore from '../../store/useSettingsStore';
 
@@ -159,7 +159,12 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
         { name: t.audit, icon: ShieldCheck, path: '/v2/audit' },
       ]},
       { category: t.cat4, color: 'purple', items: [
-        { name: t.prof, icon: UserCircle, path: '/v2/profile' },
+        { name: t.prof, icon: UserCircle, path: '/v2/provider-profile' },
+        { 
+          name: language === 'ar' ? 'معرض المشاريع' : language === 'fr' ? 'Portfolio' : 'Portfolio', 
+          icon: ImageIcon, 
+          path: '/v2/provider-portfolio' 
+        },
       ]}
     ]
   };

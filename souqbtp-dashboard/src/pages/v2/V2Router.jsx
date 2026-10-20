@@ -29,6 +29,11 @@ import ArchitectArchive from './architect/ArchitectArchive';
 import LiveRoomArchitect from './architect/LiveRoomArchitect';
 import ArchitectRegister from './architect/ArchitectRegister';
 
+// استيرادات صفحات المقاول/الحرفي
+import ProviderDashboard from './provider/ProviderDashboard';
+import ProviderProfile from './provider/ProviderProfile';
+import ProviderPortfolio from './provider/ProviderPortfolio';
+
 import UnifiedMessages from './shared/UnifiedMessages';
 
 // استيراد صفحات الهبوط (المغناطيس)
@@ -107,6 +112,11 @@ export default function V2Router({ session, supplier }) {
         <Route path="architect-profile" element={<ArchitectProfile />} />
         <Route path="architect-projects" element={<ArchitectProjects />} />
         <Route path="architect-archive" element={<ArchitectArchive />} />
+
+        {/* مسارات الحرفي / المقاول */}
+        <Route path="contractor-dashboard" element={<ProviderDashboard />} />
+        <Route path="provider-profile" element={<ProviderProfile />} />
+        <Route path="provider-portfolio" element={<ProviderPortfolio />} />
 
         {/* 🚨 التوجيه التلقائي للمسارات المجهولة داخل v2 */}
         <Route path="*" element={<Navigate to="contractor-dashboard" replace />} />
