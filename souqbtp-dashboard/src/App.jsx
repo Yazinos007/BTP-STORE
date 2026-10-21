@@ -430,9 +430,21 @@ const WholesalerDashboard = ({ supplier, children }) => {
   );
 };
 
-// 💎 مكون التاجر الداعم لمبدل الفضاءات الشامل
+// 💎 مكون التاجر الداعم لمبدل الفضاءات الشامل (مع خاصية الشاشة المصغرة)
 const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  // 🚀 فحص هل نحن داخل Iframe من اللوحة القديمة
+  const isMinimal = window.location.search.includes('minimal=true') || window.location.href.includes('minimal=true');
+
+  // إذا كنا في وضع الشاشة المصغرة، نعرض المحتوى الداخلي فقط بدون أي قوائم
+  if (isMinimal) {
+    return (
+      <div className="w-full min-h-screen overflow-x-hidden overflow-y-auto p-4 md:p-6 bg-gray-50 text-gray-800" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
