@@ -4,16 +4,117 @@ import { supabase } from '../../../lib/supabase';
 import useSettingsStore from '../../../store/useSettingsStore';
 import { HardHat, Mail, Lock, User, Phone, MapPin, Briefcase, FileText, ArrowRight, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
+const translations = {
+  ar: {
+    portalSubtitle: "بوابة الحرفيين والمقاولين",
+    tabRegister: "إنشاء حساب جديد",
+    tabLogin: "تسجيل الدخول",
+    emailLabel: "البريد الإلكتروني",
+    passwordLabel: "كلمة المرور",
+    loginBtn: "تسجيل الدخول",
+    fullNameLabel: "الاسم الكامل *",
+    phoneLabel: "رقم الهاتف *",
+    cityLabel: "المدينة",
+    specialtyLabel: "التخصص الرئيسي *",
+    selectSpecialty: "-- اختر تخصصك الدقيق --",
+    notesLabel: "ملاحظات إضافية",
+    notesPlace: "تعريف قصير بخبرتك...",
+    registerBtn: "إنشاء الحساب والانطلاق",
+    
+    // التخصصات
+    grosOeuvres: "أعمال البناء (Gros Œuvres)",
+    electricity: "الكهرباء (تريسيان)",
+    plumbing: "السباكة (بلومبي)",
+    waterproofing: "العزل (Étanchéité)",
+    tiling: "الجبس والسيراميك (الزليج)",
+    painting: "الدهان والتجصيص (الصباغة)",
+    carpentry: "نجارة وألمونيوم",
+
+    // رسائل النظام
+    errPhoneExists: "رقم الهاتف هذا مسجل مسبقاً.",
+    errEmailExists: "البريد الإلكتروني مستخدم مسبقاً.",
+    errUnexpected: "حدث خطأ غير متوقع.",
+    errInvalidLogin: "البيانات غير صحيحة.",
+    errNotProvider: "هذا الحساب ليس مسجلاً كحرفي.",
+    successRegister: "تم إنشاء الحساب بنجاح! جاري تحويلك...",
+    successLogin: "تم تسجيل الدخول بنجاح! جاري تحويلك..."
+  },
+  fr: {
+    portalSubtitle: "Portail des Artisans et Entrepreneurs",
+    tabRegister: "Créer un compte",
+    tabLogin: "Se connecter",
+    emailLabel: "Email",
+    passwordLabel: "Mot de passe",
+    loginBtn: "Connexion",
+    fullNameLabel: "Nom Complet *",
+    phoneLabel: "Téléphone *",
+    cityLabel: "Ville",
+    specialtyLabel: "Spécialité *",
+    selectSpecialty: "-- Choisissez votre spécialité --",
+    notesLabel: "Notes supplémentaires",
+    notesPlace: "Courte description...",
+    registerBtn: "Créer mon compte",
+    
+    grosOeuvres: "Gros Œuvres",
+    electricity: "Électricité",
+    plumbing: "Plomberie",
+    waterproofing: "Étanchéité",
+    tiling: "Carrelage & Plâtre",
+    painting: "Peinture",
+    carpentry: "Menuiserie & Aluminium",
+
+    errPhoneExists: "Ce numéro de téléphone est déjà enregistré.",
+    errEmailExists: "Cet email est déjà utilisé.",
+    errUnexpected: "Une erreur est survenue.",
+    errInvalidLogin: "Identifiants incorrects.",
+    errNotProvider: "Ce compte n'est pas un compte artisan.",
+    successRegister: "Compte créé avec succès ! Redirection...",
+    successLogin: "Connexion réussie ! Redirection..."
+  },
+  en: {
+    portalSubtitle: "Artisans and Contractors Portal",
+    tabRegister: "Create New Account",
+    tabLogin: "Login",
+    emailLabel: "Email Address",
+    passwordLabel: "Password",
+    loginBtn: "Login",
+    fullNameLabel: "Full Name *",
+    phoneLabel: "Phone Number *",
+    cityLabel: "City",
+    specialtyLabel: "Main Specialty *",
+    selectSpecialty: "-- Select your specialty --",
+    notesLabel: "Additional Notes",
+    notesPlace: "Brief description of your expertise...",
+    registerBtn: "Create Account & Start",
+    
+    grosOeuvres: "Construction (Gros Œuvres)",
+    electricity: "Electricity",
+    plumbing: "Plumbing",
+    waterproofing: "Waterproofing",
+    tiling: "Tiling & Plaster",
+    painting: "Painting",
+    carpentry: "Carpentry & Aluminum",
+
+    errPhoneExists: "This phone number is already registered.",
+    errEmailExists: "This email is already in use.",
+    errUnexpected: "An unexpected error occurred.",
+    errInvalidLogin: "Invalid credentials.",
+    errNotProvider: "This account is not registered as an artisan.",
+    successRegister: "Account created successfully! Redirecting...",
+    successLogin: "Login successful! Redirecting..."
+  }
+};
+
 export default function ProviderAuth() {
   const navigate = useNavigate();
   const { language = 'ar' } = useSettingsStore();
   const isRtl = language === 'ar';
+  const t = translations[language] || translations.en;
 
   const [isLogin, setIsLogin] = useState(false); // false = Register, true = Login
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, type: '', text: '' });
 
-  // حالات الفورم
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -33,18 +134,16 @@ export default function ProviderAuth() {
     setTimeout(() => setAlert({ show: false, type: '', text: '' }), 6000);
   };
 
-  // 1. معالجة التسجيل (بدون PHP نهائياً - 100% Serverless)
+  // 1. معالجة التسجيل
   const handleRegister = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setAlert({ show: false, type: '', text: '' });
 
     try {
-      // أ. التحقق من أن رقم الهاتف غير مستخدم (اختياري لزيادة الأمان)
       const { data: existingPhone } = await supabase.from('providers').select('id').eq('phone', formData.phone).maybeSingle();
-      if (existingPhone) throw new Error(isRtl ? 'رقم الهاتف هذا مسجل مسبقاً.' : 'Ce numéro de téléphone est déjà enregistré.');
+      if (existingPhone) throw new Error(t.errPhoneExists);
 
-      // ب. التسجيل في نظام المصادقة
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -55,10 +154,9 @@ export default function ProviderAuth() {
 
       if (authError) throw authError;
       if (authData.user && authData.user.identities.length === 0) {
-        throw new Error(isRtl ? 'البريد الإلكتروني مستخدم مسبقاً.' : 'Cet email est déjà utilisé.');
+        throw new Error(t.errEmailExists);
       }
 
-      // ج. إنشاء ملف الحرفي في جدول providers
       const { data: newProvider, error: dbError } = await supabase
         .from('providers')
         .insert([{
@@ -73,7 +171,6 @@ export default function ProviderAuth() {
 
       if (dbError) throw dbError;
 
-      // د. ربط الحرفي بالخدمة المتخصصة
       if (formData.serviceId) {
         await supabase.from('provider_services').insert([{
           provider_id: newProvider.id,
@@ -81,17 +178,17 @@ export default function ProviderAuth() {
         }]);
       }
 
-      showAlert('success', isRtl ? 'تم إنشاء الحساب بنجاح! جاري تحويلك...' : 'Compte créé avec succès ! Redirection...');
-      setTimeout(() => navigate('/v2/contractor-dashboard'), 2000);
+      showAlert('success', t.successRegister);
+      setTimeout(() => navigate('/v2/provider-dashboard'), 2000);
 
     } catch (err) {
-      showAlert('error', err.message || (isRtl ? 'حدث خطأ غير متوقع.' : 'Une erreur est survenue.'));
+      showAlert('error', err.message || t.errUnexpected);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 2. معالجة تسجيل الدخول (بالإيميل والباسورد لمواكبة النظام الجديد)
+  // 2. معالجة تسجيل الدخول
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -103,17 +200,16 @@ export default function ProviderAuth() {
         password: formData.password
       });
 
-      if (error) throw new Error(isRtl ? 'البيانات غير صحيحة.' : 'Identifiants incorrects.');
+      if (error) throw new Error(t.errInvalidLogin);
 
-      // التحقق من أن المستخدم حرفي/مقاول
       const role = data.user?.user_metadata?.role;
       if (role !== 'provider') {
          await supabase.auth.signOut();
-         throw new Error(isRtl ? 'هذا الحساب ليس مسجلاً كحرفي.' : 'Ce compte n\'est pas un compte artisan.');
+         throw new Error(t.errNotProvider);
       }
 
-      showAlert('success', isRtl ? 'تم تسجيل الدخول بنجاح! جاري تحويلك...' : 'Connexion réussie ! Redirection...');
-      setTimeout(() => navigate('/v2/contractor-dashboard'), 1500);
+      showAlert('success', t.successLogin);
+      setTimeout(() => navigate('/v2/provider-dashboard'), 1500);
 
     } catch (err) {
       showAlert('error', err.message);
@@ -136,7 +232,7 @@ export default function ProviderAuth() {
               <HardHat className="w-8 h-8 text-white -rotate-3" />
             </div>
             <h1 className="text-2xl font-black text-white mb-2 tracking-wide">SouqBTP PRO</h1>
-            <p className="text-slate-400 text-sm font-medium">{isRtl ? 'بوابة الحرفيين والمقاولين' : 'Portail des Artisans et Entrepreneurs'}</p>
+            <p className="text-slate-400 text-sm font-medium">{t.portalSubtitle}</p>
           </div>
         </div>
 
@@ -145,13 +241,13 @@ export default function ProviderAuth() {
             onClick={() => { setIsLogin(false); setAlert({ show: false, type: '', text: '' }); }}
             className={`flex-1 py-4 text-sm font-black transition-colors ${!isLogin ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/50' : 'text-slate-400 hover:bg-slate-50'}`}
           >
-            {isRtl ? 'إنشاء حساب جديد' : 'Créer un compte'}
+            {t.tabRegister}
           </button>
           <button 
             onClick={() => { setIsLogin(true); setAlert({ show: false, type: '', text: '' }); }}
             className={`flex-1 py-4 text-sm font-black transition-colors ${isLogin ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-slate-400 hover:bg-slate-50'}`}
           >
-            {isRtl ? 'تسجيل الدخول' : 'Se connecter'}
+            {t.tabLogin}
           </button>
         </div>
 
@@ -167,22 +263,22 @@ export default function ProviderAuth() {
             /* =================== فورم تسجيل الدخول =================== */
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">{isRtl ? 'البريد الإلكتروني' : 'Email'}</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t.emailLabel}</label>
                 <div className="relative">
                   <Mail className={`w-5 h-5 absolute top-3.5 text-slate-400 ${isRtl ? 'right-4' : 'left-4'}`} />
                   <input type="email" name="email" required value={formData.email} onChange={handleChange} className={`w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors text-sm font-medium ${isRtl ? 'pr-12' : 'pl-12'}`} dir="ltr" placeholder="artisan@email.com" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">{isRtl ? 'كلمة المرور' : 'Mot de passe'}</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t.passwordLabel}</label>
                 <div className="relative">
                   <Lock className={`w-5 h-5 absolute top-3.5 text-slate-400 ${isRtl ? 'right-4' : 'left-4'}`} />
                   <input type="password" name="password" required value={formData.password} onChange={handleChange} className={`w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors text-sm font-medium ${isRtl ? 'pr-12' : 'pl-12'}`} dir="ltr" placeholder="••••••••" />
                 </div>
               </div>
               <button type="submit" disabled={isLoading} className="w-full py-4 mt-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-base shadow-[0_5px_15px_rgba(37,99,235,0.3)] transition-transform hover:-translate-y-1 flex justify-center items-center gap-2 disabled:opacity-70 disabled:transform-none">
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
-                {isRtl ? 'تسجيل الدخول' : 'Connexion'}
+                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className={`w-5 h-5 ${isRtl ? 'rotate-180' : ''}`} />}
+                {t.loginBtn}
               </button>
             </form>
           ) : (
@@ -190,67 +286,67 @@ export default function ProviderAuth() {
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">{isRtl ? 'البريد الإلكتروني *' : 'Email *'}</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.emailLabel} *</label>
                   <div className="relative">
                     <Mail className={`w-4 h-4 absolute top-3.5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
                     <input type="email" name="email" required value={formData.email} onChange={handleChange} className={`w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-colors text-sm ${isRtl ? 'pr-9' : 'pl-9'}`} dir="ltr" />
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">{isRtl ? 'كلمة المرور *' : 'Mot de passe *'}</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.passwordLabel} *</label>
                   <div className="relative">
                     <Lock className={`w-4 h-4 absolute top-3.5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
                     <input type="password" name="password" required minLength="6" value={formData.password} onChange={handleChange} className={`w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-colors text-sm ${isRtl ? 'pr-9' : 'pl-9'}`} dir="ltr" />
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">{isRtl ? 'الاسم الكامل *' : 'Nom Complet *'}</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.fullNameLabel}</label>
                   <div className="relative">
                     <User className={`w-4 h-4 absolute top-3.5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
                     <input type="text" name="fullName" required value={formData.fullName} onChange={handleChange} className={`w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-colors text-sm ${isRtl ? 'pr-9' : 'pl-9'}`} />
                   </div>
                 </div>
                 <div className="col-span-1">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">{isRtl ? 'رقم الهاتف *' : 'Téléphone *'}</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.phoneLabel}</label>
                   <div className="relative">
                     <Phone className={`w-4 h-4 absolute top-3.5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
                     <input type="tel" name="phone" required placeholder="06..." value={formData.phone} onChange={handleChange} className={`w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-colors text-sm ${isRtl ? 'pr-9' : 'pl-9'}`} dir="ltr" />
                   </div>
                 </div>
                 <div className="col-span-1">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">{isRtl ? 'المدينة' : 'Ville'}</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.cityLabel}</label>
                   <div className="relative">
                     <MapPin className={`w-4 h-4 absolute top-3.5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
                     <input type="text" name="city" value={formData.city} onChange={handleChange} className={`w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-colors text-sm ${isRtl ? 'pr-9' : 'pl-9'}`} />
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">{isRtl ? 'التخصص الرئيسي *' : 'Spécialité *'}</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.specialtyLabel}</label>
                   <div className="relative">
                     <Briefcase className={`w-4 h-4 absolute top-3.5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
                     <select name="serviceId" required value={formData.serviceId} onChange={handleChange} className={`w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-colors text-sm font-bold ${isRtl ? 'pr-9' : 'pl-9'}`}>
-                      <option value="" disabled>{isRtl ? '-- اختر تخصصك الدقيق --' : '-- Choisissez votre spécialité --'}</option>
-                      <option value="37">{isRtl ? 'أعمال البناء (Gros Œuvres)' : 'Gros Œuvres'}</option>
-                      <option value="38">{isRtl ? 'الكهرباء (تريسيان)' : 'Électricité'}</option>
-                      <option value="39">{isRtl ? 'السباكة (بلومبي)' : 'Plomberie'}</option>
-                      <option value="40">{isRtl ? 'العزل (Étanchéité)' : 'Étanchéité'}</option>
-                      <option value="53">{isRtl ? 'الجبس والسيراميك (الزليج)' : 'Carrelage & Plâtre'}</option>
-                      <option value="54">{isRtl ? 'الدهان والتجصيص (الصباغة)' : 'Peinture'}</option>
-                      <option value="43">{isRtl ? 'نجارة وألمونيوم' : 'Menuiserie & Aluminium'}</option>
+                      <option value="" disabled>{t.selectSpecialty}</option>
+                      <option value="37">{t.grosOeuvres}</option>
+                      <option value="38">{t.electricity}</option>
+                      <option value="39">{t.plumbing}</option>
+                      <option value="40">{t.waterproofing}</option>
+                      <option value="53">{t.tiling}</option>
+                      <option value="54">{t.painting}</option>
+                      <option value="43">{t.carpentry}</option>
                     </select>
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">{isRtl ? 'ملاحظات إضافية' : 'Notes supplémentaires'}</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.notesLabel}</label>
                   <div className="relative">
                     <FileText className={`w-4 h-4 absolute top-3.5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
-                    <textarea name="notes" rows="2" value={formData.notes} onChange={handleChange} placeholder={isRtl ? "تعريف قصير بخبرتك..." : "Courte description..."} className={`w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-colors text-sm resize-none ${isRtl ? 'pr-9' : 'pl-9'}`}></textarea>
+                    <textarea name="notes" rows="2" value={formData.notes} onChange={handleChange} placeholder={t.notesPlace} className={`w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-colors text-sm resize-none ${isRtl ? 'pr-9' : 'pl-9'}`}></textarea>
                   </div>
                 </div>
               </div>
               <button type="submit" disabled={isLoading} className="w-full py-4 mt-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-black text-base shadow-[0_5px_15px_rgba(234,88,12,0.3)] transition-transform hover:-translate-y-1 flex justify-center items-center gap-2 disabled:opacity-70 disabled:transform-none">
                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <HardHat className="w-5 h-5" />}
-                {isRtl ? 'إنشاء الحساب والانطلاق' : 'Créer mon compte'}
+                {t.registerBtn}
               </button>
             </form>
           )}

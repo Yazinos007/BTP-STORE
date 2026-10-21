@@ -41,6 +41,7 @@ import ProviderPortfolio from './provider/ProviderPortfolio';
 // === الاستيرادات المشتركة (Shared) ===
 import UnifiedMessages from './shared/UnifiedMessages';
 import LiveRoom from './shared/LiveRoom';
+import AuthGateway from './auth/AuthGateway';
 
 // === استيراد صفحات الهبوط ===
 import EmpireLanding from '../../landing-pages/EmpireLanding';
@@ -179,6 +180,7 @@ export default function V2Router({ session, supplier }) {
         {/* 💬 المسار الموحد للرسائل والرادار وغرف العمليات */}
         <Route path="messages" element={<UnifiedMessages />} />
         <Route path="architect-messages" element={<UnifiedMessages />} />
+        <Route path="auth" element={<AuthGateway />} />
         
         {/* === 🏗️ سكاشن المقاول العام (Contractor) === */}
         <Route path="contractor-dashboard" element={<ContractorDashboard />} />
