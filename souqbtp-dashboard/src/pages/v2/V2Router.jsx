@@ -38,6 +38,8 @@ import ProviderDashboard from './provider/ProviderDashboard';
 import ProviderProfile from './provider/ProviderProfile';
 import ProviderPortfolio from './provider/ProviderPortfolio';
 
+import SupplierAuth from './auth/SupplierAuth';
+
 // === الاستيرادات المشتركة (Shared) ===
 import UnifiedMessages from './shared/UnifiedMessages';
 import LiveRoom from './shared/LiveRoom';
@@ -173,6 +175,7 @@ export default function V2Router({ session, supplier }) {
       {/* 🔐 صفحات التسجيل والدخول المستقلة (خارج الـ Layout) */}
       <Route path="architect-register" element={<ArchitectRegister />} />
       <Route path="provider-auth" element={<ProviderAuth />} />
+      <Route path="supplier-register" element={<SupplierAuth />} />
 
       {/* 🛡️ مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout */}
       <Route element={<V2Layout accountType={resolvedRole} storeName={resolvedName} storeInitial={storeInitial} />}>
