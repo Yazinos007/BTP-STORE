@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { Mail, Lock, User, Phone, ArrowRight, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import useSettingsStore from '../../../store/useSettingsStore';
+import { Mail, Lock, User, Phone, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const translations = {
   ar: {
@@ -15,6 +16,23 @@ const translations = {
     btnArchitect: "📐 الانتقال لصفحة تسجيل المهندسين",
     msgSupplier: "بصفتك مورداً لمواد البناء، يتطلب حسابك إدخال 'اسم المحل/الشركة' ليتم عرض منتجاتك للمقاولين.",
     btnSupplier: "🧱 الانتقال لصفحة تسجيل الموردين",
+    portalSubtitle: "سجل دخولك لمراسلة المعلمين ومتابعة مشاريعك",
+    tabRegister: "إنشاء حساب",
+    tabLogin: "تسجيل الدخول",
+    emailLabel: "البريد الإلكتروني",
+    passwordLabel: "كلمة المرور",
+    loginBtn: "دخول",
+    forgotPassword: "نسيت كلمة المرور؟",
+    iAmHereAs: "أنا هنا بصفتي:",
+    fullNameLabel: "الاسم الكامل",
+    phoneLabel: "رقم الهاتف (للتواصل مع الحرفيين)",
+    phonePlaceholder: "مثال: 0612345678",
+    registerBtn: "إنشاء حسابي الآن",
+    errInvalidLogin: "البيانات غير صحيحة.",
+    successLogin: "✅ تم تسجيل الدخول بنجاح! جاري التوجيه...",
+    errEmailExists: "هذا البريد الإلكتروني مسجل مسبقاً.",
+    successRegister: "✅ تم إنشاء الحساب بنجاح! مرحباً بك.",
+    errUnexpected: "حدث خطأ أثناء التسجيل."
   },
   fr: {
     roleClientTitle: "Entrepreneur / Maître d'ouvrage",
@@ -27,6 +45,23 @@ const translations = {
     btnArchitect: "📐 Aller à l'inscription Architecte",
     msgSupplier: "En tant que fournisseur, le nom de votre entreprise est requis pour afficher vos produits.",
     btnSupplier: "🧱 Aller à l'inscription Fournisseur",
+    portalSubtitle: "Connectez-vous pour contacter les artisans et suivre vos projets",
+    tabRegister: "Créer un compte",
+    tabLogin: "Se connecter",
+    emailLabel: "Email",
+    passwordLabel: "Mot de passe",
+    loginBtn: "Connexion",
+    forgotPassword: "Mot de passe oublié ?",
+    iAmHereAs: "Je suis ici en tant que :",
+    fullNameLabel: "Nom Complet",
+    phoneLabel: "Téléphone (pour contacter les artisans)",
+    phonePlaceholder: "Ex : 0612345678",
+    registerBtn: "Créer mon compte maintenant",
+    errInvalidLogin: "Email ou mot de passe incorrect.",
+    successLogin: "✅ Connexion réussie ! Redirection...",
+    errEmailExists: "Cet email est déjà enregistré.",
+    successRegister: "✅ Compte créé avec succès ! Bienvenue.",
+    errUnexpected: "Une erreur est survenue lors de l'inscription."
   },
   en: {
     roleClientTitle: "Contractor / Project Owner",
@@ -39,18 +74,38 @@ const translations = {
     btnArchitect: "📐 Go to Architect Registration",
     msgSupplier: "As a supplier, your company name is required to showcase your products.",
     btnSupplier: "🧱 Go to Supplier Registration",
+    portalSubtitle: "Login to contact artisans and track your projects",
+    tabRegister: "Create Account",
+    tabLogin: "Login",
+    emailLabel: "Email",
+    passwordLabel: "Password",
+    loginBtn: "Login",
+    forgotPassword: "Forgot Password?",
+    iAmHereAs: "I am here as:",
+    fullNameLabel: "Full Name",
+    phoneLabel: "Phone Number (to contact artisans)",
+    phonePlaceholder: "E.g., 0612345678",
+    registerBtn: "Create My Account Now",
+    errInvalidLogin: "Invalid credentials.",
+    successLogin: "✅ Login successful! Redirecting...",
+    errEmailExists: "This email is already registered.",
+    successRegister: "✅ Account created successfully! Welcome.",
+    errUnexpected: "An error occurred during registration."
   }
 };
 
 export default function AuthGateway() {
   const navigate = useNavigate();
+  const { language = 'ar' } = useSettingsStore();
+  const isRtl = language === 'ar';
+  const t = translations[language] || translations.ar;
+
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register'
   const [selectedRole, setSelectedRole] = useState('client'); // 'client' | 'provider' | 'architect' | 'supplier'
   
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, type: '', text: '' });
 
-  // حالات الفورم (للدخول أو لتسجيل المقاول المباشر)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -79,11 +134,9 @@ export default function AuthGateway() {
         password: formData.password
       });
 
-      if (error) throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+      if (error) throw new Error(t.errInvalidLogin);
 
-      showAlert('success', '✅ تم تسجيل الدخول بنجاح! جاري التوجيه...');
-      
-      // توجيه للمسار العام، والموجه الذكي V2Router سيتكفل بالباقي!
+      showAlert('success', t.successLogin);
       setTimeout(() => navigate('/v2'), 1500);
 
     } catch (err) {
@@ -109,21 +162,21 @@ export default function AuthGateway() {
           data: { 
             full_name: formData.fullName, 
             phone: formData.phone,
-            role: 'contractor' // رتبة المقاول
+            role: 'contractor' 
           }
         }
       });
 
       if (error) throw error;
       if (data.user && data.user.identities.length === 0) {
-        throw new Error('هذا البريد الإلكتروني مسجل مسبقاً.');
+        throw new Error(t.errEmailExists);
       }
 
-      showAlert('success', '✅ تم إنشاء الحساب بنجاح! مرحباً بك.');
+      showAlert('success', t.successRegister);
       setTimeout(() => navigate('/v2/contractor-dashboard'), 2000);
 
     } catch (err) {
-      showAlert('error', err.message || 'حدث خطأ أثناء التسجيل.');
+      showAlert('error', err.message || t.errUnexpected);
     } finally {
       setIsLoading(false);
     }
@@ -153,22 +206,19 @@ export default function AuthGateway() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 font-sans relative overflow-hidden" dir="rtl">
+    <div className="min-h-screen flex items-center justify-center p-4 font-sans relative overflow-hidden" dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* خلفية فخمة مشابهة للصورة القديمة */}
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-800 z-0"></div>
       
       <div className="w-full max-w-lg bg-white rounded-[24px] shadow-2xl overflow-hidden border border-white/20 relative z-10 my-8">
         
-        {/* اللوجو والترويسة */}
         <div className="p-8 pb-4 text-center">
           <h1 className="text-3xl font-black text-blue-900 mb-2 flex items-center justify-center gap-2">
             SouqBTP <span className="text-2xl">🏗️</span>
           </h1>
-          <p className="text-slate-500 font-medium text-sm">سجل دخولك لمراسلة المعلمين ومتابعة مشاريعك</p>
+          <p className="text-slate-500 font-medium text-sm">{t.portalSubtitle}</p>
         </div>
 
-        {/* أزرار التبويبات */}
         <div className="px-8 pb-6 flex gap-4">
           <button 
             onClick={() => { setActiveTab('register'); setAlert({ show: false, type: '', text: '' }); }}
@@ -184,7 +234,6 @@ export default function AuthGateway() {
           </button>
         </div>
 
-        {/* منطقة الإشعارات */}
         {alert.show && (
           <div className="px-8 pb-4">
             <div className={`p-4 rounded-xl font-bold flex items-start gap-3 border text-sm ${alert.type === 'error' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
@@ -194,9 +243,6 @@ export default function AuthGateway() {
           </div>
         )}
 
-        {/* ================================================== */}
-        {/* تبويبة تسجيل الدخول */}
-        {/* ================================================== */}
         {activeTab === 'login' && (
           <div className="p-8 pt-0 animate-fade-in">
             <form onSubmit={handleLogin} className="space-y-5">
@@ -228,21 +274,17 @@ export default function AuthGateway() {
             
             <div className="text-center mt-6">
               <button className="text-amber-600 hover:text-amber-700 font-bold text-sm hover:underline">
-                نسيت كلمة المرور؟
+                {t.forgotPassword}
               </button>
             </div>
           </div>
         )}
 
-        {/* ================================================== */}
-        {/* تبويبة إنشاء حساب (مع الموزع الذكي) */}
-        {/* ================================================== */}
         {activeTab === 'register' && (
           <div className="p-8 pt-0 animate-fade-in">
             
-            {/* اختيار الرتبة */}
             <div className="bg-slate-50 border border-blue-200 border-dashed rounded-xl p-5 mb-8">
-              <label className="block text-blue-900 font-black text-center mb-4">{isRtl ? 'أنا هنا بصفتي:' : 'Je suis ici en tant que :'}</label>
+              <label className="block text-blue-900 font-black text-center mb-4">{t.iAmHereAs}</label>
               <div className="grid grid-cols-2 gap-3">
                 {Object.values(roleConfigs).map(role => (
                   <label 
@@ -263,11 +305,8 @@ export default function AuthGateway() {
               </div>
             </div>
 
-            {/* عرض الفورم إذا كان مقاولاً، أو رسالة وزر إذا كان রتبة أخرى */}
             <div className="transition-all duration-300">
-              
               {selectedRole === 'client' ? (
-                /* فورم المقاول / العميل المباشر */
                 <form onSubmit={handleClientRegister} className="space-y-4 animate-fade-in">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">{t.fullNameLabel}</label>
@@ -275,7 +314,7 @@ export default function AuthGateway() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">{t.phoneLabel}</label>
-                    <input type="tel" name="phone" required placeholder="مثال: 0612345678" value={formData.phone} onChange={handleChange} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm" dir="ltr" />
+                    <input type="tel" name="phone" required placeholder={t.phonePlaceholder} value={formData.phone} onChange={handleChange} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm" dir="ltr" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">{t.emailLabel}</label>
@@ -287,12 +326,11 @@ export default function AuthGateway() {
                   </div>
                   
                   <button type="submit" disabled={isLoading} className="w-full py-4 mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-base shadow-[0_5px_15px_rgba(37,99,235,0.3)] transition-transform hover:-translate-y-1 flex justify-center items-center gap-2 disabled:opacity-70 disabled:transform-none">
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : '📝'}
-                    {t.registerBtn}ش
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : '📝 '}
+                    {t.registerBtn}
                   </button>
                 </form>
               ) : (
-                /* رسالة التوجيه للرتب الأخرى */
                 <div className="text-center animate-fade-in py-4">
                   <p className="text-slate-600 font-medium text-sm leading-relaxed mb-6 px-4">
                     {roleConfigs[selectedRole].msg}
@@ -305,7 +343,6 @@ export default function AuthGateway() {
                   </button>
                 </div>
               )}
-
             </div>
           </div>
         )}
