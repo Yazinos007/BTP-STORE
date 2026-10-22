@@ -120,19 +120,19 @@ const GlobalSpaceSwitcher = ({ language, dark = false }) => {
       }
 
       // فحص هل هو مهندس
-      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
+      const { data: arch } = await supabase.from('architects').select('id').eq('id', user.id).maybeSingle(); 
       if (arch || metaRole === 'architect') {
         spaces.push({ id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' });
       }
 
       // فحص هل هو حرفي
-      const { data: prov } = await supabase.from('providers').select('id, account_type').eq('user_id', user.id).maybeSingle();
+      const { data: prov } = await supabase.from('providers').select('id, account_type').eq('id', user.id).maybeSingle();
       if (prov || metaRole === 'provider') {
         spaces.push({ id: 'provider', label: labels.provider, path: '/v2/provider-dashboard', badge: 'PRO' });
       }
 
       // فحص هل هو مورد
-      const { data: sup } = await supabase.from('suppliers').select('id, supplier_type').eq('user_id', user.id).maybeSingle();
+      const { data: sup } = await supabase.from('suppliers').select('id, supplier_type').eq('id', user.id).maybeSingle();
       if (sup || metaRole === 'supplier' || metaRole === 'admin') {
         const type = sup?.supplier_type || user.user_metadata?.supplier_type || 'retail';
         if (type === 'wholesale') {
@@ -598,10 +598,10 @@ function App() {
         if (mounted) setUserPrimaryRole(metaRole);
         return;
       }
-      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
+      const { data: arch } = await supabase.from('architects').select('id').eq('id', user.id).maybeSingle();
       if (arch && mounted) { setUserPrimaryRole('architect'); return; }
 
-      const { data: prov } = await supabase.from('providers').select('id').eq('user_id', user.id).maybeSingle();
+      const { data: prov } = await supabase.from('providers').select('id').eq('id', user.id).maybeSingle();
       if (prov && mounted) { setUserPrimaryRole('provider'); return; }
 
       if (mounted) setUserPrimaryRole('supplier');
