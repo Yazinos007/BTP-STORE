@@ -66,15 +66,15 @@ import EmpireLanding from './landing-pages/EmpireLanding';
 import RetailLanding from './landing-pages/RetailLanding';
 import ContractorLanding from './landing-pages/ContractorLanding';
 
-// 🚀 مكون مبدل الفضاءات الموحد (الذكي - يعرض فقط ما يملكه المستخدم)
+// 🚀 مكون مبدل الفضاءات الموحد (الذكي - يعرض فقط ما يملكه المستخدم باللغات الثلاث)
 const GlobalSpaceSwitcher = ({ language, dark = false }) => {
-  const [open, setOpen] = useState(false);
-  const [allowedSpaces, setAllowedSpaces] = useState([]);
-  const isRtl = language === 'ar';
+  const [open, setOpen] = useState(false);
+  const [allowedSpaces, setAllowedSpaces] = useState([]);
+  const isRtl = language === 'ar';
 
-const labels = {
+  const labels = {
     ar: {
-      btn: '🚀 تبديل الفضاء (V2)',
+      btn: '🚀 تبديل الفضاء',
       contractor: '🏗️ فضاء المقاول العام',
       architect: '📐 مكتب المهندس المعماري',
       provider: '👷‍♂️ فضاء الحرفي المعتمد',
@@ -97,108 +97,113 @@ const labels = {
       retail: '🏪 Retailer Store',
       wholesale: '🏭 Wholesaler B2B'
     }
-  }[language] || {};
+  }[language] || {
+    btn: '🚀 Switch Space',
+    contractor: '🏗️ Contractor Hub',
+    architect: '📐 Architect Office',
+    provider: '👷‍♂️ Artisan Space',
+    retail: '🏪 Retailer Store',
+    wholesale: '🏭 Wholesaler B2B'
+  };
 
-  useEffect(() => {
-    const fetchUserSpaces = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  useEffect(() => {
+    const fetchUserSpaces = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      let spaces = [];
-      const metaRole = user.user_metadata?.role || user.user_metadata?.account_type;
+      let spaces = [];
+      const metaRole = user.user_metadata?.role || user.user_metadata?.account_type;
 
-      // المقاول العام متاح دائماً كقاعدة مركزية إذا لم يكن مجرد مورد فقط
-      if (metaRole === 'contractor' || metaRole === 'client' || !metaRole) {
-        spaces.push({ id: 'contractor', label: isRtl ? '🏗️ المقاول العام' : '🏗️ Contractor Hub', path: '/v2/contractor-dashboard', badge: 'V2' });
-      }
+      // المقاول العام متاح دائماً كقاعدة مركزية إذا لم يكن مجرد مورد فقط
+      if (metaRole === 'contractor' || metaRole === 'client' || !metaRole) {
+        spaces.push({ id: 'contractor', label: labels.contractor, path: '/v2/contractor-dashboard', badge: 'V2' });
+      }
 
-      // فحص هل هو مهندس
-      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
-      if (arch || metaRole === 'architect') {
-        spaces.push({ id: 'architect', label: isRtl ? '📐 المهندس المعماري' : '📐 Architect Office', path: '/v2/architect-dashboard', badge: 'VIP' });
-      }
+      // فحص هل هو مهندس
+      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
+      if (arch || metaRole === 'architect') {
+        spaces.push({ id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' });
+      }
 
-      // فحص هل هو حرفي
-      const { data: prov } = await supabase.from('providers').select('id, account_type').eq('user_id', user.id).maybeSingle();
-      if (prov || metaRole === 'provider') {
-        spaces.push({ id: 'provider', label: isRtl ? '👷‍♂️ الحرفي المعتمد' : '👷‍♂️ Artisan Space', path: '/v2/provider-dashboard', badge: 'PRO' });
-      }
+      // فحص هل هو حرفي
+      const { data: prov } = await supabase.from('providers').select('id, account_type').eq('user_id', user.id).maybeSingle();
+      if (prov || metaRole === 'provider') {
+        spaces.push({ id: 'provider', label: labels.provider, path: '/v2/provider-dashboard', badge: 'PRO' });
+      }
 
-      // فحص هل هو مورد
-      const { data: sup } = await supabase.from('suppliers').select('id, supplier_type').eq('user_id', user.id).maybeSingle();
-      if (sup || metaRole === 'supplier' || metaRole === 'admin') {
-        const type = sup?.supplier_type || user.user_metadata?.supplier_type || 'retail';
-        if (type === 'wholesale') {
-          spaces.push({ id: 'wholesale', label: isRtl ? '🏭 مورد الجملة' : '🏭 Wholesaler B2B', path: '/?preview=wholesale', badge: 'B2B' });
-        } else {
-          spaces.push({ id: 'retail', label: isRtl ? '🏪 تاجر التجزئة' : '🏪 Retailer Store', path: '/?preview=retail', badge: 'POS' });
-        }
-      }
+      // فحص هل هو مورد
+      const { data: sup } = await supabase.from('suppliers').select('id, supplier_type').eq('user_id', user.id).maybeSingle();
+      if (sup || metaRole === 'supplier' || metaRole === 'admin') {
+        const type = sup?.supplier_type || user.user_metadata?.supplier_type || 'retail';
+        if (type === 'wholesale') {
+          spaces.push({ id: 'wholesale', label: labels.wholesale, path: '/?preview=wholesale', badge: 'B2B' });
+        } else {
+          spaces.push({ id: 'retail', label: labels.retail, path: '/?preview=retail', badge: 'POS' });
+        }
+      }
 
-      // إذا كان مدير نظام (Admin خارق)، أظهر له كل شيء للمعاينة
-      if (user.email === 'admin@souqbtp.ma') { // ضع إيميلك هنا
-        spaces = [
-          { id: 'contractor', label: isRtl ? '🏗️ المقاول العام' : '🏗️ Contractor Hub', path: '/v2/contractor-dashboard', badge: 'V2' },
-          { id: 'architect', label: isRtl ? '📐 المهندس المعماري' : '📐 Architect Office', path: '/v2/architect-dashboard', badge: 'VIP' },
-          { id: 'provider', label: isRtl ? '👷‍♂️ الحرفي المعتمد' : '👷‍♂️ Artisan Space', path: '/v2/provider-dashboard', badge: 'PRO' },
-          { id: 'retail', label: isRtl ? '🏪 تاجر التجزئة' : '🏪 Retailer Store', path: '/?preview=retail', badge: 'POS' },
-          { id: 'wholesale', label: isRtl ? '🏭 مورد الجملة' : '🏭 Wholesaler B2B', path: '/?preview=wholesale', badge: 'B2B' }
-        ];
-      }
+      // إذا كان مدير نظام (Admin خارق)، أظهر له كل شيء للمعاينة
+      if (user.email === 'admin@souqbtp.ma') {
+        spaces = [
+          { id: 'contractor', label: labels.contractor, path: '/v2/contractor-dashboard', badge: 'V2' },
+          { id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' },
+          { id: 'provider', label: labels.provider, path: '/v2/provider-dashboard', badge: 'PRO' },
+          { id: 'retail', label: labels.retail, path: '/?preview=retail', badge: 'POS' },
+          { id: 'wholesale', label: labels.wholesale, path: '/?preview=wholesale', badge: 'B2B' }
+        ];
+      }
 
-      setAllowedSpaces(spaces);
-    };
+      setAllowedSpaces(spaces);
+    };
 
-    fetchUserSpaces();
-  }, [isRtl]);
+    fetchUserSpaces();
+  }, [language, labels.contractor, labels.architect, labels.provider, labels.retail, labels.wholesale]);
 
-  // إذا كان يملك فضاءً واحداً فقط، فلا داعي لإظهار المبدل!
-  if (allowedSpaces.length <= 1) return null;
+  if (allowedSpaces.length <= 1) return null;
 
-  const handleSwitch = (path) => {
-    setOpen(false);
-    // 🚀 القفز العنيف لمسح الذاكرة المؤقتة وضمان تحميل الرتبة الجديدة 100%
-    window.location.href = path; 
-  };
+  const handleSwitch = (path) => {
+    setOpen(false);
+    window.location.href = path; 
+  };
 
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3 py-2 md:px-4 rounded-xl font-black text-xs md:text-sm flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all whitespace-nowrap cursor-pointer"
-      >
-        <span>{isRtl ? '🚀 تبديل الفضاء' : '🚀 Switch Space'}</span>
-        <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3 py-2 md:px-4 rounded-xl font-black text-xs md:text-sm flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all whitespace-nowrap cursor-pointer"
+      >
+        <span>{labels.btn}</span>
+        <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
 
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}></div>
-          <div className={`absolute top-full mt-2 ${isRtl ? 'left-0' : 'right-0'} w-64 rounded-2xl shadow-2xl border p-1.5 z-50 ${
-            dark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-gray-200 text-gray-800'
-          }`}>
-            {allowedSpaces.map((it, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSwitch(it.path)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all mb-1 last:mb-0 ${
-                  dark ? 'hover:bg-slate-800' : 'hover:bg-purple-50 hover:text-purple-700'
-                }`}
-              >
-                <span>{it.label}</span>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-500 border border-purple-500/20">
-                  {it.badge}
-                </span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}></div>
+          <div className={`absolute top-full mt-2 ${isRtl ? 'left-0' : 'right-0'} w-64 rounded-2xl shadow-2xl border p-1.5 z-50 ${
+            dark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-gray-200 text-gray-800'
+          }`}>
+            {allowedSpaces.map((it, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSwitch(it.path)}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all mb-1 last:mb-0 ${
+                  dark ? 'hover:bg-slate-800' : 'hover:bg-purple-50 hover:text-purple-700'
+                }`}
+              >
+                <span>{it.label}</span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                  {it.badge}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 };
 
-// 🛑 الحارس الإلكتروني للأقسام المدفوعة
+// 🛑 الحارس الإلكتروني للأقسام المدفوعة (يدعم اللغات الثلاث AR / FR / EN)
 const PremiumGuard = ({ children }) => {
   const { language } = useSettingsStore();
   const navigate = useNavigate();
@@ -216,6 +221,28 @@ const PremiumGuard = ({ children }) => {
     }
   }, []);
 
+  const t = {
+    ar: {
+      title: 'عذراً، انتهت الفترة التجريبية!',
+      desc: 'لقد انتهت صلاحية استخدامك المجاني لهذه الميزة الحصرية. قم بالترقية الآن لباقة Pro ERP لاستعادة الوصول فوراً ومضاعفة أرباحك.',
+      btn: 'ترقية الحساب الآن'
+    },
+    fr: {
+      title: 'Période d\'essai expirée !',
+      desc: 'Votre accès gratuit à cette fonctionnalité a expiré. Mettez à niveau vers Pro ERP pour y accéder à nouveau et sécuriser vos marges.',
+      btn: 'Mettre à niveau maintenant'
+    },
+    en: {
+      title: 'Sorry, Trial Expired!',
+      desc: 'Your free access to this premium feature has expired. Upgrade to Pro ERP now to restore access and multiply your margins.',
+      btn: 'Upgrade Account Now'
+    }
+  }[language] || {
+    title: 'Période d\'essai expirée !',
+    desc: 'Votre accès gratuit à cette fonctionnalité a expiré. Mettez à niveau vers Pro ERP pour y accéder à nouveau et sécuriser vos marges.',
+    btn: 'Mettre à niveau maintenant'
+  };
+
   if (isExpired) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-6 animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -223,19 +250,17 @@ const PremiumGuard = ({ children }) => {
           <Lock size={48} />
         </div>
         <h2 className="text-3xl md:text-4xl font-black text-white">
-          {language === 'ar' ? 'عذراً، انتهت الفترة التجريبية!' : 'Période d\'essai expirée !'}
+          {t.title}
         </h2>
         <p className="text-slate-400 max-w-lg text-lg font-medium leading-relaxed">
-          {language === 'ar' 
-            ? 'لقد انتهت صلاحية استخدامك المجاني لهذه الميزة الحصرية. قم بالترقية الآن لباقة Pro ERP لاستعادة الوصول فوراً ومضاعفة أرباحك.' 
-            : 'Votre accès gratuit à cette fonctionnalité a expiré. Mettez à niveau vers Pro ERP pour y accéder à nouveau et sécuriser vos marges.'}
+          {t.desc}
         </p>
         <button 
           onClick={() => navigate('/subscription')}
           className="bg-gradient-to-r from-amber-500 to-orange-500 text-black px-8 py-4 rounded-xl font-black text-lg hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-amber-500/20 mt-4"
         >
           <Zap size={24} className="fill-black" />
-          {language === 'ar' ? 'ترقية الحساب الآن' : 'Mettre à niveau maintenant'}
+          {t.btn}
         </button>
       </div>
     );
@@ -252,6 +277,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
 
   const [openMenus, setOpenMenus] = useState({
+    comm_market: false,
     achats: false,
     marketplace: false,
     ventes: false
@@ -259,6 +285,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
 
   useEffect(() => {
     const p = location.pathname;
+    if (['/messages', '/marketplace'].includes(p)) setOpenMenus(prev => ({...prev, comm_market: true}));
     if (['/raw-suppliers', '/raw-purchases'].includes(p)) setOpenMenus(prev => ({...prev, achats: true}));
     if (['/market-orders', '/fleet-market'].includes(p)) setOpenMenus(prev => ({...prev, marketplace: true}));
     if (['/clients', '/pos-b2b', '/orders', '/fleet-b2b', '/contracts'].includes(p)) setOpenMenus(prev => ({...prev, ventes: true}));
@@ -291,18 +318,18 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const tLayout = {
     fr: { 
       upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", 
-      groups: { achats: "Achats & Fournisseurs", marketplace: "Gestion Marketplace", ventes: "Gestion des Ventes" },
-      items: { overview: "Tableau de bord", rawSuppliers: "Fournisseurs & Prestataires", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", production: "Production", marketOrders: "Commandes Marketplace", fleetMarket: "Suivi des Commandes", clients: "Clients & Dettes", posB2B: "Ventes Directes (POS)", orders: "Commandes Reçues (B2B)", fleetB2B: "Suivi des Commandes (B2B)", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", logisticsBourse: "Bourse de Fret", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance" } 
+      groups: { comm: "Communication & Marché", achats: "Achats & Fournisseurs", marketplace: "Gestion Marketplace", ventes: "Gestion des Ventes" },
+      items: { overview: "Tableau de bord", inbox: "Boîte de Réception", btpMarket: "Marché BTP", rawSuppliers: "Fournisseurs & Prestataires", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", production: "Production", marketOrders: "Commandes Marketplace", fleetMarket: "Suivi des Commandes", clients: "Clients & Dettes", posB2B: "Ventes Directes (POS)", orders: "Commandes Reçues (B2B)", fleetB2B: "Suivi des Commandes (B2B)", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", logisticsBourse: "Bourse de Fret", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance" } 
     },
     ar: { 
       upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
-      groups: { achats: "المشتريات والموردون", marketplace: "إدارة الماركت بليس", ventes: "إدارة المبيعات" },
-      items: { overview: "لوحة القيادة", rawSuppliers: "الموردون والشركاء", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", production: "الإنتاج (المعمل)", marketOrders: "طلبات الماركت بليس", fleetMarket: "تتبع شحنات المتجر", clients: "العملاء والديون (CRM)", posB2B: "المبيعات المباشرة (POS)", orders: "طلبات التزويد (B2B)", fleetB2B: "تتبع شحنات التزويد", contracts: "العقود والتوقيعات", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", logisticsBourse: "بورصة اللوجستيك", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق" } 
+      groups: { comm: "التواصل والسوق", achats: "المشتريات والموردون", marketplace: "إدارة الماركت بليس", ventes: "إدارة المبيعات" },
+      items: { overview: "لوحة القيادة", inbox: "صندوق الرسائل", btpMarket: "سوق BTP", rawSuppliers: "الموردون والشركاء", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", production: "الإنتاج (المعمل)", marketOrders: "طلبات الماركت بليس", fleetMarket: "تتبع شحنات المتجر", clients: "العملاء والديون (CRM)", posB2B: "المبيعات المباشرة (POS)", orders: "طلبات التزويد (B2B)", fleetB2B: "تتبع شحنات التزويد", contracts: "العقود والتوقيعات", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", logisticsBourse: "بورصة اللوجستيك", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق" } 
     },
     en: { 
       upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", 
-      groups: { achats: "Purchases & Suppliers", marketplace: "Marketplace Management", ventes: "Sales Management" },
-      items: { overview: "Dashboard", rawSuppliers: "Suppliers & Partners", rawPurchases: "Purchases & Procurement", stock: "Central Stock", production: "Production", marketOrders: "Marketplace Orders", fleetMarket: "Order Tracking", clients: "Clients & Debts", posB2B: "Direct Sales (POS)", orders: "Received Orders (B2B)", fleetB2B: "B2B Tracking", contracts: "Contracts & Signatures", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", logisticsBourse: "Freight Exchange", team: "Users & Permissions", settings: "Settings & Trust" } 
+      groups: { comm: "Communication & Market", achats: "Purchases & Suppliers", marketplace: "Marketplace Management", ventes: "Sales Management" },
+      items: { overview: "Dashboard", inbox: "Inbox", btpMarket: "BTP Marketplace", rawSuppliers: "Suppliers & Partners", rawPurchases: "Purchases & Procurement", stock: "Central Stock", production: "Production", marketOrders: "Marketplace Orders", fleetMarket: "Order Tracking", clients: "Clients & Debts", posB2B: "Direct Sales (POS)", orders: "Received Orders (B2B)", fleetB2B: "B2B Tracking", contracts: "Contracts & Signatures", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", logisticsBourse: "Freight Exchange", team: "Users & Permissions", settings: "Settings & Trust" } 
     }
   };
   const t = tLayout[language] || tLayout['fr'];
@@ -330,13 +357,12 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
     {
-      id: 'comm_market', icon: MessageCircle, label: language === 'ar' ? 'التواصل والسوق' : 'Communication & Marché',
+      id: 'comm_market', icon: MessageCircle, label: t.groups.comm,
       children: [
-        { path: '/messages', icon: MessageCircle, label: language === 'ar' ? 'صندوق الرسائل' : 'Boîte de Réception' },
-        { path: '/marketplace', icon: Store, label: language === 'ar' ? 'سوق BTP' : 'Marché BTP' },
+        { path: '/messages', icon: MessageCircle, label: t.items.inbox },
+        { path: '/marketplace', icon: Store, label: t.items.btpMarket },
       ]
     },
-
     {
       id: 'achats', icon: ShoppingBag, label: t.groups.achats,
       children: [
@@ -379,10 +405,10 @@ const WholesalerDashboard = ({ supplier, children }) => {
 
   const getActiveStyle = (path) => {
     const isActive = location.pathname === path;
+    if (!isActive) return "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent";
     if (['/messages', '/marketplace'].includes(path)) 
       return "bg-emerald-600/20 text-emerald-400 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-pulse";
-    if (!isActive) return "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent";
-      return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)]";
+    return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)]";
   };
 
   const toggleMenu = (id) => {
@@ -473,7 +499,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
           </div>
 
           <div className="flex items-center gap-4 shrink-0">
-            {/* 🚀 زر تبديل الفضاءات من داخل مورد الجملة أيضاً */}
             <GlobalSpaceSwitcher language={language} dark={true} />
 
             <div className={`flex items-center gap-3 ${language === 'ar' ? 'pr-3 md:pr-6 border-r' : 'pl-3 md:pl-6 border-l'} border-slate-700`}>
@@ -500,10 +525,8 @@ const WholesalerDashboard = ({ supplier, children }) => {
 const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
-  // 🚀 فحص هل نحن داخل Iframe من اللوحة القديمة
   const isMinimal = window.location.search.includes('minimal=true') || window.location.href.includes('minimal=true');
 
-  // إذا كنا في وضع الشاشة المصغرة، نعرض المحتوى الداخلي فقط بدون أي قوائم
   if (isMinimal) {
     return (
       <div className="w-full min-h-screen overflow-x-hidden overflow-y-auto p-4 md:p-6 bg-gray-50 text-gray-800" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -532,7 +555,6 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
             </div>
 
             <div className="flex items-center gap-3 md:gap-4 shrink-0">
-              {/* 🚀 قائمة تبديل الفضاءات الشاملة (المقاول، المهندس، الحرفي، الجملة، التجزئة) */}
               <GlobalSpaceSwitcher language={language} dark={false} />
 
               <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
@@ -558,7 +580,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
 function App() {
   const [isMinimal] = useState(() => window.location.search.includes('minimal=true') || window.location.href.includes('minimal=true'));
   const [session, setSession] = useState(null);
-  const [userPrimaryRole, setUserPrimaryRole] = useState(null); // 'architect' | 'provider' | 'contractor' | 'supplier'
+  const [userPrimaryRole, setUserPrimaryRole] = useState(null);
   const [loading, setLoading] = useState(true);
   
   const { language } = useSettingsStore();
@@ -576,7 +598,6 @@ function App() {
         if (mounted) setUserPrimaryRole(metaRole);
         return;
       }
-      // فحص جداول المهندسين والحرفيين
       const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
       if (arch && mounted) { setUserPrimaryRole('architect'); return; }
 
@@ -588,7 +609,6 @@ function App() {
 
     const forgeSession = async () => {
       try {
-        // 🚀 إعادة جسر الاتصال (Hash Parser) الذي يربط بين PHP و React داخل الـ Iframe
         const hash = window.location.hash;
         
         if (hash && hash.includes('access_token') && hash.includes('refresh_token')) {
@@ -607,7 +627,7 @@ function App() {
             if (userData?.user && mounted) {
               setSession({ user: userData.user, access_token: accessToken });
               fetchSupplierProfile(userData.user.id);
-              await detectPrimaryRole(userData.user); // 👈 فحص الهوية هنا لتشغيل الموزع الذكي
+              await detectPrimaryRole(userData.user);
               window.history.replaceState(null, '', window.location.pathname + window.location.search); 
               setLoading(false);
               return; 
@@ -667,7 +687,7 @@ function App() {
 
   const pathname = window.location.pathname;
   const searchParams = new URLSearchParams(window.location.search);
-  const previewMode = searchParams.get('preview'); // 'retail' | 'wholesale'
+  const previewMode = searchParams.get('preview');
 
   if (previewMode === 'retail' || previewMode === 'wholesale') {
     sessionStorage.setItem('souqbtp_preview_mode', previewMode);
@@ -686,7 +706,6 @@ function App() {
     return <BrowserRouter><Navigate to="/v2/auth" replace /></BrowserRouter>;
   }
 
-  // تحديد ما إذا كان العرض الحالي لمورد الجملة أو التجزئة (مع دعم المعاينة الفورية)
   const isWholesaler = activePreview === 'wholesale' 
     ? true 
     : activePreview === 'retail' 
@@ -699,15 +718,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 🚀 مسارات الهبوط المستقلة */}
         <Route path="/empire" element={<EmpireLanding />} />
         <Route path="/pro" element={<RetailLanding />} />
         <Route path="/contractor" element={<ContractorLanding />} />
 
-        {/* 🚀 بوابة V2 الشاملة (المقاول + المهندس + الحرفي + البوابة المركزية للدخول) */}
         <Route path="/v2/*" element={<V2Router session={session} supplier={supplier} />} />
 
-        {/* 🛡️ التوجيه التلقائي الذكي إذا دخل المهندس أو الحرفي أو المقاول إلى الجذر / مباشرة (إلا إذا اختار معاينة الموردين) */}
         {!activePreview && userPrimaryRole === 'architect' && (
           <Route path="/" element={<Navigate to="/v2/architect-dashboard" replace />} />
         )}
@@ -718,7 +734,6 @@ function App() {
           <Route path="/" element={<Navigate to="/v2/contractor-dashboard" replace />} />
         )}
 
-        {/* 🏪🏭 فضاءات موردي الجملة والتجزئة */}
         <Route path="/*" element={
           isWholesaler ? (
             <WholesalerDashboard supplier={supplier}>
