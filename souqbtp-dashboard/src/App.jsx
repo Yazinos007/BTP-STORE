@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate 
 import { supabase } from './lib/supabase';
 import { 
   Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
-  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft, Lock
+  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft, Lock, MessageCircle
 } from 'lucide-react';
 
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
