@@ -180,9 +180,15 @@ export default function V2Router({ session, supplier }) {
       {/* 🛡️ مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout */}
       <Route element={<V2Layout accountType={resolvedRole} storeName={resolvedName} storeInitial={storeInitial} />}>
 
-        {/* 💬 المسار الموحد للرسائل والرادار وغرف العمليات */}
+        {/* 💬 المسارات الموحدة للرسائل والرادار (مقسمة لحماية الهوية) */}
         <Route path="messages" element={<UnifiedMessages />} />
         <Route path="architect-messages" element={<UnifiedMessages />} />
+        <Route path="provider-messages" element={<UnifiedMessages />} />
+        
+        <Route path="marketplace" element={<BTPHub />} />
+        <Route path="architect-marketplace" element={<BTPHub />} />
+        <Route path="provider-marketplace" element={<BTPHub />} />
+        
         <Route path="auth" element={<AuthGateway />} />
         
         {/* === 🏗️ سكاشن المقاول العام (Contractor) === */}

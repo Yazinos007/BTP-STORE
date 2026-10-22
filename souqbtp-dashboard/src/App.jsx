@@ -64,13 +64,13 @@ import EmpireLanding from './landing-pages/EmpireLanding';
 import RetailLanding from './landing-pages/RetailLanding';
 import ContractorLanding from './landing-pages/ContractorLanding';
 
-// 🚀 مكون مبدل الفضاءات الموحد (يعمل داخل واجهات الموردين للتنقل السلس نحو المقاول والمهندس والحرفي)
+// 🚀 مكون مبدل الفضاءات الموحد (الذكي - يعرض فقط ما يملكه المستخدم)
 const GlobalSpaceSwitcher = ({ language, dark = false }) => {
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-  const isRtl = language === 'ar';
+  const [open, setOpen] = useState(false);
+  const [allowedSpaces, setAllowedSpaces] = useState([]);
+  const isRtl = language === 'ar';
 
-  const labels = {
+const labels = {
     ar: {
       btn: '🚀 تبديل الفضاء (V2)',
       contractor: '🏗️ فضاء المقاول العام',
@@ -97,49 +97,103 @@ const GlobalSpaceSwitcher = ({ language, dark = false }) => {
     }
   }[language] || {};
 
-  const items = [
-    { label: labels.contractor, path: '/v2/contractor-dashboard', badge: 'V2' },
-    { label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' },
-    { label: labels.provider, path: '/v2/provider-dashboard', badge: 'PRO' },
-    { label: labels.retail, path: '/?preview=retail', badge: 'POS' },
-    { label: labels.wholesale, path: '/?preview=wholesale', badge: 'B2B' }
-  ];
+  useEffect(() => {
+    const fetchUserSpaces = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3 py-2 md:px-4 rounded-xl font-black text-xs md:text-sm flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all whitespace-nowrap cursor-pointer"
-      >
-        <span>{labels.btn}</span>
-        <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
+      let spaces = [];
+      const metaRole = user.user_metadata?.role || user.user_metadata?.account_type;
 
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}></div>
-          <div className={`absolute top-full mt-2 ${isRtl ? 'left-0' : 'right-0'} w-64 rounded-2xl shadow-2xl border p-1.5 z-50 ${
-            dark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-gray-200 text-gray-800'
-          }`}>
-            {items.map((it, idx) => (
-              <button
-                key={idx}
-                onClick={() => { setOpen(false); navigate(it.path); }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all mb-1 last:mb-0 ${
-                  dark ? 'hover:bg-slate-800' : 'hover:bg-purple-50 hover:text-purple-700'
-                }`}
-              >
-                <span>{it.label}</span>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-500 border border-purple-500/20">
-                  {it.badge}
-                </span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
+      // المقاول العام متاح دائماً كقاعدة مركزية إذا لم يكن مجرد مورد فقط
+      if (metaRole === 'contractor' || metaRole === 'client' || !metaRole) {
+        spaces.push({ id: 'contractor', label: isRtl ? '🏗️ المقاول العام' : '🏗️ Contractor Hub', path: '/v2/contractor-dashboard', badge: 'V2' });
+      }
+
+      // فحص هل هو مهندس
+      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
+      if (arch || metaRole === 'architect') {
+        spaces.push({ id: 'architect', label: isRtl ? '📐 المهندس المعماري' : '📐 Architect Office', path: '/v2/architect-dashboard', badge: 'VIP' });
+      }
+
+      // فحص هل هو حرفي
+      const { data: prov } = await supabase.from('providers').select('id, account_type').eq('user_id', user.id).maybeSingle();
+      if (prov || metaRole === 'provider') {
+        spaces.push({ id: 'provider', label: isRtl ? '👷‍♂️ الحرفي المعتمد' : '👷‍♂️ Artisan Space', path: '/v2/provider-dashboard', badge: 'PRO' });
+      }
+
+      // فحص هل هو مورد
+      const { data: sup } = await supabase.from('suppliers').select('id, supplier_type').eq('user_id', user.id).maybeSingle();
+      if (sup || metaRole === 'supplier' || metaRole === 'admin') {
+        const type = sup?.supplier_type || user.user_metadata?.supplier_type || 'retail';
+        if (type === 'wholesale') {
+          spaces.push({ id: 'wholesale', label: isRtl ? '🏭 مورد الجملة' : '🏭 Wholesaler B2B', path: '/?preview=wholesale', badge: 'B2B' });
+        } else {
+          spaces.push({ id: 'retail', label: isRtl ? '🏪 تاجر التجزئة' : '🏪 Retailer Store', path: '/?preview=retail', badge: 'POS' });
+        }
+      }
+
+      // إذا كان مدير نظام (Admin خارق)، أظهر له كل شيء للمعاينة
+      if (user.email === 'admin@souqbtp.ma') { // ضع إيميلك هنا
+        spaces = [
+          { id: 'contractor', label: isRtl ? '🏗️ المقاول العام' : '🏗️ Contractor Hub', path: '/v2/contractor-dashboard', badge: 'V2' },
+          { id: 'architect', label: isRtl ? '📐 المهندس المعماري' : '📐 Architect Office', path: '/v2/architect-dashboard', badge: 'VIP' },
+          { id: 'provider', label: isRtl ? '👷‍♂️ الحرفي المعتمد' : '👷‍♂️ Artisan Space', path: '/v2/provider-dashboard', badge: 'PRO' },
+          { id: 'retail', label: isRtl ? '🏪 تاجر التجزئة' : '🏪 Retailer Store', path: '/?preview=retail', badge: 'POS' },
+          { id: 'wholesale', label: isRtl ? '🏭 مورد الجملة' : '🏭 Wholesaler B2B', path: '/?preview=wholesale', badge: 'B2B' }
+        ];
+      }
+
+      setAllowedSpaces(spaces);
+    };
+
+    fetchUserSpaces();
+  }, [isRtl]);
+
+  // إذا كان يملك فضاءً واحداً فقط، فلا داعي لإظهار المبدل!
+  if (allowedSpaces.length <= 1) return null;
+
+  const handleSwitch = (path) => {
+    setOpen(false);
+    // 🚀 القفز العنيف لمسح الذاكرة المؤقتة وضمان تحميل الرتبة الجديدة 100%
+    window.location.href = path; 
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3 py-2 md:px-4 rounded-xl font-black text-xs md:text-sm flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all whitespace-nowrap cursor-pointer"
+      >
+        <span>{isRtl ? '🚀 تبديل الفضاء' : '🚀 Switch Space'}</span>
+        <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}></div>
+          <div className={`absolute top-full mt-2 ${isRtl ? 'left-0' : 'right-0'} w-64 rounded-2xl shadow-2xl border p-1.5 z-50 ${
+            dark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-gray-200 text-gray-800'
+          }`}>
+            {allowedSpaces.map((it, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSwitch(it.path)}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all mb-1 last:mb-0 ${
+                  dark ? 'hover:bg-slate-800' : 'hover:bg-purple-50 hover:text-purple-700'
+                }`}
+              >
+                <span>{it.label}</span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                  {it.badge}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 };
 
 // 🛑 الحارس الإلكتروني للأقسام المدفوعة

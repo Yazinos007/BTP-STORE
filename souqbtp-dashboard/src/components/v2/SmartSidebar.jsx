@@ -204,8 +204,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
         { name: t.archArchive, icon: Archive, path: '/v2/architect-archive' },
       ]},
       { category: t.archCat2, color: 'emerald', items: [
-        { name: t.msg, icon: MessageCircle, path: '/v2/messages' },
-        { name: t.market, icon: Store, path: '/v2/marketplace' },
+        { name: t.msg, icon: MessageCircle, path: '/v2/architect-messages' }, 
+        { name: t.market, icon: Store, path: '/v2/architect-marketplace' }, 
       ]},
       { category: t.cat4, color: 'blue', items: [
         { name: t.archProfile, icon: Award, path: '/v2/architect-profile' },
@@ -219,8 +219,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
         { name: t.provPortfolio, icon: ImageIcon, path: '/v2/provider-portfolio' },
       ]},
       { category: t.cat2, color: 'emerald', items: [
-        { name: t.msg, icon: MessageCircle, path: '/v2/messages' },
-        { name: t.market, icon: Store, path: '/v2/marketplace' },
+        { name: t.msg, icon: MessageCircle, path: '/v2/provider-messages' }, 
+        { name: t.market, icon: Store, path: '/v2/provider-marketplace' }, 
       ]},
       { category: t.cat4, color: 'purple', items: [
         { name: t.provProfile, icon: UserCircle, path: '/v2/provider-profile' },
