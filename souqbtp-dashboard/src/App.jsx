@@ -588,6 +588,33 @@ function App() {
 
     const forgeSession = async () => {
       try {
+        // 🚀 إعادة جسر الاتصال (Hash Parser) الذي يربط بين PHP و React داخل الـ Iframe
+        const hash = window.location.hash;
+        
+        if (hash && hash.includes('access_token') && hash.includes('refresh_token')) {
+          const params = new URLSearchParams(hash.substring(1));
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            }).catch(() => {});
+
+            const { data: userData } = await supabase.auth.getUser(accessToken);
+            
+            if (userData?.user && mounted) {
+              setSession({ user: userData.user, access_token: accessToken });
+              fetchSupplierProfile(userData.user.id);
+              await detectPrimaryRole(userData.user); // 👈 فحص الهوية هنا لتشغيل الموزع الذكي
+              window.history.replaceState(null, '', window.location.pathname + window.location.search); 
+              setLoading(false);
+              return; 
+            }
+          }
+        }
+
         const { data: { session: curSession } } = await supabase.auth.getSession();
         if (mounted) {
           if (curSession?.user) {
