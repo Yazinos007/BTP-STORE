@@ -53,6 +53,8 @@ import SupplierProduction from './pages/SupplierProduction';
 import MarketplaceOrders from './pages/MarketplaceOrders';
 import FleetManagement from './pages/FleetManagement';
 import LogisticsBourse from './pages/LogisticsBourse';
+import UnifiedMessages from './pages/v2/shared/UnifiedMessages';
+import BTPHub from './pages/v2/BTPHub';
 
 import TrialBanner from './components/TrialBanner'; 
 import RetailTrialBanner from './components/RetailTrialBanner'; 
@@ -328,6 +330,14 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
     {
+      id: 'comm_market', icon: MessageCircle, label: language === 'ar' ? 'التواصل والسوق' : 'Communication & Marché',
+      children: [
+        { path: '/messages', icon: MessageCircle, label: language === 'ar' ? 'صندوق الرسائل' : 'Boîte de Réception' },
+        { path: '/marketplace', icon: Store, label: language === 'ar' ? 'سوق BTP' : 'Marché BTP' },
+      ]
+    },
+
+    {
       id: 'achats', icon: ShoppingBag, label: t.groups.achats,
       children: [
         { path: '/raw-suppliers', icon: Users, label: t.items.rawSuppliers },
@@ -369,8 +379,10 @@ const WholesalerDashboard = ({ supplier, children }) => {
 
   const getActiveStyle = (path) => {
     const isActive = location.pathname === path;
+    if (['/messages', '/marketplace'].includes(path)) 
+      return "bg-emerald-600/20 text-emerald-400 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-pulse";
     if (!isActive) return "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent";
-    return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)]";
+      return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)]";
   };
 
   const toggleMenu = (id) => {
@@ -711,6 +723,8 @@ function App() {
                 <Route path="/logistics-bourse" element={<PremiumGuard><LogisticsBourse /></PremiumGuard>} />
                 <Route path="/fleet-market" element={<PremiumGuard><FleetManagement /></PremiumGuard>} /> 
                 <Route path="/market-orders" element={<PremiumGuard><MarketplaceOrders /></PremiumGuard>} />
+                <Route path="/messages" element={<PremiumGuard><UnifiedMessages /></PremiumGuard>} />
+                <Route path="/marketplace" element={<PremiumGuard><BTPHub /></PremiumGuard>} />
               </Routes>
             </WholesalerDashboard>
           ) : (
@@ -738,6 +752,8 @@ function App() {
                 <Route path="/suppliers" element={<ExternalSuppliers />} />
                 <Route path="/purchases" element={<Purchases />} />
                 <Route path="/subscription" element={<RetailerSubscription />} />
+                <Route path="/messages" element={<UnifiedMessages />} />
+                <Route path="/marketplace" element={<BTPHub />} />
               </Routes>
             </RetailerLayout>
           )

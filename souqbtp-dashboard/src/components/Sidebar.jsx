@@ -3,7 +3,7 @@ import {
   LayoutDashboard, MonitorPlay, Package, ShoppingCart, Wallet, 
   Settings, LogOut, Receipt, Users, FileText, Briefcase, Landmark,
   ChevronDown, ChevronRight, CreditCard, Globe, Calculator,
-  Truck, ShoppingBag, Zap, ArrowRightLeft 
+  Truck, ShoppingBag, Zap, ArrowRightLeft, MessageCircle, Store
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -105,6 +105,14 @@ export default function Sidebar() {
   // القائمة الموحدة مع شروط الباقات الصحيحة
   const unifiedMenu = [
     { name: t.dashboard, icon: LayoutDashboard, path: '/', alwaysShow: true },
+    {
+    group: language === 'ar' ? 'التواصل والسوق' : language === 'fr' ? 'COMMUNICATION & MARCHÉ' : 'COMMUNICATION & MARKET',
+    icon: MessageCircle,
+    subItems: [
+      { name: language === 'ar' ? 'صندوق الرسائل' : language === 'fr' ? 'Boîte de Réception' : 'Inbox', path: '/messages' },
+      { name: language === 'ar' ? 'سوق BTP' : language === 'fr' ? 'Marché BTP' : 'BTP Marketplace', path: '/marketplace' }
+    ]
+  },
     {
       group: t.gestionAchats, icon: Truck,
       subItems: [
