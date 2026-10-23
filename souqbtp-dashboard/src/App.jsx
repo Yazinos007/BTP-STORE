@@ -65,12 +65,14 @@ import V2Router from './pages/v2/V2Router';
 import EmpireLanding from './landing-pages/EmpireLanding';
 import RetailLanding from './landing-pages/RetailLanding';
 import ContractorLanding from './landing-pages/ContractorLanding';
+import CostCalculatorLanding from './landing-pages/CostCalculatorLanding'; // 👈 مسار الحاسبة الفيروسية الجديد
 
-// 🚀 مكون مبدل الفضاءات الموحد (الذكي - يعرض فقط ما يملكه المستخدم باللغات الثلاث)
+// 🚀 مكون مبدل الفضاءات الموحد (الذكي - يعرض فقط ما يملكه المستخدم)
 const GlobalSpaceSwitcher = ({ language, dark = false }) => {
   const [open, setOpen] = useState(false);
   const [allowedSpaces, setAllowedSpaces] = useState([]);
   const isRtl = language === 'ar';
+  const navigate = useNavigate();
 
   const labels = {
     ar: {
@@ -82,7 +84,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false }) => {
       wholesale: '🏭 فضاء مورد الجملة'
     },
     fr: {
-      btn: '🚀 Espaces SasBTP',
+      btn: '🚀 Espaces SouqBTP',
       contractor: '🏗️ Espace Entrepreneur',
       architect: '📐 Bureau d\'Architecte',
       provider: '👷‍♂️ Espace Artisan Pro',
@@ -114,25 +116,21 @@ const GlobalSpaceSwitcher = ({ language, dark = false }) => {
       let spaces = [];
       const metaRole = user.user_metadata?.role || user.user_metadata?.account_type;
 
-      // المقاول العام متاح دائماً كقاعدة مركزية إذا لم يكن مجرد مورد فقط
       if (metaRole === 'contractor' || metaRole === 'client' || !metaRole) {
         spaces.push({ id: 'contractor', label: labels.contractor, path: '/v2/contractor-dashboard', badge: 'V2' });
       }
 
-      // فحص هل هو مهندس
-      const { data: arch } = await supabase.from('architects').select('id').eq('id', user.id).maybeSingle(); 
+      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
       if (arch || metaRole === 'architect') {
         spaces.push({ id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' });
       }
 
-      // فحص هل هو حرفي
-      const { data: prov } = await supabase.from('providers').select('id, account_type').eq('id', user.id).maybeSingle();
+      const { data: prov } = await supabase.from('providers').select('id, account_type').eq('user_id', user.id).maybeSingle();
       if (prov || metaRole === 'provider') {
         spaces.push({ id: 'provider', label: labels.provider, path: '/v2/provider-dashboard', badge: 'PRO' });
       }
 
-      // فحص هل هو مورد
-      const { data: sup } = await supabase.from('suppliers').select('id, supplier_type').eq('id', user.id).maybeSingle();
+      const { data: sup } = await supabase.from('suppliers').select('id, supplier_type').eq('user_id', user.id).maybeSingle();
       if (sup || metaRole === 'supplier' || metaRole === 'admin') {
         const type = sup?.supplier_type || user.user_metadata?.supplier_type || 'retail';
         if (type === 'wholesale') {
@@ -142,8 +140,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false }) => {
         }
       }
 
-      // إذا كان مدير نظام (Admin خارق)، أظهر له كل شيء للمعاينة
-      if (user.email === 'admin@SasBTP.ma') {
+      if (user.email === 'admin@souqbtp.ma') {
         spaces = [
           { id: 'contractor', label: labels.contractor, path: '/v2/contractor-dashboard', badge: 'V2' },
           { id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' },
@@ -203,7 +200,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false }) => {
   );
 };
 
-// 🛑 الحارس الإلكتروني للأقسام المدفوعة (يدعم اللغات الثلاث AR / FR / EN)
+// 🛑 الحارس الإلكتروني للأقسام المدفوعة
 const PremiumGuard = ({ children }) => {
   const { language } = useSettingsStore();
   const navigate = useNavigate();
@@ -222,26 +219,10 @@ const PremiumGuard = ({ children }) => {
   }, []);
 
   const t = {
-    ar: {
-      title: 'عذراً، انتهت الفترة التجريبية!',
-      desc: 'لقد انتهت صلاحية استخدامك المجاني لهذه الميزة الحصرية. قم بالترقية الآن لباقة Pro ERP لاستعادة الوصول فوراً ومضاعفة أرباحك.',
-      btn: 'ترقية الحساب الآن'
-    },
-    fr: {
-      title: 'Période d\'essai expirée !',
-      desc: 'Votre accès gratuit à cette fonctionnalité a expiré. Mettez à niveau vers Pro ERP pour y accéder à nouveau et sécuriser vos marges.',
-      btn: 'Mettre à niveau maintenant'
-    },
-    en: {
-      title: 'Sorry, Trial Expired!',
-      desc: 'Your free access to this premium feature has expired. Upgrade to Pro ERP now to restore access and multiply your margins.',
-      btn: 'Upgrade Account Now'
-    }
-  }[language] || {
-    title: 'Période d\'essai expirée !',
-    desc: 'Votre accès gratuit à cette fonctionnalité a expiré. Mettez à niveau vers Pro ERP pour y accéder à nouveau et sécuriser vos marges.',
-    btn: 'Mettre à niveau maintenant'
-  };
+    ar: { title: 'عذراً، انتهت الفترة التجريبية!', desc: 'لقد انتهت صلاحية استخدامك المجاني لهذه الميزة الحصرية. قم بالترقية الآن لباقة Pro ERP لاستعادة الوصول فوراً ومضاعفة أرباحك.', btn: 'ترقية الحساب الآن' },
+    fr: { title: 'Période d\'essai expirée !', desc: 'Votre accès gratuit à cette fonctionnalité a expiré. Mettez à niveau vers Pro ERP pour y accéder à nouveau et sécuriser vos marges.', btn: 'Mettre à niveau maintenant' },
+    en: { title: 'Sorry, Trial Expired!', desc: 'Your free access to this premium feature has expired. Upgrade to Pro ERP now to restore access and multiply your margins.', btn: 'Upgrade Account Now' }
+  }[language] || { title: 'Sorry, Trial Expired!', desc: 'Upgrade to Pro ERP now to restore access.', btn: 'Upgrade Account Now' };
 
   if (isExpired) {
     return (
@@ -249,12 +230,8 @@ const PremiumGuard = ({ children }) => {
         <div className="w-24 h-24 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
           <Lock size={48} />
         </div>
-        <h2 className="text-3xl md:text-4xl font-black text-white">
-          {t.title}
-        </h2>
-        <p className="text-slate-400 max-w-lg text-lg font-medium leading-relaxed">
-          {t.desc}
-        </p>
+        <h2 className="text-3xl md:text-4xl font-black text-white">{t.title}</h2>
+        <p className="text-slate-400 max-w-lg text-lg font-medium leading-relaxed">{t.desc}</p>
         <button 
           onClick={() => navigate('/subscription')}
           className="bg-gradient-to-r from-amber-500 to-orange-500 text-black px-8 py-4 rounded-xl font-black text-lg hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-amber-500/20 mt-4"
@@ -273,7 +250,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
   const { language, setLanguage } = useSettingsStore();
   const location = useLocation();
   
-  const isMinimal = window.location.href.includes('minimal=true');
+  const isMinimal = window.location.href.includes('minimal=true') || window.location.search.includes('minimal=true');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
 
   const [openMenus, setOpenMenus] = useState({
@@ -598,10 +575,10 @@ function App() {
         if (mounted) setUserPrimaryRole(metaRole);
         return;
       }
-      const { data: arch } = await supabase.from('architects').select('id').eq('id', user.id).maybeSingle();
+      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
       if (arch && mounted) { setUserPrimaryRole('architect'); return; }
 
-      const { data: prov } = await supabase.from('providers').select('id').eq('id', user.id).maybeSingle();
+      const { data: prov } = await supabase.from('providers').select('id').eq('user_id', user.id).maybeSingle();
       if (prov && mounted) { setUserPrimaryRole('provider'); return; }
 
       if (mounted) setUserPrimaryRole('supplier');
@@ -690,12 +667,12 @@ function App() {
   const previewMode = searchParams.get('preview');
 
   if (previewMode === 'retail' || previewMode === 'wholesale') {
-    sessionStorage.setItem('SasBTP_preview_mode', previewMode);
+    sessionStorage.setItem('souqbtp_preview_mode', previewMode);
   }
-  const activePreview = previewMode || sessionStorage.getItem('SasBTP_preview_mode');
+  const activePreview = previewMode || sessionStorage.getItem('souqbtp_preview_mode');
 
   const isV2Path = pathname.startsWith('/v2');
-  const isLandingPage = pathname.startsWith('/empire') || pathname.startsWith('/pro') || pathname.startsWith('/contractor');
+  const isLandingPage = pathname.startsWith('/empire') || pathname.startsWith('/pro') || pathname.startsWith('/contractor') || pathname.startsWith('/devis-gratuit');
   const isAuthPage = pathname.includes('/login') || pathname.includes('/register') || pathname.includes('/auth');
 
   if (loading) {
@@ -721,6 +698,7 @@ function App() {
         <Route path="/empire" element={<EmpireLanding />} />
         <Route path="/pro" element={<RetailLanding />} />
         <Route path="/contractor" element={<ContractorLanding />} />
+        <Route path="/devis-gratuit" element={<CostCalculatorLanding />} /> 
 
         <Route path="/v2/*" element={<V2Router session={session} supplier={supplier} />} />
 
