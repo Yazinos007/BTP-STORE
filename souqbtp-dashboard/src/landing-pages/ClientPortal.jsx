@@ -284,14 +284,15 @@ export default function ClientPortal() {
       console.error(e);
     }
 
-    // 2. جلب المهندسين والحرفيين الحقيقيين من Supabase ودمجهم مع القائمة
-    const fetchDirectoryData = async () => {
+    // استبدل كود fetchDirectoryData القديم داخل useEffect بهذا الكود الجديد
+    const fetchLivePortalData = async () => {
       try {
-        const { data: archs } = await supabase.from('architects').select('id, full_name, agency_name, city');
-        const { data: provs } = await supabase.from('providers').select('id, full_name, city, account_type');
+        // 1. جلب المحترفين (المهندسين والحرفيين)
+        const { data: archs } = await supabase.from('architects').select('id, full_name, agency_name, city, user_id');
+        const { data: provs } = await supabase.from('providers').select('id, full_name, city, account_type, user_id');
 
         const dynamicPros = [];
-        if (archs && archs.length > 0) {
+        if (archs) {
           archs.forEach(a => {
             dynamicPros.push({
               id: `arch-${a.id}`,
@@ -300,13 +301,15 @@ export default function ClientPortal() {
               specialty: 'مهندس معماري معتمد - رقابة وتصميم',
               city: a.city || 'المغرب',
               rating: 5.0,
-              reviews: 19,
+              reviews: Math.floor(Math.random() * 40) + 10, // مؤقت لحين إضافة نظام التقييمات الحقيقي
               isFoundingPartner: true,
-              priceHint: 'متاح للاستشارة الفورية'
+              priceHint: 'متاح للاستشارة',
+              userId: a.user_id
             });
           });
         }
-        if (provs && provs.length > 0) {
+        
+        if (provs) {
           provs.forEach(p => {
             dynamicPros.push({
               id: `prov-${p.id}`,
@@ -315,22 +318,55 @@ export default function ClientPortal() {
               specialty: 'تنفيذ أشغال البناء والتشطيبات',
               city: p.city || 'المغرب',
               rating: 4.9,
-              reviews: 27,
+              reviews: Math.floor(Math.random() * 60) + 15,
               isFoundingPartner: true,
-              priceHint: 'ضمان جودة الأشغال'
+              priceHint: 'متاح للتنفيذ',
+              userId: p.user_id
             });
           });
         }
 
         if (dynamicPros.length > 0) {
-          setProsList([...dynamicPros, ...FALLBACK_PROS]);
+          setProsList(dynamicPros);
+        }
+
+        // 2. جلب المنتجات الحقيقية من الموردين النشطين (تجار التجزئة والجملة)
+        const { data: products } = await supabase
+          .from('products')
+          .select('id, name, price, stock_quantity, supplier_id')
+          .eq('status', 'active') // جلب المنتجات المفعلة فقط
+          .limit(20);
+
+        if (products && products.length > 0) {
+          // جلب أسماء المتاجر الموردة لهذه المنتجات
+          const supplierIds = [...new Set(products.map(p => p.supplier_id))];
+          const { data: suppliers } = await supabase
+            .from('suppliers')
+            .select('id, store_name')
+            .in('id', supplierIds);
+
+          const supplierMap = {};
+          if (suppliers) {
+            suppliers.forEach(s => supplierMap[s.id] = s.store_name);
+          }
+
+          const realProducts = products.map(prod => ({
+            id: prod.id,
+            name: prod.name,
+            supplier: supplierMap[prod.supplier_id] || 'متجر معتمد',
+            price: prod.price,
+            unit: 'وحدة', // يمكن ربطها بعمود الوحدة إذا كان متوفراً في الجدول
+            badge: prod.stock_quantity > 0 ? 'متوفر' : 'نفذ من المخزون'
+          }));
+
+          setProductsList(realProducts);
         }
       } catch (e) {
-        // الإبقاء على البيانات الافتراضية
+        console.error("خطأ في جلب البيانات المباشرة:", e);
       }
     };
 
-    fetchDirectoryData();
+    fetchLivePortalData();
   }, []);
 
   const cycleLanguage = () => {
