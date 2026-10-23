@@ -100,7 +100,7 @@ export default function AIAudit() {
       tranches: 'تتبع أشطر المشروع (Tranches)', tranche1: 'الشطر الأول (50%)', tranche2: 'الشطر الثاني (30%)', tranche3: 'الشطر الثالث (20%)',
       exportReport: 'استخراج التقرير الختامي', cashFlow: 'مؤشر السيولة اللحظي (Live Ticker)',
       tableTitle: 'سجل العمليات الدقيق', date: 'التاريخ', beneficiary: 'المستفيد', amount: 'المبلغ', mode: 'طريقة الدفع / المرجع',
-      currency: 'درهم', generating: 'جاري استخراج التقرير...', generatedBy: 'تم التدقيق آلياً بواسطة SouqBTP AI',
+      currency: 'درهم', generating: 'جاري استخراج التقرير...', generatedBy: 'تم التدقيق آلياً بواسطة SasBTP AI',
       txSupervisors: 'تعويضات المشرفين', txTrainers: 'تعويضات المكونين', txSupplies: 'لوازم الورش / الجمعية', txAccounting: 'أتعاب محاسبية',
       aiMsg1: 'صرف الشطر الأول متوافق تماماً مع التوقعات والميزانية المخصصة.',
       aiMsg2: 'تحذير: معدل إنفاق الشطر الثاني أسرع بـ 12% من المخطط له.',
@@ -113,7 +113,7 @@ export default function AIAudit() {
       tranches: 'Suivi des Tranches du Projet', tranche1: '1ère Tranche (50%)', tranche2: '2ème Tranche (30%)', tranche3: '3ème Tranche (20%)',
       exportReport: 'Générer Rapport d\'Audit', cashFlow: 'Indicateur de Liquidité (Live Ticker)',
       tableTitle: 'Journal des Opérations', date: 'Date', beneficiary: 'Bénéficiaire', amount: 'Montant', mode: 'Mode / N° Pièce',
-      currency: 'MAD', generating: 'Génération en cours...', generatedBy: 'Audité automatiquement par SouqBTP AI',
+      currency: 'MAD', generating: 'Génération en cours...', generatedBy: 'Audité automatiquement par SasBTP AI',
       txSupervisors: 'Indemnités de superviseurs', txTrainers: 'Indemnités de formateurs', txSupplies: 'Fournitures de chantier', txAccounting: 'Honoraires comptables',
       aiMsg1: 'Les dépenses de la 1ère tranche sont parfaitement alignées avec le budget.',
       aiMsg2: 'Alerte : Le rythme de dépense de la 2ème tranche est 12% plus rapide que prévu.',
@@ -126,7 +126,7 @@ export default function AIAudit() {
       tranches: 'Project Milestones (Tranches)', tranche1: 'Milestone 1 (50%)', tranche2: 'Milestone 2 (30%)', tranche3: 'Milestone 3 (20%)',
       exportReport: 'Generate Audit Report', cashFlow: 'Liquidity Indicator (Live Ticker)',
       tableTitle: 'Operations Log', date: 'Date', beneficiary: 'Beneficiary', amount: 'Amount', mode: 'Mode / Ref',
-      currency: 'MAD', generating: 'Generating Report...', generatedBy: 'Automatically audited by SouqBTP AI',
+      currency: 'MAD', generating: 'Generating Report...', generatedBy: 'Automatically audited by SasBTP AI',
       txSupervisors: 'Supervisors Comp.', txTrainers: 'Trainers Comp.', txSupplies: 'Site Supplies', txAccounting: 'Accounting Fees',
       aiMsg1: 'Milestone 1 spending is perfectly aligned with the allocated budget.',
       aiMsg2: 'Warning: Milestone 2 spending rate is 12% faster than planned.',
@@ -222,7 +222,7 @@ export default function AIAudit() {
             Nous attestons par la présente que les pièces justificatives rendues ne présentent aucune irrégularité.
           </p>
           <div style="margin-top: 40px; display: inline-block; border-top: 1px dashed #000; padding-top: 10px; width: 250px; text-align: center;">
-            Signature / Cachet (SOUQBTP AI)
+            Signature / Cachet (SasBTP AI)
           </div>
         </div>
       </div>

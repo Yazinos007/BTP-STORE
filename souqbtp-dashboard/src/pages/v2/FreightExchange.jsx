@@ -115,9 +115,9 @@ export default function FreightExchange() {
       try {
         const { data, error } = await supabase.from('logistics_trips').select('*').eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle();
         if (data) setMatchedTrip(data);
-        else setMatchedTrip({ departure_city: 'Tanger', arrival_city: 'Casablanca', trip_date: '2026-08-29', available_capacity: 30, truck_type: 'Semi-remorque', supplier_name: 'مورد SouqBTP' });
+        else setMatchedTrip({ departure_city: 'Tanger', arrival_city: 'Casablanca', trip_date: '2026-08-29', available_capacity: 30, truck_type: 'Semi-remorque', supplier_name: 'مورد SasBTP' });
       } catch (err) {
-        setMatchedTrip({ departure_city: 'Tanger', arrival_city: 'Casablanca', trip_date: '2026-08-29', available_capacity: 30, truck_type: 'Semi-remorque', supplier_name: 'مورد SouqBTP' });
+        setMatchedTrip({ departure_city: 'Tanger', arrival_city: 'Casablanca', trip_date: '2026-08-29', available_capacity: 30, truck_type: 'Semi-remorque', supplier_name: 'مورد SasBTP' });
       }
     }
     fetchMatchedTrip();

@@ -214,7 +214,7 @@ export default function AuthGateway() {
         
         <div className="p-8 pb-4 text-center">
           <h1 className="text-3xl font-black text-blue-900 mb-2 flex items-center justify-center gap-2">
-            SouqBTP <span className="text-2xl">🏗️</span>
+            SasBTP <span className="text-2xl">🏗️</span>
           </h1>
           <p className="text-slate-500 font-medium text-sm">{t.portalSubtitle}</p>
         </div>

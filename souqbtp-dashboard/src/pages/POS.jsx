@@ -114,7 +114,7 @@ export default function POS() {
   // 🖨️ طباعة التذكرة الصغيرة (Ticket)
   const handlePrintTicket = () => {
     if (cart.length === 0) return;
-    const storeName = supplier?.store_name || 'SouqBTP';
+    const storeName = supplier?.store_name || 'SasBTP';
     const date = new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA', { dateStyle: 'short', timeStyle: 'short' }).format(new Date());
     const clientNameText = selectedClientId ? `<p style="margin:5px 0;">${t.selectClient.split(' ')[0]}: ${clients.find(c => c.id === selectedClientId)?.full_name}</p>` : '';
     
@@ -176,7 +176,7 @@ export default function POS() {
     const isRTL = language === 'ar';
     const alignStart = isRTL ? 'right' : 'left';
     const alignEnd = isRTL ? 'left' : 'right';
-    const storeName = supplier?.store_name || 'ENTREPRISE SOUQBTP';
+    const storeName = supplier?.store_name || 'ENTREPRISE SasBTP';
     const date = new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : language === 'en' ? 'en-US' : 'ar-MA').format(new Date());
     const { printLabels } = t;
 
@@ -241,7 +241,7 @@ export default function POS() {
             <div class="total-final"><span>${printLabels.totalTTC}:</span><span dir="ltr">${total.toLocaleString()} ${t.currency}</span></div>
           </div>
           <div style="clear:both;"></div>
-          <div class="footer"><p>Document généré par SouqBTP ERP.</p></div>
+          <div class="footer"><p>Document généré par SasBTP ERP.</p></div>
         </body>
       </html>
     `;

@@ -1169,7 +1169,7 @@ export default function LiveRoom() {
           await supabase.from('messages').insert([{ conversation_id: parseInt(roomId), sender_type: myRole, content: `📸 تقرير ميداني:\n${imageUrl}`, is_read: false }]);
           const { data: convData } = await supabase.from('conversations').select('client_id').eq('id', roomId).maybeSingle();
           if (convData?.client_id) {
-            await supabase.from('site_reports').insert([{ user_id: convData.client_id, provider_name: 'فريق SouqBTP', image_url: imageUrl, description: 'لقطة ميدانية تفاعلية من الغرفة الحية' }]);
+            await supabase.from('site_reports').insert([{ user_id: convData.client_id, provider_name: 'فريق SasBTP', image_url: imageUrl, description: 'لقطة ميدانية تفاعلية من الغرفة الحية' }]);
           }
           window.showToast('✅ تم إرسال التقرير للشات وللداشبورد بنجاح!', 'success');
         } catch (err) { window.showToast('❌ حدث خطأ أثناء رفع التقرير!', 'error'); }
@@ -1184,7 +1184,7 @@ export default function LiveRoom() {
       const tCanvas = window.generateComposite(scale, ghostRotation);
       const imgData = tCanvas.toDataURL('image/jpeg', 0.9);
       const link = document.createElement('a');
-      link.download = `SouqBTP_Architect_Report_${roomId}.jpg`;
+      link.download = `SasBTP_Architect_Report_${roomId}.jpg`;
       link.href = imgData;
       link.click();
       window.showToast('✅ تم استخراج التقرير بنجاح!', 'success');
@@ -1199,7 +1199,7 @@ export default function LiveRoom() {
       const scale = parseFloat(document.getElementById('ghostScale')?.value || 1);
       const tCanvas = window.generateComposite(scale, ghostRotation);
       const link = document.createElement('a');
-      link.download = `SouqBTP_Capture_${Date.now()}.jpg`;
+      link.download = `SasBTP_Capture_${Date.now()}.jpg`;
       link.href = tCanvas.toDataURL('image/jpeg', 0.9);
       link.click();
       window.showToast('تم حفظ النسخة بنجاح 💾', 'success');
@@ -1218,7 +1218,7 @@ export default function LiveRoom() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `SouqBTP_Session_${roomId}.webm`;
+            a.download = `SasBTP_Session_${roomId}.webm`;
             a.click();
             isRecording = false;
             if (btn) btn.innerHTML = t.startRecord;

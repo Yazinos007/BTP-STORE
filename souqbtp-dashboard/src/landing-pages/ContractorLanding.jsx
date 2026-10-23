@@ -120,7 +120,7 @@ const ContractorLanding = () => {
             <div className="enterprise-card">
               <div className="badge">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.5" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
-                SouqBTP V2 Enterprise 👑
+                SasBTP V2 Enterprise 👑
               </div>
               <div className="card-icon">👷‍♂️⚙️</div>
               <h2 className="card-title">النظام الإمبراطوري</h2>
@@ -161,7 +161,7 @@ const ContractorLanding = () => {
           <div className="gift-box" style={{ borderColor: 'var(--accent-yellow)', boxShadow: '0 0 20px rgba(245, 158, 11, 0.1)' }}>
             <div className="gift-icon" style={{ color: 'var(--accent-yellow)' }}>🏅</div>
             <h3 className="gift-title" style={{ color: 'var(--accent-yellow)' }}>حقيبة الهيبة (VIP Kit)</h3>
-            <p className="gift-desc">غيوصلك لــلبيرو ديالك درع أكريليك ذهبي (مقاول معتمد SouqBTP) + مفكرة جلدية فاخرة + 10 بطاقات NFC ذكية باش تبارطاجي معلومات شركتك مع الكليان غير بالسكان ديال QR!</p>
+            <p className="gift-desc">غيوصلك لــلبيرو ديالك درع أكريليك ذهبي (مقاول معتمد SasBTP) + مفكرة جلدية فاخرة + 10 بطاقات NFC ذكية باش تبارطاجي معلومات شركتك مع الكليان غير بالسكان ديال QR!</p>
           </div>
         </div>
       </section>

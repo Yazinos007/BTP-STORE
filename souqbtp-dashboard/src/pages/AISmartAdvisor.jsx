@@ -13,7 +13,7 @@ const translations = {
     hedgingTitle: 'رادار التنبؤ وتقلبات الأسعار الاستباقي',
     hedgingDesc: 'تحليل وتوقع أسعار المواد الخام بناءً على البورصة العالمية وحركة الشحن في البحر الأبيض المتوسط.',
     logisticsTitle: 'نظام "الرجوع عامر" للوجستيك التشاركي',
-    logisticsDesc: 'تقليل مصاريف شاحناتك الفارغة عبر دمج رحلات العودة مع موردين آخرين في شبكة SouqBTP.',
+    logisticsDesc: 'تقليل مصاريف شاحناتك الفارغة عبر دمج رحلات العودة مع موردين آخرين في شبكة SasBTP.',
     actionFreeze: 'تجميد عروض الأسعار الحالية',
     actionStockUp: 'شراء مخزون تحوطي الآن',
     actionShare: 'تأكيد مشاركة الشاحنة ومطابقة الرحلة',
@@ -121,7 +121,7 @@ const translations = {
     hedgingTitle: 'Proactive Price Prediction & Hedging Radar',
     hedgingDesc: 'Analyze and predict raw material prices based on global markets and Mediterranean shipping routes.',
     logisticsTitle: 'Shared Logistics "Loaded Return" Optimizer',
-    logisticsDesc: 'Reduce empty truck expenses by merging return trips with other suppliers in the SouqBTP network.',
+    logisticsDesc: 'Reduce empty truck expenses by merging return trips with other suppliers in the SasBTP network.',
     actionFreeze: 'Freeze current quotes',
     actionStockUp: 'Buy hedging stock now',
     actionShare: 'Confirm truck sharing & match',
@@ -287,7 +287,7 @@ export default function AISmartAdvisor() {
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from('logistics_trips').insert([{
-        supplier_name: supplier?.name || 'مورد SouqBTP',
+        supplier_name: supplier?.name || 'مورد SasBTP',
         departure_city: formData.departureCity,
         arrival_city: formData.arrivalCity,
         trip_date: formData.tripDate,

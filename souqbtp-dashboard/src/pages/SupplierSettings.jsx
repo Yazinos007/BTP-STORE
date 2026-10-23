@@ -10,8 +10,8 @@ import {
 const translations = {
   ar: {
     title: 'مركز الثقة والإعدادات',
-    subtitle: 'أدر حسابك، وثق هويتك التجارية، واحصل على شارة SouqBTP لزيادة مبيعاتك.',
-    verifiedBadge: 'مورد معتمد (SouqBTP Verified)',
+    subtitle: 'أدر حسابك، وثق هويتك التجارية، واحصل على شارة SasBTP لزيادة مبيعاتك.',
+    verifiedBadge: 'مورد معتمد (SasBTP Verified)',
     badgeDesc: 'الموردون المعتمدون يحصلون على 300% طلبات ومناقصات أكثر. الشارة تبني ثقة مطلقة مع التجار.',
     kycTitle: 'الوثائق القانونية (KYC)',
     kycDesc: 'يرجى رفع المستندات التالية لتوثيق حسابك وفتحه للتجار.',
@@ -39,8 +39,8 @@ const translations = {
   },
   fr: {
     title: 'Centre de Confiance & Paramètres',
-    subtitle: 'Gérez votre compte, certifiez votre entreprise et obtenez le badge SouqBTP.',
-    verifiedBadge: 'Fournisseur Certifié (SouqBTP Verified)',
+    subtitle: 'Gérez votre compte, certifiez votre entreprise et obtenez le badge SasBTP.',
+    verifiedBadge: 'Fournisseur Certifié (SasBTP Verified)',
     badgeDesc: 'Les fournisseurs certifiés reçoivent 300% de commandes en plus. Le badge crée une confiance absolue.',
     kycTitle: 'Documents Légaux (KYC)',
     kycDesc: 'Veuillez télécharger ces documents pour vérifier votre compte.',
@@ -68,8 +68,8 @@ const translations = {
   },
   en: {
     title: 'Trust Center & Settings',
-    subtitle: 'Manage your account, certify your business, and get the SouqBTP badge.',
-    verifiedBadge: 'Certified Supplier (SouqBTP Verified)',
+    subtitle: 'Manage your account, certify your business, and get the SasBTP badge.',
+    verifiedBadge: 'Certified Supplier (SasBTP Verified)',
     badgeDesc: 'Certified suppliers receive 300% more orders. The badge creates absolute trust.',
     kycTitle: 'Legal Documents (KYC)',
     kycDesc: 'Please upload these documents to verify your account.',
@@ -300,7 +300,7 @@ export default function SupplierSettings() {
               {/* 🚀 الزر السحري لربط التلغرام (VIP) */}
               <div className="pt-4 mt-4 border-t border-slate-800">
                 <a 
-                  href={`https://t.me/SouqBTP_Bot?start=${supplier?.id}`}
+                  href={`https://t.me/SasBTP_Bot?start=${supplier?.id}`}
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-3 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-black rounded-xl transition-all shadow-lg shadow-[#2AABEE]/30"

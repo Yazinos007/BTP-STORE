@@ -175,7 +175,7 @@ export default function Marketplace() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4" dir={isArabic ? 'rtl' : 'ltr'}>
         <Store size={64} className="text-gray-300" />
         <h2 className="text-xl font-bold text-gray-700">{error}</h2>
-        <a href="https://souqbtp.ma/app/marketplace.php" className="px-6 py-3 bg-blue-600 hover:bg-blue-700 transition-colors text-white rounded-xl font-bold">
+        <a href="https://SasBTP.ma/app/marketplace.php" className="px-6 py-3 bg-blue-600 hover:bg-blue-700 transition-colors text-white rounded-xl font-bold">
           {t.backToMarket}
         </a>
       </div> 
@@ -188,7 +188,7 @@ export default function Marketplace() {
       <div className="bg-gradient-to-r from-[#1e1b4b] via-[#2d2252] to-[#4338ca] pt-8 pb-16 px-6 lg:px-12 relative overflow-hidden shadow-lg">
         
         <div className="max-w-7xl mx-auto mb-6 relative z-20 flex justify-between items-center">
-          <a href="https://souqbtp.ma/app/marketplace.php" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm text-sm font-bold">
+          <a href="https://SasBTP.ma/app/marketplace.php" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm text-sm font-bold">
              <ArrowRight size={16} className={isArabic ? '' : 'rotate-180'} />
              {t.backToMarket}
           </a>

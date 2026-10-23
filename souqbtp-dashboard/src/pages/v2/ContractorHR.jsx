@@ -152,7 +152,7 @@ export default function ContractorHR() {
   // 🚀 السحر الأول: حفظ البيانات تلقائياً في الذاكرة الدائمة للمتصفح
   useEffect(() => {
     if (employees.length > 0) {
-      localStorage.setItem('souqbtp_hr_employees', JSON.stringify(employees));
+      localStorage.setItem('SasBTP_hr_employees', JSON.stringify(employees));
     }
   }, [employees]);
 
@@ -193,7 +193,7 @@ export default function ContractorHR() {
       }
       
       // 🚀 إذا فشل الاتصال بقاعدة البيانات، استرجع البيانات من الذاكرة المحلية
-      const localData = localStorage.getItem('souqbtp_hr_employees');
+      const localData = localStorage.getItem('SasBTP_hr_employees');
       if (localData) {
         setEmployees(JSON.parse(localData));
       } else {
@@ -206,7 +206,7 @@ export default function ContractorHR() {
       }
     } catch (err) {
       console.error(err);
-      const localData = localStorage.getItem('souqbtp_hr_employees');
+      const localData = localStorage.getItem('SasBTP_hr_employees');
       if(localData) setEmployees(JSON.parse(localData));
     }
   };

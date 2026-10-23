@@ -18,10 +18,10 @@ export default function RetailLanding() {
           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
             <Store className="text-white" size={24} />
           </div>
-          <span className="font-black text-2xl tracking-tight text-slate-800">SouqBTP <span className="text-blue-600">Retail</span></span>
+          <span className="font-black text-2xl tracking-tight text-slate-800">SasBTP <span className="text-blue-600">Retail</span></span>
         </div>
         <button
-          onClick={() => window.open('https://souqbtp.ma/app/auth.html',  '_blank')}
+          onClick={() => window.open('https://SasBTP.ma/app/auth.html',  '_blank')}
           className="text-slate-400 font-medium text-sm hover:text-slate-600 transition-colors px-4 py-2 cursor-pointer"
         >
           تسجيل الدخول
@@ -49,7 +49,7 @@ export default function RetailLanding() {
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button 
-            onClick={() => window.open('https://souqbtp.ma/app/supplier-register.php', '_blank')}
+            onClick={() => window.open('https://SasBTP.ma/app/supplier-register.php', '_blank')}
             className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-2xl shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden group"
           >
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
@@ -215,7 +215,7 @@ export default function RetailLanding() {
                 <li className="flex items-center gap-3"><CheckCircle2 className="text-emerald-400" size={20}/> حتى لـ 50 كليان</li>
               </ul>
               <button 
-                onClick={() => window.open('https://souqbtp.ma/app/supplier-register.php', '_blank')}
+                onClick={() => window.open('https://SasBTP.ma/app/supplier-register.php', '_blank')}
                 className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold transition-colors cursor-pointer"
               >
                 ابدا فابور
@@ -238,7 +238,7 @@ export default function RetailLanding() {
                 <li className="flex items-center gap-3"><CheckCircle2 className="text-amber-400" size={20}/> كليان وسلع بدون حدود</li>
               </ul>
               <button 
-                onClick={() => window.open('https://souqbtp.ma/app/supplier-register.php', '_blank')}
+                onClick={() => window.open('https://SasBTP.ma/app/supplier-register.php', '_blank')}
                 className="w-full py-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-lg transition-colors shadow-lg shadow-amber-400/20 cursor-pointer"
               >
                 جرب دابا (14 يوم فابور)
@@ -278,7 +278,7 @@ export default function RetailLanding() {
           جرب المنصة اليوم لمدة 14 يوماً بالمجان، وبلا ما تدخل لا كارطة لا والو.
         </p>
         <button 
-          onClick={() => window.open('https://souqbtp.ma/app/supplier-register.php', '_blank')}
+          onClick={() => window.open('https://SasBTP.ma/app/supplier-register.php', '_blank')}
           className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors inline-flex items-center gap-2 cursor-pointer"
         >
           <span>افتح حسابك دابا</span>

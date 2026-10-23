@@ -107,7 +107,7 @@ const EmpireLanding = () => {
             <div className="enterprise-card">
               <div className="badge">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
-                SouqBTP Enterprise 👑
+                SasBTP Enterprise 👑
               </div>
               <div className="card-icon">🚀</div>
               <h2 className="card-title">الموظف الخارق</h2>
@@ -151,7 +151,7 @@ const EmpireLanding = () => {
             <div className="gift-box" style={{borderColor: 'var(--accent-orange)'}}>
                 <div className="gift-icon" style={{color: 'var(--accent-orange)'}}>🛡️</div>
                 <h3 className="gift-title" style={{color: 'var(--accent-orange)'}}>درع الهيبة والوجاهة</h3>
-                <p className="gift-desc">غادي يوصلك للمكتب ديالك درع أكريليك ذهبي محفور باسم شركتك (مورد معتمد SouqBTP) لزيادة الثقة + مفكرة جلدية فاخرة + 10 بطاقات عمل (NFC) ذكية لمندوبي مبيعاتك.</p>
+                <p className="gift-desc">غادي يوصلك للمكتب ديالك درع أكريليك ذهبي محفور باسم شركتك (مورد معتمد SasBTP) لزيادة الثقة + مفكرة جلدية فاخرة + 10 بطاقات عمل (NFC) ذكية لمندوبي مبيعاتك.</p>
             </div>
         </div>
       </section>
@@ -162,7 +162,7 @@ const EmpireLanding = () => {
             <span>⚠️</span> توضيح هام (وبشرى سارة للمشغولين جداً):
         </h4>
         <p style={{color: 'var(--text-light)', fontSize: '1.1rem', lineHeight: '1.8', margin: '0'}}>
-            "الموظف الخارق" لي هضرنا عليه الفوق هو <strong>النظام الرقمي الذكي</strong> ديال SouqBTP لي غيولي الدراع ليمن ديالك ويسهل خدمتك لدرجة غتسير كلشي غير من تليفونك. 
+            "الموظف الخارق" لي هضرنا عليه الفوق هو <strong>النظام الرقمي الذكي</strong> ديال SasBTP لي غيولي الدراع ليمن ديالك ويسهل خدمتك لدرجة غتسير كلشي غير من تليفونك. 
             <br/><br/>
             ولكن، إلا كنتي مشغول لدرجة معندكش الوقت نهائياً، وبغيتي <strong>فريق بشري محترف</strong> من عندنا يتكلف ليك بإدخال الفواتير اليومية والتسيير الكامل 100% عن بعد... هادي <strong>خدمة VIP إضافية (تسيير شامل)</strong> متوفرة عندنا بتكلفة مخصصة. سولنا عليها فـ الواتساب!
         </p>

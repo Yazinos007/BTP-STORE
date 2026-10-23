@@ -7,7 +7,7 @@ import { Building2, Store, Factory, Phone, Mail, Lock, Loader2, CheckCircle2, Al
 const translations = {
   ar: {
     pageTitle: "إنشاء حساب جديد",
-    pageSubtitle: "بوابة الدخول لمنظومة SouqBTP الذكية.",
+    pageSubtitle: "بوابة الدخول لمنظومة SasBTP الذكية.",
     retailBtn: "تاجر (محل)",
     wholesaleBtn: "مورد (شركة)",
     companyLabel: "اسم الشركة / المحل",
@@ -19,14 +19,14 @@ const translations = {
     registerBtn: "إنشاء الحساب",
     haveAccount: "لديك حساب بالفعل؟",
     loginLink: "تسجيل الدخول",
-    rights: "جميع الحقوق محفوظة © SouqBTP 2026",
+    rights: "جميع الحقوق محفوظة © SasBTP 2026",
     errEmailExists: "هذا البريد الإلكتروني مسجل مسبقاً.",
     errUnexpected: "تأكد من صحة البيانات أو أن الحساب غير موجود مسبقاً.",
     successRegister: "✅ تم إنشاء الحساب بنجاح! جاري تحويلك..."
   },
   fr: {
     pageTitle: "Créer un nouveau compte",
-    pageSubtitle: "Portail d'accès au système intelligent SouqBTP.",
+    pageSubtitle: "Portail d'accès au système intelligent SasBTP.",
     retailBtn: "Détaillant (Boutique)",
     wholesaleBtn: "Fournisseur (Entreprise)",
     companyLabel: "Nom de l'Entreprise / Boutique",
@@ -38,14 +38,14 @@ const translations = {
     registerBtn: "Créer le compte",
     haveAccount: "Vous avez déjà un compte ?",
     loginLink: "Se connecter",
-    rights: "Tous droits réservés © SouqBTP 2026",
+    rights: "Tous droits réservés © SasBTP 2026",
     errEmailExists: "Cet email est déjà enregistré.",
     errUnexpected: "Vérifiez vos données ou le compte existe déjà.",
     successRegister: "✅ Compte créé avec succès ! Redirection..."
   },
   en: {
     pageTitle: "Create New Account",
-    pageSubtitle: "Access portal to the smart SouqBTP system.",
+    pageSubtitle: "Access portal to the smart SasBTP system.",
     retailBtn: "Retailer (Shop)",
     wholesaleBtn: "Supplier (Company)",
     companyLabel: "Company / Shop Name",
@@ -57,7 +57,7 @@ const translations = {
     registerBtn: "Create Account",
     haveAccount: "Already have an account?",
     loginLink: "Login",
-    rights: "All Rights Reserved © SouqBTP 2026",
+    rights: "All Rights Reserved © SasBTP 2026",
     errEmailExists: "This email is already registered.",
     errUnexpected: "Check your details or the account already exists.",
     successRegister: "✅ Account created successfully! Redirecting..."

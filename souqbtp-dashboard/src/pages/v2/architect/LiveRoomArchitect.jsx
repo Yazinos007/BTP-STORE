@@ -869,7 +869,7 @@ export default function LiveRoomArchitect() {
         <div style="margin-bottom: 40px;"><h3 style="border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">📝 ملاحظات المهندس:</h3><p style="font-size: 15px; line-height: 1.6; background: #f1f5f9; padding: 15px; border: 1px solid #e2e8f0;">${
           notes || 'لا توجد ملاحظات إضافية.'
         }</p></div>
-        <div style="margin-top: 50px; display: flex; justify-content: space-around; align-items: flex-end;"><div style="text-align: center;"><div style="margin-bottom: 10px; color: ${borderColor}; font-size: 30px;">🏛️</div><div style="border-top: 2px dashed #94a3b8; padding-top: 8px; font-weight: bold;">مصادقة منصة SouqBTP</div></div><div style="text-align: center;"><div style="height: 40px;"></div><div style="border-top: 2px dashed #94a3b8; padding-top: 8px; font-weight: bold;">توقيع المهندس / الختم</div></div></div>
+        <div style="margin-top: 50px; display: flex; justify-content: space-around; align-items: flex-end;"><div style="text-align: center;"><div style="margin-bottom: 10px; color: ${borderColor}; font-size: 30px;">🏛️</div><div style="border-top: 2px dashed #94a3b8; padding-top: 8px; font-weight: bold;">مصادقة منصة SasBTP</div></div><div style="text-align: center;"><div style="height: 40px;"></div><div style="border-top: 2px dashed #94a3b8; padding-top: 8px; font-weight: bold;">توقيع المهندس / الختم</div></div></div>
         ${attachedLayersHTML}
       </div>`;
 
@@ -880,7 +880,7 @@ export default function LiveRoomArchitect() {
       document.body.appendChild(container);
       const opt = {
         margin: 0,
-        filename: `SouqBTP_Architect_Report_${roomId}.pdf`,
+        filename: `SasBTP_Architect_Report_${roomId}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
@@ -918,7 +918,7 @@ export default function LiveRoomArchitect() {
       const currentPlan = window.__ARCHITECT_PLAN__ || 'basic';
       const archUid = window.__ARCHITECT_UID__ || '';
 
-      let headerLogoHTML = `<h1 style="color: #8b5cf6; margin: 0; font-size: 26px; font-weight: 900;">SouqBTP</h1>`;
+      let headerLogoHTML = `<h1 style="color: #8b5cf6; margin: 0; font-size: 26px; font-weight: 900;">SasBTP</h1>`;
       let subTitle = 'المنصة الأولى للبناء والتعمير الذكي';
       let borderColor = '#8b5cf6';
 
@@ -1038,7 +1038,7 @@ export default function LiveRoomArchitect() {
       const scale = parseFloat(document.getElementById('ghostScale')?.value || 1);
       const tCanvas = window.generateComposite(scale, ghostRotation);
       const link = document.createElement('a');
-      link.download = `SouqBTP_Architect_${new Date().getTime()}.jpg`;
+      link.download = `SasBTP_Architect_${new Date().getTime()}.jpg`;
       link.href = tCanvas.toDataURL('image/jpeg', 0.9);
       link.click();
       window.showToast('تم حفظ النسخة بنجاح 💾', 'success');
@@ -1070,7 +1070,7 @@ export default function LiveRoomArchitect() {
             document.body.appendChild(a);
             a.style.display = 'none';
             a.href = url;
-            a.download = `SouqBTP_Session_Record_${roomId}_${new Date().getTime()}.${extension}`;
+            a.download = `SasBTP_Session_Record_${roomId}_${new Date().getTime()}.${extension}`;
             a.click();
             window.URL.revokeObjectURL(url);
             isRecording = false;

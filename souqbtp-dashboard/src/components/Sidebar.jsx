@@ -194,7 +194,7 @@ export default function Sidebar() {
             
             <div className="flex flex-col overflow-hidden justify-center h-16 text-start">
               <h2 className="text-white font-black text-xl leading-tight truncate w-[140px] mb-1.5" title={safeSupplier.store_name}>
-                {safeSupplier.store_name || 'SouqBTP'}
+                {safeSupplier.store_name || 'SasBTP'}
               </h2>
               
               <div className="flex flex-wrap gap-2">

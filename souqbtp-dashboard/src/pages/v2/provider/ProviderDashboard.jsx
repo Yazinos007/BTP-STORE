@@ -6,7 +6,7 @@ import { Users, MessageCircle, ImageIcon, BellRing, Camera, Send, Loader2, Check
 const translations = {
   ar: {
     welcome: "مرحباً بك يا معلم",
-    subtitle: "إليك ملخص سريع لنشاطك على منصة SouqBTP",
+    subtitle: "إليك ملخص سريع لنشاطك على منصة SasBTP",
     clients: "عملاؤك",
     clientsDesc: "إجمالي الأشخاص الذين تواصلوا معك.",
     messages: "الرسائل",
@@ -29,7 +29,7 @@ const translations = {
   },
   fr: {
     welcome: "Bienvenue Maître",
-    subtitle: "Voici un résumé rapide de votre activité sur SouqBTP",
+    subtitle: "Voici un résumé rapide de votre activité sur SasBTP",
     clients: "Vos Clients",
     clientsDesc: "Total des personnes vous ayant contacté.",
     messages: "Messages",
@@ -52,7 +52,7 @@ const translations = {
   },
   en: {
     welcome: "Welcome Master",
-    subtitle: "Here is a quick summary of your activity on SouqBTP",
+    subtitle: "Here is a quick summary of your activity on SasBTP",
     clients: "Your Clients",
     clientsDesc: "Total people who contacted you.",
     messages: "Messages",

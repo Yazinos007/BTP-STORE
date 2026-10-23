@@ -231,7 +231,7 @@ export default function ProviderAuth() {
             <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-orange-500/30 mb-4 transform rotate-3">
               <HardHat className="w-8 h-8 text-white -rotate-3" />
             </div>
-            <h1 className="text-2xl font-black text-white mb-2 tracking-wide">SouqBTP PRO</h1>
+            <h1 className="text-2xl font-black text-white mb-2 tracking-wide">SasBTP PRO</h1>
             <p className="text-slate-400 text-sm font-medium">{t.portalSubtitle}</p>
           </div>
         </div>

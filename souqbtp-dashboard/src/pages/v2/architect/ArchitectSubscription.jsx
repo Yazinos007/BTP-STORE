@@ -32,7 +32,7 @@ const translations = {
 
     // Whitelabel
     whitelabelTitle: "وثّق عملك بعلامتك التجارية الخاصة 🏢",
-    whitelabelDesc: "حصرياً في باقة النخبة (Elite): لن يرى عميلك شعار منصة SouqBTP بعد الآن. ستصدر جميع التقارير الهندسية، محاضر الزيارات، وإثباتات الـ GPS حاملة لـ شعار مكتبك الهندسي واسمك كعلامة مائية (Whitelabel). اجعل تقاريرك تبدو مصممة بأنظمة مكتبك الداخلية وكلف بمشاريعك باحترافية مطلقة.",
+    whitelabelDesc: "حصرياً في باقة النخبة (Elite): لن يرى عميلك شعار منصة SasBTP بعد الآن. ستصدر جميع التقارير الهندسية، محاضر الزيارات، وإثباتات الـ GPS حاملة لـ شعار مكتبك الهندسي واسمك كعلامة مائية (Whitelabel). اجعل تقاريرك تبدو مصممة بأنظمة مكتبك الداخلية وكلف بمشاريعك باحترافية مطلقة.",
     yourLogo: "Your Logo",
     wlImagePlaceholder: "[صورة الورشة مع المطابقة]",
     engineerSeal: "ختم المهندس: ✔️",
@@ -113,7 +113,7 @@ const translations = {
     vipAiTooltipDesc: "Créez une infinité de propositions réalistes pour vos clients.",
 
     whitelabelTitle: "Documentez avec votre propre marque 🏢",
-    whitelabelDesc: "Exclusivement dans le pack Élite (VIP) : Vos clients ne verront plus le logo SouqBTP. Tous les rapports, PV de chantier et preuves GPS porteront le logo et le nom de votre cabinet en filigrane (Whitelabel).",
+    whitelabelDesc: "Exclusivement dans le pack Élite (VIP) : Vos clients ne verront plus le logo SasBTP. Tous les rapports, PV de chantier et preuves GPS porteront le logo et le nom de votre cabinet en filigrane (Whitelabel).",
     yourLogo: "Votre Logo",
     wlImagePlaceholder: "[Photo du chantier avec superposition]",
     engineerSeal: "Sceau de l'architecte : ✔️",
@@ -190,7 +190,7 @@ const translations = {
     vipAiTooltipDesc: "Generate endless realistic design proposals for your clients.",
 
     whitelabelTitle: "Document your work with your own brand 🏢",
-    whitelabelDesc: "Exclusively in the Elite (VIP) tier: Your clients will never see the SouqBTP logo. All engineering reports, site PVs, and GPS proofs will carry your firm's logo and name as a watermark (Whitelabel).",
+    whitelabelDesc: "Exclusively in the Elite (VIP) tier: Your clients will never see the SasBTP logo. All engineering reports, site PVs, and GPS proofs will carry your firm's logo and name as a watermark (Whitelabel).",
     yourLogo: "Your Logo",
     wlImagePlaceholder: "[Site photo with AR overlay]",
     engineerSeal: "Architect Seal: ✔️",

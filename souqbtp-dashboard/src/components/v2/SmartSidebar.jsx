@@ -317,7 +317,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
             {logoUrl ? <img src={logoUrl} alt="logo" className="w-full h-full rounded-2xl object-cover" /> : storeName?.charAt(0) || 'S'}
           </div>
           <div className="flex flex-col truncate">
-            <h2 className="text-white font-black text-lg tracking-wide truncate">SouqBTP V2</h2>
+            <h2 className="text-white font-black text-lg tracking-wide truncate">SasBTP V2</h2>
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full w-max mt-1 border ${badgeColors}`}>
               {currentRoleLabel}
             </span>

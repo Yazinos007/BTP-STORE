@@ -45,12 +45,12 @@ export default function ContractorSubscription() {
           desc: 'النظام المتكامل لإدارة التجارة، المحاسبة، والعملاء.',
           badge: 'الأكثر شعبية',
           features: ['كل ما في باقة Starter', 'نظام المحاسبة والـ CPC التلقائي', 'الـ CRM الذكي (تصنيف العملاء)', 'إرسال رسائل واتساب للتحصيل', 'عدد عملاء ووثائق غير محدود'],
-          missing: ['شارة SouqBTP Verified الذهبية', 'رادار المناقصات الحية']
+          missing: ['شارة SasBTP Verified الذهبية', 'رادار المناقصات الحية']
         },
         enterprise: {
           name: 'Enterprise (Verified)',
           desc: 'قوة الذكاء الاصطناعي واقتناص المناقصات لكبار الموردين.',
-          badge: 'SouqBTP موثق 🛡️',
+          badge: 'SasBTP موثق 🛡️',
           features: ['كل ما في باقة Pro ERP', 'شارة "مقاول معتمد" الذهبية', 'رادار المناقصات الحية الجغرافي', 'نظام التدقيق المالي الآلي (AI Audit)', 'مدير حساب شخصي', 'أولوية الظهور المطلقة'],
           missing: []
         }
@@ -86,12 +86,12 @@ export default function ContractorSubscription() {
           desc: 'Le système complet pour gérer le commerce et la compta.',
           badge: 'Le plus populaire',
           features: ['Tout de l\'offre Starter', 'Comptabilité & Bilan CPC automatisé', 'CRM Intelligent (Segmentation)', 'Relance client via WhatsApp', 'Clients et documents illimités'],
-          missing: ['Badge SouqBTP Verified', 'Radar d\'Appels d\'Offres Live']
+          missing: ['Badge SasBTP Verified', 'Radar d\'Appels d\'Offres Live']
         },
         enterprise: {
           name: 'Enterprise (Verified)',
           desc: 'La puissance de l\'IA et la capture d\'appels d\'offres.',
-          badge: 'SouqBTP Vérifié 🛡️',
+          badge: 'SasBTP Vérifié 🛡️',
           features: ['Tout de l\'offre Pro ERP', 'Badge d\'Or "Entrepreneur Certifié"', 'Radar d\'Appels d\'Offres Live', 'Audit Financier IA', 'Account Manager Dédié', 'Priorité absolue'],
           missing: []
         }
@@ -127,12 +127,12 @@ export default function ContractorSubscription() {
           desc: 'Complete system to manage trade and accounting.',
           badge: 'Most popular',
           features: ['Everything in Starter', 'Automated Accounting & CPC', 'Smart CRM (Segmentation)', 'WhatsApp client reminders', 'Unlimited clients & docs'],
-          missing: ['SouqBTP Verified Badge', 'Live Tenders Radar']
+          missing: ['SasBTP Verified Badge', 'Live Tenders Radar']
         },
         enterprise: {
           name: 'Enterprise (Verified)',
           desc: 'AI power and tender capture for market leaders.',
-          badge: 'SouqBTP Verified 🛡️',
+          badge: 'SasBTP Verified 🛡️',
           features: ['Everything in Pro ERP', 'Gold Badge "Certified Contractor"', 'Live Tenders Radar', 'AI Financial Audit', 'Dedicated Account Manager', 'Absolute priority'],
           missing: []
         }

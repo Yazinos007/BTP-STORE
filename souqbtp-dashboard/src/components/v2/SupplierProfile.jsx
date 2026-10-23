@@ -1050,7 +1050,7 @@ export default function SupplierProfile({ artisanId, isDarkMode = false, languag
 
                   {reviewsList.length > 0 ? (
                     reviewsList.map((review) => {
-                      const reviewerName = review.profiles?.full_name || (language === 'ar' ? 'مستخدم SouqBTP' : 'Utilisateur SouqBTP');
+                      const reviewerName = review.profiles?.full_name || (language === 'ar' ? 'مستخدم SasBTP' : 'Utilisateur SasBTP');
                       const reviewDate = new Date(review.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR');
                       const helpfulVotes = reviewVotesMap[review.id] || 0;
                       const hasVoted = userVotedReviews.has(review.id);

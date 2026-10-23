@@ -32,7 +32,7 @@ const translations = {
     pdfQty: 'الكمية',
     pdfPrice: 'السعر',
     pdfTotalNet: 'الإجمالي الصافي للدفع',
-    pdfCertified: 'وثيقة معتمدة من SouqBTP Cloud ERP'
+    pdfCertified: 'وثيقة معتمدة من SasBTP Cloud ERP'
   },
   fr: {
     title: 'Facturation B2B',
@@ -59,7 +59,7 @@ const translations = {
     pdfQty: 'Qté',
     pdfPrice: 'Prix',
     pdfTotalNet: 'Total Net à Payer',
-    pdfCertified: 'Document certifié par SouqBTP Cloud ERP'
+    pdfCertified: 'Document certifié par SasBTP Cloud ERP'
   },
   en: {
     title: 'B2B Invoicing',
@@ -86,7 +86,7 @@ const translations = {
     pdfQty: 'Qty',
     pdfPrice: 'Price',
     pdfTotalNet: 'Total Net to Pay',
-    pdfCertified: 'Document certified by SouqBTP Cloud ERP'
+    pdfCertified: 'Document certified by SasBTP Cloud ERP'
   }
 };
 

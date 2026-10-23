@@ -26,7 +26,7 @@ const translations = {
     btnLoading: 'جاري تجهيز مكتبك الافتراضي...',
     backLink: '🔙 العودة لصفحة الدخول الرئيسية',
     errorExist: 'هذا البريد مسجل مسبقاً في النظام.',
-    successMsg: '🎉 أهلاً بك في نخبة SouqBTP! تم تجهيز حسابك الهندسي.'
+    successMsg: '🎉 أهلاً بك في نخبة SasBTP! تم تجهيز حسابك الهندسي.'
   },
   fr: {
     subtitle: 'Portail d\'inscription pour les architectes et bureaux d\'études',
@@ -49,7 +49,7 @@ const translations = {
     btnLoading: 'Préparation de votre bureau virtuel...',
     backLink: '🔙 Retour à la page de connexion',
     errorExist: 'Cet email est déjà enregistré.',
-    successMsg: '🎉 Bienvenue dans l\'élite SouqBTP !'
+    successMsg: '🎉 Bienvenue dans l\'élite SasBTP !'
   },
   en: {
     subtitle: 'Registration portal for Architects & Engineering Firms',
@@ -72,7 +72,7 @@ const translations = {
     btnLoading: 'Setting up your virtual office...',
     backLink: '🔙 Back to Login',
     errorExist: 'This email is already registered.',
-    successMsg: '🎉 Welcome to SouqBTP Elite!'
+    successMsg: '🎉 Welcome to SasBTP Elite!'
   }
 };
 
@@ -152,7 +152,7 @@ export default function ArchitectRegister() {
     <div className="min-h-screen flex items-center justify-center p-5 font-[Cairo]" dir={isRtl ? 'rtl' : 'ltr'} style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%)' }}>
       <div className="bg-white max-w-[600px] w-full p-10 rounded-3xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] border-t-[8px] border-purple-700">
         <div className="text-center mb-8">
-          <h1 className="text-[#4c1d95] text-4xl font-black mb-2">📐 SouqBTP Elite</h1>
+          <h1 className="text-[#4c1d95] text-4xl font-black mb-2">📐 SasBTP Elite</h1>
           <p className="text-slate-500 font-semibold">{t.subtitle}</p>
         </div>
         <div className="bg-purple-100/50 border border-dashed border-purple-400 p-4 rounded-xl text-center mb-6">

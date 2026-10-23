@@ -7,7 +7,7 @@ const translations = {
   ar: {
     welcomeLogin: 'مرحباً بك مجدداً', 
     welcomeRegister: 'إنشاء حساب جديد',
-    subtitle: 'بوابة الدخول لمنظومة SouqBTP الذكية.',
+    subtitle: 'بوابة الدخول لمنظومة SasBTP الذكية.',
     retailer: 'تاجر (محل)', 
     wholesaler: 'مورد (شركة)',
     storeName: 'اسم الشركة / المحل',
@@ -21,12 +21,12 @@ const translations = {
     hasAccount: 'لديك حساب بالفعل؟', loginLink: 'تسجيل الدخول',
     errorMsg: 'تأكد من صحة البيانات المدخلة.',
     regSuccess: '✅ تم إنشاء الحساب بنجاح! جاري الدخول...',
-    rights: 'جميع الحقوق محفوظة © SouqBTP 2026'
+    rights: 'جميع الحقوق محفوظة © SasBTP 2026'
   },
   fr: {
     welcomeLogin: 'Bienvenue', 
     welcomeRegister: 'Créer un compte',
-    subtitle: 'Portail d\'accès à l\'écosystème SouqBTP.',
+    subtitle: 'Portail d\'accès à l\'écosystème SasBTP.',
     retailer: 'Détaillant', 
     wholesaler: 'Grossiste',
     storeName: 'Nom de l\'entreprise / Magasin',
@@ -40,12 +40,12 @@ const translations = {
     hasAccount: 'Vous avez déjà un compte ?', loginLink: 'Connectez-vous',
     errorMsg: 'Veuillez vérifier vos informations.',
     regSuccess: '✅ Compte créé avec succès ! Connexion...',
-    rights: 'Tous droits réservés © SouqBTP 2026'
+    rights: 'Tous droits réservés © SasBTP 2026'
   },
   en: {
     welcomeLogin: 'Welcome Back', 
     welcomeRegister: 'Create New Account',
-    subtitle: 'Access portal to the smart SouqBTP ecosystem.',
+    subtitle: 'Access portal to the smart SasBTP ecosystem.',
     retailer: 'Retailer (Store)', 
     wholesaler: 'Wholesaler (Company)',
     storeName: 'Company / Store Name',
@@ -59,7 +59,7 @@ const translations = {
     hasAccount: 'Already have an account?', loginLink: 'Login',
     errorMsg: 'Please check the entered data.',
     regSuccess: '✅ Account created successfully! Logging in...',
-    rights: 'All rights reserved © SouqBTP 2026'
+    rights: 'All rights reserved © SasBTP 2026'
   }
 };
 

@@ -44,12 +44,12 @@ const translations = {
           'نظام "الرجوع عامر" التشاركي (لوجستيك)',
           'عدد عملاء وثائق غير محدود'
         ],
-        missing: ['شارة SouqBTP Verified الذهبية', 'رادار المناقصات الحية']
+        missing: ['شارة SasBTP Verified الذهبية', 'رادار المناقصات الحية']
       },
       enterprise: {
         name: 'Enterprise (Verified)',
         desc: 'قوة الذكاء الاصطناعي واقتناص المناقصات الجغرافية لكبار الموردين.',
-        badge: 'SouqBTP موثق 🛡️',
+        badge: 'SasBTP موثق 🛡️',
         features: [
           'كل ما في باقة Pro ERP',
           'شارة "مورد معتمد" الذهبية للماركت بليس',
@@ -109,12 +109,12 @@ const translations = {
           'Optimiseur Logistique (Retour Chargé)',
           'Clients et documents illimités'
         ],
-        missing: ['Badge SouqBTP Verified', 'Radar d\'Appels d\'Offres Live']
+        missing: ['Badge SasBTP Verified', 'Radar d\'Appels d\'Offres Live']
       },
       enterprise: {
         name: 'Enterprise (Verified)',
         desc: 'La puissance de l\'IA et la capture d\'appels d\'offres pour les leaders du marché.',
-        badge: 'SouqBTP Vérifié 🛡️',
+        badge: 'SasBTP Vérifié 🛡️',
         features: [
           'Tout de l\'offre Pro ERP',
           'Badge d\'Or "Fournisseur Certifié"',
@@ -174,12 +174,12 @@ const translations = {
           'Shared Logistics Optimizer',
           'Unlimited clients and documents'
         ],
-        missing: ['SouqBTP Verified Gold Badge', 'Live Tenders Radar']
+        missing: ['SasBTP Verified Gold Badge', 'Live Tenders Radar']
       },
       enterprise: {
         name: 'Enterprise (Verified)',
         desc: 'AI power and geographic tender capture for major suppliers.',
-        badge: 'SouqBTP Verified 🛡️',
+        badge: 'SasBTP Verified 🛡️',
         features: [
           'Everything in Pro ERP',
           'Gold "Certified Supplier" badge',

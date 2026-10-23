@@ -90,7 +90,7 @@ export default function ContractorDashboard() {
       pageTitle: "إدارة الأوراش والميدان", calcBtn: "الحاسبة الذكية لتكاليف الورش", rateBtn: "تقييم الحرفيين", projectPathBtn: "مسار الورش",
       inboxTitle: "صندوق الرسائل", onlineStatus: "متصل - يوجد", available: "متاحين", noChats: "📭 لا توجد محادثات حتى الآن.", voiceMsg: "🎤 رسالة صوتية",
       chatStarted: "بدأت المحادثة", enterChat: "دخول للمحادثة", camTitle: "كاميرا الورشة وتقارير الميدان", camSub: "أحدث اللقطات من ميدان الورش",
-      liveBtn: "طلب بث مباشر من الورشة", noReports: "لا توجد لقطات حديثة من الورشة.", interactiveShot: "لقطة ميدانية تفاعلية من الورش", souqTeam: "فريق SouqBTP",
+      liveBtn: "طلب بث مباشر من الورشة", noReports: "لا توجد لقطات حديثة من الورشة.", interactiveShot: "لقطة ميدانية تفاعلية من الورش", souqTeam: "فريق SasBTP",
       budgetTitle: "💰 ميزانية الورش الإجمالية", pdfBtn: "تحميل PDF", waBtn: "مشاركة واتساب", editBudgetBtn: "تعديل الميزانية",
       noBudget: "لم تقم بحساب الميزانية بعد. ابدأ الآن لمعرفة تكلفة مشروعك.", budgetCalculated: "التكلفة التقديرية للمشروع:", progTitle: "تقدم المشروع", tasksDone: "المهام المنجزة", 
       tasksLeft: "المهام المتبقية", compData: "بيانات المقاولة", compName: "اسم الشركة", phone: "رقم الهاتف", city: "المدينة", currentSite: "الورش الحالي",
@@ -110,7 +110,7 @@ export default function ContractorDashboard() {
       pageTitle: "Gestion des Chantiers", calcBtn: "Calculateur Intelligent", rateBtn: "Évaluation Artisans", projectPathBtn: "Parcours du Projet",
       inboxTitle: "Boîte de Réception", onlineStatus: "En ligne -", available: "disponibles", noChats: "📭 Aucune conversation.", voiceMsg: "🎤 Message vocal",
       chatStarted: "Conversation démarrée", enterChat: "Accéder", camTitle: "Caméra & Rapports", camSub: "Dernières captures du chantier", liveBtn: "Demander le Direct",
-      noReports: "Aucune capture récente.", interactiveShot: "Capture de terrain interactive", souqTeam: "Équipe SouqBTP", budgetTitle: "💰 Budget Global",
+      noReports: "Aucune capture récente.", interactiveShot: "Capture de terrain interactive", souqTeam: "Équipe SasBTP", budgetTitle: "💰 Budget Global",
       pdfBtn: "Télécharger PDF", waBtn: "Partager WhatsApp", editBudgetBtn: "Modifier le Budget", noBudget: "Budget non calculé. Commencez l'estimation de votre projet.",
       budgetCalculated: "Coût estimé du projet :", progTitle: "Progression du Projet", tasksDone: "Tâches Terminées", tasksLeft: "Tâches Restantes", compData: "Données de l'Entreprise",
       compName: "Nom de l'entreprise", phone: "Téléphone", city: "Ville", currentSite: "Chantier actuel", saveBtn: "💾 Enregistrer", statsTitle: "Statistiques Détaillées",
@@ -131,7 +131,7 @@ export default function ContractorDashboard() {
       pageTitle: "Site Management", calcBtn: "Smart Cost Calculator", rateBtn: "Artisan Ratings", projectPathBtn: "Project Path", inboxTitle: "Inbox",
       onlineStatus: "Online -", available: "available", noChats: "📭 No conversations yet.", voiceMsg: "🎤 Voice message", chatStarted: "Conversation started",
       enterChat: "Enter Chat", camTitle: "Site Camera & Reports", camSub: "Latest shots from the field", liveBtn: "Request Live Broadcast", noReports: "No recent shots.",
-      interactiveShot: "Interactive field shot", souqTeam: "SouqBTP Team", budgetTitle: "💰 Total Site Budget", pdfBtn: "Download PDF", waBtn: "Share via WhatsApp",
+      interactiveShot: "Interactive field shot", souqTeam: "SasBTP Team", budgetTitle: "💰 Total Site Budget", pdfBtn: "Download PDF", waBtn: "Share via WhatsApp",
       editBudgetBtn: "Edit Budget", noBudget: "Budget not calculated. Start your project estimation now.", budgetCalculated: "Estimated Project Cost:",
       progTitle: "Project Progress", tasksDone: "Completed Tasks", tasksLeft: "Remaining Tasks", compData: "Company Data", compName: "Company Name",
       phone: "Phone Number", city: "City", currentSite: "Current Site", saveBtn: "💾 Save Changes", statsTitle: "Detailed Statistics", progByStage: "Progress by Stage:",
@@ -904,7 +904,7 @@ export default function ContractorDashboard() {
           </style>
         </head>
         <body>
-          <div class="watermark">SouqBTP</div>
+          <div class="watermark">SasBTP</div>
           <div class="header">
             <div>
               <h1 class="title">${language === 'ar' ? 'تقدير تكلفة المشروع (Devis)' : 'Devis Estimatif'}</h1>
@@ -912,7 +912,7 @@ export default function ContractorDashboard() {
             </div>
             <div class="info">
               <div>${language === 'ar' ? 'التاريخ:' : 'Date:'} ${new Date().toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR')}</div>
-              <div>${language === 'ar' ? 'المقاول:' : 'Entrepreneur:'} ${profile?.store_name || user?.user_metadata?.full_name || 'SouqBTP'}</div>
+              <div>${language === 'ar' ? 'المقاول:' : 'Entrepreneur:'} ${profile?.store_name || user?.user_metadata?.full_name || 'SasBTP'}</div>
             </div>
           </div>
           
@@ -967,7 +967,7 @@ export default function ContractorDashboard() {
                  `📈 نسبة التقدم الإجمالي: *${stats.progress}%*\n` +
                  `💰 الميزانية التقديرية: *${budget.total.toLocaleString()}* درهم\n` +
                  `💸 التكلفة المستهلكة (حسب التقدم): *${budget.spent.toLocaleString()}* درهم\n\n` +
-                 `تم الاستخراج من منصة *SouqBTP* 🏗️`;
+                 `تم الاستخراج من منصة *SasBTP* 🏗️`;
     const encodedText = encodeURIComponent(text);
     window.open(`https://wa.me/?text=${encodedText}`, '_blank');
   };

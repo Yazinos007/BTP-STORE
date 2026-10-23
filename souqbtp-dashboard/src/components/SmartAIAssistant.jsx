@@ -6,7 +6,7 @@ import useSettingsStore from '../store/useSettingsStore';
 
 const translations = {
   ar: {
-    title: 'مساعد SouqBTP الذكي',
+    title: 'مساعد SasBTP الذكي',
     desc: 'تنبؤات مبنية على تحليل أسعار السوق الحالية لقطاع: ',
     premiumBadge: 'PREMIUM',
     lockedTitle: 'ميزة حصرية للمشتركين',
@@ -22,7 +22,7 @@ const translations = {
     }
   },
   fr: {
-    title: 'Assistant Intelligent SouqBTP',
+    title: 'Assistant Intelligent SasBTP',
     desc: 'Prévisions basées sur l\'analyse du marché pour le secteur : ',
     premiumBadge: 'PREMIUM',
     lockedTitle: 'Fonctionnalité Premium',
@@ -38,7 +38,7 @@ const translations = {
     }
   },
   en: {
-    title: 'SouqBTP Smart Assistant',
+    title: 'SasBTP Smart Assistant',
     desc: 'Forecasts based on current market price analysis for sector: ',
     premiumBadge: 'PREMIUM',
     lockedTitle: 'Exclusive Subscriber Feature',

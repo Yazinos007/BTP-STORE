@@ -12,7 +12,7 @@ import {
 const translations = {
   ar: {
     title: 'الملف الشخصي والإعدادات', subtitle: 'أدر حسابك، وثق هويتك، وتحكم في صلاحيات فريق العمل.',
-    verifiedBadge: 'مؤسسة معتمدة (SouqBTP Verified)', badgeDesc: 'المؤسسات المعتمدة تحظى بثقة مطلقة وتحصل على الأولوية في الصفقات والمناقصات.',
+    verifiedBadge: 'مؤسسة معتمدة (SasBTP Verified)', badgeDesc: 'المؤسسات المعتمدة تحظى بثقة مطلقة وتحصل على الأولوية في الصفقات والمناقصات.',
     kycTitle: 'الوثائق القانونية (KYC)', kycDesc: 'يرجى رفع المستندات التالية لتوثيق حسابك.',
     uploadRC: 'السجل التجاري (RC)', uploadICE: 'التعريف الضريبي (ICE)', uploadCIN: 'بطاقة المسير (CIN)',
     btnUpload: 'اختر ملف', statusUnverified: 'حساب غير موثق', statusPending: 'قيد المراجعة', statusVerified: 'موثق ومعتمد',
@@ -50,7 +50,7 @@ const translations = {
   },
   fr: {
     title: 'Profil & Paramètres', subtitle: 'Gérez votre compte, certifiez votre entreprise et contrôlez les accès.',
-    verifiedBadge: 'Entreprise Certifiée (SouqBTP Verified)', badgeDesc: 'Les entreprises certifiées inspirent une confiance absolue.',
+    verifiedBadge: 'Entreprise Certifiée (SasBTP Verified)', badgeDesc: 'Les entreprises certifiées inspirent une confiance absolue.',
     kycTitle: 'Documents Légaux (KYC)', kycDesc: 'Veuillez télécharger ces documents pour vérification.',
     uploadRC: 'Registre de Commerce', uploadICE: 'Certificat ICE', uploadCIN: 'CIN du Gérant',
     btnUpload: 'Choisir fichier', statusUnverified: 'Non Vérifié', statusPending: 'En Cours', statusVerified: 'Vérifié',
@@ -87,7 +87,7 @@ const translations = {
   },
   en: {
     title: 'Profile & Settings', subtitle: 'Manage your account, certify your business, and control team access.',
-    verifiedBadge: 'Certified Company (SouqBTP)', badgeDesc: 'Certified companies get priority in deals and tenders.',
+    verifiedBadge: 'Certified Company (SasBTP)', badgeDesc: 'Certified companies get priority in deals and tenders.',
     kycTitle: 'Legal Documents (KYC)', kycDesc: 'Please upload these documents to verify your account.',
     uploadRC: 'Commercial Register', uploadICE: 'Tax ID (ICE)', uploadCIN: 'Manager ID (CIN)',
     btnUpload: 'Choose file', statusUnverified: 'Unverified', statusPending: 'Pending', statusVerified: 'Verified',
@@ -478,7 +478,7 @@ export default function ContractorProfile() {
               </button>
 
               <div className={`pt-4 mt-4 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-                <a href={`https://t.me/SouqBTP_Bot?start=${userObj?.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-black rounded-xl transition-all shadow-lg shadow-[#2AABEE]/30">
+                <a href={`https://t.me/SasBTP_Bot?start=${userObj?.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-black rounded-xl transition-all shadow-lg shadow-[#2AABEE]/30">
                   <MessageCircle size={20} className="fill-current" /> <span>{t.connectTelegram}</span>
                 </a>
               </div>

@@ -82,7 +82,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false }) => {
       wholesale: '🏭 فضاء مورد الجملة'
     },
     fr: {
-      btn: '🚀 Espaces SouqBTP',
+      btn: '🚀 Espaces SasBTP',
       contractor: '🏗️ Espace Entrepreneur',
       architect: '📐 Bureau d\'Architecte',
       provider: '👷‍♂️ Espace Artisan Pro',
@@ -143,7 +143,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false }) => {
       }
 
       // إذا كان مدير نظام (Admin خارق)، أظهر له كل شيء للمعاينة
-      if (user.email === 'admin@souqbtp.ma') {
+      if (user.email === 'admin@SasBTP.ma') {
         spaces = [
           { id: 'contractor', label: labels.contractor, path: '/v2/contractor-dashboard', badge: 'V2' },
           { id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' },
@@ -425,7 +425,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
                 {supplier?.store_name?.charAt(0).toUpperCase() || 'S'}
               </div>
               <div className="flex flex-col text-start">
-                <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">SouqBTP</h1>
+                <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">SasBTP</h1>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Portal</span>
               </div>
             </div>
@@ -690,9 +690,9 @@ function App() {
   const previewMode = searchParams.get('preview');
 
   if (previewMode === 'retail' || previewMode === 'wholesale') {
-    sessionStorage.setItem('souqbtp_preview_mode', previewMode);
+    sessionStorage.setItem('SasBTP_preview_mode', previewMode);
   }
-  const activePreview = previewMode || sessionStorage.getItem('souqbtp_preview_mode');
+  const activePreview = previewMode || sessionStorage.getItem('SasBTP_preview_mode');
 
   const isV2Path = pathname.startsWith('/v2');
   const isLandingPage = pathname.startsWith('/empire') || pathname.startsWith('/pro') || pathname.startsWith('/contractor');
@@ -712,7 +712,7 @@ function App() {
     ? false 
     : (session?.user?.user_metadata?.supplier_type === 'wholesale' || supplier?.supplier_type === 'wholesale');
 
-  const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || session?.user?.user_metadata?.full_name || 'SouqBTP';
+  const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || session?.user?.user_metadata?.full_name || 'SasBTP';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : 'S';
 
   return (
