@@ -65,7 +65,8 @@ import V2Router from './pages/v2/V2Router';
 import EmpireLanding from './landing-pages/EmpireLanding';
 import RetailLanding from './landing-pages/RetailLanding';
 import ContractorLanding from './landing-pages/ContractorLanding';
-import CostCalculatorLanding from './landing-pages/CostCalculatorLanding'; // 👈 مسار الحاسبة الفيروسية الجديد
+import CostCalculatorLanding from './landing-pages/CostCalculatorLanding'; 
+import ClientPortal from './landing-pages/ClientPortal';
 
 // 🚀 مكون مبدل الفضاءات الموحد (الذكي - يعرض فقط ما يملكه المستخدم)
 const GlobalSpaceSwitcher = ({ language, dark = false }) => {
@@ -672,7 +673,7 @@ function App() {
   const activePreview = previewMode || sessionStorage.getItem('souqbtp_preview_mode');
 
   const isV2Path = pathname.startsWith('/v2');
-  const isLandingPage = pathname.startsWith('/empire') || pathname.startsWith('/pro') || pathname.startsWith('/contractor') || pathname.startsWith('/devis-gratuit');
+  const isLandingPage = pathname.startsWith('/empire') || pathname.startsWith('/pro') || pathname.startsWith('/contractor') || pathname.startsWith('/devis-gratuit') || pathname.startsWith('/client-portal');
   const isAuthPage = pathname.includes('/login') || pathname.includes('/register') || pathname.includes('/auth');
 
   if (loading) {
@@ -698,7 +699,8 @@ function App() {
         <Route path="/empire" element={<EmpireLanding />} />
         <Route path="/pro" element={<RetailLanding />} />
         <Route path="/contractor" element={<ContractorLanding />} />
-        <Route path="/devis-gratuit" element={<CostCalculatorLanding />} /> 
+        <Route path="/devis-gratuit" element={<CostCalculatorLanding />} />
+        <Route path="/client-portal" element={<ClientPortal />} />
 
         <Route path="/v2/*" element={<V2Router session={session} supplier={supplier} />} />
 

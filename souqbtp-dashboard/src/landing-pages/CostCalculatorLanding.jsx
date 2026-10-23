@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
   Calculator, Home, Building, Building2, Sparkles, ArrowRight, 
-  CheckCircle2, Mail, Phone, User, Download, Lock, Loader2 
+  CheckCircle2, Mail, Phone, User, Download, Lock, Loader2, FileText 
 } from 'lucide-react';
 
 export default function CostCalculatorLanding() {
@@ -64,8 +64,15 @@ export default function CostCalculatorLanding() {
         // إذا لم يكن الجدول موجوداً بعد، نتجاوز الخطأ للمعاينة فقط (سننشئ الجدول لاحقاً)
         console.warn('تنبيه: جدول marketing_leads غير موجود بعد، جاري المتابعة للمعاينة.');
       }
+
+      localStorage.setItem('sasbtp_client_lead', JSON.stringify({
+        ...leadData,
+        ...calcData,
+        estimatedTotal,
+        date: new Date().toISOString()
+      }));
+      setStep(3);
       
-      setStep(3); // الانتقال لشاشة النجاح
     } catch (err) {
       console.error('Error saving lead:', err);
     } finally {
