@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const TELEGRAM_BOT_TOKEN = '8851772110:AAEl8LrqU_QwcuyYX4koXwPpDFxRWzZs3C4';
-const CHANNEL_USERNAME = '@souqbtp_logistics'; // قناتك العامة
+const CHANNEL_USERNAME = '@SasBTP_logistics'; // قناتك العامة
 const ADMIN_CHAT_ID = '5508156915'; // معرفك الشخصي
 
 // استدعاء متغيرات البيئة للاتصال بقاعدة البيانات من داخل الدالة
@@ -27,7 +27,7 @@ serve(async (req) => {
 💰 *وفر حوالي ${savings.toLocaleString()} درهم من تكلفة النقل!*
 
 لمعرفة اسم المورد وحجز الشاحنة قبل غيرك:
-🔗 [اضغط هنا للدخول لمنصة SouqBTP](https://souqbtp.ma)
+🔗 [اضغط هنا للدخول لمنصة SasBTP](https://SasBTP.ma)
       `;
 
       await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -66,7 +66,7 @@ serve(async (req) => {
 💰 يمكنك توفير حوالي *${savings.toLocaleString()} درهم* إذا قمت بدمج شحنتك معه!
 
 سارع بالدخول للمنصة وحجز مساحتك قبل الآخرين:
-🔗 [الدخول لبورصة اللوجستيك](https://souqbtp.ma/logistics-bourse)
+🔗 [الدخول لبورصة اللوجستيك](https://SasBTP.ma/logistics-bourse)
             `;
 
             // إرسال الرسالة الخاصة للمورد

@@ -27,7 +27,7 @@ serve(async (req) => {
           .update({ telegram_chat_id: chatId.toString() })
           .eq('id', supplierId);
 
-        let replyText = "✅ *تم ربط حسابك في SouqBTP بنجاح!*\nستتوصل الآن بفرص اللوجستيك (الرجوع عامر) التي تنطلق من مدينتك مباشرة هنا، وبشكل حصري (VIP). 🚛✨";
+        let replyText = "✅ *تم ربط حسابك في SasBTP بنجاح!*\nستتوصل الآن بفرص اللوجستيك (الرجوع عامر) التي تنطلق من مدينتك مباشرة هنا، وبشكل حصري (VIP). 🚛✨";
         
         if (error) {
             replyText = `❌ حدث خطأ أثناء ربط الحساب. التفاصيل التقنية: ${error.message}`;
