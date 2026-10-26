@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
+import { bindReferralOnSignup } from '../../../lib/referralHandler';
 import useSettingsStore from '../../../store/useSettingsStore';
 import { Mail, Lock, User, Phone, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -170,6 +171,11 @@ export default function AuthGateway() {
       if (error) throw error;
       if (data.user && data.user.identities.length === 0) {
         throw new Error(t.errEmailExists);
+      }
+
+      // 🔥 هذا هو سطر ربط الإحالة الذي تمت إضافته 🔥
+      if (data?.user?.id) {
+        await bindReferralOnSignup(data.user.id);
       }
 
       showAlert('success', t.successRegister);

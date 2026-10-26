@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Calculator, UserCircle, MessageCircle, Store, Map, Users, Wallet, 
   Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package, ShieldCheck, Zap, 
-  ImageIcon, Compass, FileCheck2, Archive, Award, HardHat
+  ImageIcon, Compass, FileCheck2, Archive, Award, HardHat, Trophy
 } from 'lucide-react';
 import useSettingsStore from '../../store/useSettingsStore';
 
@@ -12,24 +12,24 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
 
   const isRtl = language === 'ar';
 
-  // 🧠 تحديد الرتبة الفعالة بذكاء (من الـ Props أو من الرابط الحالي لمنع أي اختلاط)
+  // 🧠 تحديث effectiveRole لتشمل جميع الفئات بدقة
   const effectiveRole = (() => {
     const path = location.pathname;
     if (accountType === 'architect' || path.includes('/architect')) return 'architect';
     if (accountType === 'provider' || path.includes('/provider-')) return 'provider';
+    if (accountType === 'supplier' || path.includes('/supplier')) return 'supplier';
     return accountType || 'contractor';
   })();
 
   const t = {
     ar: {
-      // ألقاب الحسابات
       roleContractor: "مكتب المقاول",
       roleArchitect: "مكتب الدراسات الهندسية",
       roleProvider: "فضاء الحرفي المعتمد",
 
-      // تصنيفات وأزرار المقاول العام
-      premium: "الترقية والـ VIP 👑",
+      premium: "الترقية والشركاء 👑",
       sub: "الترقية للإمبراطورية ⚡",
+      affiliates: "شركاء النجاح (اربح معنا) 🏆",
       cat1: "القيادة والميدان",
       cat2: "التواصل والمشتريات",
       cat3: "المالية والمحاسبة",
@@ -52,7 +52,6 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       audit: "التدقيق الذكي (Audit)",
       prof: "الملف الشخصي",
 
-      // تصنيفات وأزرار المهندس المعماري
       archSub: "باقات النخبة (VIP) 👑",
       archCat1: "الإشراف الهندسي",
       archCat2: "التواصل والسوق",
@@ -61,19 +60,20 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       archArchive: "الأرشيف والتقارير",
       archProfile: "الهوية الهندسية (البرستيج)",
 
-      // تصنيفات وأزرار الحرفي
       provCat1: "إدارة أعمالي",
       provDash: "لوحة الحرفي (الرئيسية)",
       provProfile: "بيانات الحرفي",
-      provPortfolio: "معرض المشاريع (Portfolio)"
+      provPortfolio: "معرض المشاريع (Portfolio)",
+      provSub: "باقة المعلم المحترف ⚡",
     },
     fr: {
       roleContractor: "Bureau d'Entrepreneur",
       roleArchitect: "Bureau d'Architecture",
       roleProvider: "Espace Artisan Pro",
 
-      premium: "Abonnement VIP 👑",
+      premium: "VIP & Partenaires 👑",
       sub: "Passer à l'Enterprise ⚡",
+      affiliates: "Programme Partenaires 🏆",
       cat1: "Direction & Terrain",
       cat2: "Communication & Achats",
       cat3: "Finance & Comptabilité",
@@ -107,15 +107,17 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       provCat1: "Gestion Artisan",
       provDash: "Tableau Artisan (Accueil)",
       provProfile: "Mes Informations",
-      provPortfolio: "Mon Portfolio"
+      provPortfolio: "Mon Portfolio",
+      provSub: "Pack Artisan PRO ⚡",
     },
     en: {
       roleContractor: "Contractor Office",
       roleArchitect: "Architectural Firm",
       roleProvider: "Certified Artisan Hub",
 
-      premium: "Upgrade & VIP 👑",
+      premium: "VIP & Affiliates 👑",
       sub: "Upgrade to Enterprise ⚡",
+      affiliates: "Affiliate Partners 🏆",
       cat1: "Leadership & Field",
       cat2: "Communication & Purchases",
       cat3: "Finance & Accounting",
@@ -149,7 +151,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       provCat1: "My Practice",
       provDash: "Artisan Dashboard",
       provProfile: "Artisan Profile",
-      provPortfolio: "Project Portfolio"
+      provPortfolio: "Project Portfolio",
+      provSub: "Artisan PRO Plan ⚡",
     }
   }[language] || {};
 
@@ -197,6 +200,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
     architect: [
       { category: t.premium, color: 'vip', items: [
         { name: t.archSub, icon: Zap, path: '/v2/architect-subscription', isVIP: true },
+        { name: t.affiliates, icon: Trophy, path: '/v2/architect-affiliates', isVIP: true },
       ]},
       { category: t.archCat1, color: 'purple', items: [
         { name: t.archDash, icon: Compass, path: '/v2/architect-dashboard' },
@@ -214,6 +218,10 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
 
     // 2. قائمة الحرفي / المعلم (Provider)
     provider: [
+      { category: t.premium, color: 'vip', items: [
+        { name: t.provSub, icon: Zap, path: '/v2/provider-subscription', isVIP: true },
+        { name: t.affiliates, icon: Trophy, path: '/v2/provider-affiliates', isVIP: true },
+      ]},
       { category: t.provCat1, color: 'orange', items: [
         { name: t.provDash, icon: HardHat, path: '/v2/provider-dashboard' },
         { name: t.provPortfolio, icon: ImageIcon, path: '/v2/provider-portfolio' },
@@ -231,6 +239,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
     contractor: [
       { category: t.premium, color: 'vip', items: [
         { name: t.sub, icon: Zap, path: '/v2/subscription', isVIP: true },
+        { name: t.affiliates, icon: Trophy, path: '/v2/affiliates', isVIP: true },
       ]},
       { category: t.cat1, color: 'orange', items: [
         { name: t.dash, icon: LayoutDashboard, path: '/v2/contractor-dashboard' },
@@ -337,7 +346,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
                       to={item.path} 
                       className={({ isActive }) => `flex items-center gap-3 px-6 py-3.5 text-sm transition-all duration-300 ${isRtl ? 'border-r-4' : 'border-l-4'} ${
                         isActive 
-                          ? `${theme.active} font-black ${theme.border} my-1 mx-2${isRtl ? 'rounded-l-lg' : 'rounded-r-lg'}` 
+                          ? `${theme.active} font-black ${theme.border} my-1 mx-2 ${isRtl ? 'rounded-l-lg' : 'rounded-r-lg'}` 
                           : `font-bold text-slate-400 border-transparent ${theme.hover} ${isRtl ? 'hover:-translate-x-1' : 'hover:translate-x-1'} ${item.isVIP ? 'vip-btn-glow' : ''}`
                       }`}
                     >

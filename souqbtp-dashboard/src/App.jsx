@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate 
 import { supabase } from './lib/supabase';
 import { 
   Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
-  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft, Lock, MessageCircle
+  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft, Lock, MessageCircle, Trophy
 } from 'lucide-react';
 
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
@@ -56,6 +56,9 @@ import LogisticsBourse from './pages/LogisticsBourse';
 import UnifiedMessages from './pages/v2/shared/UnifiedMessages';
 import BTPHub from './pages/v2/BTPHub';
 
+import ProviderSubscription from './pages/v2/provider/ProviderSubscription';
+import AffiliateDashboard from './pages/v2/AffiliateDashboard';
+
 import TrialBanner from './components/TrialBanner'; 
 import RetailTrialBanner from './components/RetailTrialBanner'; 
 import useSupplierStore from './store/useSupplierStore';
@@ -67,6 +70,23 @@ import RetailLanding from './landing-pages/RetailLanding';
 import ContractorLanding from './landing-pages/ContractorLanding';
 import CostCalculatorLanding from './landing-pages/CostCalculatorLanding'; 
 import ClientPortal from './landing-pages/ClientPortal';
+
+// 🧲 رادار التقاط كود الإحالة تلقائياً من الرابط في جميع الصفحات
+function ReferralTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const refCode = params.get('ref');
+    
+    if (refCode && refCode.startsWith('SAS-')) {
+      localStorage.setItem('sasbtp_referral_code', refCode.trim().toUpperCase());
+      localStorage.setItem('sasbtp_referral_date', new Date().toISOString());
+    }
+  }, [location]);
+
+  return null;
+}
 
 // 🚀 مكون مبدل الفضاءات الموحد (الذكي - يعرض فقط ما يملكه المستخدم)
 const GlobalSpaceSwitcher = ({ language, dark = false }) => {
@@ -295,17 +315,17 @@ const WholesalerDashboard = ({ supplier, children }) => {
 
   const tLayout = {
     fr: { 
-      upgrade: "Passer à l'Enterprise", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", 
+      upgrade: "Passer à l'Enterprise", affiliates: "Programme Partenaires 🏆", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", 
       groups: { comm: "Communication & Marché", achats: "Achats & Fournisseurs", marketplace: "Gestion Marketplace", ventes: "Gestion des Ventes" },
       items: { overview: "Tableau de bord", inbox: "Boîte de Réception", btpMarket: "Marché BTP", rawSuppliers: "Fournisseurs & Prestataires", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", production: "Production", marketOrders: "Commandes Marketplace", fleetMarket: "Suivi des Commandes", clients: "Clients & Dettes", posB2B: "Ventes Directes (POS)", orders: "Commandes Reçues (B2B)", fleetB2B: "Suivi des Commandes (B2B)", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", logisticsBourse: "Bourse de Fret", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance" } 
     },
     ar: { 
-      upgrade: "ترقية للباقة الذهبية", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
+      upgrade: "ترقية للباقة الذهبية", affiliates: "شركاء النجاح (اربح معنا) 🏆", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
       groups: { comm: "التواصل والسوق", achats: "المشتريات والموردون", marketplace: "إدارة الماركت بليس", ventes: "إدارة المبيعات" },
       items: { overview: "لوحة القيادة", inbox: "صندوق الرسائل", btpMarket: "سوق BTP", rawSuppliers: "الموردون والشركاء", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", production: "الإنتاج (المعمل)", marketOrders: "طلبات الماركت بليس", fleetMarket: "تتبع شحنات المتجر", clients: "العملاء والديون (CRM)", posB2B: "المبيعات المباشرة (POS)", orders: "طلبات التزويد (B2B)", fleetB2B: "تتبع شحنات التزويد", contracts: "العقود والتوقيعات", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", logisticsBourse: "بورصة اللوجستيك", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق" } 
     },
     en: { 
-      upgrade: "Upgrade to Enterprise", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", 
+      upgrade: "Upgrade to Enterprise", affiliates: "Affiliate Partners 🏆", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", 
       groups: { comm: "Communication & Market", achats: "Purchases & Suppliers", marketplace: "Marketplace Management", ventes: "Sales Management" },
       items: { overview: "Dashboard", inbox: "Inbox", btpMarket: "BTP Marketplace", rawSuppliers: "Suppliers & Partners", rawPurchases: "Purchases & Procurement", stock: "Central Stock", production: "Production", marketOrders: "Marketplace Orders", fleetMarket: "Order Tracking", clients: "Clients & Debts", posB2B: "Direct Sales (POS)", orders: "Received Orders (B2B)", fleetB2B: "B2B Tracking", contracts: "Contracts & Signatures", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", logisticsBourse: "Freight Exchange", team: "Users & Permissions", settings: "Settings & Trust" } 
     }
@@ -334,6 +354,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
   
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
+    { path: '/affiliates', icon: Trophy, label: t.affiliates },
     {
       id: 'comm_market', icon: MessageCircle, label: t.groups.comm,
       children: [
@@ -535,6 +556,10 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
             <div className="flex items-center gap-3 md:gap-4 shrink-0">
               <GlobalSpaceSwitcher language={language} dark={false} />
 
+              <Link to="/affiliates" className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-2 md:px-4 rounded-lg font-black flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs md:text-sm">
+                <Trophy size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Partenaires' : language === 'en' ? 'Affiliates' : 'شركاء النجاح'}</span>
+              </Link>
+
               <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
                  <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
               </Link>
@@ -655,6 +680,7 @@ function App() {
   if (isStorePage) {
     return (
       <BrowserRouter>
+        <ReferralTracker />
         <Routes>
           <Route path="/store" element={<Marketplace />} />
           <Route path="*" element={<Marketplace />} />
@@ -681,7 +707,7 @@ function App() {
   }
 
   if (!session && !isV2Path && !isLandingPage && !isAuthPage && !isStorePage) {
-    return <BrowserRouter><Navigate to="/v2/auth" replace /></BrowserRouter>;
+    return <BrowserRouter><ReferralTracker /><Navigate to="/v2/auth" replace /></BrowserRouter>;
   }
 
   const isWholesaler = activePreview === 'wholesale' 
@@ -695,13 +721,16 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ReferralTracker />
       <Routes>
         <Route path="/empire" element={<EmpireLanding />} />
         <Route path="/pro" element={<RetailLanding />} />
         <Route path="/contractor" element={<ContractorLanding />} />
         <Route path="/devis-gratuit" element={<CostCalculatorLanding />} />
         <Route path="/client-portal" element={<ClientPortal />} />
+        <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
 
+        {/* مسارات فضاء V2 (المقاول، المهندس، الحرفي) */}
         <Route path="/v2/*" element={<V2Router session={session} supplier={supplier} />} />
 
         {!activePreview && userPrimaryRole === 'architect' && (
@@ -719,6 +748,7 @@ function App() {
             <WholesalerDashboard supplier={supplier}>
               <Routes>
                 <Route path="/" element={<SupplierOverview />} />
+                <Route path="/affiliates" element={<AffiliateDashboard />} />
                 <Route path="/stock" element={<SupplierStock isWholesaler={true} />} />
                 <Route path="/invoices" element={<SupplierInvoices />} />
                 <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
@@ -753,6 +783,7 @@ function App() {
             <RetailerLayout storeName={storeName} storeInitial={storeInitial} language={language}>
               <Routes>
                 <Route path="/" element={<Overview />} />
+                <Route path="/affiliates" element={<AffiliateDashboard />} />
                 <Route path="/products" element={<Products />} />                     
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/wallet" element={<RetailerWallet />} />

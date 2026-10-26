@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import useSettingsStore from '../../../store/useSettingsStore';
 import { HardHat, Mail, Lock, User, Phone, MapPin, Briefcase, FileText, ArrowRight, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { bindReferralOnSignup } from '../../../lib/referralHandler'; // 👈 استيراد نظام الإحالة
 
 const translations = {
   ar: {
@@ -134,7 +135,7 @@ export default function ProviderAuth() {
     setTimeout(() => setAlert({ show: false, type: '', text: '' }), 6000);
   };
 
-  // 1. معالجة التسجيل
+  // معالجة التسجيل
   const handleRegister = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -178,6 +179,11 @@ export default function ProviderAuth() {
         }]);
       }
 
+      // 🔥 استدعاء دالة الإحالة هنا بعد نجاح التسجيل وحفظ البيانات 🔥
+      if (authData?.user?.id) {
+        await bindReferralOnSignup(authData.user.id);
+      }
+
       showAlert('success', t.successRegister);
       setTimeout(() => navigate('/v2/provider-dashboard'), 2000);
 
@@ -188,7 +194,7 @@ export default function ProviderAuth() {
     }
   };
 
-  // 2. معالجة تسجيل الدخول
+  // معالجة تسجيل الدخول
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);

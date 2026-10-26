@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { Loader2 } from 'lucide-react';
 import useSettingsStore from '../../../store/useSettingsStore';
+import { bindReferralOnSignup } from '../../../lib/referralHandler'; // 👈 استيراد نظام الإحالة
 
 const translations = {
   ar: {
@@ -136,6 +137,11 @@ export default function ArchitectRegister() {
       }]);
 
       if (dbError) throw dbError;
+
+      // 🔥 استدعاء دالة الإحالة هنا بعد نجاح التسجيل وحفظ البيانات 🔥
+      if (authData?.user?.id) {
+        await bindReferralOnSignup(authData.user.id);
+      }
 
       alert(t.successMsg);
       navigate('/v2/architect-projects'); // توجيه مباشر لصفحة المشاريع

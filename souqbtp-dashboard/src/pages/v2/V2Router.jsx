@@ -8,7 +8,7 @@ import ContractorDashboard from './ContractorDashboard';
 import CostCalculator from './CostCalculator'; 
 import ProjectPath from './ProjectPath'; 
 import ContractorHR from './ContractorHR'; 
-import BTPHub from "./BTPHub";
+import BTPHub from './BTPHub';
 import VendorStoreManager from './VendorStoreManager';       
 import ContractorCamera from './ContractorCamera';
 import TenderRadar from './TenderRadar';
@@ -37,13 +37,15 @@ import ProviderAuth from './provider/ProviderAuth';
 import ProviderDashboard from './provider/ProviderDashboard';
 import ProviderProfile from './provider/ProviderProfile';
 import ProviderPortfolio from './provider/ProviderPortfolio';
+import ProviderSubscription from './provider/ProviderSubscription';
 
 import SupplierAuth from './auth/SupplierAuth';
 
-// === الاستيرادات المشتركة (Shared) ===
+// === الاستيرادات المشتركة والشركاء (Shared & Affiliates) ===
 import UnifiedMessages from './shared/UnifiedMessages';
 import LiveRoom from './shared/LiveRoom';
 import AuthGateway from './auth/AuthGateway';
+import AffiliateDashboard from './AffiliateDashboard';
 
 // === استيراد صفحات الهبوط ===
 import EmpireLanding from '../../landing-pages/EmpireLanding';
@@ -180,6 +182,12 @@ export default function V2Router({ session, supplier }) {
       {/* 🛡️ مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout */}
       <Route element={<V2Layout accountType={resolvedRole} storeName={resolvedName} storeInitial={storeInitial} />}>
 
+        {/* 🏆 المسارات الموحدة لبرنامج شركاء النجاح (مقسمة لحماية الهوية والقائمة الجانبية) */}
+        <Route path="affiliates" element={<AffiliateDashboard />} />
+        <Route path="architect-affiliates" element={<AffiliateDashboard />} />
+        <Route path="provider-affiliates" element={<AffiliateDashboard />} />
+        <Route path="supplier-affiliates" element={<AffiliateDashboard />} />
+
         {/* 💬 المسارات الموحدة للرسائل والرادار (مقسمة لحماية الهوية) */}
         <Route path="messages" element={<UnifiedMessages />} />
         <Route path="architect-messages" element={<UnifiedMessages />} />
@@ -196,7 +204,6 @@ export default function V2Router({ session, supplier }) {
         <Route path="project-path" element={<ProjectPath />} />
         <Route path="cost-calculator" element={<CostCalculator />} />
         <Route path="field-camera" element={<ContractorCamera />} />
-        <Route path="marketplace" element={<BTPHub />} />
         <Route path="store-manager" element={<VendorStoreManager />} /> 
         <Route path="tenders" element={<TenderRadar />} />
         <Route path="freight-exchange" element={<FreightExchange />} />
@@ -220,6 +227,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="architect-archive" element={<ArchitectArchive />} />
 
         {/* === 🛠️ سكاشن الحرفي / المقاول الصغير (Provider) === */}
+        <Route path="provider-subscription" element={<ProviderSubscription />} />
         <Route path="provider-dashboard" element={<ProviderDashboard />} />
         <Route path="provider-profile" element={<ProviderProfile />} />
         <Route path="provider-portfolio" element={<ProviderPortfolio />} />
