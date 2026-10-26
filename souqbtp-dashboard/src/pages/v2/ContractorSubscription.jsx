@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import useSettingsStore from '../../store/useSettingsStore';
 import { 
-  ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, Minus, Loader2,
-  X, Building2, CreditCard, Wallet, UploadCloud, Clock, MessageCircle
+  ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, ArrowLeft, Minus, Loader2,
+  X, Building2, CreditCard, Wallet, UploadCloud, Clock, MessageCircle, Trophy
 } from 'lucide-react';
 
 export default function ContractorSubscription() {
@@ -15,6 +15,7 @@ export default function ContractorSubscription() {
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
   // Modal States
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -55,6 +56,10 @@ export default function ContractorSubscription() {
           missing: []
         }
       },
+      bannerBadge: 'ميزة حصرية للمقاولين المحترفين',
+      bannerTitle: 'كيف تسترجع ثمن اشتراكك وتحوله إلى ربح صافٍ؟',
+      bannerDesc: 'بمجرد ترقية حسابك إلى Pro أو Enterprise، ترتفع عمولتك في برنامج شركاء النجاح تلقائياً! كل زميل تدعوه للمنصة ويفعّل باقته، يمنحك عمولة نقدية مباشرة (حتى 30%) تُضاف إلى محفظتك أو تُخصم من اشتراكك القادم.',
+      bannerBtn: 'اكتشف لوحة الشركاء',
       modal: {
         vipTitle: 'خدمة كبار العملاء VIP', vipWelcome: 'مرحباً بك في نادي النخبة', vipDesc: 'مدير حسابات شخصي جاهز لخدمتك وللإجابة عن كل استفساراتك.',
         waBtn: 'تواصل معنا عبر WhatsApp', payDirectBtn: 'أفضل الدفع مباشرة', paymentTitle: 'إتمام الدفع',
@@ -96,6 +101,10 @@ export default function ContractorSubscription() {
           missing: []
         }
       },
+      bannerBadge: 'Avantage exclusif pour les pros',
+      bannerTitle: 'Comment rentabiliser votre abonnement et générer un profit net ?',
+      bannerDesc: 'Dès votre passage à Pro ou Enterprise, votre commission de partenariat augmente automatiquement ! Chaque confrère invité qui s\'abonne vous rapporte jusqu\'à 30% de commission cash directement dans votre portefeuille.',
+      bannerBtn: 'Découvrir le Tableau Partenaires',
       modal: {
         vipTitle: 'Service Client VIP', vipWelcome: 'Bienvenue dans le club d\'élite', vipDesc: 'Un manager de compte dédié est prêt à répondre à vos questions.',
         waBtn: 'Contactez-nous sur WhatsApp', payDirectBtn: 'Je préfère payer directement', paymentTitle: 'Finaliser le paiement',
@@ -137,6 +146,10 @@ export default function ContractorSubscription() {
           missing: []
         }
       },
+      bannerBadge: 'Exclusive benefit for PROs',
+      bannerTitle: 'How to recover your subscription cost and turn it into net profit?',
+      bannerDesc: 'Once you upgrade to Pro or Enterprise, your affiliate commission rate automatically jumps! Every colleague who joins and upgrades via your link earns you up to 30% direct cash commission added to your wallet.',
+      bannerBtn: 'Explore Partners Dashboard',
       modal: {
         vipTitle: 'VIP Client Service', vipWelcome: 'Welcome to the elite club', vipDesc: 'A dedicated account manager is ready to assist you.',
         waBtn: 'Contact on WhatsApp', payDirectBtn: 'Pay directly', paymentTitle: 'Finalize payment',
@@ -199,7 +212,7 @@ export default function ContractorSubscription() {
           <Clock size={18} className="animate-pulse" />
           <span>{t.trialMsg}</span>
         </div>
-        <button onClick={() => handleUpgradeClick('pro')} className="bg-orange-500 hover:bg-orange-400 text-slate-900 px-4 py-1.5 rounded-lg font-black uppercase text-[10px] tracking-widest transition-colors flex items-center gap-1 shadow-lg shadow-orange-500/20">
+        <button onClick={() => handleUpgradeClick('pro')} className="bg-orange-500 hover:bg-orange-400 text-slate-900 px-4 py-1.5 rounded-lg font-black uppercase text-[10px] tracking-widest transition-colors flex items-center gap-1 shadow-lg shadow-orange-500/20 cursor-pointer">
           <Zap size={14} /> {t.subscribeBtn} <ArrowRight size={14} className={isRtl ? 'rotate-180' : ''} />
         </button>
       </div>
@@ -216,10 +229,10 @@ export default function ContractorSubscription() {
           {/* 🚀 Toggle Billing - تصميم الكبسولة الجديد */}
           <div className="flex items-center justify-center mt-8">
             <div className={`p-1.5 rounded-full inline-flex items-center relative select-none shadow-inner ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-slate-100 border border-slate-300'}`}>
-              <button onClick={() => setIsAnnual(false)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 ${!isAnnual ? 'text-white' : textMuted}`}>
+              <button onClick={() => setIsAnnual(false)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 cursor-pointer ${!isAnnual ? 'text-white' : textMuted}`}>
                 {t.monthly}
               </button>
-              <button onClick={() => setIsAnnual(true)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 flex items-center gap-2 ${isAnnual ? 'text-white' : textMuted}`}>
+              <button onClick={() => setIsAnnual(true)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 flex items-center gap-2 cursor-pointer ${isAnnual ? 'text-white' : textMuted}`}>
                 {t.annual}
                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${isAnnual ? 'bg-emerald-500 text-white shadow-md' : 'bg-emerald-500/20 text-emerald-600'}`}>
                   {t.save20}
@@ -274,7 +287,7 @@ export default function ContractorSubscription() {
               </span>
               <span className={`font-bold ml-2 ${textMuted}`}>{t.currency} {isAnnual ? t.yr : t.mo}</span>
             </div>
-            <button onClick={() => handleUpgradeClick('pro')} disabled={isSubmitting} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm uppercase tracking-widest">
+            <button onClick={() => handleUpgradeClick('pro')} disabled={isSubmitting} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm uppercase tracking-widest cursor-pointer">
               {t.upgradeBtn} <ArrowRight size={18} className={`group-hover:translate-x-1 transition-transform ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
             </button>
             <div className="space-y-5 flex-1">
@@ -313,7 +326,7 @@ export default function ContractorSubscription() {
             <button 
               onClick={() => handleUpgradeClick('enterprise')}
               disabled={isSubmitting} 
-              className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-900 font-black rounded-2xl transition-all shadow-[0_0_20px_rgba(249,115,22,0.6)] mb-8 relative z-10 flex justify-center items-center gap-2 text-sm uppercase tracking-widest animate-pulse hover:animate-none"
+              className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-900 font-black rounded-2xl transition-all shadow-[0_0_20px_rgba(249,115,22,0.6)] mb-8 relative z-10 flex justify-center items-center gap-2 text-sm uppercase tracking-widest animate-pulse hover:animate-none cursor-pointer"
             >
               {t.contactSales} <Star size={18} className="fill-slate-900" />
             </button>
@@ -329,6 +342,28 @@ export default function ContractorSubscription() {
           </div>
         </div>
 
+        {/* 🚀 بانر الشركاء الذهبي أسفل الباقات */}
+        <div className={`mt-12 bg-gradient-to-r ${isDarkMode ? 'from-slate-900 via-indigo-950 to-slate-900 border-indigo-500/40' : 'from-indigo-50 via-white to-indigo-50 border-indigo-200'} border rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden`}>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+          <div className="space-y-3 relative z-10">
+            <div className="inline-flex items-center gap-2 text-indigo-500 font-black uppercase text-xs">
+              <Trophy size={16} /> {t.bannerBadge}
+            </div>
+            <h4 className={`text-2xl font-black ${textMain}`}>
+              {t.bannerTitle}
+            </h4>
+            <p className={`text-sm ${textMuted} leading-relaxed max-w-3xl font-medium`}>
+              {t.bannerDesc}
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/v2/affiliates')}
+            className="shrink-0 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black flex items-center gap-3 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer hover:-translate-y-1 relative z-10"
+          >
+            {t.bannerBtn} <ArrowIcon size={18} />
+          </button>
+        </div>
+
         {/* 💳 Payment Modal */}
         {showPaymentModal && selectedPlan && m && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" dir={isRtl ? 'rtl' : 'ltr'}>
@@ -339,7 +374,7 @@ export default function ContractorSubscription() {
                   <ShieldCheck className="text-blue-500" size={28}/> 
                   {selectedPlan?.id === 'enterprise' && !skipVip ? m.vipTitle : m.paymentTitle}
                 </h3>
-                <button onClick={() => setShowPaymentModal(false)} className={`p-2 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}>
+                <button onClick={() => setShowPaymentModal(false)} className={`p-2 rounded-xl transition-colors cursor-pointer ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}>
                   <X size={20} />
                 </button>
               </div>
@@ -353,10 +388,10 @@ export default function ContractorSubscription() {
                     <h4 className="text-3xl font-black text-amber-500 mb-3">{m.vipWelcome}</h4>
                     <p className={`text-lg ${textMuted} font-bold`}>{m.vipDesc}</p>
                   </div>
-                  <a href={`https://wa.me/212700715399?text=${encodeURIComponent(isRtl ? 'مرحباً، أود الاستفسار عن باقة Enterprise.' : 'Bonjour, je souhaite me renseigner sur le plan Enterprise.')}`} target="_blank" rel="noopener noreferrer" className="w-full max-w-md py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-2xl transition-all shadow-lg hover:scale-105 flex justify-center items-center gap-3 text-lg mt-6">
+                  <a href={`https://wa.me/212700715399?text=${encodeURIComponent(isRtl ? 'مرحباً، أود الاستفسار عن باقة Enterprise.' : 'Bonjour, je souhaite me renseigner sur le plan Enterprise.')}`} target="_blank" rel="noopener noreferrer" className="w-full max-w-md py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-2xl transition-all shadow-lg hover:scale-105 flex justify-center items-center gap-3 text-lg mt-6 cursor-pointer">
                     <MessageCircle size={24}/> {m.waBtn}
                   </a>
-                  <button onClick={() => setSkipVip(true)} className={`font-bold text-sm transition-colors underline underline-offset-4 mt-4 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
+                  <button onClick={() => setSkipVip(true)} className={`font-bold text-sm transition-colors underline underline-offset-4 mt-4 cursor-pointer ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
                     {m.payDirectBtn}
                   </button>
                 </div>
@@ -383,10 +418,10 @@ export default function ContractorSubscription() {
 
                   <h4 className={`font-black ${textMain} mb-4`}>{m.chooseMethod}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                    <button onClick={() => setPaymentMethod('virement')} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${paymentMethod === 'virement' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : (isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300')}`}>
+                    <button onClick={() => setPaymentMethod('virement')} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all cursor-pointer ${paymentMethod === 'virement' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : (isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300')}`}>
                       <Building2 size={32} /> <span className="font-bold text-sm">{m.bank}</span>
                     </button>
-                    <button onClick={() => setPaymentMethod('cash')} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${paymentMethod === 'cash' ? 'border-amber-500 bg-amber-500/10 text-amber-500' : (isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300')}`}>
+                    <button onClick={() => setPaymentMethod('cash')} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all cursor-pointer ${paymentMethod === 'cash' ? 'border-amber-500 bg-amber-500/10 text-amber-500' : (isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300')}`}>
                       <Wallet size={32} /> <span className="font-bold text-sm">{m.cash}</span>
                     </button>
                     <button disabled className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 cursor-not-allowed relative overflow-hidden ${isDarkMode ? 'border-slate-800 bg-slate-900/50 text-slate-600' : 'border-slate-200 bg-slate-100 text-slate-400'}`}>
@@ -440,7 +475,6 @@ export default function ContractorSubscription() {
                     )}
                   </div>
 
-                  {/* 🚀 الزر الواضح الذي طلبته لرفع الملفات */}
                   <div className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${receiptFile ? 'border-emerald-500 bg-emerald-500/10' : (isDarkMode ? 'border-slate-700 bg-slate-900/50 hover:border-blue-500' : 'border-slate-300 bg-slate-50 hover:border-blue-400')}`}>
                     <UploadCloud size={40} className={`mx-auto mb-4 ${receiptFile ? 'text-emerald-500' : textMuted}`} />
                     <p className={`font-black mb-1 ${textMain}`}>{m.uploadTitle}</p>
@@ -453,7 +487,7 @@ export default function ContractorSubscription() {
                   </div>
 
                   <div className="mt-8 pt-6 border-t border-slate-800/50">
-                    <button onClick={submitPayment} disabled={!receiptFile || isSubmitting} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-3">
+                    <button onClick={submitPayment} disabled={!receiptFile || isSubmitting} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-3 cursor-pointer">
                       {isSubmitting ? <Loader2 size={24} className="animate-spin" /> : m.confirmBtn}
                     </button>
                   </div>

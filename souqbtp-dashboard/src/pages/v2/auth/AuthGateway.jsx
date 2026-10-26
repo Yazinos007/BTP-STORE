@@ -101,7 +101,9 @@ export default function AuthGateway() {
   const isRtl = language === 'ar';
   const t = translations[language] || translations.ar;
 
-  const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register'
+  const [activeTab, setActiveTab] = useState(() => 
+  window.location.search.includes('ref=') ? 'register' : 'login'
+);
   const [selectedRole, setSelectedRole] = useState('client'); // 'client' | 'provider' | 'architect' | 'supplier'
   
   const [isLoading, setIsLoading] = useState(false);
