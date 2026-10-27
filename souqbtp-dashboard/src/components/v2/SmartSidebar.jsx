@@ -200,7 +200,6 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
     architect: [
       { category: t.premium, color: 'vip', items: [
         { name: t.archSub, icon: Zap, path: '/v2/architect-subscription', isVIP: true },
-        { name: t.affiliates, icon: Trophy, path: '/v2/architect-affiliates', isVIP: true },
       ]},
       { category: t.archCat1, color: 'purple', items: [
         { name: t.archDash, icon: Compass, path: '/v2/architect-dashboard' },
@@ -220,7 +219,6 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
     provider: [
       { category: t.premium, color: 'vip', items: [
         { name: t.provSub, icon: Zap, path: '/v2/provider-subscription', isVIP: true },
-        { name: t.affiliates, icon: Trophy, path: '/v2/provider-affiliates', isVIP: true },
       ]},
       { category: t.provCat1, color: 'orange', items: [
         { name: t.provDash, icon: HardHat, path: '/v2/provider-dashboard' },
@@ -239,7 +237,6 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
     contractor: [
       { category: t.premium, color: 'vip', items: [
         { name: t.sub, icon: Zap, path: '/v2/subscription', isVIP: true },
-        { name: t.affiliates, icon: Trophy, path: '/v2/affiliates', isVIP: true },
       ]},
       { category: t.cat1, color: 'orange', items: [
         { name: t.dash, icon: LayoutDashboard, path: '/v2/contractor-dashboard' },

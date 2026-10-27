@@ -132,15 +132,38 @@ export default function AuthGateway() {
     setAlert({ show: false, type: '', text: '' });
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       });
 
       if (error) throw new Error(t.errInvalidLogin);
 
+      const user = data?.user;
+      const metaRole = user?.user_metadata?.role || user?.user_metadata?.account_type;
+      const metaSupplierType = user?.user_metadata?.supplier_type;
+
+      // فحص ما إذا كان الحساب لمورد أو تاجر في قاعدة البيانات
+      const { data: supData } = await supabase
+        .from('suppliers')
+        .select('supplier_type')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
       showAlert('success', t.successLogin);
-      setTimeout(() => navigate('/v2'), 1500);
+
+      setTimeout(() => {
+        if (supData || metaRole === 'supplier' || metaRole === 'admin') {
+          const type = supData?.supplier_type || metaSupplierType || 'retail';
+          window.location.href = type === 'wholesale' ? '/?preview=wholesale' : '/?preview=retail';
+        } else if (metaRole === 'architect') {
+          navigate('/v2/architect-dashboard');
+        } else if (metaRole === 'provider') {
+          navigate('/v2/provider-dashboard');
+        } else {
+          navigate('/v2/contractor-dashboard');
+        }
+      }, 1000);
 
     } catch (err) {
       showAlert('error', err.message);

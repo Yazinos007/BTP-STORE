@@ -174,7 +174,8 @@ export default function V2Router({ session, supplier }) {
       <Route path="live-room/:cid" element={<LiveRoom />} />
       <Route path="architect/live-room/:cid" element={<LiveRoom />} />
 
-      {/* 🔐 صفحات التسجيل والدخول المستقلة (خارج الـ Layout) */}
+      {/* 🔐 صفحات التسجيل والدخول المستقلة (خارج الـ Layout تماماً لكي تظهر بشاشة كاملة نظيفة) */}
+      <Route path="auth" element={<AuthGateway />} />
       <Route path="architect-register" element={<ArchitectRegister />} />
       <Route path="provider-auth" element={<ProviderAuth />} />
       <Route path="supplier-register" element={<SupplierAuth />} />
@@ -196,8 +197,6 @@ export default function V2Router({ session, supplier }) {
         <Route path="marketplace" element={<BTPHub />} />
         <Route path="architect-marketplace" element={<BTPHub />} />
         <Route path="provider-marketplace" element={<BTPHub />} />
-        
-        <Route path="auth" element={<AuthGateway />} />
         
         {/* === 🏗️ سكاشن المقاول العام (Contractor) === */}
         <Route path="contractor-dashboard" element={<ContractorDashboard />} />

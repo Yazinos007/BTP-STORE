@@ -354,7 +354,6 @@ const WholesalerDashboard = ({ supplier, children }) => {
   
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: t.items.overview },
-    { path: '/affiliates', icon: Trophy, label: t.affiliates },
     {
       id: 'comm_market', icon: MessageCircle, label: t.groups.comm,
       children: [
@@ -499,6 +498,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
 
           <div className="flex items-center gap-4 shrink-0">
             <GlobalSpaceSwitcher language={language} dark={true} />
+            <Link to="/affiliates"></Link>
 
             <div className={`flex items-center gap-3 ${language === 'ar' ? 'pr-3 md:pr-6 border-r' : 'pl-3 md:pl-6 border-l'} border-slate-700`}>
               <div className="text-end hidden sm:block">
