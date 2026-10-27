@@ -147,10 +147,16 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 1. حساب أيام التجربة (10 أيام) بناءً على تاريخ إنشاء حساب المستخدم الفعلي
-      const createdAt = user.created_at ? new Date(user.created_at) : new Date();
+      // 1. منح كل فضاء (مقاول، مهندس، حرفي) فترة تجريبية مستقلة مدتها 10 أيام
+      const trialKey = `sasbtp_trial_${currentSpaceId}_${user.id}`;
+      let startStr = localStorage.getItem(trialKey);
+      if (!startStr) {
+        startStr = new Date().toISOString();
+        localStorage.setItem(trialKey, startStr);
+      }
+      const start = new Date(startStr);
       const now = new Date();
-      const diffDays = Math.floor(Math.abs(now - createdAt) / (1000 * 60 * 60 * 24));
+      const diffDays = Math.floor(Math.abs(now - start) / (1000 * 60 * 60 * 24));
       const remaining = Math.max(0, 10 - diffDays);
       if (mounted) setTrialDaysLeft(remaining);
 

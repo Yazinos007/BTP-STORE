@@ -349,14 +349,19 @@ const PremiumGuard = ({ children }) => {
   useEffect(() => {
     const checkUserTrial = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const startStr = user?.created_at || localStorage.getItem('trial_start_date');
-      if (startStr) {
-        const start = new Date(startStr);
-        const now = new Date();
-        const diffDays = Math.floor(Math.abs(now - start) / (1000 * 60 * 60 * 24));
-        if (10 - diffDays <= 0) {
-          setIsExpired(true);
-        }
+      const storageKey = user?.id ? `sasbtp_trial_wholesale_${user.id}` : 'sasbtp_trial_wholesale_v2';
+      let startStr = localStorage.getItem(storageKey);
+      if (!startStr) {
+        startStr = new Date().toISOString();
+        localStorage.setItem(storageKey, startStr);
+      }
+      const start = new Date(startStr);
+      const now = new Date();
+      const diffDays = Math.floor(Math.abs(now - start) / (1000 * 60 * 60 * 24));
+      if (10 - diffDays <= 0) {
+        setIsExpired(true);
+      } else {
+        setIsExpired(false);
       }
     };
     checkUserTrial();
@@ -741,14 +746,6 @@ function App() {
   const { supplier, fetchSupplierProfile } = useSupplierStore();
 
   const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
-
-  // 🔄 مزامنة تاريخ بداية التجربة مع تاريخ إنشاء حساب المستخدم الفعلي لمنع انتهاء الصلاحية الوهمي
-  const syncUserTrialDate = (user) => {
-    if (user?.created_at) {
-      localStorage.setItem('trial_start_date', user.created_at);
-      localStorage.setItem('retail_trial_start_date', user.created_at);
-    }
-  };
 
   useEffect(() => {
     let mounted = true;
