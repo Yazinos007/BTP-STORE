@@ -180,6 +180,14 @@ export default function V2Router({ session, supplier }) {
         <Route path="architect-profile" element={<ArchitectProfile />} />
         <Route path="architect-projects" element={<ArchitectProjects />} />
         <Route path="architect-archive" element={<ArchitectArchive />} />
+        <Route path="architect-tenders" element={<TenderRadar />} />
+        <Route path="architect-hr" element={<ContractorHR />} />
+        <Route path="architect-invoices" element={<B2bInvoices />} />
+        <Route path="architect-accounts" element={<AccountsManager />} />
+        <Route path="architect-expenses" element={<ContractorExpenses />} />
+        <Route path="architect-taxes" element={<Taxes />} />
+        <Route path="architect-accounting" element={<ContractorAccounting />} />
+        <Route path="architect-audit" element={<AIAudit />} />
 
         {/* === 🛠️ سكاشن الحرفي / المقاول الصغير (Provider) === */}
         <Route path="provider-subscription" element={<ProviderSubscription />} />

@@ -227,8 +227,18 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       { category: t.archCat2, color: 'emerald', items: [
         { name: t.msg, icon: MessageCircle, path: '/v2/architect-messages' }, 
         { name: t.market, icon: Store, path: '/v2/architect-marketplace' }, 
+        { name: t.radar, icon: Radar, path: '/v2/architect-tenders' },
       ]},
-      { category: t.cat4, color: 'blue', items: [
+      { category: t.cat3, color: 'blue', items: [
+        { name: t.hr, icon: Users, path: '/v2/architect-hr' },
+        { name: t.b2bInvoices, icon: Receipt, path: '/v2/architect-invoices' },
+        { name: t.acc, icon: Wallet, path: '/v2/architect-accounts' },
+        { name: t.exp, icon: Receipt, path: '/v2/architect-expenses' },
+        { name: t.tax, icon: Landmark, path: '/v2/architect-taxes' },
+        { name: t.cpc, icon: BarChart3, path: '/v2/architect-accounting' },
+        { name: t.audit, icon: ShieldCheck, path: '/v2/architect-audit' },
+      ]},
+      { category: t.cat4, color: 'purple', items: [
         { name: t.archProfile, icon: Award, path: '/v2/architect-profile' },
       ]}
     ],
