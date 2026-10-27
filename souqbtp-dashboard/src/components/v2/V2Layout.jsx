@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, LogOut, Sun, Moon, Globe, Layers, ChevronDown, Trophy, PlusCircle, Sparkles, Loader2 } from 'lucide-react';
+import { Menu, X, LogOut, Sun, Moon, Globe, Layers, ChevronDown, Trophy, PlusCircle, Sparkles, Loader2, Clock, Zap, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import SmartSidebar from './SmartSidebar';
 import { supabase } from '../../lib/supabase';
@@ -12,25 +12,34 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
   const [isSpaceOpen, setIsSpaceOpen] = useState(false);
   const [showAddSpaces, setShowAddSpaces] = useState(false);
   const [ownedSpaceIds, setOwnedSpaceIds] = useState([]);
+  const [spacePlans, setSpacePlans] = useState({});
   const [activatingSpace, setActivatingSpace] = useState(null);
+  const [trialDaysLeft, setTrialDaysLeft] = useState(10);
 
   const navigate = useNavigate();
   const location = useLocation();
   const { language = 'ar', setLanguage } = useSettingsStore();
+  const isRtl = language === 'ar';
+  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
-  // تحديد الفضاء الحالي بدقة لاستثنائه من قائمة التبديل
+  // تحديد الفضاء الحالي بدقة من المسار
   const currentSpaceId = (() => {
     const path = location.pathname;
-    if (accountType === 'architect' || path.includes('/architect')) return 'architect';
-    if (accountType === 'provider' || path.includes('/provider-')) return 'provider';
+    if (path.includes('/architect')) return 'architect';
+    if (path.includes('/provider-')) return 'provider';
     return 'contractor';
   })();
 
-  // تحديد مسار شركاء النجاح المناسب للفضاء الحالي
+  // مسار الشركاء ومسار الاشتراك حسب الفضاء الحالي
   const affiliatePath = 
     currentSpaceId === 'architect' ? '/v2/architect-affiliates' :
     currentSpaceId === 'provider' ? '/v2/provider-affiliates' :
     '/v2/affiliates';
+
+  const subscriptionPath = 
+    currentSpaceId === 'architect' ? '/v2/architect-subscription' :
+    currentSpaceId === 'provider' ? '/v2/provider-subscription' :
+    '/v2/subscription';
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -59,14 +68,18 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
       switcherTitle: 'تبديل الفضاء',
       addSpaceBtn: 'فتح فضاء آخر',
       yourSpacesHeader: 'فضاءاتك المفعلة (انتقال فوري)',
-      expandHeader: 'أضف فضاءً مهنياً آخر بنفس حسابك:',
       expandHint: 'يمكنك تفعيل حساب إضافي من الفضاءات الأربع المتبقية بنفس بريدك الحالي والتنقل بينها بضغطة زر:',
       addAnotherLink: '+ تفعيل فضاء مهني إضافي',
+      activateBadge: '+ تفعيل',
+      basicBadge: 'أساسي',
       contractor: 'فضاء المقاول العام',
       architect: 'مكتب المهندس المعماري',
       provider: 'فضاء الحرفي المعتمد',
       retail: 'فضاء تاجر التجزئة',
-      wholesale: 'فضاء مورد الجملة'
+      wholesale: 'فضاء مورد الجملة',
+      trialActive: (days, planName) => `فترة تجريبية: يتبقى لك ${days} أيام على باقة ${planName}`,
+      trialExpired: 'انتهت الفترة التجريبية! رقِّ حسابك الآن للاحتفاظ بكامل الصلاحيات.',
+      subscribeNow: 'اشترك للاحتفاظ بالصلاحيات'
     },
     fr: {
       welcome: 'Bienvenue,',
@@ -77,14 +90,18 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
       switcherTitle: 'Changer d\'Espace',
       addSpaceBtn: 'Ajouter un Espace',
       yourSpacesHeader: 'Vos espaces actifs',
-      expandHeader: 'Activer un autre espace sur ce compte :',
       expandHint: 'Vous pouvez ouvrir un autre espace professionnel avec votre compte actuel et basculer en un clic :',
       addAnotherLink: '+ Activer un nouvel espace',
+      activateBadge: '+ Activer',
+      basicBadge: 'Basic',
       contractor: 'Espace Entrepreneur',
       architect: 'Bureau d\'Architecte',
       provider: 'Espace Artisan Pro',
       retail: 'Espace Détaillant',
-      wholesale: 'Espace Grossiste B2B'
+      wholesale: 'Espace Grossiste B2B',
+      trialActive: (days, planName) => `Période d'essai : Il vous reste ${days} jours sur le plan ${planName}`,
+      trialExpired: 'La période d\'essai a expiré ! Mettez à niveau votre compte pour conserver vos accès.',
+      subscribeNow: 'Abonnez-vous pour conserver l\'accès'
     },
     en: {
       welcome: 'Welcome,',
@@ -95,36 +112,53 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
       switcherTitle: 'Switch Space',
       addSpaceBtn: 'Add Space',
       yourSpacesHeader: 'Your Active Spaces',
-      expandHeader: 'Activate another space on this account:',
       expandHint: 'You can activate an additional professional space under your current account and switch anytime:',
       addAnotherLink: '+ Activate another space',
+      activateBadge: '+ Activate',
+      basicBadge: 'Basic',
       contractor: 'Contractor Hub',
       architect: 'Architect Office',
       provider: 'Artisan Space',
       retail: 'Retailer Store',
-      wholesale: 'Wholesaler B2B'
+      wholesale: 'Wholesaler B2B',
+      trialActive: (days, planName) => `Trial period: You have ${days} days left on the ${planName} plan`,
+      trialExpired: 'Trial period expired! Upgrade now to keep full access.',
+      subscribeNow: 'Subscribe to keep access'
     }
   }[language] || {};
 
-  const isRtl = language === 'ar';
+  const currentTrialPlanName = 
+    currentSpaceId === 'architect' ? 'Architecte Élite VIP' :
+    currentSpaceId === 'provider' ? 'Maâlem PRO' :
+    'Pro ERP';
 
   const allSpaces = [
-    { id: 'contractor', label: t.contractor, icon: '🏗️', path: '/v2/contractor-dashboard', badge: 'V2' },
-    { id: 'architect', label: t.architect, icon: '📐', path: '/v2/architect-dashboard', badge: 'VIP' },
-    { id: 'provider', label: t.provider, icon: '👷‍♂️', path: '/v2/provider-dashboard', badge: 'PRO' },
-    { id: 'retail', label: t.retail, icon: '🏪', path: '/?preview=retail', badge: 'POS' },
-    { id: 'wholesale', label: t.wholesale, icon: '🏭', path: '/?preview=wholesale', badge: 'B2B' }
+    { id: 'contractor', label: t.contractor, icon: '🏗️', path: '/v2/contractor-dashboard', badge: spacePlans.contractor || t.basicBadge },
+    { id: 'architect', label: t.architect, icon: '📐', path: '/v2/architect-dashboard', badge: spacePlans.architect || t.basicBadge },
+    { id: 'provider', label: t.provider, icon: '👷‍♂️', path: '/v2/provider-dashboard', badge: spacePlans.provider || t.basicBadge },
+    { id: 'retail', label: t.retail, icon: '🏪', path: '/?preview=retail', badge: spacePlans.retail || t.basicBadge },
+    { id: 'wholesale', label: t.wholesale, icon: '🏭', path: '/?preview=wholesale', badge: spacePlans.wholesale || t.basicBadge }
   ];
 
-  // فحص الفضاءات التي يملكها المستخدم فعلياً في قاعدة البيانات
+  // فحص الفضاءات المفعلة والباقة الحقيقية وحساب أيام التجربة بدقة لكل مستخدم
   useEffect(() => {
     let mounted = true;
-    const fetchOwnedSpaces = async () => {
+    const fetchOwnedSpacesAndTrial = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // 1. حساب أيام التجربة (10 أيام) بناءً على تاريخ إنشاء حساب المستخدم الفعلي
+      const createdAt = user.created_at ? new Date(user.created_at) : new Date();
+      const now = new Date();
+      const diffDays = Math.floor(Math.abs(now - createdAt) / (1000 * 60 * 60 * 24));
+      const remaining = Math.max(0, 10 - diffDays);
+      if (mounted) setTrialDaysLeft(remaining);
+
       if (user.email === 'admin@souqbtp.ma') {
-        if (mounted) setOwnedSpaceIds(['contractor', 'architect', 'provider', 'retail', 'wholesale']);
+        if (mounted) {
+          setOwnedSpaceIds(['contractor', 'architect', 'provider', 'retail', 'wholesale']);
+          setSpacePlans({ contractor: 'VIP', architect: 'VIP', provider: 'PRO', retail: 'PRO', wholesale: 'B2B' });
+        }
         return;
       }
 
@@ -137,30 +171,53 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
       if (metaRole === 'provider') owned.add('provider');
 
       const [archRes, provRes, supRes] = await Promise.all([
-        supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle(),
-        supabase.from('providers').select('id').eq('user_id', user.id).maybeSingle(),
-        supabase.from('suppliers').select('id, supplier_type').eq('user_id', user.id)
+        supabase.from('architects').select('id, subscription_plan').eq('user_id', user.id).limit(1),
+        supabase.from('providers').select('id, subscription_plan').eq('user_id', user.id).limit(1),
+        supabase.from('suppliers').select('id, supplier_type, subscription_plan').eq('user_id', user.id)
       ]);
 
-      if (archRes.data) owned.add('architect');
-      if (provRes.data) owned.add('provider');
+      const plans = {
+        contractor: user.user_metadata?.subscription_plan === 'pro' ? 'PRO' : (t.basicBadge || 'Basic'),
+        architect: t.basicBadge || 'Basic',
+        provider: t.basicBadge || 'Basic',
+        retail: t.basicBadge || 'Basic',
+        wholesale: t.basicBadge || 'Basic'
+      };
+
+      if (archRes.data && archRes.data.length > 0) {
+        owned.add('architect');
+        const p = archRes.data[0].subscription_plan;
+        plans.architect = (p && p !== 'basic') ? p.toUpperCase() : (t.basicBadge || 'Basic');
+      }
+      if (provRes.data && provRes.data.length > 0) {
+        owned.add('provider');
+        const p = provRes.data[0].subscription_plan;
+        plans.provider = (p && p !== 'basic') ? p.toUpperCase() : (t.basicBadge || 'Basic');
+      }
       if (supRes.data && supRes.data.length > 0) {
         supRes.data.forEach(s => {
-          if (s.supplier_type === 'wholesale') owned.add('wholesale');
-          else owned.add('retail');
+          const p = (s.subscription_plan && s.subscription_plan !== 'basic') ? s.subscription_plan.toUpperCase() : (t.basicBadge || 'Basic');
+          if (s.supplier_type === 'wholesale') {
+            owned.add('wholesale');
+            plans.wholesale = p;
+          } else {
+            owned.add('retail');
+            plans.retail = p;
+          }
         });
       }
 
-      if (mounted) setOwnedSpaceIds(Array.from(owned));
+      if (mounted) {
+        setOwnedSpaceIds(Array.from(owned));
+        setSpacePlans(plans);
+      }
     };
 
-    fetchOwnedSpaces();
+    fetchOwnedSpacesAndTrial();
     return () => { mounted = false; };
-  }, [currentSpaceId, location.pathname]);
+  }, [currentSpaceId, location.pathname, language, t.basicBadge]);
 
-  // الفضاءات المفعلة الأخرى (باستثناء الفضاء الحالي)
   const otherOwnedSpaces = allSpaces.filter(sp => ownedSpaceIds.includes(sp.id) && sp.id !== currentSpaceId);
-  // الفضاءات غير المفعلة بعد
   const uncreatedSpaces = allSpaces.filter(sp => !ownedSpaceIds.includes(sp.id) && sp.id !== currentSpaceId);
 
   const handleSpaceSwitch = (path) => {
@@ -172,7 +229,6 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
     }
   };
 
-  // تفعيل وإنشاء فضاء إضافي بنفس حساب المستخدم الحالي
   const handleActivateNewSpace = async (space) => {
     try {
       setActivatingSpace(space.id);
@@ -188,8 +244,8 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
       const defaultPhone = user.user_metadata?.phone || '';
 
       if (space.id === 'architect') {
-        const { data: existing } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
-        if (!existing) {
+        const { data: existing } = await supabase.from('architects').select('id').eq('user_id', user.id).limit(1);
+        if (!existing || existing.length === 0) {
           await supabase.from('architects').insert([{
             user_id: user.id,
             full_name: defaultName,
@@ -201,8 +257,8 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
           }]);
         }
       } else if (space.id === 'provider') {
-        const { data: existing } = await supabase.from('providers').select('id').eq('user_id', user.id).maybeSingle();
-        if (!existing) {
+        const { data: existing } = await supabase.from('providers').select('id').eq('user_id', user.id).limit(1);
+        if (!existing || existing.length === 0) {
           await supabase.from('providers').insert([{
             user_id: user.id,
             full_name: defaultName,
@@ -211,8 +267,8 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
           }]);
         }
       } else if (space.id === 'retail' || space.id === 'wholesale') {
-        const { data: existing } = await supabase.from('suppliers').select('id').eq('user_id', user.id).eq('supplier_type', space.id).maybeSingle();
-        if (!existing) {
+        const { data: existing } = await supabase.from('suppliers').select('id').eq('user_id', user.id).eq('supplier_type', space.id).limit(1);
+        if (!existing || existing.length === 0) {
           await supabase.from('suppliers').insert([{
             user_id: user.id,
             store_name: defaultName,
@@ -234,9 +290,37 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
     }
   };
 
+  // إخفاء شريط التجربة إذا كنا داخل صفحة الاشتراكات نفسها لمنع التكرار
+  const isSubscriptionPage = location.pathname.includes('subscription');
+
   return (
     <div className={`flex flex-col h-screen overflow-hidden transition-all duration-700 ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#a3e6cd]'}`} dir={isRtl ? 'rtl' : 'ltr'}>
-      <div className="flex h-full w-full overflow-hidden relative">
+      
+      {/* ⏳ شريط الفترة التجريبية الموحد للمقاول والمهندس والحرفي */}
+      {!isSubscriptionPage && (
+        <div className={`w-full py-2 px-4 flex flex-wrap items-center justify-center gap-3 text-xs md:text-sm font-bold z-50 shrink-0 shadow-sm ${
+          trialDaysLeft > 0 
+            ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white' 
+            : 'bg-red-600 text-white'
+        }`}>
+          <div className="flex items-center gap-2">
+            <Clock size={16} className="animate-pulse shrink-0" />
+            <span>
+              {trialDaysLeft > 0 ? t.trialActive(trialDaysLeft, currentTrialPlanName) : t.trialExpired}
+            </span>
+          </div>
+          <Link
+            to={subscriptionPath}
+            className="bg-white text-indigo-900 hover:bg-amber-400 hover:text-slate-950 px-3 py-1 rounded-full text-xs font-black transition-all flex items-center gap-1 shadow-sm"
+          >
+            <Zap size={13} className="fill-current" />
+            <span>{t.subscribeNow}</span>
+            <ArrowIcon size={13} />
+          </Link>
+        </div>
+      )}
+
+      <div className="flex flex-1 w-full overflow-hidden relative">
         
         <aside className={`shrink-0 h-full transition-all duration-300 z-30 absolute md:relative ${isSidebarOpen ? 'w-[280px] translate-x-0' : 'w-0 opacity-0 overflow-hidden'}`}>
           <SmartSidebar accountType={accountType} storeName={storeName} />
@@ -248,7 +332,7 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
 
         <main className="flex-1 flex flex-col h-full overflow-hidden w-full relative">
           
-          <header className={`h-20 border-b flex items-center justify-between px-4 md:px-6 shrink-0 z-20 shadow-sm transition-colors duration-700 ${isDarkMode ? 'bg-slate-900/80 border-slate-700/50 backdrop-blur-xl' : 'bg-white/40 border-white/50 backdrop-blur-md'}`}>
+          <header className={`h-20 border-b flex items-center justify-between px-4 md:px-6 shrink-0 z-40 shadow-sm transition-colors duration-700 ${isDarkMode ? 'bg-slate-900/80 border-slate-700/50 backdrop-blur-xl' : 'bg-white/40 border-white/50 backdrop-blur-md'}`}>
             
             <div className="flex items-center gap-4">
               <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`p-2 rounded-xl transition-colors cursor-pointer ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:text-blue-400' : 'bg-white/60 text-slate-700 hover:text-blue-600'}`}>
@@ -261,7 +345,7 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
 
             <div className="flex items-center gap-2 md:gap-3">
               
-              {/* 🏆 زر شركاء النجاح الموحد في الشريط العلوي */}
+              {/* 🏆 زر شركاء النجاح الموحد */}
               <Link
                 to={affiliatePath}
                 className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 md:px-4 py-2 rounded-full font-black text-xs md:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/25 transition-all hover:scale-105 whitespace-nowrap"
@@ -270,7 +354,7 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
                 <span className="hidden sm:inline">{t.affiliatesBtn}</span>
               </Link>
 
-              {/* 🚀 مبدّل الفضاءات الذكي (يعرض فقط الحسابات المنشأة مع استثناء الحساب الحالي) */}
+              {/* 🚀 مبدّل الفضاءات الذكي */}
               <div className="relative">
                 <button
                   onClick={() => {
@@ -297,7 +381,6 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
                       isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
                     }`}>
                       
-                      {/* 1. قائمة الفضاءات التي أنشأها المستخدم فعلياً (بدون الفضاء الحالي) */}
                       {otherOwnedSpaces.length > 0 && (
                         <div className="mb-2">
                           <div className="px-3 py-1.5 text-[11px] font-black text-purple-500 uppercase tracking-wider">
@@ -315,7 +398,7 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
                                 <span className="text-base">{sp.icon}</span>
                                 <span>{sp.label}</span>
                               </div>
-                              <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                              <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-500 border border-slate-500/20">
                                 {sp.badge}
                               </span>
                             </button>
@@ -323,7 +406,6 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
                         </div>
                       )}
 
-                      {/* 2. زر أو قسم تفعيل فضاء مهني إضافي بنفس الحساب */}
                       {uncreatedSpaces.length > 0 && (
                         <div className={otherOwnedSpaces.length > 0 ? 'border-t border-slate-700/30 pt-2 mt-1' : ''}>
                           {!showAddSpaces && otherOwnedSpaces.length > 0 ? (
@@ -361,7 +443,7 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
                                       <Loader2 size={14} className="animate-spin text-purple-500" />
                                     ) : (
                                       <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                                        + تفعيل
+                                        {t.activateBadge}
                                       </span>
                                     )}
                                   </button>

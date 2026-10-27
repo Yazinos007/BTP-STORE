@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { 
-  Menu, X, Package, Truck, FileSignature, BarChart3, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
+  Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
   Settings, Zap, Radar, Wallet, Landmark, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft, Lock, MessageCircle, Trophy, PlusCircle, Loader2
 } from 'lucide-react';
 
@@ -87,11 +87,12 @@ function ReferralTracker() {
   return null;
 }
 
-// 🚀 مكون مبدل الفضاءات الموحد والذكي (يعرض الفضاءات المفعلة ويستثني الفضاء الحالي)
+// 🚀 مكون مبدل الفضاءات الموحد والذكي
 const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }) => {
   const [open, setOpen] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [ownedIds, setOwnedIds] = useState([]);
+  const [spacePlans, setSpacePlans] = useState({});
   const [activating, setActivating] = useState(null);
   const isRtl = language === 'ar';
 
@@ -102,6 +103,8 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
       activeHeader: 'فضاءاتك المفعلة (انتقال فوري)',
       expandHint: 'يمكنك تفعيل حساب إضافي بنفس بريدك الحالي والتنقل بينها بضغطة زر:',
       addLink: '+ تفعيل فضاء مهني إضافي',
+      activateBadge: '+ تفعيل',
+      basicBadge: 'أساسي',
       contractor: '🏗️ فضاء المقاول العام',
       architect: '📐 مكتب المهندس المعماري',
       provider: '👷‍♂️ فضاء الحرفي المعتمد',
@@ -114,6 +117,8 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
       activeHeader: 'Vos espaces actifs',
       expandHint: 'Vous pouvez ouvrir un autre espace professionnel avec votre compte actuel :',
       addLink: '+ Activer un nouvel espace',
+      activateBadge: '+ Activer',
+      basicBadge: 'Basic',
       contractor: '🏗️ Espace Entrepreneur',
       architect: '📐 Bureau d\'Architecte',
       provider: '👷‍♂️ Espace Artisan Pro',
@@ -126,6 +131,8 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
       activeHeader: 'Your Active Spaces',
       expandHint: 'You can activate another professional space under your current account:',
       addLink: '+ Activate another space',
+      activateBadge: '+ Activate',
+      basicBadge: 'Basic',
       contractor: '🏗️ Contractor Hub',
       architect: '📐 Architect Office',
       provider: '👷‍♂️ Artisan Space',
@@ -135,11 +142,11 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
   }[language] || {};
 
   const allSpaces = [
-    { id: 'contractor', label: labels.contractor, path: '/v2/contractor-dashboard', badge: 'V2' },
-    { id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' },
-    { id: 'provider', label: labels.provider, path: '/v2/provider-dashboard', badge: 'PRO' },
-    { id: 'retail', label: labels.retail, path: '/?preview=retail', badge: 'POS' },
-    { id: 'wholesale', label: labels.wholesale, path: '/?preview=wholesale', badge: 'B2B' }
+    { id: 'contractor', label: labels.contractor, path: '/v2/contractor-dashboard', badge: spacePlans.contractor || labels.basicBadge },
+    { id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: spacePlans.architect || labels.basicBadge },
+    { id: 'provider', label: labels.provider, path: '/v2/provider-dashboard', badge: spacePlans.provider || labels.basicBadge },
+    { id: 'retail', label: labels.retail, path: '/?preview=retail', badge: spacePlans.retail || labels.basicBadge },
+    { id: 'wholesale', label: labels.wholesale, path: '/?preview=wholesale', badge: spacePlans.wholesale || labels.basicBadge }
   ];
 
   useEffect(() => {
@@ -149,6 +156,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
 
       if (user.email === 'admin@souqbtp.ma') {
         setOwnedIds(['contractor', 'architect', 'provider', 'retail', 'wholesale']);
+        setSpacePlans({ contractor: 'VIP', architect: 'VIP', provider: 'PRO', retail: 'PRO', wholesale: 'B2B' });
         return;
       }
 
@@ -160,27 +168,49 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
       if (metaRole === 'architect') owned.add('architect');
       if (metaRole === 'provider') owned.add('provider');
 
-      // استخدام استعلامات آمنة لا تفشل عند وجود أكثر من سجل
       const [archRes, provRes, supRes] = await Promise.all([
-        supabase.from('architects').select('id').eq('user_id', user.id).limit(1),
-        supabase.from('providers').select('id').eq('user_id', user.id).limit(1),
-        supabase.from('suppliers').select('id, supplier_type').eq('user_id', user.id)
+        supabase.from('architects').select('id, subscription_plan').eq('user_id', user.id).limit(1),
+        supabase.from('providers').select('id, subscription_plan').eq('user_id', user.id).limit(1),
+        supabase.from('suppliers').select('id, supplier_type, subscription_plan').eq('user_id', user.id)
       ]);
 
-      if (archRes.data && archRes.data.length > 0) owned.add('architect');
-      if (provRes.data && provRes.data.length > 0) owned.add('provider');
+      const plans = {
+        contractor: user.user_metadata?.subscription_plan === 'pro' ? 'PRO' : (labels.basicBadge || 'Basic'),
+        architect: labels.basicBadge || 'Basic',
+        provider: labels.basicBadge || 'Basic',
+        retail: labels.basicBadge || 'Basic',
+        wholesale: labels.basicBadge || 'Basic'
+      };
+
+      if (archRes.data && archRes.data.length > 0) {
+        owned.add('architect');
+        const p = archRes.data[0].subscription_plan;
+        plans.architect = (p && p !== 'basic') ? p.toUpperCase() : (labels.basicBadge || 'Basic');
+      }
+      if (provRes.data && provRes.data.length > 0) {
+        owned.add('provider');
+        const p = provRes.data[0].subscription_plan;
+        plans.provider = (p && p !== 'basic') ? p.toUpperCase() : (labels.basicBadge || 'Basic');
+      }
       if (supRes.data && supRes.data.length > 0) {
         supRes.data.forEach(s => {
-          if (s.supplier_type === 'wholesale') owned.add('wholesale');
-          else owned.add('retail');
+          const p = (s.subscription_plan && s.subscription_plan !== 'basic') ? s.subscription_plan.toUpperCase() : (labels.basicBadge || 'Basic');
+          if (s.supplier_type === 'wholesale') {
+            owned.add('wholesale');
+            plans.wholesale = p;
+          } else {
+            owned.add('retail');
+            plans.retail = p;
+          }
         });
       }
 
       setOwnedIds(Array.from(owned));
+      setSpacePlans(plans);
     };
 
     fetchUserSpaces();
-  }, [currentSpace, language]);
+  }, [currentSpace, language, labels.basicBadge]);
 
   const otherOwned = allSpaces.filter(sp => ownedIds.includes(sp.id) && sp.id !== currentSpace);
   const uncreated = allSpaces.filter(sp => !ownedIds.includes(sp.id) && sp.id !== currentSpace);
@@ -235,7 +265,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
         className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3 py-2 md:px-4 rounded-xl font-black text-xs md:text-sm flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all whitespace-nowrap cursor-pointer"
       >
         {otherOwned.length > 0 ? <Layers size={16} /> : <PlusCircle size={16} />}
-        <span>{otherOwned.length > 0 ? labels.btn : labels.addBtn}</span>
+        <span className="hidden sm:inline">{otherOwned.length > 0 ? labels.btn : labels.addBtn}</span>
         <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -257,7 +287,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
                     }`}
                   >
                     <span>{it.label}</span>
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-500 border border-slate-500/20">
                       {it.badge}
                     </span>
                   </button>
@@ -294,7 +324,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
                           <Loader2 size={14} className="animate-spin text-purple-500" />
                         ) : (
                           <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                            + تفعيل
+                            {labels.activateBadge}
                           </span>
                         )}
                       </button>
@@ -310,22 +340,26 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
   );
 };
 
-// 🛑 الحارس الإلكتروني للأقسام المدفوعة
+// 🛑 الحارس الإلكتروني للأقسام المدفوعة (مربوط بتاريخ إنشاء حساب المستخدم الفعلي)
 const PremiumGuard = ({ children }) => {
   const { language } = useSettingsStore();
   const navigate = useNavigate();
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
-    const trialStartDate = localStorage.getItem('trial_start_date');
-    if (trialStartDate) {
-      const start = new Date(trialStartDate);
-      const now = new Date();
-      const diffDays = Math.floor(Math.abs(now - start) / (1000 * 60 * 60 * 24));
-      if (7 - diffDays <= 0) {
-        setIsExpired(true);
+    const checkUserTrial = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const startStr = user?.created_at || localStorage.getItem('trial_start_date');
+      if (startStr) {
+        const start = new Date(startStr);
+        const now = new Date();
+        const diffDays = Math.floor(Math.abs(now - start) / (1000 * 60 * 60 * 24));
+        if (10 - diffDays <= 0) {
+          setIsExpired(true);
+        }
       }
-    }
+    };
+    checkUserTrial();
   }, []);
 
   const t = {
@@ -344,7 +378,7 @@ const PremiumGuard = ({ children }) => {
         <p className="text-slate-400 max-w-lg text-lg font-medium leading-relaxed">{t.desc}</p>
         <button 
           onClick={() => navigate('/subscription')}
-          className="bg-gradient-to-r from-amber-500 to-orange-500 text-black px-8 py-4 rounded-xl font-black text-lg hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-amber-500/20 mt-4"
+          className="bg-gradient-to-r from-amber-500 to-orange-500 text-black px-8 py-4 rounded-xl font-black text-lg hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-amber-500/20 mt-4 cursor-pointer"
         >
           <Zap size={24} className="fill-black" />
           {t.btn}
@@ -359,6 +393,7 @@ const PremiumGuard = ({ children }) => {
 const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) => {
   const { language, setLanguage } = useSettingsStore();
   const location = useLocation();
+  const navigate = useNavigate();
   
   const isMinimal = window.location.href.includes('minimal=true') || window.location.search.includes('minimal=true');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
@@ -369,6 +404,11 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
     marketplace: false,
     ventes: false
   });
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/v2/auth');
+  };
 
   useEffect(() => {
     const p = location.pathname;
@@ -409,7 +449,7 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
       items: { overview: "Tableau de bord", inbox: "Boîte de Réception", btpMarket: "Marché BTP", rawSuppliers: "Fournisseurs & Prestataires", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", production: "Production", marketOrders: "Commandes Marketplace", fleetMarket: "Suivi des Commandes", clients: "Clients & Dettes", posB2B: "Ventes Directes (POS)", orders: "Commandes Reçues (B2B)", fleetB2B: "Suivi des Commandes (B2B)", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", logisticsBourse: "Bourse de Fret", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance" } 
     },
     ar: { 
-      upgrade: "ترقية للباقة الذهبية", affiliates: "شركاء النجاح", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
+      upgrade: "ترقية للباقة الذهبية", affiliates: "شركاء النجاح", logout: "خروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
       groups: { comm: "التواصل والسوق", achats: "المشتريات والموردون", marketplace: "إدارة الماركت بليس", ventes: "إدارة المبيعات" },
       items: { overview: "لوحة القيادة", inbox: "صندوق الرسائل", btpMarket: "سوق BTP", rawSuppliers: "الموردون والشركاء", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", production: "الإنتاج (المعمل)", marketOrders: "طلبات الماركت بليس", fleetMarket: "تتبع شحنات المتجر", clients: "العملاء والديون (CRM)", posB2B: "المبيعات المباشرة (POS)", orders: "طلبات التزويد (B2B)", fleetB2B: "تتبع شحنات التزويد", contracts: "العقود والتوقيعات", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", logisticsBourse: "بورصة اللوجستيك", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق" } 
     },
@@ -571,7 +611,6 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
       </aside>
 
       <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
-        {/* 📌 رفع الـ z-index إلى z-50 لمنع الشريط الأحمر من تغطية القائمة المنسدلة */}
         <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/90 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 sticky top-0 z-50">
           <div className="flex items-center gap-3 md:gap-4">
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="flex items-center gap-2 p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer">
@@ -586,15 +625,15 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-4 shrink-0">
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
             <Link to="/affiliates" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 py-2 md:px-4 rounded-xl font-black flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all whitespace-nowrap text-xs md:text-sm">
               <Trophy size={16} /> <span className="hidden sm:inline">{t.affiliates}</span>
             </Link>
 
             <GlobalSpaceSwitcher language={language} dark={true} currentSpace="wholesale" />
 
-            <div className={`flex items-center gap-3 ${language === 'ar' ? 'pr-3 md:pr-6 border-r' : 'pl-3 md:pl-6 border-l'} border-slate-700`}>
-              <div className="text-end hidden sm:block">
+            <div className={`flex items-center gap-3 ${language === 'ar' ? 'pr-3 border-r' : 'pl-3 border-l'} border-slate-700`}>
+              <div className="text-end hidden lg:block">
                 <p className="text-sm font-bold text-white">{storeName}</p>
                 <p className="text-xs text-slate-400 uppercase tracking-wider">{t.wholesaler}</p>
               </div>
@@ -602,6 +641,11 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
                 {storeInitial}
               </div>
             </div>
+
+            {/* 🚪 زر الخروج للمورد الكبير */}
+            <button onClick={handleLogout} className="flex items-center justify-center w-10 h-10 md:w-auto md:px-3.5 md:py-2 rounded-xl text-xs md:text-sm font-bold text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/20 transition-all cursor-pointer">
+              <LogOut size={17} /> <span className={`hidden sm:inline ${language === 'ar' ? 'mr-1.5' : 'ml-1.5'}`}>{t.logout}</span>
+            </button>
           </div>
         </header>
         <div className="relative z-10">
@@ -615,11 +659,17 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
   );
 };
 
-// 💎 مكون التاجر الداعم لمبدل الفضاءات الشامل
+// 💎 مكون التاجر الداعم لمبدل الفضاءات الشامل وزر الخروج
 const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const navigate = useNavigate();
   
   const isMinimal = window.location.search.includes('minimal=true') || window.location.href.includes('minimal=true');
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/v2/auth');
+  };
 
   if (isMinimal) {
     return (
@@ -628,6 +678,8 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
       </div>
     );
   }
+
+  const logoutLabel = language === 'fr' ? 'Déconnexion' : language === 'en' ? 'Logout' : 'خروج';
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -648,7 +700,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
               </h2>
             </div>
 
-            <div className="flex items-center gap-3 md:gap-4 shrink-0">
+            <div className="flex items-center gap-2 md:gap-3 shrink-0">
               <Link to="/affiliates" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 py-2 md:px-4 rounded-xl font-black flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs md:text-sm">
                 <Trophy size={16} /> <span className="hidden sm:inline">{language === 'fr' ? 'Partenaires' : language === 'en' ? 'Affiliates' : 'شركاء النجاح'}</span>
               </Link>
@@ -656,12 +708,17 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
               <GlobalSpaceSwitcher language={language} dark={false} currentSpace="retail" />
 
               <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs md:text-sm">
-                 <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
+                 <Package size={18} /> <span className="hidden xl:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
               </Link>
               
-              <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
+              <div className="w-9 h-9 md:w-10 md:h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
                 {storeInitial}
               </div>
+
+              {/* 🚪 زر الخروج للتاجر */}
+              <button onClick={handleLogout} className="flex items-center justify-center w-10 h-10 md:w-auto md:px-3.5 md:py-2 rounded-xl text-xs md:text-sm font-bold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white border border-red-200 transition-all cursor-pointer">
+                <LogOut size={17} /> <span className={`hidden sm:inline ${language === 'ar' ? 'mr-1.5' : 'ml-1.5'}`}>{logoutLabel}</span>
+              </button>
             </div>
           </header>
           <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full relative z-10">
@@ -685,11 +742,20 @@ function App() {
 
   const isStorePage = window.location.pathname.startsWith('/store') || window.location.search.includes('vendor');
 
+  // 🔄 مزامنة تاريخ بداية التجربة مع تاريخ إنشاء حساب المستخدم الفعلي لمنع انتهاء الصلاحية الوهمي
+  const syncUserTrialDate = (user) => {
+    if (user?.created_at) {
+      localStorage.setItem('trial_start_date', user.created_at);
+      localStorage.setItem('retail_trial_start_date', user.created_at);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
     const detectPrimaryRole = async (user) => {
       if (!user) return;
+      syncUserTrialDate(user);
       const metaRole = user.user_metadata?.role || user.user_metadata?.account_type;
       if (metaRole === 'architect' || metaRole === 'provider' || metaRole === 'contractor') {
         if (mounted) setUserPrimaryRole(metaRole);
@@ -810,7 +876,6 @@ function App() {
     ? false 
     : (session?.user?.user_metadata?.supplier_type === 'wholesale' || supplier?.supplier_type === 'wholesale');
 
-  // 🎯 توحيد اسم الحساب في جميع الواجهات
   const storeName = session?.user?.user_metadata?.company_name || session?.user?.user_metadata?.full_name || supplier?.store_name || 'SasBTP';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : 'S';
 
