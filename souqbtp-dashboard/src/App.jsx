@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { 
-  Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Bell, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
-  Settings, Zap, Radar, Wallet, Landmark, CreditCard, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft, Lock, MessageCircle, Trophy
+  Menu, X, Package, Truck, FileSignature, BarChart3, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
+  Settings, Zap, Radar, Wallet, Landmark, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft, Lock, MessageCircle, Trophy, PlusCircle, Loader2
 } from 'lucide-react';
 
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
@@ -56,7 +56,6 @@ import LogisticsBourse from './pages/LogisticsBourse';
 import UnifiedMessages from './pages/v2/shared/UnifiedMessages';
 import BTPHub from './pages/v2/BTPHub';
 
-import ProviderSubscription from './pages/v2/provider/ProviderSubscription';
 import AffiliateDashboard from './pages/v2/AffiliateDashboard';
 
 import TrialBanner from './components/TrialBanner'; 
@@ -88,16 +87,21 @@ function ReferralTracker() {
   return null;
 }
 
-// 🚀 مكون مبدل الفضاءات الموحد (الذكي - يعرض فقط ما يملكه المستخدم)
-const GlobalSpaceSwitcher = ({ language, dark = false }) => {
+// 🚀 مكون مبدل الفضاءات الموحد والذكي (يعرض الفضاءات المفعلة ويستثني الفضاء الحالي)
+const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }) => {
   const [open, setOpen] = useState(false);
-  const [allowedSpaces, setAllowedSpaces] = useState([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [ownedIds, setOwnedIds] = useState([]);
+  const [activating, setActivating] = useState(null);
   const isRtl = language === 'ar';
-  const navigate = useNavigate();
 
   const labels = {
     ar: {
-      btn: '🚀 تبديل الفضاء',
+      btn: 'تبديل الفضاء',
+      addBtn: 'فتح فضاء آخر',
+      activeHeader: 'فضاءاتك المفعلة (انتقال فوري)',
+      expandHint: 'يمكنك تفعيل حساب إضافي بنفس بريدك الحالي والتنقل بينها بضغطة زر:',
+      addLink: '+ تفعيل فضاء مهني إضافي',
       contractor: '🏗️ فضاء المقاول العام',
       architect: '📐 مكتب المهندس المعماري',
       provider: '👷‍♂️ فضاء الحرفي المعتمد',
@@ -105,7 +109,11 @@ const GlobalSpaceSwitcher = ({ language, dark = false }) => {
       wholesale: '🏭 فضاء مورد الجملة'
     },
     fr: {
-      btn: '🚀 Espaces SouqBTP',
+      btn: 'Changer d\'Espace',
+      addBtn: 'Ajouter un Espace',
+      activeHeader: 'Vos espaces actifs',
+      expandHint: 'Vous pouvez ouvrir un autre espace professionnel avec votre compte actuel :',
+      addLink: '+ Activer un nouvel espace',
       contractor: '🏗️ Espace Entrepreneur',
       architect: '📐 Bureau d\'Architecte',
       provider: '👷‍♂️ Espace Artisan Pro',
@@ -113,107 +121,188 @@ const GlobalSpaceSwitcher = ({ language, dark = false }) => {
       wholesale: '🏭 Espace Grossiste B2B'
     },
     en: {
-      btn: '🚀 Switch Space',
+      btn: 'Switch Space',
+      addBtn: 'Add Space',
+      activeHeader: 'Your Active Spaces',
+      expandHint: 'You can activate another professional space under your current account:',
+      addLink: '+ Activate another space',
       contractor: '🏗️ Contractor Hub',
       architect: '📐 Architect Office',
       provider: '👷‍♂️ Artisan Space',
       retail: '🏪 Retailer Store',
       wholesale: '🏭 Wholesaler B2B'
     }
-  }[language] || {
-    btn: '🚀 Switch Space',
-    contractor: '🏗️ Contractor Hub',
-    architect: '📐 Architect Office',
-    provider: '👷‍♂️ Artisan Space',
-    retail: '🏪 Retailer Store',
-    wholesale: '🏭 Wholesaler B2B'
-  };
+  }[language] || {};
+
+  const allSpaces = [
+    { id: 'contractor', label: labels.contractor, path: '/v2/contractor-dashboard', badge: 'V2' },
+    { id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' },
+    { id: 'provider', label: labels.provider, path: '/v2/provider-dashboard', badge: 'PRO' },
+    { id: 'retail', label: labels.retail, path: '/?preview=retail', badge: 'POS' },
+    { id: 'wholesale', label: labels.wholesale, path: '/?preview=wholesale', badge: 'B2B' }
+  ];
 
   useEffect(() => {
     const fetchUserSpaces = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      let spaces = [];
-      const metaRole = user.user_metadata?.role || user.user_metadata?.account_type;
-
-      if (metaRole === 'contractor' || metaRole === 'client' || !metaRole) {
-        spaces.push({ id: 'contractor', label: labels.contractor, path: '/v2/contractor-dashboard', badge: 'V2' });
-      }
-
-      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
-      if (arch || metaRole === 'architect') {
-        spaces.push({ id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' });
-      }
-
-      const { data: prov } = await supabase.from('providers').select('id, account_type').eq('user_id', user.id).maybeSingle();
-      if (prov || metaRole === 'provider') {
-        spaces.push({ id: 'provider', label: labels.provider, path: '/v2/provider-dashboard', badge: 'PRO' });
-      }
-
-      const { data: sup } = await supabase.from('suppliers').select('id, supplier_type').eq('user_id', user.id).maybeSingle();
-      if (sup || metaRole === 'supplier' || metaRole === 'admin') {
-        const type = sup?.supplier_type || user.user_metadata?.supplier_type || 'retail';
-        if (type === 'wholesale') {
-          spaces.push({ id: 'wholesale', label: labels.wholesale, path: '/?preview=wholesale', badge: 'B2B' });
-        } else {
-          spaces.push({ id: 'retail', label: labels.retail, path: '/?preview=retail', badge: 'POS' });
-        }
-      }
-
       if (user.email === 'admin@souqbtp.ma') {
-        spaces = [
-          { id: 'contractor', label: labels.contractor, path: '/v2/contractor-dashboard', badge: 'V2' },
-          { id: 'architect', label: labels.architect, path: '/v2/architect-dashboard', badge: 'VIP' },
-          { id: 'provider', label: labels.provider, path: '/v2/provider-dashboard', badge: 'PRO' },
-          { id: 'retail', label: labels.retail, path: '/?preview=retail', badge: 'POS' },
-          { id: 'wholesale', label: labels.wholesale, path: '/?preview=wholesale', badge: 'B2B' }
-        ];
+        setOwnedIds(['contractor', 'architect', 'provider', 'retail', 'wholesale']);
+        return;
       }
 
-      setAllowedSpaces(spaces);
+      const owned = new Set(user.user_metadata?.enabled_spaces || []);
+      owned.add(currentSpace);
+
+      const metaRole = user.user_metadata?.role || user.user_metadata?.account_type;
+      if (metaRole === 'contractor' || metaRole === 'client') owned.add('contractor');
+      if (metaRole === 'architect') owned.add('architect');
+      if (metaRole === 'provider') owned.add('provider');
+
+      // استخدام استعلامات آمنة لا تفشل عند وجود أكثر من سجل
+      const [archRes, provRes, supRes] = await Promise.all([
+        supabase.from('architects').select('id').eq('user_id', user.id).limit(1),
+        supabase.from('providers').select('id').eq('user_id', user.id).limit(1),
+        supabase.from('suppliers').select('id, supplier_type').eq('user_id', user.id)
+      ]);
+
+      if (archRes.data && archRes.data.length > 0) owned.add('architect');
+      if (provRes.data && provRes.data.length > 0) owned.add('provider');
+      if (supRes.data && supRes.data.length > 0) {
+        supRes.data.forEach(s => {
+          if (s.supplier_type === 'wholesale') owned.add('wholesale');
+          else owned.add('retail');
+        });
+      }
+
+      setOwnedIds(Array.from(owned));
     };
 
     fetchUserSpaces();
-  }, [language, labels.contractor, labels.architect, labels.provider, labels.retail, labels.wholesale]);
+  }, [currentSpace, language]);
 
-  if (allowedSpaces.length <= 1) return null;
+  const otherOwned = allSpaces.filter(sp => ownedIds.includes(sp.id) && sp.id !== currentSpace);
+  const uncreated = allSpaces.filter(sp => !ownedIds.includes(sp.id) && sp.id !== currentSpace);
 
   const handleSwitch = (path) => {
     setOpen(false);
-    window.location.href = path; 
+    window.location.href = path;
+  };
+
+  const handleActivate = async (sp) => {
+    try {
+      setActivating(sp.id);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updated = Array.from(new Set([...ownedIds, currentSpace, sp.id]));
+      await supabase.auth.updateUser({ data: { enabled_spaces: updated } });
+
+      const defaultName = user.user_metadata?.company_name || user.user_metadata?.full_name || 'SasBTP Pro';
+      const defaultPhone = user.user_metadata?.phone || '';
+
+      if (sp.id === 'architect') {
+        const { data: ex } = await supabase.from('architects').select('id').eq('user_id', user.id).limit(1);
+        if (!ex || ex.length === 0) {
+          await supabase.from('architects').insert([{ user_id: user.id, full_name: defaultName, email: user.email, phone: defaultPhone, agency_name: defaultName, specialty: 'Architect', subscription_plan: 'basic' }]);
+        }
+      } else if (sp.id === 'provider') {
+        const { data: ex } = await supabase.from('providers').select('id').eq('user_id', user.id).limit(1);
+        if (!ex || ex.length === 0) {
+          await supabase.from('providers').insert([{ user_id: user.id, full_name: defaultName, phone: defaultPhone || `06${Math.floor(10000000 + Math.random() * 90000000)}`, account_type: 'marketplace' }]);
+        }
+      } else if (sp.id === 'retail' || sp.id === 'wholesale') {
+        const { data: ex } = await supabase.from('suppliers').select('id').eq('user_id', user.id).eq('supplier_type', sp.id).limit(1);
+        if (!ex || ex.length === 0) {
+          await supabase.from('suppliers').insert([{ user_id: user.id, store_name: defaultName, email: user.email, phone: defaultPhone, supplier_type: sp.id }]);
+        }
+      }
+
+      setOwnedIds(updated);
+      handleSwitch(sp.path);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActivating(null);
+    }
   };
 
   return (
-    <div className="relative">
+    <div className="relative z-50">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { setOpen(!open); setShowAdd(otherOwned.length === 0); }}
         className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3 py-2 md:px-4 rounded-xl font-black text-xs md:text-sm flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all whitespace-nowrap cursor-pointer"
       >
-        <span>{labels.btn}</span>
+        {otherOwned.length > 0 ? <Layers size={16} /> : <PlusCircle size={16} />}
+        <span>{otherOwned.length > 0 ? labels.btn : labels.addBtn}</span>
         <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}></div>
-          <div className={`absolute top-full mt-2 ${isRtl ? 'left-0' : 'right-0'} w-64 rounded-2xl shadow-2xl border p-1.5 z-50 ${
+          <div className={`absolute top-full mt-2 ${isRtl ? 'left-0' : 'right-0'} w-72 rounded-2xl shadow-2xl border p-2 z-50 ${
             dark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-gray-200 text-gray-800'
           }`}>
-            {allowedSpaces.map((it, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSwitch(it.path)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all mb-1 last:mb-0 ${
-                  dark ? 'hover:bg-slate-800' : 'hover:bg-purple-50 hover:text-purple-700'
-                }`}
-              >
-                <span>{it.label}</span>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-500 border border-purple-500/20">
-                  {it.badge}
-                </span>
-              </button>
-            ))}
+            {otherOwned.length > 0 && (
+              <div className="mb-2">
+                <div className="px-3 py-1.5 text-[11px] font-black text-purple-500 uppercase tracking-wider">{labels.activeHeader}</div>
+                {otherOwned.map((it) => (
+                  <button
+                    key={it.id}
+                    onClick={() => handleSwitch(it.path)}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all mb-1 last:mb-0 cursor-pointer ${
+                      dark ? 'hover:bg-slate-800 text-slate-200' : 'hover:bg-purple-50 hover:text-purple-700 text-slate-700'
+                    }`}
+                  >
+                    <span>{it.label}</span>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                      {it.badge}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {uncreated.length > 0 && (
+              <div className={otherOwned.length > 0 ? 'border-t border-slate-700/20 pt-2 mt-1' : ''}>
+                {!showAdd && otherOwned.length > 0 ? (
+                  <button
+                    onClick={() => setShowAdd(true)}
+                    className="w-full py-2 px-3 rounded-xl text-xs font-black text-cyan-500 hover:bg-cyan-500/10 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Sparkles size={14} />
+                    <span>{labels.addLink}</span>
+                  </button>
+                ) : (
+                  <div className="space-y-1.5 p-1">
+                    <div className="px-2 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                      <p className="text-[11px] font-bold text-purple-400 leading-relaxed">{labels.expandHint}</p>
+                    </div>
+                    {uncreated.map((sp) => (
+                      <button
+                        key={sp.id}
+                        disabled={activating === sp.id}
+                        onClick={() => handleActivate(sp)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold border border-dashed transition-all cursor-pointer ${
+                          dark ? 'border-slate-700 hover:border-purple-500 hover:bg-slate-800 text-slate-300' : 'border-gray-300 hover:border-purple-500 hover:bg-purple-50 text-slate-700'
+                        }`}
+                      >
+                        <span>{sp.label}</span>
+                        {activating === sp.id ? (
+                          <Loader2 size={14} className="animate-spin text-purple-500" />
+                        ) : (
+                          <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                            + تفعيل
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
@@ -267,7 +356,7 @@ const PremiumGuard = ({ children }) => {
 };
 
 // 🛡️ لوحة المورد الكبير المحصنة
-const WholesalerDashboard = ({ supplier, children }) => {
+const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) => {
   const { language, setLanguage } = useSettingsStore();
   const location = useLocation();
   
@@ -315,17 +404,17 @@ const WholesalerDashboard = ({ supplier, children }) => {
 
   const tLayout = {
     fr: { 
-      upgrade: "Passer à l'Enterprise", affiliates: "Programme Partenaires 🏆", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", 
+      upgrade: "Passer à l'Enterprise", affiliates: "Partenaires", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", 
       groups: { comm: "Communication & Marché", achats: "Achats & Fournisseurs", marketplace: "Gestion Marketplace", ventes: "Gestion des Ventes" },
       items: { overview: "Tableau de bord", inbox: "Boîte de Réception", btpMarket: "Marché BTP", rawSuppliers: "Fournisseurs & Prestataires", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", production: "Production", marketOrders: "Commandes Marketplace", fleetMarket: "Suivi des Commandes", clients: "Clients & Dettes", posB2B: "Ventes Directes (POS)", orders: "Commandes Reçues (B2B)", fleetB2B: "Suivi des Commandes (B2B)", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", logisticsBourse: "Bourse de Fret", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance" } 
     },
     ar: { 
-      upgrade: "ترقية للباقة الذهبية", affiliates: "شركاء النجاح (اربح معنا) 🏆", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
+      upgrade: "ترقية للباقة الذهبية", affiliates: "شركاء النجاح", logout: "تسجيل الخروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
       groups: { comm: "التواصل والسوق", achats: "المشتريات والموردون", marketplace: "إدارة الماركت بليس", ventes: "إدارة المبيعات" },
       items: { overview: "لوحة القيادة", inbox: "صندوق الرسائل", btpMarket: "سوق BTP", rawSuppliers: "الموردون والشركاء", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", production: "الإنتاج (المعمل)", marketOrders: "طلبات الماركت بليس", fleetMarket: "تتبع شحنات المتجر", clients: "العملاء والديون (CRM)", posB2B: "المبيعات المباشرة (POS)", orders: "طلبات التزويد (B2B)", fleetB2B: "تتبع شحنات التزويد", contracts: "العقود والتوقيعات", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", logisticsBourse: "بورصة اللوجستيك", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق" } 
     },
     en: { 
-      upgrade: "Upgrade to Enterprise", affiliates: "Affiliate Partners 🏆", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", 
+      upgrade: "Upgrade to Enterprise", affiliates: "Affiliates", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", 
       groups: { comm: "Communication & Market", achats: "Purchases & Suppliers", marketplace: "Marketplace Management", ventes: "Sales Management" },
       items: { overview: "Dashboard", inbox: "Inbox", btpMarket: "BTP Marketplace", rawSuppliers: "Suppliers & Partners", rawPurchases: "Purchases & Procurement", stock: "Central Stock", production: "Production", marketOrders: "Marketplace Orders", fleetMarket: "Order Tracking", clients: "Clients & Debts", posB2B: "Direct Sales (POS)", orders: "Received Orders (B2B)", fleetB2B: "B2B Tracking", contracts: "Contracts & Signatures", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", logisticsBourse: "Freight Exchange", team: "Users & Permissions", settings: "Settings & Trust" } 
     }
@@ -420,7 +509,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
           <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg border border-white/10">
-                {supplier?.store_name?.charAt(0).toUpperCase() || 'S'}
+                {storeInitial}
               </div>
               <div className="flex flex-col text-start">
                 <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">SasBTP</h1>
@@ -482,9 +571,10 @@ const WholesalerDashboard = ({ supplier, children }) => {
       </aside>
 
       <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
-        <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 sticky top-0 z-20">
+        {/* 📌 رفع الـ z-index إلى z-50 لمنع الشريط الأحمر من تغطية القائمة المنسدلة */}
+        <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/90 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 sticky top-0 z-50">
           <div className="flex items-center gap-3 md:gap-4">
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="flex items-center gap-2 p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all">
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="flex items-center gap-2 p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer">
               {isSidebarOpen ? <X size={22} className="text-red-400" /> : <Menu size={22} className="text-blue-400" />}
             </button>
             <div className="truncate pr-1 text-start">
@@ -496,22 +586,27 @@ const WholesalerDashboard = ({ supplier, children }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 shrink-0">
-            <GlobalSpaceSwitcher language={language} dark={true} />
-            <Link to="/affiliates"></Link>
+          <div className="flex items-center gap-3 md:gap-4 shrink-0">
+            <Link to="/affiliates" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 py-2 md:px-4 rounded-xl font-black flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all whitespace-nowrap text-xs md:text-sm">
+              <Trophy size={16} /> <span className="hidden sm:inline">{t.affiliates}</span>
+            </Link>
+
+            <GlobalSpaceSwitcher language={language} dark={true} currentSpace="wholesale" />
 
             <div className={`flex items-center gap-3 ${language === 'ar' ? 'pr-3 md:pr-6 border-r' : 'pl-3 md:pl-6 border-l'} border-slate-700`}>
               <div className="text-end hidden sm:block">
-                <p className="text-sm font-bold text-white">{supplier?.store_name}</p>
+                <p className="text-sm font-bold text-white">{storeName}</p>
                 <p className="text-xs text-slate-400 uppercase tracking-wider">{t.wholesaler}</p>
               </div>
               <div className="w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg">
-                {supplier?.store_name?.charAt(0).toUpperCase() || 'W'}
+                {storeInitial}
               </div>
             </div>
           </div>
         </header>
-        <TrialBanner />
+        <div className="relative z-10">
+          <TrialBanner />
+        </div>
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-10 w-full max-w-full relative z-10">
           {children}
         </div>
@@ -520,7 +615,7 @@ const WholesalerDashboard = ({ supplier, children }) => {
   );
 };
 
-// 💎 مكون التاجر الداعم لمبدل الفضاءات الشامل (مع خاصية الشاشة المصغرة)
+// 💎 مكون التاجر الداعم لمبدل الفضاءات الشامل
 const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
@@ -543,9 +638,9 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
         </div>
         
         <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full relative">
-          <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full z-20">
+          <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full z-50">
             <div className="flex items-center gap-3">
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="flex items-center gap-2 p-2 bg-gray-100 hover:bg-blue-50 border border-gray-200 rounded-xl text-gray-600 hover:text-blue-600 transition-all">
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="flex items-center gap-2 p-2 bg-gray-100 hover:bg-blue-50 border border-gray-200 rounded-xl text-gray-600 hover:text-blue-600 transition-all cursor-pointer">
                 {isSidebarOpen ? <X size={22} className="text-red-500" /> : <Menu size={22} className="text-blue-500" />}
               </button>
               <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate text-start">
@@ -554,13 +649,13 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
             </div>
 
             <div className="flex items-center gap-3 md:gap-4 shrink-0">
-              <GlobalSpaceSwitcher language={language} dark={false} />
-
-              <Link to="/affiliates" className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-2 md:px-4 rounded-lg font-black flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs md:text-sm">
-                <Trophy size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Partenaires' : language === 'en' ? 'Affiliates' : 'شركاء النجاح'}</span>
+              <Link to="/affiliates" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 py-2 md:px-4 rounded-xl font-black flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs md:text-sm">
+                <Trophy size={16} /> <span className="hidden sm:inline">{language === 'fr' ? 'Partenaires' : language === 'en' ? 'Affiliates' : 'شركاء النجاح'}</span>
               </Link>
 
-              <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap">
+              <GlobalSpaceSwitcher language={language} dark={false} currentSpace="retail" />
+
+              <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs md:text-sm">
                  <Package size={18} /> <span className="hidden sm:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
               </Link>
               
@@ -569,7 +664,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
               </div>
             </div>
           </header>
-          <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full">
+          <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full relative z-10">
             <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
               {children}
             </div>
@@ -581,7 +676,6 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
 };
 
 function App() {
-  const [isMinimal] = useState(() => window.location.search.includes('minimal=true') || window.location.href.includes('minimal=true'));
   const [session, setSession] = useState(null);
   const [userPrimaryRole, setUserPrimaryRole] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -601,11 +695,11 @@ function App() {
         if (mounted) setUserPrimaryRole(metaRole);
         return;
       }
-      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).maybeSingle();
-      if (arch && mounted) { setUserPrimaryRole('architect'); return; }
+      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).limit(1);
+      if (arch && arch.length > 0 && mounted) { setUserPrimaryRole('architect'); return; }
 
-      const { data: prov } = await supabase.from('providers').select('id').eq('user_id', user.id).maybeSingle();
-      if (prov && mounted) { setUserPrimaryRole('provider'); return; }
+      const { data: prov } = await supabase.from('providers').select('id').eq('user_id', user.id).limit(1);
+      if (prov && prov.length > 0 && mounted) { setUserPrimaryRole('provider'); return; }
 
       if (mounted) setUserPrimaryRole('supplier');
     };
@@ -716,7 +810,8 @@ function App() {
     ? false 
     : (session?.user?.user_metadata?.supplier_type === 'wholesale' || supplier?.supplier_type === 'wholesale');
 
-  const storeName = session?.user?.user_metadata?.company_name || supplier?.store_name || session?.user?.user_metadata?.full_name || 'SasBTP';
+  // 🎯 توحيد اسم الحساب في جميع الواجهات
+  const storeName = session?.user?.user_metadata?.company_name || session?.user?.user_metadata?.full_name || supplier?.store_name || 'SasBTP';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : 'S';
 
   return (
@@ -745,7 +840,7 @@ function App() {
 
         <Route path="/*" element={
           isWholesaler ? (
-            <WholesalerDashboard supplier={supplier}>
+            <WholesalerDashboard supplier={supplier} storeName={storeName} storeInitial={storeInitial}>
               <Routes>
                 <Route path="/" element={<SupplierOverview />} />
                 <Route path="/affiliates" element={<AffiliateDashboard />} />

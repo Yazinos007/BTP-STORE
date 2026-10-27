@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Calculator, UserCircle, MessageCircle, Store, Map, Users, Wallet, 
   Receipt, Landmark, BarChart3, Radar, Camera, Truck, Package, ShieldCheck, Zap, 
-  ImageIcon, Compass, FileCheck2, Archive, Award, HardHat, Trophy
+  ImageIcon, Compass, FileCheck2, Archive, Award, HardHat
 } from 'lucide-react';
 import useSettingsStore from '../../store/useSettingsStore';
 
@@ -12,12 +12,35 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
 
   const isRtl = language === 'ar';
 
-  // 🧠 تحديث effectiveRole لتشمل جميع الفئات بدقة
+  // 🧠 الأولوية المطلقة للرابط الحالي (Path-First) لمنع طغيان أي فضاء على آخر
   const effectiveRole = (() => {
     const path = location.pathname;
-    if (accountType === 'architect' || path.includes('/architect')) return 'architect';
-    if (accountType === 'provider' || path.includes('/provider-')) return 'provider';
-    if (accountType === 'supplier' || path.includes('/supplier')) return 'supplier';
+    if (path.includes('/architect')) return 'architect';
+    if (path.includes('/provider-')) return 'provider';
+    if (path.includes('/supplier')) return 'supplier';
+    if (
+      path.includes('/contractor') ||
+      path.includes('/project-path') ||
+      path.includes('/cost-calculator') ||
+      path.includes('/field-camera') ||
+      path.includes('/tenders') ||
+      path.includes('/freight-exchange') ||
+      path.includes('/live-orders') ||
+      path.includes('/hr') ||
+      path.includes('/b2b-invoices') ||
+      path.includes('/accounts') ||
+      path.includes('/expenses') ||
+      path.includes('/taxes') ||
+      path.includes('/accounting') ||
+      path.includes('/audit') ||
+      path.includes('/profile') ||
+      path.includes('/subscription') ||
+      path.includes('/affiliates') ||
+      path.includes('/messages') ||
+      path.includes('/marketplace')
+    ) {
+      return 'contractor';
+    }
     return accountType || 'contractor';
   })();
 
@@ -27,9 +50,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       roleArchitect: "مكتب الدراسات الهندسية",
       roleProvider: "فضاء الحرفي المعتمد",
 
-      premium: "الترقية والشركاء 👑",
+      premium: "الترقية والـ VIP 👑",
       sub: "الترقية للإمبراطورية ⚡",
-      affiliates: "شركاء النجاح (اربح معنا) 🏆",
       cat1: "القيادة والميدان",
       cat2: "التواصل والمشتريات",
       cat3: "المالية والمحاسبة",
@@ -71,9 +93,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       roleArchitect: "Bureau d'Architecture",
       roleProvider: "Espace Artisan Pro",
 
-      premium: "VIP & Partenaires 👑",
+      premium: "Abonnement VIP 👑",
       sub: "Passer à l'Enterprise ⚡",
-      affiliates: "Programme Partenaires 🏆",
       cat1: "Direction & Terrain",
       cat2: "Communication & Achats",
       cat3: "Finance & Comptabilité",
@@ -115,9 +136,8 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       roleArchitect: "Architectural Firm",
       roleProvider: "Certified Artisan Hub",
 
-      premium: "VIP & Affiliates 👑",
+      premium: "Upgrade & VIP 👑",
       sub: "Upgrade to Enterprise ⚡",
-      affiliates: "Affiliate Partners 🏆",
       cat1: "Leadership & Field",
       cat2: "Communication & Purchases",
       cat3: "Finance & Accounting",
@@ -194,9 +214,7 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
     }
   };
 
-  // 🚦 قوائم كل رتبة مفصولة بدقة تامة
   const roleMenus = {
-    // 1. قائمة المهندس المعماري (Architect)
     architect: [
       { category: t.premium, color: 'vip', items: [
         { name: t.archSub, icon: Zap, path: '/v2/architect-subscription', isVIP: true },
@@ -215,7 +233,6 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       ]}
     ],
 
-    // 2. قائمة الحرفي / المعلم (Provider)
     provider: [
       { category: t.premium, color: 'vip', items: [
         { name: t.provSub, icon: Zap, path: '/v2/provider-subscription', isVIP: true },
@@ -233,7 +250,6 @@ export default function SmartSidebar({ accountType, storeName, logoUrl }) {
       ]}
     ],
 
-    // 3. قائمة المقاول العام (Contractor)
     contractor: [
       { category: t.premium, color: 'vip', items: [
         { name: t.sub, icon: Zap, path: '/v2/subscription', isVIP: true },

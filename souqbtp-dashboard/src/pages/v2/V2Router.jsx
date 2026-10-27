@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
+import { Routes, Route, Navigate, useOutletContext, useLocation } from 'react-router-dom';
 import V2Layout from '../../components/v2/V2Layout';
 import { supabase } from '../../lib/supabase';
 
@@ -47,11 +47,6 @@ import LiveRoom from './shared/LiveRoom';
 import AuthGateway from './auth/AuthGateway';
 import AffiliateDashboard from './AffiliateDashboard';
 
-// === استيراد صفحات الهبوط ===
-import EmpireLanding from '../../landing-pages/EmpireLanding';
-import RetailLanding from '../../landing-pages/RetailLanding';
-import ContractorLanding from '../../landing-pages/ContractorLanding';
-
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
   const { isDarkMode } = useOutletContext(); 
@@ -65,19 +60,28 @@ const UnderConstruction = ({ title, icon }) => {
 };
 
 export default function V2Router({ session, supplier }) {
-  // 🧠 حالة الهوية الذكية لمنع تداخل الحسابات
-  const [resolvedRole, setResolvedRole] = useState(
-    session?.user?.user_metadata?.role ||
-    session?.user?.user_metadata?.account_type ||
-    supplier?.supplier_type ||
-    'contractor'
-  );
+  const location = useLocation();
+
+  // 🧠 تحديد الرتبة مباشرة من المسار الحالي أولاً لمنع انقلاب القائمة الجانبية بعد التحميل
+  const getRoleFromPath = (pathname) => {
+    if (pathname.includes('/architect')) return 'architect';
+    if (pathname.includes('/provider-')) return 'provider';
+    if (pathname.includes('/supplier')) return 'supplier';
+    return 'contractor';
+  };
+
+  const [resolvedRole, setResolvedRole] = useState(() => getRoleFromPath(location.pathname));
   const [resolvedName, setResolvedName] = useState(
     session?.user?.user_metadata?.company_name ||
     session?.user?.user_metadata?.full_name ||
-    'مستخدم V2'
+    supplier?.store_name ||
+    'SasBTP'
   );
-  const [isCheckingRole, setIsCheckingRole] = useState(true);
+
+  // تحديث الرتبة فوراً عند تغير الرابط
+  useEffect(() => {
+    setResolvedRole(getRoleFromPath(location.pathname));
+  }, [location.pathname]);
 
   useEffect(() => {
     let isMounted = true;
@@ -85,65 +89,17 @@ export default function V2Router({ session, supplier }) {
     const verifyUserIdentity = async () => {
       try {
         const currentUser = session?.user || (await supabase.auth.getUser()).data?.user;
-        if (!currentUser) {
-          if (isMounted) setIsCheckingRole(false);
-          return;
-        }
+        if (!currentUser || !isMounted) return;
 
-        const metaRole = currentUser.user_metadata?.role || currentUser.user_metadata?.account_type;
-        const metaName = currentUser.user_metadata?.company_name || currentUser.user_metadata?.full_name;
+        const metaName =
+          currentUser.user_metadata?.company_name ||
+          currentUser.user_metadata?.full_name ||
+          supplier?.store_name ||
+          'SasBTP';
 
-        // 1. فحص جدول المهندسين المعماريين
-        const { data: archData } = await supabase
-          .from('architects')
-          .select('id, full_name, agency_name')
-          .eq('user_id', currentUser.id)
-          .maybeSingle();
-
-        if (archData && (metaRole === 'architect' || !metaRole || window.location.pathname.includes('architect'))) {
-          if (isMounted) {
-            setResolvedRole('architect');
-            setResolvedName(archData.agency_name || archData.full_name || metaName || 'المكتب الهندسي');
-            setIsCheckingRole(false);
-          }
-          return;
-        }
-
-        // 2. فحص جدول الحرفيين (Providers)
-        const { data: provData } = await supabase
-          .from('providers')
-          .select('id, full_name, account_type')
-          .eq('user_id', currentUser.id)
-          .maybeSingle();
-
-        if (provData && (metaRole === 'provider' || provData.account_type === 'marketplace' || window.location.pathname.includes('provider'))) {
-          if (isMounted) {
-            setResolvedRole('provider');
-            setResolvedName(provData.full_name || metaName || 'حرفي معتمد');
-            setIsCheckingRole(false);
-          }
-          return;
-        }
-
-        // 3. في حال كان مهندساً في القاعدة حتى بدون تلميح في الرابط
-        if (archData) {
-          if (isMounted) {
-            setResolvedRole('architect');
-            setResolvedName(archData.agency_name || archData.full_name || metaName || 'المكتب الهندسي');
-            setIsCheckingRole(false);
-          }
-          return;
-        }
-
-        // 4. الافتراضي: مقاول عام أو حسب الميتا داتا
-        if (isMounted) {
-          setResolvedRole(metaRole || supplier?.supplier_type || 'contractor');
-          setResolvedName(metaName || 'مستخدم V2');
-          setIsCheckingRole(false);
-        }
+        setResolvedName(metaName);
       } catch (err) {
-        console.error('Role resolution error:', err);
-        if (isMounted) setIsCheckingRole(false);
+        console.error('Identity resolution error:', err);
       }
     };
 
@@ -154,27 +110,27 @@ export default function V2Router({ session, supplier }) {
     };
   }, [session, supplier]);
 
-  const storeInitial = resolvedName ? resolvedName.charAt(0).toUpperCase() : '?';
+  const storeInitial = resolvedName ? resolvedName.charAt(0).toUpperCase() : 'S';
 
-  // تحديد لوحة التحكم الافتراضية بناءً على الرتبة الحقيقية
   const getDefaultDashboard = () => {
-    if (resolvedRole === 'architect') return 'architect-dashboard';
-    if (resolvedRole === 'provider') return 'provider-dashboard';
+    const metaRole = session?.user?.user_metadata?.role || session?.user?.user_metadata?.account_type;
+    if (metaRole === 'architect') return 'architect-dashboard';
+    if (metaRole === 'provider') return 'provider-dashboard';
     return 'contractor-dashboard';
   };
 
   return (
     <Routes>
-      {/* 🚀 فخ التوجيه: خارج الـ Layout تماماً لمنع رسم أي واجهة بالخطأ */}
+      {/* 🚀 فخ التوجيه: خارج الـ Layout تماماً */}
       <Route path="empire" element={<Navigate to="/empire" replace />} />
       <Route path="pro" element={<Navigate to="/pro" replace />} />
       <Route path="contractor" element={<Navigate to="/contractor" replace />} />
 
-      {/* 🚀 الغرفة الحية الموحدة (شاشة كاملة خارج الـ Layout للمهندس والحرفي والعميل) */}
+      {/* 🚀 الغرفة الحية الموحدة */}
       <Route path="live-room/:cid" element={<LiveRoom />} />
       <Route path="architect/live-room/:cid" element={<LiveRoom />} />
 
-      {/* 🔐 صفحات التسجيل والدخول المستقلة (خارج الـ Layout تماماً لكي تظهر بشاشة كاملة نظيفة) */}
+      {/* 🔐 صفحات التسجيل والدخول المستقلة (خارج الـ Layout تماماً) */}
       <Route path="auth" element={<AuthGateway />} />
       <Route path="architect-register" element={<ArchitectRegister />} />
       <Route path="provider-auth" element={<ProviderAuth />} />
@@ -183,13 +139,13 @@ export default function V2Router({ session, supplier }) {
       {/* 🛡️ مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout */}
       <Route element={<V2Layout accountType={resolvedRole} storeName={resolvedName} storeInitial={storeInitial} />}>
 
-        {/* 🏆 المسارات الموحدة لبرنامج شركاء النجاح (مقسمة لحماية الهوية والقائمة الجانبية) */}
+        {/* 🏆 المسارات الموحدة لبرنامج شركاء النجاح */}
         <Route path="affiliates" element={<AffiliateDashboard />} />
         <Route path="architect-affiliates" element={<AffiliateDashboard />} />
         <Route path="provider-affiliates" element={<AffiliateDashboard />} />
         <Route path="supplier-affiliates" element={<AffiliateDashboard />} />
 
-        {/* 💬 المسارات الموحدة للرسائل والرادار (مقسمة لحماية الهوية) */}
+        {/* 💬 المسارات الموحدة للرسائل والماركت بليس */}
         <Route path="messages" element={<UnifiedMessages />} />
         <Route path="architect-messages" element={<UnifiedMessages />} />
         <Route path="provider-messages" element={<UnifiedMessages />} />
@@ -231,7 +187,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="provider-profile" element={<ProviderProfile />} />
         <Route path="provider-portfolio" element={<ProviderPortfolio />} />
 
-        {/* 🚦 الموزع الذكي عند الدخول إلى /v2 مباشرة أو مسار غير معروف */}
+        {/* 🚦 الموزع الذكي عند الدخول إلى /v2 مباشرة */}
         <Route index element={<Navigate to={getDefaultDashboard()} replace />} />
         <Route path="*" element={<Navigate to={getDefaultDashboard()} replace />} />
       </Route>
