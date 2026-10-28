@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import useSettingsStore from '../../store/useSettingsStore';
 import { 
   Users, Building2, HardHat, RefreshCcw, Trash2, CheckCircle2, 
-  MessageCircle, Loader2, AlertCircle, LayoutDashboard, BadgeCheck
+  MessageCircle, Loader2, AlertCircle, LayoutDashboard, BadgeCheck, Store
 } from 'lucide-react';
 
 export default function AdminCRM() {
@@ -18,6 +18,7 @@ export default function AdminCRM() {
   const [clients, setClients] = useState([]);
   const [architects, setArchitects] = useState([]);
   const [providers, setProviders] = useState([]);
+  const [suppliers, setSuppliers] = useState([]); // 🌟 فئة التجار والموردين الجديدة
 
   // Stats
   const [clientStats, setClientStats] = useState({ total: 0, registered: 0, external: 0 });
@@ -26,6 +27,7 @@ export default function AdminCRM() {
     if (activeTab === 'clients') loadClients();
     if (activeTab === 'architects') loadArchitects();
     if (activeTab === 'providers') loadProviders();
+    if (activeTab === 'suppliers') loadSuppliers(); // 🌟 تحميل التجار
   }, [activeTab]);
 
   const showAlert = (type, text) => {
@@ -47,7 +49,7 @@ export default function AdminCRM() {
     } catch (err) {}
   };
 
-  // ================= 1. محرك جلب بيانات العملاء (CRM Clients) =================
+  // ================= 1. محرك جلب بيانات المقاولين والعملاء =================
   const loadClients = async () => {
     setIsLoading(true);
     try {
@@ -109,7 +111,6 @@ export default function AdminCRM() {
       setClients(allClients);
 
     } catch (err) {
-      console.error(err);
       showAlert('error', 'خطأ في جلب بيانات العملاء');
     } finally {
       setIsLoading(false);
@@ -144,6 +145,20 @@ export default function AdminCRM() {
     }
   };
 
+  // ================= 4. 🌟 محرك جلب التجار والموردين (جديد) =================
+  const loadSuppliers = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.from('suppliers').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      setSuppliers(data || []);
+    } catch (err) {
+      showAlert('error', 'خطأ في جلب بيانات الموردين');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // ================= أدوات الرقابة (الحذف والتوثيق) =================
   const verifyProvider = async (id, name) => {
     if(!window.confirm(`هل أنت متأكد من توثيق حساب الحرفي (${name}) وتفعيله للظهور في المنصة؟`)) return;
@@ -165,7 +180,11 @@ export default function AdminCRM() {
       const { error } = await supabase.from(table).delete().eq('id', id);
       if (error) throw error;
       
-      const roleName = table === 'architects' ? 'مهندس' : 'حرفي';
+      let roleName = 'مستخدم';
+      if(table === 'architects') roleName = 'مهندس';
+      if(table === 'providers') roleName = 'حرفي';
+      if(table === 'suppliers') roleName = 'تاجر/مورد';
+      
       logToBlackBox('DELETE_USER', `قام بحذف حساب ${roleName}: ${name}`);
       
       showAlert('success', "تم الحذف بنجاح!");
@@ -193,7 +212,7 @@ export default function AdminCRM() {
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-slate-800 mb-1 tracking-tight">مركز البيانات الشامل (CRM)</h1>
-            <p className="text-slate-500 font-medium">إدارة ومراقبة قاعدة العملاء، المهندسين، والحرفيين</p>
+            <p className="text-slate-500 font-medium">إدارة ومراقبة قاعدة المقاولين، المهندسين، الحرفيين، والتجار</p>
           </div>
         </div>
       </div>
@@ -201,13 +220,17 @@ export default function AdminCRM() {
       {/* Tabs */}
       <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
         <button onClick={() => setActiveTab('clients')} className={`flex items-center gap-2 px-6 py-3.5 rounded-xl font-black text-sm transition-all ${activeTab === 'clients' ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg shadow-slate-900/20' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
-          <Users size={18} /> قاعدة العملاء (أصحاب المشاريع)
+          <Users size={18} /> المقاولون وأصحاب المشاريع
         </button>
         <button onClick={() => setActiveTab('architects')} className={`flex items-center gap-2 px-6 py-3.5 rounded-xl font-black text-sm transition-all ${activeTab === 'architects' ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg shadow-slate-900/20' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
-          <Building2 size={18} /> قاعدة المهندسين المعماريين
+          <Building2 size={18} /> المهندسون المعماريون
         </button>
         <button onClick={() => setActiveTab('providers')} className={`flex items-center gap-2 px-6 py-3.5 rounded-xl font-black text-sm transition-all ${activeTab === 'providers' ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg shadow-slate-900/20' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
-          <HardHat size={18} /> قاعدة الحرفيين والمقاولين
+          <HardHat size={18} /> الحرفيون (البريكول)
+        </button>
+        {/* 🌟 زر تبويب التجار والموردين */}
+        <button onClick={() => setActiveTab('suppliers')} className={`flex items-center gap-2 px-6 py-3.5 rounded-xl font-black text-sm transition-all ${activeTab === 'suppliers' ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg shadow-slate-900/20' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
+          <Store size={18} /> التجار والموردون
         </button>
       </div>
 
@@ -226,11 +249,11 @@ export default function AdminCRM() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 flex items-center gap-4 shadow-sm">
               <div className="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500"><Users size={28}/></div>
-              <div><h4 className="text-slate-500 font-bold text-sm mb-1">العملاء المتفاعلين</h4><span className="text-2xl font-black text-slate-800">{clientStats.total}</span></div>
+              <div><h4 className="text-slate-500 font-bold text-sm mb-1">المقاولون المتفاعلون</h4><span className="text-2xl font-black text-slate-800">{clientStats.total}</span></div>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-slate-200 flex items-center gap-4 shadow-sm">
               <div className="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500"><CheckCircle2 size={28}/></div>
-              <div><h4 className="text-slate-500 font-bold text-sm mb-1">عملاء مسجلين</h4><span className="text-2xl font-black text-slate-800">{clientStats.registered}</span></div>
+              <div><h4 className="text-slate-500 font-bold text-sm mb-1">مقاولون مسجلون</h4><span className="text-2xl font-black text-slate-800">{clientStats.registered}</span></div>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-slate-200 flex items-center gap-4 shadow-sm">
               <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500"><AlertCircle size={28}/></div>
@@ -240,7 +263,7 @@ export default function AdminCRM() {
 
           <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50">
-              <span className="text-slate-600 font-bold text-sm">📍 قائمة بجميع العملاء (المسجلين والخارجيين) المرتبطين بمشاريع.</span>
+              <span className="text-slate-600 font-bold text-sm">📍 قائمة بجميع المقاولين والعملاء (المسجلين والخارجيين) المرتبطين بمشاريع.</span>
               <button onClick={loadClients} className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-black text-sm transition-colors flex items-center gap-2 shadow-sm">
                 <RefreshCcw size={16} className={isLoading ? 'animate-spin' : ''} /> تحديث البيانات
               </button>
@@ -258,7 +281,7 @@ export default function AdminCRM() {
                 </thead>
                 <tbody>
                   {isLoading ? <tr><td colSpan="5" className="p-12 text-center text-slate-400 font-bold"><Loader2 className="mx-auto mb-2 animate-spin text-blue-500" size={24}/> جاري مسح الرادارات...</td></tr> : 
-                    clients.length === 0 ? <tr><td colSpan="5" className="p-12 text-center text-slate-400 font-bold">لا يوجد عملاء حالياً.</td></tr> :
+                    clients.length === 0 ? <tr><td colSpan="5" className="p-12 text-center text-slate-400 font-bold">لا يوجد مقاولون حالياً.</td></tr> :
                     clients.map((c, i) => (
                       <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
                         <td className="p-4 font-bold text-purple-700">👤 {c.name}</td>
@@ -299,7 +322,7 @@ export default function AdminCRM() {
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 sticky top-0">
                 <tr>
                   <th className="p-4 font-black">الوكالة / المكتب</th>
-                  <th className="p-4 font-black">المهندس (المسؤول)</th>
+                  <th className="p-4 font-black">المهندس (الاسم)</th>
                   <th className="p-4 font-black">الهاتف</th>
                   <th className="p-4 font-black">البريد الإلكتروني</th>
                   <th className="p-4 font-black text-center">إجراءات الإدارة</th>
@@ -332,7 +355,7 @@ export default function AdminCRM() {
       {activeTab === 'providers' && (
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden animate-fade-in">
           <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50">
-            <span className="text-slate-600 font-bold text-sm">📍 قائمة الحرفيين والمقاولين. يمكنك توثيق حساباتهم المعلقة من هنا.</span>
+            <span className="text-slate-600 font-bold text-sm">📍 قائمة الحرفيين (البريكول). يمكنك توثيق حساباتهم المعلقة من هنا.</span>
             <button onClick={loadProviders} className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-black text-sm transition-colors flex items-center gap-2 shadow-sm">
               <RefreshCcw size={16} className={isLoading ? 'animate-spin' : ''} /> تحديث البيانات
             </button>
@@ -341,8 +364,8 @@ export default function AdminCRM() {
             <table className="w-full text-sm text-right">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 sticky top-0">
                 <tr>
-                  <th className="p-4 font-black">اسم الحرفي / المقاولة</th>
-                  <th className="p-4 font-black">المهنة / التخصص</th>
+                  <th className="p-4 font-black">اسم الحرفي</th>
+                  <th className="p-4 font-black">التخصص</th>
                   <th className="p-4 font-black">الهاتف</th>
                   <th className="p-4 font-black text-center">حالة التوثيق</th>
                   <th className="p-4 font-black text-center">إجراءات الإدارة</th>
@@ -377,6 +400,54 @@ export default function AdminCRM() {
                       </tr>
                     );
                   })
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ================= 4. SUPPLIERS TAB (الجديد) ================= */}
+      {activeTab === 'suppliers' && (
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden animate-fade-in">
+          <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50">
+            <span className="text-slate-600 font-bold text-sm">📍 قائمة الموردين وتجار التجزئة المسجلين بالمنصة.</span>
+            <button onClick={loadSuppliers} className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-black text-sm transition-colors flex items-center gap-2 shadow-sm">
+              <RefreshCcw size={16} className={isLoading ? 'animate-spin' : ''} /> تحديث البيانات
+            </button>
+          </div>
+          <div className="overflow-x-auto max-h-[600px] custom-scrollbar">
+            <table className="w-full text-sm text-right">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 sticky top-0">
+                <tr>
+                  <th className="p-4 font-black">اسم الشركة / المحل</th>
+                  <th className="p-4 font-black">نوع التاجر</th>
+                  <th className="p-4 font-black">الهاتف</th>
+                  <th className="p-4 font-black">البريد الإلكتروني</th>
+                  <th className="p-4 font-black text-center">إجراءات الإدارة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? <tr><td colSpan="5" className="p-12 text-center text-slate-400 font-bold"><Loader2 className="mx-auto mb-2 animate-spin text-blue-500" size={24}/> جاري جلب بيانات التجار والموردين...</td></tr> : 
+                  suppliers.length === 0 ? <tr><td colSpan="5" className="p-12 text-center text-slate-400 font-bold">لا يوجد تجار أو موردون مسجلون.</td></tr> :
+                  suppliers.map((s) => (
+                    <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
+                      <td className="p-4 font-black text-slate-800">{s.store_name || s.full_name || 'مجهول'}</td>
+                      <td className="p-4">
+                        {s.supplier_type === 'wholesale' 
+                          ? <span className="bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1 rounded-full text-xs font-black inline-flex items-center gap-1">🏭 مورد جملة (B2B)</span>
+                          : <span className="bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1 rounded-full text-xs font-black inline-flex items-center gap-1">🏪 تاجر تجزئة (POS)</span>
+                        }
+                      </td>
+                      <td className="p-4 font-mono font-bold text-slate-500" dir="ltr">{s.phone || '-'}</td>
+                      <td className="p-4 font-mono font-bold text-slate-500" dir="ltr">{s.email || '-'}</td>
+                      <td className="p-4 text-center flex items-center justify-center gap-2">
+                        <button onClick={() => deleteRecord('suppliers', s.id, s.store_name || s.full_name, loadSuppliers)} className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-bold text-xs transition-colors flex items-center gap-1">
+                          <Trash2 size={14} /> حذف
+                        </button>
+                      </td>
+                    </tr>
+                  ))
                 }
               </tbody>
             </table>
