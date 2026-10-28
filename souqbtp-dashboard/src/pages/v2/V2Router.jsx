@@ -209,13 +209,14 @@ export default function V2Router({ session, supplier }) {
         <Route index element={<Navigate to={getDefaultDashboard()} replace />} />
         <Route path="*" element={<Navigate to={getDefaultDashboard()} replace />} />
 
-        {/* 👑 لوحة مدير النظام (Admin) */}
+        {/* 👑 لوحات مدير النظام (Admin) */}
         <Route path="admin-dashboard" element={<AdminDashboard />} />
-        <Route path="admin-settings" element={<AdminServicesPanel />} />
+        <Route path="admin-settings" element={<AdminDashboard />} /> 
+        <Route path="admin-services" element={<AdminServicesPanel />} />
         <Route path="admin-cost-items" element={<AdminCostItems />} />
         <Route path="admin-crm" element={<AdminCRM />} />
         <Route path="admin-projects" element={<AdminProjects />} />
-        <Route path="admin-projects" element={<AdminWorkshops />} />
+        <Route path="admin-workshops" element={<AdminWorkshops />} />
         <Route path="admin-analytics" element={<AdminAnalytics />} />
         <Route path="admin-global-settings" element={<AdminGlobalSettings />} />
         <Route path="admin-audit" element={<AdminAudit />} />
