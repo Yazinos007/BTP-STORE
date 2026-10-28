@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useOutletContext, useLocation } from 'react-router-dom';
 import V2Layout from '../../components/v2/V2Layout';
+import AdminLayout from '../../components/v2/AdminLayout'; // 👈 استيراد الأوتليت الخاص بالأدمن
 import { supabase } from '../../lib/supabase';
 
 // === استيرادات المقاول العام (Contractor) ===
@@ -41,11 +42,12 @@ import ProviderSubscription from './provider/ProviderSubscription';
 
 import SupplierAuth from './auth/SupplierAuth';
 
+// === استيرادات مدير النظام (Admin) ===
 import AdminDashboard from './AdminDashboard';
 import AdminServicesPanel from './AdminServicesPanel';
 import AdminCostItems from './AdminCostItems';
 import AdminCRM from './AdminCRM';
-import AdminProjects from './AdminProjects';
+// ملاحظة: لقد ألغيت AdminProjects لأن AdminWorkshops يعوضه ويشمل مهامه
 import AdminWorkshops from './AdminWorkshops';
 import AdminAnalytics from './AdminAnalytics';
 import AdminGlobalSettings from './AdminGlobalSettings';
@@ -72,7 +74,6 @@ const UnderConstruction = ({ title, icon }) => {
 export default function V2Router({ session, supplier }) {
   const location = useLocation();
 
-  // 🧠 تحديد الرتبة مباشرة من المسار الحالي أولاً لمنع انقلاب القائمة الجانبية بعد التحميل
   const getRoleFromPath = (pathname) => {
     if (pathname.includes('/architect')) return 'architect';
     if (pathname.includes('/provider-')) return 'provider';
@@ -88,14 +89,12 @@ export default function V2Router({ session, supplier }) {
     'SasBTP'
   );
 
-  // تحديث الرتبة فوراً عند تغير الرابط
   useEffect(() => {
     setResolvedRole(getRoleFromPath(location.pathname));
   }, [location.pathname]);
 
   useEffect(() => {
     let isMounted = true;
-
     const verifyUserIdentity = async () => {
       try {
         const currentUser = session?.user || (await supabase.auth.getUser()).data?.user;
@@ -112,18 +111,15 @@ export default function V2Router({ session, supplier }) {
         console.error('Identity resolution error:', err);
       }
     };
-
     verifyUserIdentity();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [session, supplier]);
 
   const storeInitial = resolvedName ? resolvedName.charAt(0).toUpperCase() : 'S';
 
   const getDefaultDashboard = () => {
     const metaRole = session?.user?.user_metadata?.role || session?.user?.user_metadata?.account_type;
+    if (metaRole === 'admin') return 'admin-dashboard'; // 👈 ضمان التوجيه للأدمن
     if (metaRole === 'architect') return 'architect-dashboard';
     if (metaRole === 'provider') return 'provider-dashboard';
     return 'contractor-dashboard';
@@ -131,22 +127,39 @@ export default function V2Router({ session, supplier }) {
 
   return (
     <Routes>
-      {/* 🚀 فخ التوجيه: خارج الـ Layout تماماً */}
+      {/* 🚀 فخ التوجيه */}
       <Route path="empire" element={<Navigate to="/empire" replace />} />
       <Route path="pro" element={<Navigate to="/pro" replace />} />
       <Route path="contractor" element={<Navigate to="/contractor" replace />} />
 
-      {/* 🚀 الغرفة الحية الموحدة */}
+      {/* 🚀 الغرفة الحية */}
       <Route path="live-room/:cid" element={<LiveRoom />} />
       <Route path="architect/live-room/:cid" element={<LiveRoom />} />
 
-      {/* 🔐 صفحات التسجيل والدخول المستقلة (خارج الـ Layout تماماً) */}
+      {/* 🔐 صفحات التسجيل والدخول */}
       <Route path="auth" element={<AuthGateway />} />
       <Route path="architect-register" element={<ArchitectRegister />} />
       <Route path="provider-auth" element={<ProviderAuth />} />
       <Route path="supplier-register" element={<SupplierAuth />} />
 
-      {/* 🛡️ مسارات النظام الداخلي (Dashboard) - داخل الـ V2Layout */}
+      {/* =======================================================
+          🔥 مسارات الإدارة العليا (Admin) - معزولة كلياً 🔥
+      ======================================================= */}
+      <Route element={<AdminLayout />}>
+        <Route path="admin-dashboard" element={<AdminDashboard />} />
+        <Route path="admin-settings" element={<AdminDashboard />} /> 
+        <Route path="admin-services" element={<AdminServicesPanel />} />
+        <Route path="admin-cost-items" element={<AdminCostItems />} />
+        <Route path="admin-crm" element={<AdminCRM />} />
+        <Route path="admin-workshops" element={<AdminWorkshops />} />
+        <Route path="admin-analytics" element={<AdminAnalytics />} />
+        <Route path="admin-global-settings" element={<AdminGlobalSettings />} />
+        <Route path="admin-audit" element={<AdminAudit />} />
+      </Route>
+
+      {/* =======================================================
+          🛡️ مسارات النظام الداخلي للمستخدمين - داخل الـ V2Layout
+      ======================================================= */}
       <Route element={<V2Layout accountType={resolvedRole} storeName={resolvedName} storeInitial={storeInitial} />}>
 
         {/* 🏆 المسارات الموحدة لبرنامج شركاء النجاح */}
@@ -208,20 +221,8 @@ export default function V2Router({ session, supplier }) {
         {/* 🚦 الموزع الذكي عند الدخول إلى /v2 مباشرة */}
         <Route index element={<Navigate to={getDefaultDashboard()} replace />} />
         <Route path="*" element={<Navigate to={getDefaultDashboard()} replace />} />
-
-        {/* 👑 لوحات مدير النظام (Admin) */}
-        <Route path="admin-dashboard" element={<AdminDashboard />} />
-        <Route path="admin-settings" element={<AdminDashboard />} /> 
-        <Route path="admin-services" element={<AdminServicesPanel />} />
-        <Route path="admin-cost-items" element={<AdminCostItems />} />
-        <Route path="admin-crm" element={<AdminCRM />} />
-        <Route path="admin-projects" element={<AdminProjects />} />
-        <Route path="admin-workshops" element={<AdminWorkshops />} />
-        <Route path="admin-analytics" element={<AdminAnalytics />} />
-        <Route path="admin-global-settings" element={<AdminGlobalSettings />} />
-        <Route path="admin-audit" element={<AdminAudit />} />
       </Route>
-      
+
       <Route path="foreman-dashboard" element={<ForemanDashboard />} />
     </Routes>
   );
