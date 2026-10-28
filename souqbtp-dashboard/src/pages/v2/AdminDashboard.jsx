@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import useSettingsStore from '../../store/useSettingsStore';
 import { 
   Building2, Map, Users, LayoutDashboard, Siren, HardHat, 
-  Settings, Briefcase, Database, ShieldCheck, X, CheckCircle2 
+  Settings, Briefcase, Database, ShieldCheck, X, CheckCircle2, Zap
 } from 'lucide-react';
 
 export default function AdminDashboard() {
