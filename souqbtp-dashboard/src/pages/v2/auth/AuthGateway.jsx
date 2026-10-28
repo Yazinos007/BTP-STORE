@@ -153,7 +153,9 @@ export default function AuthGateway() {
       showAlert('success', t.successLogin);
 
       setTimeout(() => {
-        if (supData || metaRole === 'supplier' || metaRole === 'admin') {
+        if (metaRole === 'admin') {
+          navigate('/v2/admin-dashboard');
+        } else if (supData || metaRole === 'supplier') {
           const type = supData?.supplier_type || metaSupplierType || 'retail';
           window.location.href = type === 'wholesale' ? '/?preview=wholesale' : '/?preview=retail';
         } else if (metaRole === 'architect') {
