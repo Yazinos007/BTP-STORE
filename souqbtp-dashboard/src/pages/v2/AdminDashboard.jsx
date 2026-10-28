@@ -176,7 +176,7 @@ export default function AdminDashboard() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
-          <Link to="/v2/admin-projects" className="flex items-center justify-between p-5 rounded-2xl border-2 border-slate-100 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/10 transition-all bg-slate-50 hover:bg-white group">
+          <Link to="/v2/admin-workshops" className="flex items-center justify-between p-5 rounded-2xl border-2 border-slate-100 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/10 transition-all bg-slate-50 hover:bg-white group">
             <span className="font-bold text-slate-700 text-lg group-hover:text-blue-600">إدارة المهندسين والورش</span>
             <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-blue-500 group-hover:bg-blue-50 transition-colors"><Map size={24}/></div>
           </Link>
