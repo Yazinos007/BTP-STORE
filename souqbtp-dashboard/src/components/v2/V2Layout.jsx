@@ -15,7 +15,7 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
   const [ownedSpaceIds, setOwnedSpaceIds] = useState([]);
   const [spacePlans, setSpacePlans] = useState({});
   const [activatingSpace, setActivatingSpace] = useState(null);
-  const [trialDaysLeft, setTrialDaysLeft] = useState(14);
+  const [trialDaysLeft, setTrialDaysLeft] = useState(null);
   const [isCurrentSpacePaid, setIsCurrentSpacePaid] = useState(false);
 
   const navigate = useNavigate();
@@ -149,23 +149,12 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 1. حساب الفترة التجريبية المبدئية من المتصفح كاحتياط (Fallback)
-      const trialKey = `sasbtp_trial_${currentSpaceId}_${user.id}`;
-      let startStr = localStorage.getItem(trialKey);
-      if (!startStr) {
-        startStr = new Date().toISOString();
-        localStorage.setItem(trialKey, startStr);
-      }
-      const start = new Date(startStr);
-      const now = new Date();
-      const diffDays = Math.floor(Math.abs(now - start) / (1000 * 60 * 60 * 24));
-      let calculatedRemaining = Math.max(0, 14 - diffDays);
-
       if (user.email === 'admin@souqbtp.ma' || user.user_metadata?.role === 'admin') {
         if (mounted) {
           setOwnedSpaceIds(['contractor', 'architect', 'provider', 'retail', 'wholesale']);
           setSpacePlans({ contractor: 'VIP', architect: 'VIP', provider: 'PRO', retail: 'PRO', wholesale: 'B2B' });
           setIsCurrentSpacePaid(true);
+          setTrialDaysLeft(14);
         }
         return;
       }
@@ -194,11 +183,9 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
         wholesale: t.basicBadge || 'Basic'
       };
 
-      let dbTrialEndsAt = null;
       let spacePaid = false;
 
       if (currentSpaceId === 'contractor') {
-        dbTrialEndsAt = profRes.data?.trial_ends_at;
         spacePaid = ['pro', 'enterprise', 'vip'].includes(contractorPlan.toLowerCase());
       }
 
@@ -207,7 +194,6 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
         const p = (archRes.data[0].subscription_plan || 'basic').toLowerCase();
         plans.architect = (p && p !== 'basic') ? p.toUpperCase() : (t.basicBadge || 'Basic');
         if (currentSpaceId === 'architect') {
-          dbTrialEndsAt = archRes.data[0].trial_ends_at;
           spacePaid = ['pro', 'vip', 'elite'].includes(p);
         }
       }
@@ -217,7 +203,6 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
         const p = (provRes.data[0].subscription_plan || 'free').toLowerCase();
         plans.provider = (p && p !== 'free' && p !== 'basic') ? p.toUpperCase() : (t.basicBadge || 'Basic');
         if (currentSpaceId === 'provider') {
-          dbTrialEndsAt = provRes.data[0].trial_ends_at;
           spacePaid = ['pro', 'maalem pro'].includes(p);
         }
       }
@@ -237,11 +222,24 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
         });
       }
 
-      // 2. إذا كان هناك تاريخ انتهاء تجربة في قاعدة البيانات (أو تم تمديده عبر God Mode)، نعتمد عليه فوراً
-      if (dbTrialEndsAt) {
-        const diffMs = new Date(dbTrialEndsAt).getTime() - Date.now();
-        calculatedRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-      }
+      // حساب موحد ومستقر للفترة التجريبية بناءً على تاريخ إنشاء الحساب الأصلي (14 يوماً)
+      // مع أخذ أي تمديد إداري (God Mode) في الحسبان
+      const accountCreatedAt = user.created_at ? new Date(user.created_at) : new Date();
+      const defaultTrialEnd = new Date(accountCreatedAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+      const candidateDates = [
+        defaultTrialEnd,
+        profRes.data?.trial_ends_at ? new Date(profRes.data.trial_ends_at) : null,
+        archRes.data?.[0]?.trial_ends_at ? new Date(archRes.data[0].trial_ends_at) : null,
+        provRes.data?.[0]?.trial_ends_at ? new Date(provRes.data[0].trial_ends_at) : null,
+        ...(supRes.data || []).map(s => s.trial_ends_at ? new Date(s.trial_ends_at) : null)
+      ].filter(Boolean);
+
+      const effectiveTrialEnd = new Date(Math.max(...candidateDates.map(d => d.getTime())));
+      const calculatedRemaining = Math.max(
+        0,
+        Math.ceil((effectiveTrialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      );
 
       if (mounted) {
         setTrialDaysLeft(calculatedRemaining);
@@ -337,8 +335,8 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
       {/* 🔔 1. شريط الإشعارات الذكي (هدايا التمديد، تفعيل الباقات، وتنبيهات الإدارة) */}
       <SystemNotificationBanner />
 
-      {/* ⏳ 2. شريط الفترة التجريبية الموحد (يظهر فقط للحسابات غير المدفوعة) */}
-      {!isSubscriptionPage && !isCurrentSpacePaid && (
+      {/* ⏳ 2. شريط الفترة التجريبية الموحد (يظهر فقط بعد استقرار القراءة وللحسابات غير المدفوعة) */}
+      {!isSubscriptionPage && !isCurrentSpacePaid && trialDaysLeft !== null && (
         <div className={`w-full py-2 px-4 flex flex-wrap items-center justify-center gap-3 text-xs md:text-sm font-bold z-50 shrink-0 shadow-sm ${
           trialDaysLeft > 0 
             ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white' 

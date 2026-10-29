@@ -57,6 +57,7 @@ import UnifiedMessages from './pages/v2/shared/UnifiedMessages';
 import BTPHub from './pages/v2/BTPHub';
 
 import AffiliateDashboard from './pages/v2/AffiliateDashboard';
+import SystemNotificationBanner from './components/v2/SystemNotificationBanner';
 
 import TrialBanner from './components/TrialBanner'; 
 import RetailTrialBanner from './components/RetailTrialBanner'; 
@@ -69,6 +70,28 @@ import RetailLanding from './landing-pages/RetailLanding';
 import ContractorLanding from './landing-pages/ContractorLanding';
 import CostCalculatorLanding from './landing-pages/CostCalculatorLanding'; 
 import ClientPortal from './landing-pages/ClientPortal';
+
+// 🔄 دالة مزامنة تاريخ بداية الفترة التجريبية الموحد لجميع الفضاءات
+function syncUserTrialDate(user) {
+  if (!user) return;
+  try {
+    const baseDate = user.created_at || new Date().toISOString();
+    const keys = [
+      `sasbtp_trial_wholesale_${user.id}`,
+      `sasbtp_trial_retail_${user.id}`,
+      `sasbtp_trial_contractor_${user.id}`,
+      `sasbtp_trial_architect_${user.id}`,
+      `sasbtp_trial_provider_${user.id}`,
+      'sasbtp_trial_wholesale_v2',
+      'sasbtp_trial_retail_v2'
+    ];
+    keys.forEach((k) => {
+      localStorage.setItem(k, baseDate);
+    });
+  } catch (err) {
+    console.error('Trial sync warning:', err);
+  }
+}
 
 // 🧲 رادار التقاط كود الإحالة تلقائياً من الرابط في جميع الصفحات
 function ReferralTracker() {
@@ -154,7 +177,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      if (user.email === 'admin@souqbtp.ma') {
+      if (user.email === 'admin@souqbtp.ma' || user.user_metadata?.role === 'admin') {
         setOwnedIds(['contractor', 'architect', 'provider', 'retail', 'wholesale']);
         setSpacePlans({ contractor: 'VIP', architect: 'VIP', provider: 'PRO', retail: 'PRO', wholesale: 'B2B' });
         return;
@@ -190,11 +213,11 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
       if (provRes.data && provRes.data.length > 0) {
         owned.add('provider');
         const p = provRes.data[0].subscription_plan;
-        plans.provider = (p && p !== 'basic') ? p.toUpperCase() : (labels.basicBadge || 'Basic');
+        plans.provider = (p && p !== 'basic' && p !== 'free') ? p.toUpperCase() : (labels.basicBadge || 'Basic');
       }
       if (supRes.data && supRes.data.length > 0) {
         supRes.data.forEach(s => {
-          const p = (s.subscription_plan && s.subscription_plan !== 'basic') ? s.subscription_plan.toUpperCase() : (labels.basicBadge || 'Basic');
+          const p = (s.subscription_plan && s.subscription_plan !== 'basic' && s.subscription_plan !== 'starter') ? s.subscription_plan.toUpperCase() : (labels.basicBadge || 'Basic');
           if (s.supplier_type === 'wholesale') {
             owned.add('wholesale');
             plans.wholesale = p;
@@ -217,6 +240,9 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
 
   const handleSwitch = (path) => {
     setOpen(false);
+    if (path.startsWith('/v2')) {
+      sessionStorage.removeItem('souqbtp_preview_mode');
+    }
     window.location.href = path;
   };
 
@@ -340,7 +366,7 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
   );
 };
 
-// 🛑 الحارس الإلكتروني للأقسام المدفوعة (مربوط بتاريخ إنشاء حساب المستخدم الفعلي)
+// 🛑 الحارس الإلكتروني للأقسام المدفوعة (مربوط بقاعدة البيانات و God Mode)
 const PremiumGuard = ({ children }) => {
   const { language } = useSettingsStore();
   const navigate = useNavigate();
@@ -349,20 +375,40 @@ const PremiumGuard = ({ children }) => {
   useEffect(() => {
     const checkUserTrial = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const storageKey = user?.id ? `sasbtp_trial_wholesale_${user.id}` : 'sasbtp_trial_wholesale_v2';
-      let startStr = localStorage.getItem(storageKey);
-      if (!startStr) {
-        startStr = new Date().toISOString();
-        localStorage.setItem(storageKey, startStr);
-      }
-      const start = new Date(startStr);
-      const now = new Date();
-      const diffDays = Math.floor(Math.abs(now - start) / (1000 * 60 * 60 * 24));
-      if (10 - diffDays <= 0) {
-        setIsExpired(true);
-      } else {
+      if (!user) return;
+
+      if (user.email === 'admin@souqbtp.ma' || user.user_metadata?.role === 'admin') {
         setIsExpired(false);
+        return;
       }
+
+      const [profRes, supRes] = await Promise.all([
+        supabase.from('profiles').select('subscription_plan, trial_ends_at').eq('id', user.id).maybeSingle(),
+        supabase.from('suppliers').select('subscription_plan, trial_ends_at').eq('user_id', user.id)
+      ]);
+
+      const plans = [
+        user.user_metadata?.subscription_plan,
+        profRes.data?.subscription_plan,
+        ...(supRes.data || []).map(s => s.subscription_plan)
+      ].filter(Boolean).map(p => p.toLowerCase());
+
+      if (plans.some(p => ['pro', 'enterprise', 'premium', 'vip'].includes(p))) {
+        setIsExpired(false);
+        return;
+      }
+
+      const createdAt = user.created_at ? new Date(user.created_at) : new Date();
+      const defaultTrialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+      const candidateDates = [
+        defaultTrialEnd,
+        profRes.data?.trial_ends_at ? new Date(profRes.data.trial_ends_at) : null,
+        ...(supRes.data || []).map(s => s.trial_ends_at ? new Date(s.trial_ends_at) : null)
+      ].filter(Boolean);
+
+      const effectiveEnd = new Date(Math.max(...candidateDates.map(d => d.getTime())));
+      setIsExpired(effectiveEnd.getTime() < Date.now());
     };
     checkUserTrial();
   }, []);
@@ -616,6 +662,7 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
       </aside>
 
       <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
+        <SystemNotificationBanner />
         <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/90 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 sticky top-0 z-50">
           <div className="flex items-center gap-3 md:gap-4">
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="flex items-center gap-2 p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer">
@@ -688,6 +735,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      <SystemNotificationBanner />
       <RetailTrialBanner />
       <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         <div className={`shrink-0 h-full transition-all duration-300 ${isSidebarOpen ? (language === 'ar' ? 'w-64 border-l' : 'w-64 border-r') : 'w-0 overflow-hidden border-none'} bg-white z-20`}>
@@ -752,19 +800,24 @@ function App() {
 
     const detectPrimaryRole = async (user) => {
       if (!user) return;
-      syncUserTrialDate(user);
-      const metaRole = user.user_metadata?.role || user.user_metadata?.account_type;
-      if (metaRole === 'architect' || metaRole === 'provider' || metaRole === 'contractor') {
-        if (mounted) setUserPrimaryRole(metaRole);
-        return;
+      try {
+        syncUserTrialDate(user);
+        const metaRole = user.user_metadata?.role || user.user_metadata?.account_type;
+        if (metaRole === 'admin' || metaRole === 'architect' || metaRole === 'provider' || metaRole === 'contractor') {
+          if (mounted) setUserPrimaryRole(metaRole);
+          return;
+        }
+        const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).limit(1);
+        if (arch && arch.length > 0 && mounted) { setUserPrimaryRole('architect'); return; }
+
+        const { data: prov } = await supabase.from('providers').select('id').eq('user_id', user.id).limit(1);
+        if (prov && prov.length > 0 && mounted) { setUserPrimaryRole('provider'); return; }
+
+        if (mounted) setUserPrimaryRole('supplier');
+      } catch (err) {
+        console.error('Role detection error:', err);
+        if (mounted) setUserPrimaryRole('supplier');
       }
-      const { data: arch } = await supabase.from('architects').select('id').eq('user_id', user.id).limit(1);
-      if (arch && arch.length > 0 && mounted) { setUserPrimaryRole('architect'); return; }
-
-      const { data: prov } = await supabase.from('providers').select('id').eq('user_id', user.id).limit(1);
-      if (prov && prov.length > 0 && mounted) { setUserPrimaryRole('provider'); return; }
-
-      if (mounted) setUserPrimaryRole('supplier');
     };
 
     const forgeSession = async () => {
@@ -807,8 +860,8 @@ function App() {
           setLoading(false);
         }
       } catch (err) {
+        console.error('Session initialization error:', err);
         if (mounted) {
-          setSession(null);
           setLoading(false);
         }
       }
@@ -852,6 +905,8 @@ function App() {
 
   if (previewMode === 'retail' || previewMode === 'wholesale') {
     sessionStorage.setItem('souqbtp_preview_mode', previewMode);
+  } else if (pathname.startsWith('/v2')) {
+    sessionStorage.removeItem('souqbtp_preview_mode');
   }
   const activePreview = previewMode || sessionStorage.getItem('souqbtp_preview_mode');
 
@@ -887,9 +942,12 @@ function App() {
         <Route path="/client-portal" element={<ClientPortal />} />
         <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
 
-        {/* مسارات فضاء V2 (المقاول، المهندس، الحرفي) */}
+        {/* مسارات فضاء V2 (الإدارة، المقاول، المهندس، الحرفي) */}
         <Route path="/v2/*" element={<V2Router session={session} supplier={supplier} />} />
 
+        {!activePreview && userPrimaryRole === 'admin' && (
+          <Route path="/" element={<Navigate to="/v2/admin-dashboard" replace />} />
+        )}
         {!activePreview && userPrimaryRole === 'architect' && (
           <Route path="/" element={<Navigate to="/v2/architect-dashboard" replace />} />
         )}
