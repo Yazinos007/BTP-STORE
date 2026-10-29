@@ -4,6 +4,7 @@ import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import SmartSidebar from './SmartSidebar';
 import { supabase } from '../../lib/supabase';
 import useSettingsStore from '../../store/useSettingsStore';
+import SystemNotificationBanner from './SystemNotificationBanner';
 
 export default function V2Layout({ accountType, storeName, storeInitial }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
@@ -14,7 +15,8 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
   const [ownedSpaceIds, setOwnedSpaceIds] = useState([]);
   const [spacePlans, setSpacePlans] = useState({});
   const [activatingSpace, setActivatingSpace] = useState(null);
-  const [trialDaysLeft, setTrialDaysLeft] = useState(10);
+  const [trialDaysLeft, setTrialDaysLeft] = useState(14);
+  const [isCurrentSpacePaid, setIsCurrentSpacePaid] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -140,14 +142,14 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
     { id: 'wholesale', label: t.wholesale, icon: '🏭', path: '/?preview=wholesale', badge: spacePlans.wholesale || t.basicBadge }
   ];
 
-  // فحص الفضاءات المفعلة والباقة الحقيقية وحساب أيام التجربة بدقة لكل مستخدم
+  // فحص الفضاءات المفعلة والباقة الحقيقية وحساب أيام التجربة بدقة من قاعدة البيانات
   useEffect(() => {
     let mounted = true;
     const fetchOwnedSpacesAndTrial = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 1. منح كل فضاء (مقاول، مهندس، حرفي) فترة تجريبية مستقلة مدتها 10 أيام
+      // 1. حساب الفترة التجريبية المبدئية من المتصفح كاحتياط (Fallback)
       const trialKey = `sasbtp_trial_${currentSpaceId}_${user.id}`;
       let startStr = localStorage.getItem(trialKey);
       if (!startStr) {
@@ -157,13 +159,13 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
       const start = new Date(startStr);
       const now = new Date();
       const diffDays = Math.floor(Math.abs(now - start) / (1000 * 60 * 60 * 24));
-      const remaining = Math.max(0, 10 - diffDays);
-      if (mounted) setTrialDaysLeft(remaining);
+      let calculatedRemaining = Math.max(0, 14 - diffDays);
 
-      if (user.email === 'admin@souqbtp.ma') {
+      if (user.email === 'admin@souqbtp.ma' || user.user_metadata?.role === 'admin') {
         if (mounted) {
           setOwnedSpaceIds(['contractor', 'architect', 'provider', 'retail', 'wholesale']);
           setSpacePlans({ contractor: 'VIP', architect: 'VIP', provider: 'PRO', retail: 'PRO', wholesale: 'B2B' });
+          setIsCurrentSpacePaid(true);
         }
         return;
       }
@@ -176,33 +178,55 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
       if (metaRole === 'architect') owned.add('architect');
       if (metaRole === 'provider') owned.add('provider');
 
-      const [archRes, provRes, supRes] = await Promise.all([
-        supabase.from('architects').select('id, subscription_plan').eq('user_id', user.id).limit(1),
-        supabase.from('providers').select('id, subscription_plan').eq('user_id', user.id).limit(1),
-        supabase.from('suppliers').select('id, supplier_type, subscription_plan').eq('user_id', user.id)
+      const [profRes, archRes, provRes, supRes] = await Promise.all([
+        supabase.from('profiles').select('id, subscription_plan, trial_ends_at').eq('id', user.id).maybeSingle(),
+        supabase.from('architects').select('id, subscription_plan, trial_ends_at').eq('user_id', user.id).limit(1),
+        supabase.from('providers').select('id, subscription_plan, trial_ends_at').eq('user_id', user.id).limit(1),
+        supabase.from('suppliers').select('id, supplier_type, subscription_plan, trial_ends_at').eq('user_id', user.id)
       ]);
 
+      const contractorPlan = profRes.data?.subscription_plan || user.user_metadata?.subscription_plan || 'starter';
       const plans = {
-        contractor: user.user_metadata?.subscription_plan === 'pro' ? 'PRO' : (t.basicBadge || 'Basic'),
+        contractor: ['pro', 'enterprise', 'vip'].includes(contractorPlan.toLowerCase()) ? contractorPlan.toUpperCase() : (t.basicBadge || 'Basic'),
         architect: t.basicBadge || 'Basic',
         provider: t.basicBadge || 'Basic',
         retail: t.basicBadge || 'Basic',
         wholesale: t.basicBadge || 'Basic'
       };
 
+      let dbTrialEndsAt = null;
+      let spacePaid = false;
+
+      if (currentSpaceId === 'contractor') {
+        dbTrialEndsAt = profRes.data?.trial_ends_at;
+        spacePaid = ['pro', 'enterprise', 'vip'].includes(contractorPlan.toLowerCase());
+      }
+
       if (archRes.data && archRes.data.length > 0) {
         owned.add('architect');
-        const p = archRes.data[0].subscription_plan;
+        const p = (archRes.data[0].subscription_plan || 'basic').toLowerCase();
         plans.architect = (p && p !== 'basic') ? p.toUpperCase() : (t.basicBadge || 'Basic');
+        if (currentSpaceId === 'architect') {
+          dbTrialEndsAt = archRes.data[0].trial_ends_at;
+          spacePaid = ['pro', 'vip', 'elite'].includes(p);
+        }
       }
+
       if (provRes.data && provRes.data.length > 0) {
         owned.add('provider');
-        const p = provRes.data[0].subscription_plan;
-        plans.provider = (p && p !== 'basic') ? p.toUpperCase() : (t.basicBadge || 'Basic');
+        const p = (provRes.data[0].subscription_plan || 'free').toLowerCase();
+        plans.provider = (p && p !== 'free' && p !== 'basic') ? p.toUpperCase() : (t.basicBadge || 'Basic');
+        if (currentSpaceId === 'provider') {
+          dbTrialEndsAt = provRes.data[0].trial_ends_at;
+          spacePaid = ['pro', 'maalem pro'].includes(p);
+        }
       }
+
       if (supRes.data && supRes.data.length > 0) {
         supRes.data.forEach(s => {
-          const p = (s.subscription_plan && s.subscription_plan !== 'basic') ? s.subscription_plan.toUpperCase() : (t.basicBadge || 'Basic');
+          const p = (s.subscription_plan && s.subscription_plan !== 'basic' && s.subscription_plan !== 'starter')
+            ? s.subscription_plan.toUpperCase()
+            : (t.basicBadge || 'Basic');
           if (s.supplier_type === 'wholesale') {
             owned.add('wholesale');
             plans.wholesale = p;
@@ -213,7 +237,15 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
         });
       }
 
+      // 2. إذا كان هناك تاريخ انتهاء تجربة في قاعدة البيانات (أو تم تمديده عبر God Mode)، نعتمد عليه فوراً
+      if (dbTrialEndsAt) {
+        const diffMs = new Date(dbTrialEndsAt).getTime() - Date.now();
+        calculatedRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+      }
+
       if (mounted) {
+        setTrialDaysLeft(calculatedRemaining);
+        setIsCurrentSpacePaid(spacePaid);
         setOwnedSpaceIds(Array.from(owned));
         setSpacePlans(plans);
       }
@@ -296,14 +328,17 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
     }
   };
 
-  // إخفاء شريط التجربة إذا كنا داخل صفحة الاشتراكات نفسها لمنع التكرار
+  // إخفاء شريط التجربة إذا كنا داخل صفحة الاشتراكات نفسها أو إذا كان الحساب مدفوعاً بالفعل
   const isSubscriptionPage = location.pathname.includes('subscription');
 
   return (
     <div className={`flex flex-col h-screen overflow-hidden transition-all duration-700 ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#a3e6cd]'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* ⏳ شريط الفترة التجريبية الموحد للمقاول والمهندس والحرفي */}
-      {!isSubscriptionPage && (
+      {/* 🔔 1. شريط الإشعارات الذكي (هدايا التمديد، تفعيل الباقات، وتنبيهات الإدارة) */}
+      <SystemNotificationBanner />
+
+      {/* ⏳ 2. شريط الفترة التجريبية الموحد (يظهر فقط للحسابات غير المدفوعة) */}
+      {!isSubscriptionPage && !isCurrentSpacePaid && (
         <div className={`w-full py-2 px-4 flex flex-wrap items-center justify-center gap-3 text-xs md:text-sm font-bold z-50 shrink-0 shadow-sm ${
           trialDaysLeft > 0 
             ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white' 

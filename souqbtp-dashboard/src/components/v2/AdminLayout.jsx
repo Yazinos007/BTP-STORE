@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Briefcase, Settings, 
-  Database, HardHat, Map, BarChart3, LogOut 
+  Database, HardHat, Map, BarChart3, LogOut, CreditCard 
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -10,6 +10,7 @@ export default function AdminLayout() {
 
   const adminLinks = [
     { path: '/v2/admin-dashboard', label: 'غرفة القيادة', icon: LayoutDashboard },
+    { path: '/v2/admin-billing', label: 'الاشتراكات والفوترة 💳', icon: CreditCard },
     { path: '/v2/admin-crm', label: 'CRM & الحرفيين', icon: Users },
     { path: '/v2/admin-workshops', label: 'الورش (God Mode)', icon: Map },
     { path: '/v2/admin-services', label: 'الخدمات', icon: Briefcase },

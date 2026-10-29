@@ -47,11 +47,11 @@ import AdminDashboard from './AdminDashboard';
 import AdminServicesPanel from './AdminServicesPanel';
 import AdminCostItems from './AdminCostItems';
 import AdminCRM from './AdminCRM';
-// ملاحظة: لقد ألغيت AdminProjects لأن AdminWorkshops يعوضه ويشمل مهامه
 import AdminWorkshops from './AdminWorkshops';
 import AdminAnalytics from './AdminAnalytics';
 import AdminGlobalSettings from './AdminGlobalSettings';
 import AdminAudit from './AdminAudit';
+import AdminBilling from './AdminBilling';
 
 // === الاستيرادات المشتركة والشركاء (Shared & Affiliates) ===
 import UnifiedMessages from './shared/UnifiedMessages';
@@ -147,6 +147,7 @@ export default function V2Router({ session, supplier }) {
       ======================================================= */}
       <Route element={<AdminLayout />}>
         <Route path="admin-dashboard" element={<AdminDashboard />} />
+        <Route path="admin-billing" element={<AdminBilling />} />
         <Route path="admin-settings" element={<AdminDashboard />} /> 
         <Route path="admin-services" element={<AdminServicesPanel />} />
         <Route path="admin-cost-items" element={<AdminCostItems />} />
