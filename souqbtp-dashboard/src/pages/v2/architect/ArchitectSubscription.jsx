@@ -3,6 +3,20 @@ import confetti from 'canvas-confetti';
 import { supabase } from '../../../lib/supabase';
 import useArchitectStore from '../../../store/useArchitectStore';
 import useSettingsStore from '../../../store/useSettingsStore';
+import { 
+  ShieldCheck, Building2, Wallet, CreditCard, UploadCloud, 
+  Star, MessageCircle, X, CheckCircle2, Copy, Check 
+} from 'lucide-react';
+
+const BANK_INFO = {
+  beneficiary: "BACHIR YASSINE",
+  cin: "IA83571",
+  phone: "07 00 71 53 99",
+  ice: "003460220000095",
+  rib: "225 104 0447028246010126 97",
+  bank: "CREDIT AGRICOLE DU MAROC",
+  whatsappPhone: "212700715399"
+};
 
 const translations = {
   ar: {
@@ -18,12 +32,33 @@ const translations = {
     upgradePro: "اشترك كـ محترف",
     upgradeVip: "انضم للنخبة الآن",
     activePlan: "✅ الباقة مفعلة الآن",
-    checkoutTitle: "تأكيد الاشتراك",
-    payWithCard: "💳 البطاقة (Utajir) - قريباً",
-    payBank: "🏦 تحويل بنكي",
-    processing: "⏳ جاري التفعيل السحري...",
-    confirmPayment: "✅ تأكيد ودفع الاشتراك",
+    checkoutTitle: "إتمام عملية الدفع",
+    selectedPlanLabel: "الباقة المختارة",
+    totalToPayLabel: "الإجمالي للدفع",
+    paymentMethodLabel: "طريقة الدفع :",
+    payBank: "تحويل بنكي",
+    payCash: "Cash Plus / Wafacash",
+    payWithCard: "بطاقة بنكية",
+    soonBadge: "قريباً",
+    bankTransferInst: "يرجى إجراء تحويل بنكي إلى الحساب التالي :",
+    cashTransferInst: "يرجى إرسال المبلغ عبر Cash Plus أو Wafacash باسم المستفيد التالي :",
+    beneficiaryLabel: "المستفيد (Bénéficiaire)",
+    iceCompanyLabel: "ICE",
+    ribLabel: "RIB",
+    bankNameLabel: "البنك: CREDIT AGRICOLE DU MAROC",
+    uploadReceiptTitle: "تحميل وصل الدفع (صورة أو PDF)",
+    uploadReceiptSub: "اضغط هنا لاختيار ملف الوصل لتأكيد اشتراكك",
+    receiptSelected: "تم إرفاق الوصل:",
+    processing: "⏳ جاري تأكيد الاشتراك ورفع الوصل...",
+    confirmPayment: "✅ تأكيد وإرسال وصل الدفع",
     close: "✖",
+
+    // VIP Concierge Modal
+    vipModalHeader: "خدمة عملاء VIP",
+    vipModalTitle: "مرحباً بك في نادي النخبة",
+    vipModalDesc: "مدير حساب مخصص جاهز للإجابة على جميع استفساراتك وتفعيل باقتك فوراً.",
+    vipWhatsappBtn: "تواصل معنا عبر WhatsApp",
+    vipDirectPayBtn: "أفضل الدفع مباشرة",
 
     // Tooltips
     proAiTooltip: "أبهر عملاءك بصور واقعية لغرفهم من خلال رفع مخططاتهم!",
@@ -101,12 +136,33 @@ const translations = {
     upgradePro: "Devenir Pro",
     upgradeVip: "Rejoindre l'Élite VIP",
     activePlan: "✅ Plan Actif",
-    checkoutTitle: "Confirmer l'Abonnement",
-    payWithCard: "💳 Carte (Utajir) - Bientôt",
-    payBank: "🏦 Virement Bancaire",
+    checkoutTitle: "Finaliser le paiement",
+    selectedPlanLabel: "PLAN SÉLECTIONNÉ",
+    totalToPayLabel: "TOTAL À PAYER",
+    paymentMethodLabel: "Méthode de paiement :",
+    payBank: "Virement Bancaire",
+    payCash: "Cash Plus / Wafacash",
+    payWithCard: "Carte Bancaire",
+    soonBadge: "BIENTÔT",
+    bankTransferInst: "Veuillez effectuer un virement vers le compte suivant :",
+    cashTransferInst: "Veuillez effectuer le transfert via Cash Plus ou Wafacash au nom du bénéficiaire suivant :",
+    beneficiaryLabel: "Bénéficiaire",
+    iceCompanyLabel: "ICE",
+    ribLabel: "RIB",
+    bankNameLabel: "Banque: CREDIT AGRICOLE DU MAROC",
+    uploadReceiptTitle: "Télécharger le reçu",
+    uploadReceiptSub: "Cliquez pour joindre la photo ou le PDF du reçu",
+    receiptSelected: "Reçu joint :",
     processing: "⏳ Activation en cours...",
-    confirmPayment: "✅ Confirmer et Payer",
+    confirmPayment: "✅ Confirmer et envoyer le reçu",
     close: "✖",
+
+    // VIP Concierge Modal
+    vipModalHeader: "Service Client VIP",
+    vipModalTitle: "Bienvenue dans le club d'élite",
+    vipModalDesc: "Un manager de compte dédié est prêt à répondre à vos questions.",
+    vipWhatsappBtn: "Contactez-nous sur WhatsApp",
+    vipDirectPayBtn: "Je préfère payer directement",
 
     proAiTooltip: "Impressionnez vos clients avec des rendus réalistes à partir de leurs plans !",
     vipAiTooltipTitle: "Sans limites !",
@@ -178,12 +234,33 @@ const translations = {
     upgradePro: "Subscribe as Pro",
     upgradeVip: "Join Elite VIP Now",
     activePlan: "✅ Plan Active Now",
-    checkoutTitle: "Confirm Subscription",
-    payWithCard: "💳 Card (Utajir) - Soon",
-    payBank: "🏦 Bank Transfer",
-    processing: "⏳ Magic Activation...",
-    confirmPayment: "✅ Confirm & Pay",
+    checkoutTitle: "Finalize Payment",
+    selectedPlanLabel: "SELECTED PLAN",
+    totalToPayLabel: "TOTAL TO PAY",
+    paymentMethodLabel: "Payment Method:",
+    payBank: "Bank Transfer",
+    payCash: "Cash Plus / Wafacash",
+    payWithCard: "Bank Card",
+    soonBadge: "SOON",
+    bankTransferInst: "Please make a bank transfer to the following account:",
+    cashTransferInst: "Please send the amount via Cash Plus or Wafacash to the following beneficiary:",
+    beneficiaryLabel: "Beneficiary",
+    iceCompanyLabel: "ICE",
+    ribLabel: "RIB",
+    bankNameLabel: "Bank: CREDIT AGRICOLE DU MAROC",
+    uploadReceiptTitle: "Upload Receipt",
+    uploadReceiptSub: "Click to attach receipt image or PDF",
+    receiptSelected: "Attached receipt:",
+    processing: "⏳ Activating Subscription...",
+    confirmPayment: "✅ Confirm & Submit Receipt",
     close: "✖",
+
+    // VIP Concierge Modal
+    vipModalHeader: "VIP Client Service",
+    vipModalTitle: "Welcome to the Elite Club",
+    vipModalDesc: "A dedicated account manager is ready to answer your questions.",
+    vipWhatsappBtn: "Contact us on WhatsApp",
+    vipDirectPayBtn: "I prefer to pay directly",
 
     proAiTooltip: "Impress clients with realistic room renders by uploading their plans!",
     vipAiTooltipTitle: "Unlimited!",
@@ -252,7 +329,11 @@ export default function ArchitectSubscription() {
 
   const [isAnnual, setIsAnnual] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [isVipModalOpen, setIsVipModalOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('bank'); // 'bank' | 'cash'
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [copiedRib, setCopiedRib] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [agencyName, setAgencyName] = useState('');
@@ -265,6 +346,7 @@ export default function ArchitectSubscription() {
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [officeStats, setOfficeStats] = useState({ activeCount: 0, projectNames: [] });
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Animated Prices State
   const [priceBasic, setPriceBasic] = useState(139);
@@ -352,19 +434,97 @@ export default function ArchitectSubscription() {
   };
 
   const openCheckout = (planCode, planName, basePrice) => {
-    setSelectedPlan({
+    const planObj = {
       code: planCode,
       name: planName,
       price: isAnnual ? basePrice * 12 : basePrice
-    });
-    setIsCheckoutOpen(true);
+    };
+    setSelectedPlan(planObj);
+    setReceiptFile(null);
+
+    if (planCode === 'vip') {
+      setIsVipModalOpen(true);
+    } else {
+      setIsCheckoutOpen(true);
+    }
   };
 
-  const processInstantUpgrade = () => {
-    setIsProcessing(true);
-    setTimeout(async () => {
-      setIsCheckoutOpen(false);
+  const handleCopyRib = () => {
+    navigator.clipboard.writeText(BANK_INFO.rib);
+    setCopiedRib(true);
+    setTimeout(() => setCopiedRib(false), 2000);
+  };
 
+  const handleContactVipWhatsApp = () => {
+    const firm = agencyName || profile?.agency_name || 'مكتب دراسات';
+    const msg = encodeURIComponent(
+      `السلام عليكم، أنا المهندس (${profile?.full_name || firm})، أود الاشتراك في باقة النخبة (${selectedPlan?.name}) بقيمة ${selectedPlan?.price} درهم.`
+    );
+    window.open(`https://wa.me/${BANK_INFO.whatsappPhone}?text=${msg}`, '_blank');
+  };
+
+  const processInstantUpgrade = async () => {
+    setIsProcessing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      let receiptUrl = null;
+
+      // 1. رفع إيصال الدفع إن وجد
+      if (receiptFile && user) {
+        const fileExt = receiptFile.name.split('.').pop();
+        const filePath = `architects/${user.id}_${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('receipts')
+          .upload(filePath, receiptFile);
+
+        if (!uploadErr && uploadData) {
+          const { data: publicUrlData } = supabase.storage.from('receipts').getPublicUrl(filePath);
+          receiptUrl = publicUrlData?.publicUrl || filePath;
+        }
+      }
+
+      // 2. تحديث بيانات المهندس والباقة
+      if (user) {
+        const updates = {
+          subscription_plan: selectedPlan.code,
+          updated_at: new Date().toISOString()
+        };
+        if (agencyName) updates.agency_name = agencyName;
+        await supabase.from('architects').update(updates).eq('user_id', user.id);
+
+        // 3. تسجيل طلب الاشتراك في جدول الفوترة (إن وجد) + الصندوق الأسود للإدارة
+        try {
+          await supabase.from('subscription_requests').insert([{
+            user_id: user.id,
+            user_role: 'architect',
+            user_name: agencyName || profile?.full_name || user.email,
+            plan_code: selectedPlan.code,
+            plan_name: selectedPlan.name,
+            amount: selectedPlan.price,
+            billing_cycle: isAnnual ? 'annual' : 'monthly',
+            payment_method: paymentMethod,
+            ice_number: agencyICE || null,
+            receipt_url: receiptUrl,
+            status: 'pending'
+          }]);
+        } catch (_) {}
+
+        try {
+          await supabase.from('audit_logs').insert([{
+            user_name: agencyName || profile?.full_name || user.email || 'مهندس معماري',
+            user_role: 'architect',
+            action_type: 'SUBSCRIPTION_UPGRADE',
+            details: `طلب ترقية اشتراك المهندس إلى باقة (${selectedPlan.name}) بقيمة ${selectedPlan.price} MAD عبر (${paymentMethod === 'bank' ? 'تحويل بنكي' : 'Cash Plus / Wafacash'})`
+          }]);
+        } catch (_) {}
+
+        if (fetchArchitectData) await fetchArchitectData(user.id);
+      }
+
+      setIsCheckoutOpen(false);
+      setCurrentPlanId(selectedPlan.code);
+
+      // احتفالية الترقية
       const duration = 3 * 1000;
       const end = Date.now() + duration;
       (function frame() {
@@ -373,25 +533,11 @@ export default function ArchitectSubscription() {
         if (Date.now() < end) requestAnimationFrame(frame);
       }());
 
-      setCurrentPlanId(selectedPlan.code);
-
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const updates = {
-            subscription_plan: selectedPlan.code,
-            updated_at: new Date().toISOString()
-          };
-          if (agencyName) updates.agency_name = agencyName;
-          await supabase.from('architects').update(updates).eq('user_id', user.id);
-          if (fetchArchitectData) await fetchArchitectData(user.id);
-        }
-      } catch (error) {
-        console.error("DB Update Error", error);
-      } finally {
-        setIsProcessing(false);
-      }
-    }, 1500);
+    } catch (error) {
+      console.error("DB Update Error", error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // 🧠 المحرك العبقري للمستشار الهندسي (VIP Co-Pilot Engine)
@@ -417,11 +563,11 @@ export default function ArchitectSubscription() {
       const listStr = officeStats.projectNames.length > 0 ? officeStats.projectNames.join('، ') : (isRtl ? 'لا توجد ورشات مسماة بعد' : 'Aucun chantier nommé');
       if (language === 'fr') {
         return {
-          text: `📊 Bilan en temps réel pour (${firm}) :\n• Chantiers actifs supervisés : ${officeStats.activeCount}\n• Projets récents : ${listStr}\n\n💡 Conseil du partenaire : Planifiez une session Live AR de 10 minutes avec vos clients actifs avant chaque coulage de dalle pour générer un PV horodaté GPS. Cela réduit les litiges de 85%.`
+          text: `📊 Bilan en temps réel pour (${firm}) :\nChantiers actifs supervisés : ${officeStats.activeCount}\nProjets récents : ${listStr}\n\n💡 Conseil du partenaire : Planifiez une session Live AR de 10 minutes avec vos clients actifs avant chaque coulage de dalle pour générer un PV horodaté GPS. Cela réduit les litiges de 85%.`
         };
       }
       return {
-        text: `📊 تقرير النبض الحي لـ (${firm}):\n• عدد الورشات النشطة حالياً: ${officeStats.activeCount} ورشات.\n• أبرز الملفات المفتوحة: (${listStr}).\n\n💡 توصية شريكك الذكي اليوم:\nقبل صب أي سقف (Dalle) هذا الأسبوع، اطلب من العميل فتح الغرفة الحية (Live AR) لمدة 5 دقائق، وفعّل المخطط الشفاف للتحقق من أماكن الأعمدة، ثم اضغط "ختم GPS". هذا الإجراء يوثق أتعابك ويحميك قانونياً 100%!`
+        text: `📊 تقرير النبض الحي لـ (${firm}):\nعدد الورشات النشطة حالياً: ${officeStats.activeCount} ورشات.\nأبرز الملفات المفتوحة: (${listStr}).\n\n💡 توصية شريكك الذكي اليوم:\nقبل صب أي سقف (Dalle) هذا الأسبوع، اطلب من العميل فتح الغرفة الحية (Live AR) لمدة 5 دقائق، وفعّل المخطط الشفاف للتحقق من أماكن الأعمدة، ثم اضغط "ختم GPS". هذا الإجراء يوثق أتعابك ويحميك قانونياً 100%!`
       };
     }
 
@@ -446,7 +592,6 @@ export default function ArchitectSubscription() {
       };
     }
 
-    // استجابة ذكية لأي سؤال حر يكتبه المهندس
     return {
       text: isRtl
         ? `🧠 تحليل الشريك الهندسي لطلبك ("${typeOrQuery}"):\nبصفتك عضواً في نخبة VIP (${firm})، أنصحك بتوثيق هذه النقطة فوراً عبر الغرفة الميدانية (AR) وإرفاقها بختم الإحداثيات (GPS). هل ترغب في أن أصيغ لك بنداً قانونياً مخصصاً حول "${typeOrQuery}" لإدراجه في محضر الورشة؟`
@@ -600,25 +745,6 @@ export default function ArchitectSubscription() {
         .faq-item details[open] summary::after { content: '-'; color: var(--gold); transform: rotate(180deg); }
         .faq-item p { margin: 15px 0 0 0; color: #cbd5e1; line-height: 1.7; font-size: 0.95rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(8px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
-        .checkout-modal { background: #0f172a; width: 90%; max-width: 450px; border-radius: 24px; border: 1px solid #38bdf8; box-shadow: 0 20px 50px rgba(0,0,0,0.8); padding: 30px; position: relative; animation: slideUp 0.4s ease-out; }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        .checkout-modal h2 { color: #fff; margin-top: 0; text-align: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; }
-        .form-group { margin-bottom: 20px; text-align: ${isRtl ? 'right' : 'left'}; }
-        .form-group label { display: block; color: #94a3b8; font-size: 0.9rem; margin-bottom: 8px; font-weight: bold; }
-        .form-group input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; font-family: 'Cairo'; outline: none; box-sizing: border-box; text-align: ${isRtl ? 'right' : 'left'}; }
-        .form-group input:focus { border-color: #38bdf8; background: rgba(255,255,255,0.1); }
-        
-        .payment-methods { display: flex; gap: 10px; margin-bottom: 25px; }
-        .pay-method { flex: 1; padding: 15px 10px; text-align: center; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); cursor: pointer; transition: 0.3s; font-weight: bold; color: #cbd5e1; }
-        .pay-method.active { background: rgba(56, 189, 248, 0.1); border-color: #38bdf8; color: #38bdf8; }
-        .pay-method.disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .btn-confirm { width: 100%; padding: 15px; background: linear-gradient(90deg, #10b981, #059669); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; font-family: 'Cairo'; transition: 0.3s; box-shadow: 0 10px 20px rgba(16,185,129,0.3); }
-        .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 15px 25px rgba(16,185,129,0.5); }
-        .close-modal { position: absolute; top: 15px; right: 20px; background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; }
-
         /* 🤖 المساعد الذكي الحصري للنخبة VIP */
         .ai-widget-btn { position: fixed; bottom: 30px; ${isRtl ? 'left: 30px;' : 'right: 30px;'} width: 65px; height: 65px; background: linear-gradient(135deg, #fbbf24, #d97706); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; cursor: pointer; box-shadow: 0 10px 30px rgba(251, 191, 36, 0.5); z-index: 1000; animation: floatBot 3s ease-in-out infinite; border: 2px solid #fff; }
         @keyframes floatBot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -692,7 +818,7 @@ export default function ArchitectSubscription() {
             <button 
               className="sub-btn basic-btn" 
               disabled={currentPlanId === 'basic'}
-              onClick={() => openCheckout('basic', 'Basic 🌱', 139)}
+              onClick={() => openCheckout('basic', 'Basic ERP', priceBasic)}
               style={currentPlanId === 'basic' ? { background: '#10b981', color: '#fff', border: 'none', cursor: 'default' } : {}}
             >
               {currentPlanId === 'basic' ? t.activePlan : t.upgradeNow}
@@ -729,7 +855,7 @@ export default function ArchitectSubscription() {
             <button 
               className="sub-btn pro-btn" 
               disabled={currentPlanId === 'pro'}
-              onClick={() => openCheckout('pro', 'Pro 🔥', 349)}
+              onClick={() => openCheckout('pro', 'Pro Architecture', pricePro)}
               style={currentPlanId === 'pro' ? { background: '#10b981', color: '#fff', border: 'none', boxShadow: 'none', cursor: 'default' } : {}}
             >
               {currentPlanId === 'pro' ? t.activePlan : t.upgradePro}
@@ -763,7 +889,7 @@ export default function ArchitectSubscription() {
             <button 
               className="sub-btn vip-btn" 
               disabled={currentPlanId === 'vip'}
-              onClick={() => openCheckout('vip', 'Elite VIP 👑', 699)}
+              onClick={() => openCheckout('vip', 'Elite VIP 👑', priceVip)}
               style={currentPlanId === 'vip' ? { background: '#10b981', color: '#fff', border: 'none', cursor: 'default' } : {}}
             >
               {currentPlanId === 'vip' ? t.activePlan : t.upgradeVip}
@@ -876,36 +1002,285 @@ export default function ArchitectSubscription() {
         </div>
       </div>
 
-      {/* Checkout Modal */}
+      {/* =========================================================
+          🌟 1. نافذة خدمة عملاء النخبة (Service Client VIP Modal)
+      ========================================================= */}
+      {isVipModalOpen && selectedPlan && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in" dir={isRtl ? 'rtl' : 'ltr'}>
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-slate-100 text-slate-800">
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="text-blue-600" size={24} />
+                <h3 className="text-lg font-black text-slate-900">{t.vipModalHeader}</h3>
+              </div>
+              <button 
+                onClick={() => setIsVipModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-8 text-center space-y-5">
+              <div className="w-20 h-20 rounded-full bg-amber-500 mx-auto flex items-center justify-center shadow-lg shadow-amber-500/30">
+                <Star size={38} className="text-slate-900 fill-slate-900" />
+              </div>
+
+              <h2 className="text-2xl font-black text-amber-500">{t.vipModalTitle}</h2>
+              <p className="text-slate-500 font-bold text-sm max-w-sm mx-auto leading-relaxed">
+                {t.vipModalDesc}
+              </p>
+
+              <button
+                onClick={handleContactVipWhatsApp}
+                className="w-full py-4 px-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black text-base shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2.5"
+              >
+                <MessageCircle size={20} />
+                <span>{t.vipWhatsappBtn}</span>
+              </button>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    setIsVipModalOpen(false);
+                    setIsCheckoutOpen(true);
+                  }}
+                  className="text-sm font-bold text-slate-400 hover:text-slate-700 underline underline-offset-4 transition-colors"
+                >
+                  {t.vipDirectPayBtn}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          💳 2. نافذة إتمام الدفع الموحدة (Finaliser le paiement)
+      ========================================================= */}
       {isCheckoutOpen && selectedPlan && (
-        <div className="modal-overlay">
-          <div className="checkout-modal">
-            <button className="close-modal" onClick={() => setIsCheckoutOpen(false)}>✖</button>
-            <h2>{t.checkoutTitle} ({selectedPlan.name})</h2>
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in" dir={isRtl ? 'rtl' : 'ltr'}>
+          <div className="bg-white rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 text-slate-800">
             
-            <p style={{color:'#94a3b8', textAlign:'center', fontSize:'0.9rem', marginBottom:'25px'}}>
-              {t.checkoutTotal} <b style={{color:'#38bdf8', fontSize:'1.2rem'}}>{selectedPlan.price}</b> د.م / <span>{isAnnual ? t.periodAnnual : t.periodMonthly}</span>
-            </p>
-
-            <div className="payment-methods">
-              <div className="pay-method active">{t.payBank}</div>
-              <div className="pay-method disabled">{t.payWithCard}</div>
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="text-blue-600" size={24} />
+                <h3 className="text-xl font-black text-slate-900">{t.checkoutTitle}</h3>
+              </div>
+              <button 
+                onClick={() => setIsCheckoutOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="form-group">
-              <label>{t.agencyNameLabel}</label>
-              <input type="text" placeholder={t.agencyNamePlace} value={agencyName} onChange={(e) => setAgencyName(e.target.value)} />
-            </div>
-            
-            <div className="form-group">
-              <label>{t.iceLabel}</label>
-              <input type="text" placeholder={t.icePlace} value={agencyICE} onChange={(e) => setAgencyICE(e.target.value)} />
-            </div>
+            <div className="p-6 space-y-6">
+              {/* Plan Summary Box */}
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                    {t.selectedPlanLabel}
+                  </span>
+                  <h4 className="text-lg font-black text-slate-900">{selectedPlan.name}</h4>
+                </div>
+                <div className={isRtl ? 'text-left' : 'text-right'}>
+                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                    {t.totalToPayLabel}
+                  </span>
+                  <div className="text-2xl font-black text-emerald-600">
+                    {selectedPlan.price.toLocaleString()} <span className="text-sm font-bold">MAD</span>
+                  </div>
+                </div>
+              </div>
 
-            <button className="btn-confirm" disabled={isProcessing} onClick={processInstantUpgrade}>
-              {isProcessing ? t.processing : t.confirmPayment}
-            </button>
-            <p style={{textAlign:'center', fontSize:'0.8rem', color:'#64748b', marginTop:'15px'}}>{t.secureData}</p>
+              {/* Payment Methods */}
+              <div>
+                <label className="block text-sm font-black text-slate-700 mb-3">
+                  {t.paymentMethodLabel}
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {/* Virement Bancaire */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('bank')}
+                    className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${
+                      paymentMethod === 'bank'
+                        ? 'border-blue-600 bg-blue-50/40 text-blue-600'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                    }`}
+                  >
+                    <Building2 size={24} />
+                    <span className="text-xs font-black text-center">{t.payBank}</span>
+                  </button>
+
+                  {/* Cash Plus / Wafacash */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('cash')}
+                    className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${
+                      paymentMethod === 'cash'
+                        ? 'border-blue-600 bg-blue-50/40 text-blue-600'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                    }`}
+                  >
+                    <Wallet size={24} />
+                    <span className="text-xs font-black text-center">{t.payCash}</span>
+                  </button>
+
+                  {/* Carte Bancaire (Soon) */}
+                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 text-slate-400 flex flex-col items-center justify-center gap-2 relative cursor-not-allowed opacity-75">
+                    <span className="absolute top-2 right-2 bg-slate-200 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded-md">
+                      {t.soonBadge}
+                    </span>
+                    <CreditCard size={24} />
+                    <span className="text-xs font-bold text-center">{t.payWithCard}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank / Cash Details Box */}
+              <div className="bg-slate-50/70 border border-slate-200 rounded-2xl p-5 space-y-4">
+                <p className="text-xs font-bold text-slate-500">
+                  {paymentMethod === 'bank' ? t.bankTransferInst : t.cashTransferInst}
+                </p>
+
+                {paymentMethod === 'bank' ? (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="bg-white p-3.5 rounded-xl border border-slate-200/80">
+                        <span className="text-[11px] font-bold text-slate-400 block mb-1">{t.beneficiaryLabel}</span>
+                        <span className="text-sm font-black text-slate-900">{BANK_INFO.beneficiary}</span>
+                      </div>
+                      <div className="bg-white p-3.5 rounded-xl border border-slate-200/80">
+                        <span className="text-[11px] font-bold text-slate-400 block mb-1">{t.iceCompanyLabel}</span>
+                        <span className="text-sm font-black text-slate-900 font-mono">{BANK_INFO.ice}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl border border-slate-200/80 relative">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-bold text-slate-400">{t.ribLabel}</span>
+                        <button
+                          type="button"
+                          onClick={handleCopyRib}
+                          className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+                        >
+                          {copiedRib ? <Check size={14} /> : <Copy size={14} />}
+                          <span>{copiedRib ? (isRtl ? 'تم النسخ' : 'Copié') : (isRtl ? 'نسخ' : 'Copier')}</span>
+                        </button>
+                      </div>
+                      <p className="text-base sm:text-lg font-black text-blue-600 font-mono tracking-wider" dir="ltr">
+                        {BANK_INFO.rib}
+                      </p>
+                      <span className="text-[11px] font-bold text-slate-500 block mt-1">
+                        {t.bankNameLabel}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="bg-white p-3.5 rounded-xl border border-slate-200/80">
+                        <span className="text-[11px] font-bold text-slate-400 block mb-1">{isRtl ? 'الاسم الكامل' : 'Nom Complet'}</span>
+                        <span className="text-sm font-black text-slate-900">{BANK_INFO.beneficiary}</span>
+                      </div>
+                      <div className="bg-white p-3.5 rounded-xl border border-slate-200/80">
+                        <span className="text-[11px] font-bold text-slate-400 block mb-1">{isRtl ? 'رقم البطاقة الوطنية (N° CIN)' : 'N° CIN'}</span>
+                        <span className="text-sm font-black text-slate-900 font-mono tracking-widest">{BANK_INFO.cin}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl border border-slate-200/80">
+                      <span className="text-[11px] font-bold text-slate-400 block mb-1">{isRtl ? 'رقم الهاتف' : 'Téléphone'}</span>
+                      <p className="text-base sm:text-lg font-black text-amber-600 font-mono tracking-widest" dir="ltr">
+                        {BANK_INFO.phone}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Agency Info Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">{t.agencyNameLabel}</label>
+                  <input 
+                    type="text" 
+                    placeholder={t.agencyNamePlace} 
+                    value={agencyName} 
+                    onChange={(e) => setAgencyName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-800 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">{t.iceLabel}</label>
+                  <input 
+                    type="text" 
+                    placeholder={t.icePlace} 
+                    value={agencyICE} 
+                    onChange={(e) => setAgencyICE(e.target.value)}
+                    dir="ltr"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Upload Receipt Box */}
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*,.pdf"
+                  onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
+                    receiptFile
+                      ? 'border-emerald-400 bg-emerald-50/50'
+                      : 'border-blue-200 hover:border-blue-400 bg-blue-50/20'
+                  }`}
+                >
+                  <UploadCloud
+                    size={36}
+                    className={`mx-auto mb-2 ${receiptFile ? 'text-emerald-600' : 'text-blue-600'}`}
+                  />
+                  {receiptFile ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-black text-emerald-700 flex items-center justify-center gap-1.5">
+                        <CheckCircle2 size={16} />
+                        <span>{t.receiptSelected}</span>
+                      </p>
+                      <p className="text-xs font-bold text-slate-600">{receiptFile.name}</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-black text-slate-800">{t.uploadReceiptTitle}</p>
+                      <p className="text-xs font-bold text-slate-400 mt-1">{t.uploadReceiptSub}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="button"
+                disabled={!receiptFile || isProcessing}
+                onClick={processInstantUpgrade}
+                className="w-full py-4 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black text-base shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
+              >
+                {isProcessing ? t.processing : t.confirmPayment}
+              </button>
+
+              <p className="text-center text-xs font-bold text-slate-400">
+                {t.secureData}
+              </p>
+            </div>
           </div>
         </div>
       )}

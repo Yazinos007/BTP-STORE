@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import { 
   ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, Minus, Loader2,
@@ -211,6 +212,7 @@ export default function SupplierSubscription() {
   
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState('starter');
   const navigate = useNavigate();
 
   // Modal States
@@ -221,6 +223,26 @@ export default function SupplierSubscription() {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [skipVip, setSkipVip] = useState(false);
 
+  useEffect(() => {
+    const fetchSupplierPlan = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: supData } = await supabase
+          .from('suppliers')
+          .select('subscription_plan')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (supData?.subscription_plan) {
+          setCurrentPlan(supData.subscription_plan.toLowerCase());
+        }
+      } catch (_) {}
+    };
+    fetchSupplierPlan();
+  }, []);
+
   const prices = {
     starter: { monthly: 0, annual: 0 },
     pro: { monthly: 499, annual: 4790 },
@@ -230,28 +252,94 @@ export default function SupplierSubscription() {
   const handleUpgradeClick = (tierKey) => {
     const planData = t.plans[tierKey];
     const price = isAnnual ? prices[tierKey].annual : prices[tierKey].monthly;
-    setSelectedPlan({ name: planData.name, price: price });
+    setSelectedPlan({ id: tierKey, name: planData.name, price: price });
     setSkipVip(false);
+    setReceiptFile(null);
     setShowPaymentModal(true);
   };
 
   const handleReceiptUpload = (e) => {
-    if (e.target.files[0]) {
-      setReceiptFile(e.target.files[0].name);
+    if (e.target.files && e.target.files[0]) {
+      setReceiptFile(e.target.files[0]);
     }
   };
 
-  const submitPayment = () => {
+  const submitPayment = async () => {
+    if (!receiptFile || !selectedPlan) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      let receiptUrl = null;
+
+      // 1. رفع إيصال الدفع الفعلي إلى سحابة Supabase
+      if (receiptFile && user) {
+        const fileExt = receiptFile.name.split('.').pop();
+        const filePath = `suppliers/${user.id}_${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('receipts')
+          .upload(filePath, receiptFile);
+
+        if (!uploadErr && uploadData) {
+          const { data: publicUrlData } = supabase.storage.from('receipts').getPublicUrl(filePath);
+          receiptUrl = publicUrlData?.publicUrl || filePath;
+        }
+      }
+
+      if (user) {
+        const { data: supInfo } = await supabase
+          .from('suppliers')
+          .select('store_name, full_name')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const supplierName =
+          supInfo?.store_name ||
+          supInfo?.full_name ||
+          user.user_metadata?.company_name ||
+          user.email ||
+          'مورد جملة (B2B)';
+
+        // 2. تسجيل طلب الترقية في جدول الفوترة الموحد
+        try {
+          await supabase.from('subscription_requests').insert([{
+            user_id: user.id,
+            user_role: 'wholesale_supplier',
+            user_name: supplierName,
+            plan_code: selectedPlan.id,
+            plan_name: selectedPlan.name,
+            amount: selectedPlan.price,
+            billing_cycle: isAnnual ? 'annual' : 'monthly',
+            payment_method: paymentMethod === 'virement' ? 'bank' : 'cash',
+            receipt_url: receiptUrl,
+            status: 'pending'
+          }]);
+        } catch (err) {
+          console.error('Error inserting supplier subscription request:', err);
+        }
+
+        // 3. توثيق العملية في الصندوق الأسود للإدارة
+        try {
+          await supabase.from('audit_logs').insert([{
+            user_name: supplierName,
+            user_role: 'wholesale_supplier',
+            action_type: 'SUBSCRIPTION_UPGRADE',
+            details: `طلب ترقية حساب مورد جملة إلى باقة (${selectedPlan.name}) بقيمة ${selectedPlan.price} MAD عبر (${paymentMethod === 'virement' ? 'تحويل بنكي' : 'Cash Plus / Wafacash'})`
+          }]);
+        } catch (_) {}
+      }
+
       setPaymentSuccess(true);
       setTimeout(() => {
         setShowPaymentModal(false);
         setPaymentSuccess(false);
         setReceiptFile(null);
-      }, 4000); 
-    }, 2000);
+      }, 3500);
+    } catch (error) {
+      console.error('Supplier payment error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -300,7 +388,7 @@ export default function SupplierSubscription() {
             <span className="text-slate-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
           <button disabled className="w-full py-3.5 bg-slate-800 text-slate-400 font-black rounded-xl cursor-not-allowed border border-slate-700 mb-8 text-sm">
-            {t.currentPlan}
+            {currentPlan === 'starter' ? t.currentPlan : t.plans.starter.name}
           </button>
           <div className="space-y-4">
             {t.plans.starter.features.map((feat, i) => (
@@ -333,10 +421,16 @@ export default function SupplierSubscription() {
           </div>
           <button 
             onClick={() => handleUpgradeClick('pro')} 
-            disabled={isSubmitting}
-            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm"
+            disabled={isSubmitting || currentPlan === 'pro'}
+            className={`w-full py-3.5 font-black rounded-xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 group text-sm ${
+              currentPlan === 'pro'
+                ? 'bg-emerald-600 text-white cursor-default'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/30'
+            }`}
           >
-            <>{t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} /></>
+            {currentPlan === 'pro' ? `✅ ${t.currentPlan}` : (
+              <>{t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} /></>
+            )}
           </button>
           <div className="space-y-4">
             {t.plans.pro.features.map((feat, i) => (
@@ -354,10 +448,9 @@ export default function SupplierSubscription() {
           </div>
         </div>
 
-        {/* Enterprise - تمت إزالة overflow-hidden هنا */}
+        {/* Enterprise */}
         <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/50 rounded-3xl p-8 relative shadow-[0_0_50px_rgba(245,158,11,0.1)] group hover:border-amber-400 transition-all duration-300 text-start">
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none"></div>
-          {/* إضافة z-20 للشارة لتظهر دائماً فوق كل شيء */}
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-400 text-black px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-lg shadow-amber-500/20 z-20">
             <ShieldCheck size={14} /> {t.plans.enterprise.badge}
           </div>
@@ -372,10 +465,16 @@ export default function SupplierSubscription() {
           </div>
           <button 
             onClick={() => handleUpgradeClick('enterprise')}
-            disabled={isSubmitting}
-            className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-xl transition-all shadow-lg shadow-amber-500/30 mb-8 relative z-10 flex justify-center items-center gap-2 text-sm"
+            disabled={isSubmitting || currentPlan === 'enterprise'}
+            className={`w-full py-3.5 font-black rounded-xl transition-all shadow-lg mb-8 relative z-10 flex justify-center items-center gap-2 text-sm ${
+              currentPlan === 'enterprise'
+                ? 'bg-emerald-600 text-white cursor-default'
+                : 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/30'
+            }`}
           >
-            <>{t.contactSales} <Star size={16} className="fill-black" /></>
+            {currentPlan === 'enterprise' ? `✅ ${t.currentPlan}` : (
+              <>{t.contactSales} <Star size={16} className="fill-black" /></>
+            )}
           </button>
           <div className="space-y-4 relative z-10">
             {t.plans.enterprise.features.map((feat, i) => (
@@ -396,7 +495,7 @@ export default function SupplierSubscription() {
             <div className="flex justify-between items-center p-6 border-b border-slate-800 bg-slate-950">
               <h3 className="text-2xl font-black text-white flex items-center gap-2">
                 <ShieldCheck className="text-emerald-500" /> 
-                {selectedPlan?.name === 'Enterprise (Verified)' && !skipVip ? m.vipTitle : m.paymentTitle}
+                {selectedPlan?.id === 'enterprise' && !skipVip ? m.vipTitle : m.paymentTitle}
               </h3>
               <button onClick={() => setShowPaymentModal(false)} className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors">
                 <X size={20} />
@@ -404,7 +503,7 @@ export default function SupplierSubscription() {
             </div>
 
             {/* 👑 معالجة خاصة لباقة Enterprise */}
-            {selectedPlan?.name === 'Enterprise (Verified)' && !skipVip ? (
+            {selectedPlan?.id === 'enterprise' && !skipVip ? (
               <div className="p-8 text-center flex flex-col items-center justify-center space-y-6">
                 <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)]">
                   <Star size={40} className="text-black fill-current" />
@@ -445,7 +544,7 @@ export default function SupplierSubscription() {
                   </div>
                   <div className={language === 'ar' ? 'text-left' : 'text-right'}>
                     <p className="text-slate-400 font-bold text-sm">{m.total}</p>
-                    <p className="text-2xl font-black text-emerald-400" dir="ltr">{selectedPlan?.price} MAD</p>
+                    <p className="text-2xl font-black text-emerald-400" dir="ltr">{selectedPlan?.price.toLocaleString()} MAD</p>
                   </div>
                 </div>
 
@@ -514,7 +613,7 @@ export default function SupplierSubscription() {
                   <p className="text-white font-bold mb-1">{m.uploadTitle}</p>
                   <p className="text-sm text-slate-500 mb-4">{m.uploadDesc}</p>
                   <label className="cursor-pointer bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-bold transition-colors inline-block">
-                    {receiptFile ? <span className="text-emerald-400 flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile}</span> : m.chooseFile}
+                    {receiptFile ? <span className="text-emerald-400 flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile.name.slice(0, 18)}...</span> : m.chooseFile}
                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={handleReceiptUpload} />
                   </label>
                 </div>

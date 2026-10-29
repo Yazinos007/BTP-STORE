@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-import { Store, CheckCircle2, Zap, ArrowRight, Minus, Loader2, Shield } from 'lucide-react';
-// 👇 استدعاء مكون الدفع (تأكد من صحة المسار حسب بنية مجلداتك)
+import { Store, CheckCircle2, Zap, ArrowRight, Minus, Shield } from 'lucide-react';
 import PaymentModal from '../components/PaymentModal'; 
 
 const translations = {
@@ -19,7 +19,7 @@ const translations = {
     currentPlan: 'باقتك الحالية',
     upgradeBtn: 'اشترك الآن',
     contactSales: 'تواصل معنا',
-    successMsg: 'تم إرسال طلب الترقية بنجاح! سنقوم بمراجعة الوصل وتفعيل الباقة قريباً.', // تم التعديل
+    successMsg: 'تم إرسال طلب الترقية بنجاح! سنقوم بمراجعة الوصل وتفعيل الباقة قريباً.',
     errorActivation: 'حدث خطأ أثناء إرسال الطلب، يرجى المحاولة لاحقاً.',
     errorConnection: 'خطأ في الاتصال بالخادم.',
     plans: {
@@ -76,7 +76,7 @@ const translations = {
     currentPlan: 'Votre plan actuel',
     upgradeBtn: 'S\'abonner',
     contactSales: 'Nous contacter',
-    successMsg: 'Votre demande a été envoyée avec succès ! Nous allons vérifier le reçu et activer votre plan sous peu.', // تم التعديل
+    successMsg: 'Votre demande a été envoyée avec succès ! Nous allons vérifier le reçu et activer votre plan sous peu.',
     errorActivation: 'Erreur lors de l\'envoi. Veuillez réessayer plus tard.',
     errorConnection: 'Erreur de connexion au serveur.',
     plans: {
@@ -133,7 +133,7 @@ const translations = {
     currentPlan: 'Your current plan',
     upgradeBtn: 'Subscribe Now',
     contactSales: 'Contact Us',
-    successMsg: 'Request sent successfully! We will verify the receipt and activate your plan shortly.', // تم التعديل
+    successMsg: 'Request sent successfully! We will verify the receipt and activate your plan shortly.',
     errorActivation: 'Error during submission. Please try again later.',
     errorConnection: 'Connection error to the server.',
     plans: {
@@ -186,11 +186,31 @@ export default function RetailerSubscription() {
   const t = translations[language] || translations['fr'];
   
   const [isAnnual, setIsAnnual] = useState(true);
-  // 👇 متغيرات التحكم في النافذة المنبثقة
+  const [currentPlan, setCurrentPlan] = useState('basic');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchRetailerPlan = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: supData } = await supabase
+          .from('suppliers')
+          .select('subscription_plan')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (supData?.subscription_plan) {
+          setCurrentPlan(supData.subscription_plan.toLowerCase());
+        }
+      } catch (_) {}
+    };
+    fetchRetailerPlan();
+  }, []);
 
   const prices = {
     basic: { monthly: 0, annual: 0 },
@@ -198,23 +218,74 @@ export default function RetailerSubscription() {
     pro: { monthly: 299, annual: 2870 } 
   };
 
-  // 👇 دالة فتح النافذة
   const handleUpgradeClick = (tierCode, planName, planPrice) => {
-    setSelectedPlan({ tier: tierCode, name: planName, price: planPrice });
+    setSelectedPlan({ tier: tierCode.toLowerCase(), name: planName, price: planPrice });
     setShowPaymentModal(true);
   };
 
-  // 👇 دالة تنفيذ الطلب بعد رفع الوصل
+  // 🚀 دالة تنفيذ الطلب ورفع الوصل الفعلي لـ Supabase
   const handlePaymentSubmit = async (plan, method, file) => {
     try {
-      // هنا مستقبلاً ستقوم برفع الصورة `file` إلى Supabase Storage 
-      // وإدراج سطر في جدول `upgrade_requests`
-      
+      const { data: { user } } = await supabase.auth.getUser();
+      let receiptUrl = null;
+
+      // 1. رفع إيصال الدفع إلى سلة receipts في Supabase Storage
+      if (file && user) {
+        const fileExt = file.name.split('.').pop();
+        const filePath = `retailers/${user.id}_${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('receipts')
+          .upload(filePath, file);
+
+        if (!uploadErr && uploadData) {
+          const { data: publicUrlData } = supabase.storage.from('receipts').getPublicUrl(filePath);
+          receiptUrl = publicUrlData?.publicUrl || filePath;
+        }
+      }
+
+      if (user) {
+        const { data: supInfo } = await supabase
+          .from('suppliers')
+          .select('store_name, full_name')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const retailerName =
+          supInfo?.store_name ||
+          supInfo?.full_name ||
+          user.user_metadata?.company_name ||
+          user.email ||
+          'تاجر تجزئة (POS)';
+
+        // 2. إدراج الطلب في جدول طلبات الاشتراك الموحد
+        await supabase.from('subscription_requests').insert([{
+          user_id: user.id,
+          user_role: 'retail_supplier',
+          user_name: retailerName,
+          plan_code: plan.tier.toLowerCase(),
+          plan_name: plan.name,
+          amount: plan.price,
+          billing_cycle: isAnnual ? 'annual' : 'monthly',
+          payment_method: method === 'virement' ? 'bank' : 'cash',
+          receipt_url: receiptUrl,
+          status: 'pending'
+        }]);
+
+        // 3. توثيق العملية في الصندوق الأسود للإدارة
+        try {
+          await supabase.from('audit_logs').insert([{
+            user_name: retailerName,
+            user_role: 'retail_supplier',
+            action_type: 'SUBSCRIPTION_UPGRADE',
+            details: `طلب ترقية حساب تاجر تجزئة إلى باقة (${plan.name}) بقيمة ${plan.price} MAD عبر (${method === 'virement' ? 'تحويل بنكي' : 'Cash Plus / Wafacash'})`
+          }]);
+        } catch (_) {}
+      }
+
       alert(t.successMsg);
       setShowPaymentModal(false);
-      navigate('/');
     } catch (error) {
-      console.error(error);
+      console.error('Retailer payment submission error:', error);
       alert(t.errorConnection);
     }
   };
@@ -251,7 +322,9 @@ export default function RetailerSubscription() {
             <span className="text-5xl font-black text-gray-900">0</span>
             <span className="text-gray-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
-          <button disabled className="w-full py-3.5 bg-gray-100 text-gray-400 font-black rounded-xl cursor-not-allowed border border-gray-200 mb-8 text-sm">{t.currentPlan}</button>
+          <button disabled className="w-full py-3.5 bg-gray-100 text-gray-400 font-black rounded-xl cursor-not-allowed border border-gray-200 mb-8 text-sm">
+            {currentPlan === 'basic' ? t.currentPlan : t.plans.basic.name}
+          </button>
           <div className="space-y-4">
             {t.plans.basic.features.map((feat, i) => (
               <div key={i} className="flex items-start gap-3"><CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" /><span className="text-sm font-medium text-gray-700">{feat}</span></div>
@@ -271,12 +344,18 @@ export default function RetailerSubscription() {
             <span className="text-5xl font-black text-blue-600">{isAnnual ? prices.premium.annual.toLocaleString() : prices.premium.monthly.toLocaleString()}</span>
             <span className="text-gray-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
-          {/* 👇 تعديل زر الترقية لفتح النافذة */}
           <button 
-            onClick={() => handleUpgradeClick('Premium', t.plans.premium.name, isAnnual ? prices.premium.annual : prices.premium.monthly)} 
-            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm"
+            onClick={() => handleUpgradeClick('premium', t.plans.premium.name, isAnnual ? prices.premium.annual : prices.premium.monthly)} 
+            disabled={currentPlan === 'premium'}
+            className={`w-full py-3.5 font-black rounded-xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 group text-sm ${
+              currentPlan === 'premium'
+                ? 'bg-emerald-600 text-white cursor-default'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/30'
+            }`}
           >
-            <Zap size={18} className="fill-white" /> {t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
+            {currentPlan === 'premium' ? `✅ ${t.currentPlan}` : (
+              <><Zap size={18} className="fill-white" /> {t.upgradeBtn} <ArrowRight size={16} className={`group-hover:translate-x-1 transition-transform ${language === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : ''}`} /></>
+            )}
           </button>
           <div className="space-y-4">
             {t.plans.premium.features.map((feat, i) => (
@@ -297,12 +376,18 @@ export default function RetailerSubscription() {
             <span className="text-5xl font-black text-gray-900">{isAnnual ? prices.pro.annual.toLocaleString() : prices.pro.monthly.toLocaleString()}</span>
             <span className="text-gray-500 font-bold ml-2">{t.currency} {isAnnual ? t.yr : t.mo}</span>
           </div>
-          {/* 👇 تعديل زر الترقية لفتح النافذة */}
           <button 
             onClick={() => handleUpgradeClick('pro', t.plans.pro.name, isAnnual ? prices.pro.annual : prices.pro.monthly)} 
-            className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black rounded-xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 text-sm"
+            disabled={currentPlan === 'pro'}
+            className={`w-full py-3.5 font-black rounded-xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 text-sm ${
+              currentPlan === 'pro'
+                ? 'bg-emerald-600 text-white cursor-default'
+                : 'bg-gray-900 hover:bg-black text-white'
+            }`}
           >
-            <Shield size={16} /> {t.upgradeBtn}
+            {currentPlan === 'pro' ? `✅ ${t.currentPlan}` : (
+              <><Shield size={16} /> {t.upgradeBtn}</>
+            )}
           </button>
           <div className="space-y-4">
             {t.plans.pro.features.map((feat, i) => (

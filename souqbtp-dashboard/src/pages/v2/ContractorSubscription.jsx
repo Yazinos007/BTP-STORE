@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 import useSettingsStore from '../../store/useSettingsStore';
 import { 
   ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, ArrowLeft, Minus, Loader2,
@@ -14,6 +15,7 @@ export default function ContractorSubscription() {
   
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState('starter');
   const navigate = useNavigate();
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
@@ -24,6 +26,30 @@ export default function ContractorSubscription() {
   const [receiptFile, setReceiptFile] = useState(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [skipVip, setSkipVip] = useState(false);
+
+  useEffect(() => {
+    const fetchCurrentPlan = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        if (user.user_metadata?.subscription_plan) {
+          setCurrentPlan(user.user_metadata.subscription_plan.toLowerCase());
+        }
+
+        const { data: supData } = await supabase
+          .from('suppliers')
+          .select('subscription_plan')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (supData?.subscription_plan) {
+          setCurrentPlan(supData.subscription_plan.toLowerCase());
+        }
+      } catch (_) {}
+    };
+    fetchCurrentPlan();
+  }, []);
 
   const translations = {
     ar: {
@@ -177,26 +203,87 @@ export default function ContractorSubscription() {
     const price = isAnnual ? prices[tierKey].annual : prices[tierKey].monthly;
     setSelectedPlan({ id: tierKey, name: planData.name, price: price });
     setSkipVip(false);
+    setReceiptFile(null);
     setShowPaymentModal(true);
   };
 
   const handleReceiptUpload = (e) => {
-    if (e.target.files[0]) {
-      setReceiptFile(e.target.files[0].name);
+    if (e.target.files && e.target.files[0]) {
+      setReceiptFile(e.target.files[0]);
     }
   };
 
-  const submitPayment = () => {
+  const submitPayment = async () => {
+    if (!receiptFile || !selectedPlan) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      let receiptUrl = null;
+
+      // 1. رفع إيصال الدفع الفعلي إلى سحابة Supabase
+      if (receiptFile && user) {
+        const fileExt = receiptFile.name.split('.').pop();
+        const filePath = `contractors/${user.id}_${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('receipts')
+          .upload(filePath, receiptFile);
+
+        if (!uploadErr && uploadData) {
+          const { data: publicUrlData } = supabase.storage.from('receipts').getPublicUrl(filePath);
+          receiptUrl = publicUrlData?.publicUrl || filePath;
+        }
+      }
+
+      if (user) {
+        const contractorName =
+          user.user_metadata?.company_name ||
+          user.user_metadata?.full_name ||
+          user.email ||
+          'مقاول / مورد';
+
+        // 2. تسجيل طلب الترقية في جدول طلبات الاشتراك الموحد (للوحة AdminBilling)
+        try {
+          await supabase.from('subscription_requests').insert([{
+            user_id: user.id,
+            user_role: 'contractor',
+            user_name: contractorName,
+            plan_code: selectedPlan.id,
+            plan_name: selectedPlan.name,
+            amount: selectedPlan.price,
+            billing_cycle: isAnnual ? 'annual' : 'monthly',
+            payment_method: paymentMethod === 'virement' ? 'bank' : 'cash',
+            receipt_url: receiptUrl,
+            status: 'pending'
+          }]);
+        } catch (err) {
+          console.error('Error inserting subscription request:', err);
+        }
+
+        // 3. توثيق العملية في الصندوق الأسود للإدارة
+        try {
+          await supabase.from('audit_logs').insert([{
+            user_name: contractorName,
+            user_role: 'contractor',
+            action_type: 'SUBSCRIPTION_UPGRADE',
+            details: `طلب ترقية حساب مقاول إلى باقة (${selectedPlan.name}) بقيمة ${selectedPlan.price} MAD عبر (${paymentMethod === 'virement' ? 'تحويل بنكي' : 'Cash Plus / Wafacash'})`
+          }]);
+        } catch (err) {
+          console.error('Error logging to Black Box:', err);
+        }
+      }
+
       setPaymentSuccess(true);
       setTimeout(() => {
         setShowPaymentModal(false);
         setPaymentSuccess(false);
         setReceiptFile(null);
-      }, 4000); 
-    }, 2000);
+      }, 3500);
+    } catch (error) {
+      console.error('Payment submission error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const bgMain = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
@@ -226,7 +313,7 @@ export default function ContractorSubscription() {
           </h2>
           <p className={`text-lg ${textMuted} font-medium leading-relaxed`}>{t.subtitle}</p>
 
-          {/* 🚀 Toggle Billing - تصميم الكبسولة الجديد */}
+          {/* 🚀 Toggle Billing */}
           <div className="flex items-center justify-center mt-8">
             <div className={`p-1.5 rounded-full inline-flex items-center relative select-none shadow-inner ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-slate-100 border border-slate-300'}`}>
               <button onClick={() => setIsAnnual(false)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 cursor-pointer ${!isAnnual ? 'text-white' : textMuted}`}>
@@ -255,7 +342,7 @@ export default function ContractorSubscription() {
               <span className={`font-bold ml-2 ${textMuted}`}>{t.currency} {isAnnual ? t.yr : t.mo}</span>
             </div>
             <button disabled className={`w-full py-4 font-black rounded-2xl cursor-not-allowed border-2 mb-8 text-sm uppercase tracking-widest ${isDarkMode ? 'bg-slate-800 text-slate-500 border-slate-700' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-              {t.currentPlan}
+              {currentPlan === 'starter' ? t.currentPlan : t.plans.starter.name}
             </button>
             <div className="space-y-5 flex-1">
               {t.plans.starter.features.map((feat, i) => (
@@ -275,7 +362,6 @@ export default function ContractorSubscription() {
 
           {/* Pro Plan (Popular) */}
           <div className={`${isDarkMode ? 'bg-slate-900 border-blue-600' : 'bg-white border-blue-500'} border-2 rounded-[2.5rem] p-8 relative transform lg:-translate-y-6 shadow-2xl shadow-blue-600/20 transition-all duration-500 text-start flex flex-col`}>
-            {/* الشارة البارزة (Cutout effect) */}
             <div className={`absolute -top-5 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg border-4 ${isDarkMode ? 'border-slate-900' : 'border-white'}`}>
               {t.plans.pro.badge}
             </div>
@@ -287,8 +373,20 @@ export default function ContractorSubscription() {
               </span>
               <span className={`font-bold ml-2 ${textMuted}`}>{t.currency} {isAnnual ? t.yr : t.mo}</span>
             </div>
-            <button onClick={() => handleUpgradeClick('pro')} disabled={isSubmitting} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm uppercase tracking-widest cursor-pointer">
-              {t.upgradeBtn} <ArrowRight size={18} className={`group-hover:translate-x-1 transition-transform ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
+            <button 
+              onClick={() => handleUpgradeClick('pro')} 
+              disabled={isSubmitting || currentPlan === 'pro'} 
+              className={`w-full py-4 font-black rounded-2xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 group text-sm uppercase tracking-widest cursor-pointer ${
+                currentPlan === 'pro'
+                  ? 'bg-emerald-600 text-white cursor-default'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
+              }`}
+            >
+              {currentPlan === 'pro' ? `✅ ${t.currentPlan}` : (
+                <>
+                  {t.upgradeBtn} <ArrowRight size={18} className={`group-hover:translate-x-1 transition-transform ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
+                </>
+              )}
             </button>
             <div className="space-y-5 flex-1">
               {t.plans.pro.features.map((feat, i) => (
@@ -309,7 +407,6 @@ export default function ContractorSubscription() {
           {/* Enterprise Plan */}
           <div className={`bg-gradient-to-br ${isDarkMode ? 'from-slate-900 to-slate-950 border-amber-500/50' : 'from-amber-50 to-white border-amber-300'} border-2 rounded-[2.5rem] p-8 relative shadow-[0_0_40px_rgba(245,158,11,0.15)] group hover:border-amber-400 transition-all duration-500 text-start flex flex-col overflow-visible`}>
             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px] pointer-events-none"></div>
-            {/* الشارة البارزة باللون الذهبي */}
             <div className={`absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-900 px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-amber-500/30 z-20 border-4 ${isDarkMode ? 'border-slate-900' : 'border-[#fffbeb]'}`}>
               <ShieldCheck size={16} /> {t.plans.enterprise.badge}
             </div>
@@ -325,10 +422,18 @@ export default function ContractorSubscription() {
             
             <button 
               onClick={() => handleUpgradeClick('enterprise')}
-              disabled={isSubmitting} 
-              className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-900 font-black rounded-2xl transition-all shadow-[0_0_20px_rgba(249,115,22,0.6)] mb-8 relative z-10 flex justify-center items-center gap-2 text-sm uppercase tracking-widest animate-pulse hover:animate-none cursor-pointer"
+              disabled={isSubmitting || currentPlan === 'enterprise'} 
+              className={`w-full py-4 font-black rounded-2xl transition-all mb-8 relative z-10 flex justify-center items-center gap-2 text-sm uppercase tracking-widest cursor-pointer ${
+                currentPlan === 'enterprise'
+                  ? 'bg-emerald-600 text-white cursor-default'
+                  : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-900 shadow-[0_0_20px_rgba(249,115,22,0.6)] animate-pulse hover:animate-none'
+              }`}
             >
-              {t.contactSales} <Star size={18} className="fill-slate-900" />
+              {currentPlan === 'enterprise' ? `✅ ${t.currentPlan}` : (
+                <>
+                  {t.contactSales} <Star size={18} className="fill-slate-900" />
+                </>
+              )}
             </button>
             
             <div className="space-y-5 relative z-10 flex-1">
@@ -481,7 +586,7 @@ export default function ContractorSubscription() {
                     <p className={`text-sm font-bold mb-6 ${textMuted}`}>{m.uploadDesc}</p>
                     
                     <label className="cursor-pointer px-8 py-3.5 rounded-xl font-black transition-all inline-block bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30">
-                      {receiptFile ? <span className="flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile.slice(0, 15)}...</span> : m.chooseFile}
+                      {receiptFile ? <span className="flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile.name.slice(0, 18)}...</span> : m.chooseFile}
                       <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={handleReceiptUpload} />
                     </label>
                   </div>
