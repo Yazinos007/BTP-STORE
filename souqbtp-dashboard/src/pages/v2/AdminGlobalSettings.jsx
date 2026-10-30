@@ -225,7 +225,7 @@ export default function AdminGlobalSettings() {
               <div className="bg-slate-50 border border-slate-200 p-5 rounded-xl flex items-center justify-between">
                 <div>
                   <strong className="text-slate-800 block text-base mb-1">أنت (المدير العام) 👑</strong>
-                  <small className="text-slate-500 font-mono">admin@souqbtp.ma</small>
+                  <small className="text-slate-500 font-mono">admin@sasbtp.ma</small>
                 </div>
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-black">صلاحيات مطلقة</span>
               </div>

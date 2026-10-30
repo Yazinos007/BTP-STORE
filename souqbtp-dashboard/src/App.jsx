@@ -382,7 +382,7 @@ const PremiumGuard = ({ children }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      if (user.email === 'yassine.bestlife@gmail.com' || user.user_metadata?.role === 'admin') {
+      if (user.email === 'admin@sasbtp.ma' || user.user_metadata?.role === 'admin') {
         setIsExpired(false);
         return;
       }
