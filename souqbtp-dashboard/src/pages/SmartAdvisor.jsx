@@ -173,7 +173,7 @@ const translations = {
   }
 };
 
-export default function AISmartAdvisor() {
+export default function SmartAdvisor() {
   const { language } = useSettingsStore();
   const { supplier } = useSupplierStore();
   const t = translations[language] || translations['fr'];
