@@ -35,7 +35,6 @@ import Expenses from './pages/Expenses';
 import Invoices from './pages/Invoices';
 import HR from './pages/HR';
 import Fiscal from './pages/Fiscal';
-import Sidebar from './components/Sidebar';
 import Caisses from './pages/Caisses';
 import Devis from './pages/Devis';
 import BC from './pages/BC';
@@ -53,17 +52,21 @@ import SupplierProduction from './pages/SupplierProduction';
 import MarketplaceOrders from './pages/MarketplaceOrders';
 import FleetManagement from './pages/FleetManagement';
 import LogisticsBourse from './pages/LogisticsBourse';
-import UnifiedMessages from './pages/v2/shared/UnifiedMessages';
-import BTPHub from './pages/v2/BTPHub';
 
+import UnifiedMessages from './pages/v2/shared/UnifiedMessages';
+
+import V2Router from './pages/v2/V2Router';
+import BTPHub from './pages/v2/BTPHub';
+import AIAudit from './pages/v2/AIAudit';
 import AffiliateDashboard from './pages/v2/AffiliateDashboard';
 import SystemNotificationBanner from './components/v2/SystemNotificationBanner';
 
+import Sidebar from './components/Sidebar';
 import TrialBanner from './components/TrialBanner'; 
 import RetailTrialBanner from './components/RetailTrialBanner'; 
+
 import useSupplierStore from './store/useSupplierStore';
 import useSettingsStore from './store/useSettingsStore';
-import V2Router from './pages/v2/V2Router';
 
 import EmpireLanding from './landing-pages/EmpireLanding';
 import RetailLanding from './landing-pages/RetailLanding';
@@ -674,7 +677,8 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
         { path: '/expenses', icon: Receipt, label: t.items.expenses },
         { path: '/hr', icon: Users, label: t.items.hr },
         { path: '/fiscal', icon: Landmark, label: t.items.fiscal },
-        { path: '/accounting', icon: Calculator, label: t.items.accounting }
+        { path: '/accounting', icon: Calculator, label: t.items.accounting },
+        { path: '/audit', icon: ShieldCheck, label: language === 'ar' ? 'التدقيق المالي الذكي (AI Audit)' : language === 'fr' ? 'Audit Financier IA' : 'Smart AI Audit', tag: 'NEW' }
       ]
     },
     {
@@ -1186,7 +1190,7 @@ function AppContent({ session, loading, userPrimaryRole, supplier, language, isS
               <Route path="/team" element={<PremiumGuard><SupplierTeam /></PremiumGuard>} />
               <Route path="/caisses" element={<PremiumGuard><Caisses isWholesaler={true} /></PremiumGuard>} />
               <Route path="/production" element={<PremiumGuard><SupplierProduction /></PremiumGuard>} />
-
+              <Route path="/audit" element={<PremiumGuard><AIAudit /></PremiumGuard>} />
               <Route path="/analytics" element={<PremiumGuard><AnalyticsB2B /></PremiumGuard>} />
               <Route path="/ai-advisor" element={<PremiumGuard><AISmartAdvisor /></PremiumGuard>} />
               <Route path="/tender-radar" element={<PremiumGuard><TenderRadar /></PremiumGuard>} />
