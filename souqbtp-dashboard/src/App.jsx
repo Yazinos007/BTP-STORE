@@ -1028,32 +1028,33 @@ function AppContent({ session, loading, userPrimaryRole, supplier, language, isS
         ) : (
           <RetailerLayout storeName={storeName} storeInitial={storeInitial} language={language}>
             <Routes>
-              <Route path="/" element={<Overview />} />
-              <Route path="/affiliates" element={<AffiliateDashboard />} />
-              <Route path="/products" element={<Products />} />                     
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/wallet" element={<RetailerWallet />} />
-              <Route path="/settings" element={<RetailerSettings />} />
-              <Route path="/pos" element={<POS />} />
-              <Route path="/expenses" element={<Expenses />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/hr" element={<HR />} />
-              <Route path="/fiscal" element={<Fiscal />} />
-              <Route path="/caisses" element={<Caisses />} />
-              <Route path="/devis" element={<Devis />} />
-              <Route path="/bc" element={<BC />} />
-              <Route path="/bl" element={<BL />} />
-              <Route path="/avoir" element={<Avoir />} />
-              <Route path="/fiches-expedition" element={<Expeditions />} />
-              <Route path="/factures-achat" element={<FacturesAchat />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/accounting" element={<Accounting />} />
-              <Route path="/suppliers" element={<ExternalSuppliers />} />
-              <Route path="/purchases" element={<Purchases />} />
-              <Route path="/subscription" element={<RetailerSubscription />} />
-              <Route path="/messages" element={<UnifiedMessages />} />
-              <Route path="/marketplace" element={<BTPHub />} />
-            </Routes>
+                <Route path="/" element={<Overview />} />
+                <Route path="/affiliates" element={<AffiliateDashboard />} />
+                <Route path="/products" element={<Products />} />                     
+                <Route path="/orders" element={<Orders />} />
+                <Route path="/wallet" element={<RetailerWallet />} />
+                <Route path="/settings" element={<RetailerSettings />} />
+                <Route path="/pos" element={<POS />} />
+                <Route path="/invoices" element={<Invoices />} />
+                <Route path="/suppliers" element={<ExternalSuppliers />} />
+                <Route path="/purchases" element={<Purchases />} />
+                <Route path="/subscription" element={<RetailerSubscription />} />
+                <Route path="/messages" element={<UnifiedMessages />} />
+                <Route path="/marketplace" element={<BTPHub />} />
+                {/* 🛡️ أقسام باقات Premium Shop & Pro Retailer (تعمل مجاناً طوال الـ 14 يوماً التجريبية) */}
+                <Route path="/clients" element={<PremiumGuard><Clients /></PremiumGuard>} />
+                <Route path="/expenses" element={<PremiumGuard><Expenses /></PremiumGuard>} />
+                <Route path="/hr" element={<PremiumGuard><HR /></PremiumGuard>} />
+                <Route path="/fiscal" element={<PremiumGuard><Fiscal /></PremiumGuard>} />
+                <Route path="/caisses" element={<PremiumGuard><Caisses /></PremiumGuard>} />
+                <Route path="/devis" element={<PremiumGuard><Devis /></PremiumGuard>} />
+                <Route path="/bc" element={<PremiumGuard><BC /></PremiumGuard>} />
+                <Route path="/bl" element={<PremiumGuard><BL /></PremiumGuard>} />
+                <Route path="/avoir" element={<PremiumGuard><Avoir /></PremiumGuard>} />
+                <Route path="/fiches-expedition" element={<PremiumGuard><Expeditions /></PremiumGuard>} />
+                <Route path="/factures-achat" element={<PremiumGuard><FacturesAchat /></PremiumGuard>} />
+                <Route path="/accounting" element={<PremiumGuard><Accounting /></PremiumGuard>} />
+              </Routes>
           </RetailerLayout>
         )
       } />
