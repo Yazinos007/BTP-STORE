@@ -258,11 +258,14 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
 
   const handleSpaceSwitch = (path) => {
     setIsSpaceOpen(false);
-    if (path.startsWith('/?preview=')) {
-      window.location.href = path;
+    if (path.includes('preview=retail')) {
+      sessionStorage.setItem('souqbtp_preview_mode', 'retail');
+    } else if (path.includes('preview=wholesale')) {
+      sessionStorage.setItem('souqbtp_preview_mode', 'wholesale');
     } else {
-      navigate(path);
+      sessionStorage.removeItem('souqbtp_preview_mode');
     }
+    navigate(path);
   };
 
   const handleActivateNewSpace = async (space) => {

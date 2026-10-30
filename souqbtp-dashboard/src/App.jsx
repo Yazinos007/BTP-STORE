@@ -112,6 +112,7 @@ function ReferralTracker() {
 
 // 🚀 مكون مبدل الفضاءات الموحد والذكي
 const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }) => {
+  const navigate = useNavigate(); 
   const [open, setOpen] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [ownedIds, setOwnedIds] = useState([]);
@@ -240,10 +241,14 @@ const GlobalSpaceSwitcher = ({ language, dark = false, currentSpace = 'retail' }
 
   const handleSwitch = (path) => {
     setOpen(false);
-    if (path.startsWith('/v2')) {
+    if (path.includes('preview=retail')) {
+      sessionStorage.setItem('souqbtp_preview_mode', 'retail');
+    } else if (path.includes('preview=wholesale')) {
+      sessionStorage.setItem('souqbtp_preview_mode', 'wholesale');
+    } else {
       sessionStorage.removeItem('souqbtp_preview_mode');
     }
-    window.location.href = path;
+    navigate(path);
   };
 
   const handleActivate = async (sp) => {
@@ -899,8 +904,25 @@ function App() {
     );
   }
 
-  const pathname = window.location.pathname;
-  const searchParams = new URLSearchParams(window.location.search);
+  return (
+    <BrowserRouter>
+      <ReferralTracker />
+      <AppContent
+        session={session}
+        loading={loading}
+        userPrimaryRole={userPrimaryRole}
+        supplier={supplier}
+        language={language}
+        isStorePage={isStorePage}
+      />
+    </BrowserRouter>
+  );
+}
+
+function AppContent({ session, loading, userPrimaryRole, supplier, language, isStorePage }) {
+  const location = useLocation();
+  const pathname = location.pathname;
+  const searchParams = new URLSearchParams(location.search);
   const previewMode = searchParams.get('preview');
 
   if (previewMode === 'retail' || previewMode === 'wholesale') {
@@ -908,126 +930,134 @@ function App() {
   } else if (pathname.startsWith('/v2')) {
     sessionStorage.removeItem('souqbtp_preview_mode');
   }
-  const activePreview = previewMode || sessionStorage.getItem('souqbtp_preview_mode');
+  const activePreview = pathname.startsWith('/v2')
+    ? null
+    : (previewMode || sessionStorage.getItem('souqbtp_preview_mode'));
 
   const isV2Path = pathname.startsWith('/v2');
-  const isLandingPage = pathname.startsWith('/empire') || pathname.startsWith('/pro') || pathname.startsWith('/contractor') || pathname.startsWith('/devis-gratuit') || pathname.startsWith('/client-portal');
+  const isLandingPage =
+    pathname.startsWith('/empire') ||
+    pathname.startsWith('/pro') ||
+    pathname.startsWith('/contractor') ||
+    pathname.startsWith('/devis-gratuit') ||
+    pathname.startsWith('/client-portal');
   const isAuthPage = pathname.includes('/login') || pathname.includes('/register') || pathname.includes('/auth');
 
   if (loading) {
-    return <div className="h-screen w-full bg-[#0f172a]"></div>; 
+    return <div className="h-screen w-full bg-[#0f172a]"></div>;
   }
 
   if (!session && !isV2Path && !isLandingPage && !isAuthPage && !isStorePage) {
-    return <BrowserRouter><ReferralTracker /><Navigate to="/v2/auth" replace /></BrowserRouter>;
+    return <Navigate to="/v2/auth" replace />;
   }
 
-  const isWholesaler = activePreview === 'wholesale' 
-    ? true 
-    : activePreview === 'retail' 
-    ? false 
+  const isWholesaler = activePreview === 'wholesale'
+    ? true
+    : activePreview === 'retail'
+    ? false
     : (session?.user?.user_metadata?.supplier_type === 'wholesale' || supplier?.supplier_type === 'wholesale');
 
-  const storeName = session?.user?.user_metadata?.company_name || session?.user?.user_metadata?.full_name || supplier?.store_name || 'SasBTP';
+  const storeName =
+    session?.user?.user_metadata?.company_name ||
+    session?.user?.user_metadata?.full_name ||
+    supplier?.store_name ||
+    'SasBTP';
   const storeInitial = storeName ? storeName.charAt(0).toUpperCase() : 'S';
 
   return (
-    <BrowserRouter>
-      <ReferralTracker />
-      <Routes>
-        <Route path="/empire" element={<EmpireLanding />} />
-        <Route path="/pro" element={<RetailLanding />} />
-        <Route path="/contractor" element={<ContractorLanding />} />
-        <Route path="/devis-gratuit" element={<CostCalculatorLanding />} />
-        <Route path="/client-portal" element={<ClientPortal />} />
-        <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
+    <Routes>
+      <Route path="/empire" element={<EmpireLanding />} />
+      <Route path="/pro" element={<RetailLanding />} />
+      <Route path="/contractor" element={<ContractorLanding />} />
+      <Route path="/devis-gratuit" element={<CostCalculatorLanding />} />
+      <Route path="/client-portal" element={<ClientPortal />} />
+      <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
 
-        {/* مسارات فضاء V2 (الإدارة، المقاول، المهندس، الحرفي) */}
-        <Route path="/v2/*" element={<V2Router session={session} supplier={supplier} />} />
+      {/* مسارات فضاء V2 (الإدارة، المقاول، المهندس، الحرفي) */}
+      <Route path="/v2/*" element={<V2Router session={session} supplier={supplier} />} />
 
-        {!activePreview && userPrimaryRole === 'admin' && (
-          <Route path="/" element={<Navigate to="/v2/admin-dashboard" replace />} />
-        )}
-        {!activePreview && userPrimaryRole === 'architect' && (
-          <Route path="/" element={<Navigate to="/v2/architect-dashboard" replace />} />
-        )}
-        {!activePreview && userPrimaryRole === 'provider' && (
-          <Route path="/" element={<Navigate to="/v2/provider-dashboard" replace />} />
-        )}
-        {!activePreview && userPrimaryRole === 'contractor' && (
-          <Route path="/" element={<Navigate to="/v2/contractor-dashboard" replace />} />
-        )}
+      {!activePreview && userPrimaryRole === 'admin' && (
+        <Route path="/" element={<Navigate to="/v2/admin-dashboard" replace />} />
+      )}
+      {!activePreview && userPrimaryRole === 'architect' && (
+        <Route path="/" element={<Navigate to="/v2/architect-dashboard" replace />} />
+      )}
+      {!activePreview && userPrimaryRole === 'provider' && (
+        <Route path="/" element={<Navigate to="/v2/provider-dashboard" replace />} />
+      )}
+      {!activePreview && userPrimaryRole === 'contractor' && (
+        <Route path="/" element={<Navigate to="/v2/contractor-dashboard" replace />} />
+      )}
 
-        <Route path="/*" element={
-          isWholesaler ? (
-            <WholesalerDashboard supplier={supplier} storeName={storeName} storeInitial={storeInitial}>
-              <Routes>
-                <Route path="/" element={<SupplierOverview />} />
-                <Route path="/affiliates" element={<AffiliateDashboard />} />
-                <Route path="/stock" element={<SupplierStock isWholesaler={true} />} />
-                <Route path="/invoices" element={<SupplierInvoices />} />
-                <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
-                <Route path="/raw-purchases" element={<RawMaterialPurchases />} />
-                <Route path="/pos-b2b" element={<SupplierPOS />} />
-                <Route path="/orders" element={<SupplierOrders />} />
-                <Route path="/settings" element={<SupplierSettings />} />
-                <Route path="/subscription" element={<SupplierSubscription />} />
+      <Route path="/*" element={
+        isWholesaler ? (
+          <WholesalerDashboard supplier={supplier} storeName={storeName} storeInitial={storeInitial}>
+            <Routes>
+              <Route path="/" element={<SupplierOverview />} />
+              <Route path="/affiliates" element={<AffiliateDashboard />} />
+              <Route path="/stock" element={<SupplierStock isWholesaler={true} />} />
+              <Route path="/invoices" element={<SupplierInvoices />} />
+              <Route path="/raw-suppliers" element={<RawMaterialSuppliers />} />
+              <Route path="/raw-purchases" element={<RawMaterialPurchases />} />
+              <Route path="/pos-b2b" element={<SupplierPOS />} />
+              <Route path="/orders" element={<SupplierOrders />} />
+              <Route path="/settings" element={<SupplierSettings />} />
+              <Route path="/subscription" element={<SupplierSubscription />} />
 
-                <Route path="/clients" element={<PremiumGuard><Clients isWholesaler={true} /></PremiumGuard>} />
-                <Route path="/contracts" element={<PremiumGuard><Contracts /></PremiumGuard>} />
-                <Route path="/fleet-b2b" element={<PremiumGuard><Fleet /></PremiumGuard>} />
-                <Route path="/hr" element={<PremiumGuard><SupplierHR /></PremiumGuard>} />
-                <Route path="/expenses" element={<PremiumGuard><SupplierExpenses /></PremiumGuard>} />
-                <Route path="/accounting" element={<PremiumGuard><SupplierAccounting /></PremiumGuard>} />
-                <Route path="/fiscal" element={<PremiumGuard><Fiscal isWholesaler={true} /></PremiumGuard>} />
-                <Route path="/team" element={<PremiumGuard><SupplierTeam /></PremiumGuard>} />
-                <Route path="/caisses" element={<PremiumGuard><Caisses isWholesaler={true} /></PremiumGuard>} />
-                <Route path="/production" element={<PremiumGuard><SupplierProduction /></PremiumGuard>} />
+              <Route path="/clients" element={<PremiumGuard><Clients isWholesaler={true} /></PremiumGuard>} />
+              <Route path="/contracts" element={<PremiumGuard><Contracts /></PremiumGuard>} />
+              <Route path="/fleet-b2b" element={<PremiumGuard><Fleet /></PremiumGuard>} />
+              <Route path="/hr" element={<PremiumGuard><SupplierHR /></PremiumGuard>} />
+              <Route path="/expenses" element={<PremiumGuard><SupplierExpenses /></PremiumGuard>} />
+              <Route path="/accounting" element={<PremiumGuard><SupplierAccounting /></PremiumGuard>} />
+              <Route path="/fiscal" element={<PremiumGuard><Fiscal isWholesaler={true} /></PremiumGuard>} />
+              <Route path="/team" element={<PremiumGuard><SupplierTeam /></PremiumGuard>} />
+              <Route path="/caisses" element={<PremiumGuard><Caisses isWholesaler={true} /></PremiumGuard>} />
+              <Route path="/production" element={<PremiumGuard><SupplierProduction /></PremiumGuard>} />
 
-                <Route path="/analytics" element={<PremiumGuard><AnalyticsB2B /></PremiumGuard>} />
-                <Route path="/ai-advisor" element={<PremiumGuard><AISmartAdvisor /></PremiumGuard>} />
-                <Route path="/tender-radar" element={<PremiumGuard><TenderRadar /></PremiumGuard>} />
-                <Route path="/logistics-bourse" element={<PremiumGuard><LogisticsBourse /></PremiumGuard>} />
-                <Route path="/fleet-market" element={<PremiumGuard><FleetManagement /></PremiumGuard>} /> 
-                <Route path="/market-orders" element={<PremiumGuard><MarketplaceOrders /></PremiumGuard>} />
-                <Route path="/messages" element={<PremiumGuard><UnifiedMessages /></PremiumGuard>} />
-                <Route path="/marketplace" element={<PremiumGuard><BTPHub /></PremiumGuard>} />
-              </Routes>
-            </WholesalerDashboard>
-          ) : (
-            <RetailerLayout storeName={storeName} storeInitial={storeInitial} language={language}>
-              <Routes>
-                <Route path="/" element={<Overview />} />
-                <Route path="/affiliates" element={<AffiliateDashboard />} />
-                <Route path="/products" element={<Products />} />                     
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/wallet" element={<RetailerWallet />} />
-                <Route path="/settings" element={<RetailerSettings />} />
-                <Route path="/pos" element={<POS />} />
-                <Route path="/expenses" element={<Expenses />} />
-                <Route path="/invoices" element={<Invoices />} />
-                <Route path="/hr" element={<HR />} />
-                <Route path="/fiscal" element={<Fiscal />} />
-                <Route path="/caisses" element={<Caisses />} />
-                <Route path="/devis" element={<Devis />} />
-                <Route path="/bc" element={<BC />} />
-                <Route path="/bl" element={<BL />} />
-                <Route path="/avoir" element={<Avoir />} />
-                <Route path="/fiches-expedition" element={<Expeditions />} />
-                <Route path="/factures-achat" element={<FacturesAchat />} />
-                <Route path="/clients" element={<Clients />} />
-                <Route path="/accounting" element={<Accounting />} />
-                <Route path="/suppliers" element={<ExternalSuppliers />} />
-                <Route path="/purchases" element={<Purchases />} />
-                <Route path="/subscription" element={<RetailerSubscription />} />
-                <Route path="/messages" element={<UnifiedMessages />} />
-                <Route path="/marketplace" element={<BTPHub />} />
-              </Routes>
-            </RetailerLayout>
-          )
-        } />
-      </Routes>
-    </BrowserRouter>
+              <Route path="/analytics" element={<PremiumGuard><AnalyticsB2B /></PremiumGuard>} />
+              <Route path="/ai-advisor" element={<PremiumGuard><AISmartAdvisor /></PremiumGuard>} />
+              <Route path="/tender-radar" element={<PremiumGuard><TenderRadar /></PremiumGuard>} />
+              <Route path="/logistics-bourse" element={<PremiumGuard><LogisticsBourse /></PremiumGuard>} />
+              <Route path="/fleet-market" element={<PremiumGuard><FleetManagement /></PremiumGuard>} /> 
+              <Route path="/market-orders" element={<PremiumGuard><MarketplaceOrders /></PremiumGuard>} />
+              <Route path="/messages" element={<PremiumGuard><UnifiedMessages /></PremiumGuard>} />
+              <Route path="/marketplace" element={<PremiumGuard><BTPHub /></PremiumGuard>} />
+            </Routes>
+          </WholesalerDashboard>
+        ) : (
+          <RetailerLayout storeName={storeName} storeInitial={storeInitial} language={language}>
+            <Routes>
+              <Route path="/" element={<Overview />} />
+              <Route path="/affiliates" element={<AffiliateDashboard />} />
+              <Route path="/products" element={<Products />} />                     
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/wallet" element={<RetailerWallet />} />
+              <Route path="/settings" element={<RetailerSettings />} />
+              <Route path="/pos" element={<POS />} />
+              <Route path="/expenses" element={<Expenses />} />
+              <Route path="/invoices" element={<Invoices />} />
+              <Route path="/hr" element={<HR />} />
+              <Route path="/fiscal" element={<Fiscal />} />
+              <Route path="/caisses" element={<Caisses />} />
+              <Route path="/devis" element={<Devis />} />
+              <Route path="/bc" element={<BC />} />
+              <Route path="/bl" element={<BL />} />
+              <Route path="/avoir" element={<Avoir />} />
+              <Route path="/fiches-expedition" element={<Expeditions />} />
+              <Route path="/factures-achat" element={<FacturesAchat />} />
+              <Route path="/clients" element={<Clients />} />
+              <Route path="/accounting" element={<Accounting />} />
+              <Route path="/suppliers" element={<ExternalSuppliers />} />
+              <Route path="/purchases" element={<Purchases />} />
+              <Route path="/subscription" element={<RetailerSubscription />} />
+              <Route path="/messages" element={<UnifiedMessages />} />
+              <Route path="/marketplace" element={<BTPHub />} />
+            </Routes>
+          </RetailerLayout>
+        )
+      } />
+    </Routes>
   );
 }
 
