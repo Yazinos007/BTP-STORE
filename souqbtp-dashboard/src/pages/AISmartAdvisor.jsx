@@ -10,7 +10,7 @@ import {
 
 const translations = {
   ar: {
-    title: 'المستشار الاستراتيجي (IA)',
+    title: 'المستشار الاستراتيجي',
     subtitle: 'محرك الذكاء الاصطناعي لتحليل الأسواق العالمية وتحسين اللوجستيك في الوقت الفعلي.',
     tenderRadar: 'رادار المناقصات الذكي (فرص حية)',
     tenderDesc: 'اقتناص طلبات كميات ضخمة من المقاولين والمهندسين في منطقتك الجغرافية تلقائياً.',
@@ -64,7 +64,7 @@ const translations = {
     aiFallbackAction: 'تجميد عروض البيع فوراً وتأمين شحنة مصنع'
   },
   fr: {
-    title: 'Conseiller Stratégique (IA)',
+    title: 'Conseiller Stratégique',
     subtitle: 'Moteur IA pour l\'analyse des marchés mondiaux et l\'optimisation logistique en temps réel.',
     tenderRadar: 'Radar d\'Appels d\'Offres (Live)',
     tenderDesc: 'Capturez automatiquement les demandes de gros volumes des entrepreneurs de votre région.',
@@ -118,7 +118,7 @@ const translations = {
     aiFallbackAction: 'Geler les devis de vente immédiatement et sécuriser le stock d\'usine'
   },
   en: {
-    title: 'AI Strategic Advisor',
+    title: 'Strategic Advisor',
     subtitle: 'AI engine for global market analysis and real-time logistics optimization.',
     tenderRadar: 'Smart Tender Radar (Live)',
     tenderDesc: 'Automatically capture large volume requests from contractors and engineers in your area.',
