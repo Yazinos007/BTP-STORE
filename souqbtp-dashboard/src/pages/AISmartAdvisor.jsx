@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import useSupplierStore from '../store/useSupplierStore';
-import { Sparkles, AlertTriangle, Truck, ShieldAlert, ArrowRightLeft, CheckCircle2, ChevronRight, RefreshCw, Loader2, Gavel, Timer, Box, Send, MapPin, Plus, X } from 'lucide-react';
+import { 
+  Sparkles, AlertTriangle, Truck, ShieldCheck, ShieldAlert, 
+  ArrowRightLeft, CheckCircle2, ChevronRight, RefreshCw, 
+  Loader2, Gavel, Timer, Box, Send, MapPin, Plus, X 
+} from 'lucide-react';
 
 const translations = {
   ar: {
