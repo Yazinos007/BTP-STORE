@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { 
-  Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Layers, FileText, Calculator, Users, Receipt, Sparkles, LayoutDashboard, 
-  Settings, Zap, Radar, Wallet, Landmark, Globe, ShoppingCart, Factory, ShoppingBag, ChevronDown, Store, Briefcase, ArrowRightLeft, Lock, MessageCircle, Trophy, PlusCircle, Loader2
+  Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Layers, FileText, Calculator, Users, Receipt, 
+  Sparkles, LayoutDashboard, Settings, Zap, Radar, Wallet, Landmark, Globe, ShoppingCart, Factory, ShoppingBag, 
+  ChevronDown, Store, Briefcase, ArrowRightLeft, Lock, MessageCircle, Trophy, PlusCircle, Loader2, ShieldCheck
 } from 'lucide-react';
 
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
