@@ -445,7 +445,56 @@ const PremiumGuard = ({ children }) => {
   return children;
 };
 
-// 🛡️ لوحة المورد الكبير المحصنة
+// 🎨 منظومة الألوان المتوهجة والنابضة لسيدبار المورد الكبير (B2B Neon Themes)
+const WHOLESALE_SECTION_THEMES = {
+  direction: {
+    gradientText: 'bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]',
+    dot: 'bg-blue-400 shadow-[0_0_10px_#60a5fa]',
+    activeBtn: 'bg-blue-600/20 text-blue-300 border border-blue-500/70 shadow-[0_0_20px_rgba(59,130,246,0.45)] animate-pulse',
+    activeIcon: 'text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.9)]',
+    hoverBtn: 'hover:bg-blue-500/10 hover:text-blue-300 hover:border-blue-500/30',
+    groupActive: 'bg-blue-500/10 text-blue-300 border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.2)]',
+    subBorder: 'border-blue-500/30'
+  },
+  comm: {
+    gradientText: 'bg-gradient-to-r from-emerald-400 via-teal-200 to-green-400 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]',
+    dot: 'bg-emerald-400 shadow-[0_0_10px_#34d399]',
+    activeBtn: 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/70 shadow-[0_0_20px_rgba(16,185,129,0.45)] animate-pulse',
+    activeIcon: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.9)]',
+    hoverBtn: 'hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/30',
+    groupActive: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.2)]',
+    subBorder: 'border-emerald-500/30'
+  },
+  industrial: {
+    gradientText: 'bg-gradient-to-r from-amber-400 via-yellow-200 to-orange-400 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]',
+    dot: 'bg-amber-400 shadow-[0_0_10px_#fbbf24]',
+    activeBtn: 'bg-amber-500/20 text-amber-300 border border-amber-500/70 shadow-[0_0_20px_rgba(245,158,11,0.45)] animate-pulse',
+    activeIcon: 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.9)]',
+    hoverBtn: 'hover:bg-amber-500/10 hover:text-amber-300 hover:border-amber-500/30',
+    groupActive: 'bg-amber-500/10 text-amber-300 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.2)]',
+    subBorder: 'border-amber-500/30'
+  },
+  finance: {
+    gradientText: 'bg-gradient-to-r from-purple-400 via-fuchsia-300 to-indigo-400 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]',
+    dot: 'bg-purple-400 shadow-[0_0_10px_#c084fc]',
+    activeBtn: 'bg-purple-600/20 text-purple-300 border border-purple-500/70 shadow-[0_0_20px_rgba(168,85,247,0.45)] animate-pulse',
+    activeIcon: 'text-purple-400 drop-shadow-[0_0_8px_rgba(192,132,252,0.9)]',
+    hoverBtn: 'hover:bg-purple-500/10 hover:text-purple-300 hover:border-purple-500/30',
+    groupActive: 'bg-purple-500/10 text-purple-300 border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.2)]',
+    subBorder: 'border-purple-500/30'
+  },
+  params: {
+    gradientText: 'bg-gradient-to-r from-cyan-400 via-sky-200 to-blue-400 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]',
+    dot: 'bg-cyan-400 shadow-[0_0_10px_#22d3ee]',
+    activeBtn: 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/70 shadow-[0_0_20px_rgba(34,211,238,0.45)] animate-pulse',
+    activeIcon: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.9)]',
+    hoverBtn: 'hover:bg-cyan-500/10 hover:text-cyan-300 hover:border-cyan-500/30',
+    groupActive: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/40 shadow-[0_0_15px_rgba(34,211,238,0.2)]',
+    subBorder: 'border-cyan-500/30'
+  }
+};
+
+// 🛡️ لوحة المورد الكبير المحصنة (Smart Glowing B2B Sidebar)
 const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) => {
   const { language, setLanguage } = useSettingsStore();
   const location = useLocation();
@@ -458,7 +507,7 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
     comm_market: false,
     achats: false,
     marketplace: false,
-    ventes: false
+    ventes: true
   });
 
   const handleLogout = async () => {
@@ -468,10 +517,10 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
 
   useEffect(() => {
     const p = location.pathname;
-    if (['/messages', '/marketplace'].includes(p)) setOpenMenus(prev => ({...prev, comm_market: true}));
-    if (['/raw-suppliers', '/raw-purchases'].includes(p)) setOpenMenus(prev => ({...prev, achats: true}));
-    if (['/market-orders', '/fleet-market'].includes(p)) setOpenMenus(prev => ({...prev, marketplace: true}));
-    if (['/clients', '/pos-b2b', '/orders', '/fleet-b2b', '/contracts'].includes(p)) setOpenMenus(prev => ({...prev, ventes: true}));
+    if (['/messages', '/marketplace'].includes(p)) setOpenMenus(prev => ({ ...prev, comm_market: true }));
+    if (['/raw-suppliers', '/raw-purchases'].includes(p)) setOpenMenus(prev => ({ ...prev, achats: true }));
+    if (['/market-orders', '/fleet-market'].includes(p)) setOpenMenus(prev => ({ ...prev, marketplace: true }));
+    if (['/clients', '/pos-b2b', '/orders', '/fleet-b2b', '/contracts'].includes(p)) setOpenMenus(prev => ({ ...prev, ventes: true }));
   }, [location.pathname]);
 
   useEffect(() => {
@@ -501,21 +550,43 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
   const tLayout = {
     fr: { 
       upgrade: "Passer à l'Enterprise", affiliates: "Partenaires", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", 
+      sections: {
+        direction: "DIRECTION & INTELLIGENCE",
+        comm: "MARCHÉ, RADAR & FRET",
+        industrial: "INDUSTRIE, STOCK & VENTES B2B",
+        finance: "FINANCE, FISCALITÉ & RH",
+        params: "ADMINISTRATION & ÉQUIPE"
+      },
       groups: { comm: "Communication & Marché", achats: "Achats & Fournisseurs", marketplace: "Gestion Marketplace", ventes: "Gestion des Ventes" },
       items: { overview: "Tableau de bord", inbox: "Boîte de Réception", btpMarket: "Marché BTP", rawSuppliers: "Fournisseurs & Prestataires", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", production: "Production", marketOrders: "Commandes Marketplace", fleetMarket: "Suivi des Commandes", clients: "Clients & Dettes", posB2B: "Ventes Directes (POS)", orders: "Commandes Reçues (B2B)", fleetB2B: "Suivi des Commandes (B2B)", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique (IA)", radar: "Radar d'Appels d'Offres", logisticsBourse: "Bourse de Fret", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance" } 
     },
     ar: { 
       upgrade: "ترقية للباقة الذهبية", affiliates: "شركاء النجاح", logout: "خروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
+      sections: {
+        direction: "القيادة والذكاء الاستراتيجي",
+        comm: "السوق، المناقصات واللوجستيك",
+        industrial: "المصنع، المخزون والمبيعات الكبرى",
+        finance: "المالية، الجبايات والموارد البشرية",
+        params: "الإدارة، الفريق والإعدادات"
+      },
       groups: { comm: "التواصل والسوق", achats: "المشتريات والموردون", marketplace: "إدارة الماركت بليس", ventes: "إدارة المبيعات" },
       items: { overview: "لوحة القيادة", inbox: "صندوق الرسائل", btpMarket: "سوق BTP", rawSuppliers: "الموردون والشركاء", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", production: "الإنتاج (المعمل)", marketOrders: "طلبات الماركت بليس", fleetMarket: "تتبع شحنات المتجر", clients: "العملاء والديون (CRM)", posB2B: "المبيعات المباشرة (POS)", orders: "طلبات التزويد (B2B)", fleetB2B: "تتبع شحنات التزويد", contracts: "العقود والتوقيعات", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي (IA)", radar: "رادار المناقصات", logisticsBourse: "بورصة اللوجستيك", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق" } 
     },
     en: { 
       upgrade: "Upgrade to Enterprise", affiliates: "Affiliates", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", 
+      sections: {
+        direction: "DIRECTION & AI STRATEGY",
+        comm: "MARKET, TENDERS & FREIGHT",
+        industrial: "FACTORY, STOCK & B2B SALES",
+        finance: "FINANCE, TAX & HR",
+        params: "ADMINISTRATION & TEAM"
+      },
       groups: { comm: "Communication & Market", achats: "Purchases & Suppliers", marketplace: "Marketplace Management", ventes: "Sales Management" },
       items: { overview: "Dashboard", inbox: "Inbox", btpMarket: "BTP Marketplace", rawSuppliers: "Suppliers & Partners", rawPurchases: "Purchases & Procurement", stock: "Central Stock", production: "Production", marketOrders: "Marketplace Orders", fleetMarket: "Order Tracking", clients: "Clients & Debts", posB2B: "Direct Sales (POS)", orders: "Received Orders (B2B)", fleetB2B: "B2B Tracking", contracts: "Contracts & Signatures", invoices: "B2B Invoices", hr: "Human Resources", caisses: "Banks & Registers", expenses: "Expenses Management", fiscal: "Tax System (VAT)", accounting: "Accounting & CPC", analytics: "B2B Analytics", ai: "AI Strategic Advisor", radar: "Tender Radar", logisticsBourse: "Freight Exchange", team: "Users & Permissions", settings: "Settings & Trust" } 
     }
   };
   const t = tLayout[language] || tLayout['fr'];
+  const isRtl = language === 'ar';
   
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [readyToShipCount, setReadyToShipCount] = useState(0);
@@ -536,80 +607,143 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
       }).subscribe();
     return () => supabase.removeChannel(channel);
   }, [supplier]);
-  
-  const menuItems = [
-    { path: '/', icon: LayoutDashboard, label: t.items.overview },
+
+  const categorizedSections = [
     {
-      id: 'comm_market', icon: MessageCircle, label: t.groups.comm,
-      children: [
-        { path: '/messages', icon: MessageCircle, label: t.items.inbox },
-        { path: '/marketplace', icon: Store, label: t.items.btpMarket },
+      key: 'direction',
+      title: t.sections.direction,
+      items: [
+        { path: '/', icon: LayoutDashboard, label: t.items.overview },
+        { path: '/analytics', icon: BarChart3, label: t.items.analytics },
+        { path: '/ai-advisor', icon: Sparkles, label: t.items.ai, tag: 'IA' }
       ]
     },
     {
-      id: 'achats', icon: ShoppingBag, label: t.groups.achats,
-      children: [
-        { path: '/raw-suppliers', icon: Users, label: t.items.rawSuppliers },
-        { path: '/raw-purchases', icon: Receipt, label: t.items.rawPurchases },
+      key: 'comm',
+      title: t.sections.comm,
+      items: [
+        {
+          id: 'comm_market', icon: MessageCircle, label: t.groups.comm,
+          children: [
+            { path: '/messages', icon: MessageCircle, label: t.items.inbox },
+            { path: '/marketplace', icon: Store, label: t.items.btpMarket },
+          ]
+        },
+        { path: '/tender-radar', icon: Radar, label: t.items.radar, tag: 'LIVE' },
+        { path: '/logistics-bourse', icon: ArrowRightLeft, label: t.items.logisticsBourse }
       ]
     },
-    { path: '/stock', icon: Layers, label: t.items.stock },
-    { path: '/production', icon: Factory, label: t.items.production }, 
     {
-      id: 'marketplace', icon: Store, label: t.groups.marketplace,
-      children: [
-        { path: '/market-orders', icon: ShoppingBag, label: t.items.marketOrders },
-        { path: '/fleet-market', icon: Truck, label: t.items.fleetMarket }, 
+      key: 'industrial',
+      title: t.sections.industrial,
+      items: [
+        { path: '/stock', icon: Layers, label: t.items.stock },
+        { path: '/production', icon: Factory, label: t.items.production },
+        {
+          id: 'achats', icon: ShoppingBag, label: t.groups.achats,
+          children: [
+            { path: '/raw-suppliers', icon: Users, label: t.items.rawSuppliers },
+            { path: '/raw-purchases', icon: Receipt, label: t.items.rawPurchases },
+          ]
+        },
+        {
+          id: 'marketplace', icon: Store, label: t.groups.marketplace,
+          children: [
+            { path: '/market-orders', icon: ShoppingBag, label: t.items.marketOrders },
+            { path: '/fleet-market', icon: Truck, label: t.items.fleetMarket },
+          ]
+        },
+        {
+          id: 'ventes', icon: Briefcase, label: t.groups.ventes,
+          children: [
+            { path: '/clients', icon: Users, label: t.items.clients },
+            { path: '/pos-b2b', icon: ShoppingCart, label: t.items.posB2B },
+            { path: '/orders', icon: Package, label: t.items.orders, badge: pendingOrdersCount },
+            { path: '/fleet-b2b', icon: Truck, label: t.items.fleetB2B, badge: readyToShipCount },
+            { path: '/contracts', icon: FileSignature, label: t.items.contracts },
+          ]
+        },
+        { path: '/invoices', icon: FileText, label: t.items.invoices }
       ]
     },
     {
-      id: 'ventes', icon: Briefcase, label: t.groups.ventes,
-      children: [
-        { path: '/clients', icon: Users, label: t.items.clients },
-        { path: '/pos-b2b', icon: ShoppingCart, label: t.items.posB2B }, 
-        { path: '/orders', icon: Package, label: t.items.orders, badge: pendingOrdersCount },
-        { path: '/fleet-b2b', icon: Truck, label: t.items.fleetB2B, badge: readyToShipCount },  
-        { path: '/contracts', icon: FileSignature, label: t.items.contracts },
+      key: 'finance',
+      title: t.sections.finance,
+      items: [
+        { path: '/caisses', icon: Wallet, label: t.items.caisses },
+        { path: '/expenses', icon: Receipt, label: t.items.expenses },
+        { path: '/hr', icon: Users, label: t.items.hr },
+        { path: '/fiscal', icon: Landmark, label: t.items.fiscal },
+        { path: '/accounting', icon: Calculator, label: t.items.accounting }
       ]
     },
-    { path: '/invoices', icon: FileText, label: t.items.invoices },
-    { path: '/hr', icon: Users, label: t.items.hr },
-    { path: '/caisses', icon: Wallet, label: t.items.caisses },
-    { path: '/expenses', icon: Receipt, label: t.items.expenses },
-    { path: '/fiscal', icon: Landmark, label: t.items.fiscal },
-    { path: '/accounting', icon: Calculator, label: t.items.accounting },
-    { path: '/analytics', icon: BarChart3, label: t.items.analytics },
-    { path: '/ai-advisor', icon: Sparkles, label: t.items.ai },
-    { path: '/tender-radar', icon: Radar, label: t.items.radar },
-    { path: '/logistics-bourse', icon: ArrowRightLeft, label: t.items.logisticsBourse },
-    { path: '/team', icon: Users, label: t.items.team },
-    { path: '/settings', icon: Settings, label: t.items.settings }
+    {
+      key: 'params',
+      title: t.sections.params,
+      items: [
+        { path: '/team', icon: Users, label: t.items.team },
+        { path: '/settings', icon: Settings, label: t.items.settings }
+      ]
+    }
   ];
 
-  const getActiveStyle = (path) => {
+  const getThemedLinkStyle = (path, themeKey) => {
     const isActive = location.pathname === path;
-    if (!isActive) return "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent";
-    if (['/messages', '/marketplace'].includes(path)) 
-      return "bg-emerald-600/20 text-emerald-400 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-pulse";
-    return "bg-indigo-600/20 text-indigo-400 border border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.35)]";
+    const theme = WHOLESALE_SECTION_THEMES[themeKey] || WHOLESALE_SECTION_THEMES.direction;
+    if (isActive) return theme.activeBtn;
+    return `text-slate-400 border border-transparent ${theme.hoverBtn}`;
+  };
+
+  const getThemedIconStyle = (path, themeKey) => {
+    const isActive = location.pathname === path;
+    const theme = WHOLESALE_SECTION_THEMES[themeKey] || WHOLESALE_SECTION_THEMES.direction;
+    return isActive ? theme.activeIcon : 'text-slate-400 group-hover:text-white transition-colors';
   };
 
   const toggleMenu = (id) => {
-    setOpenMenus(prev => ({...prev, [id]: !prev[id]}));
+    setOpenMenus(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const SectionHeader = ({ title, themeKey }) => {
+    const theme = WHOLESALE_SECTION_THEMES[themeKey] || WHOLESALE_SECTION_THEMES.direction;
+    return (
+      <div className="px-3 pb-1.5 pt-2 flex items-center gap-2.5 relative overflow-hidden">
+        <span className={`w-2 h-2 rounded-full animate-ping absolute opacity-75 ${theme.dot}`} />
+        <span className={`w-2 h-2 rounded-full relative shrink-0 ${theme.dot}`} />
+        <span className={`text-[10px] font-black uppercase tracking-widest b2b-shimmer-title ${theme.gradientText}`}>
+          {title}
+        </span>
+      </div>
+    );
   };
 
   return (
     <div className="flex h-screen w-full max-w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <style>{`
+        @keyframes b2bHeaderShimmer {
+          0% { filter: brightness(0.95); }
+          50% { filter: brightness(1.4); }
+          100% { filter: brightness(0.95); }
+        }
+        .b2b-shimmer-title {
+          animation: b2bHeaderShimmer 2.4s infinite ease-in-out;
+        }
+      `}</style>
+
       <aside className={`shrink-0 h-full bg-slate-900 flex flex-col shadow-2xl transition-all duration-300 ease-in-out absolute md:relative z-30 ${isSidebarOpen ? 'w-72 border-r border-slate-800 opacity-100 translate-x-0' : 'w-0 border-r-0 opacity-0 overflow-hidden'}`}>
         <div className="w-72 h-full flex flex-col">
           <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg border border-white/10">
+              <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-[0_0_20px_rgba(37,99,235,0.4)] border border-white/10">
                 {storeInitial}
               </div>
               <div className="flex flex-col text-start">
-                <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">SasBTP</h1>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Portal</span>
+                <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">
+                  SasBTP
+                </h1>
+                <span className="text-[10px] font-black px-2 py-0.5 mt-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-widest">
+                  B2B EMPIRE
+                </span>
               </div>
             </div>
             <button onClick={handleLanguageChange} className="flex flex-col items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-all text-slate-300 hover:text-white group cursor-pointer">
@@ -617,49 +751,88 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
               <span className="text-[9px] font-black uppercase mt-1 tracking-wider">{language}</span>
             </button>
           </div>
-          <div className="px-5 pt-6 pb-2 shrink-0">
-            <Link to="/subscription" className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all text-sm">
-              <Zap size={20} className="fill-black" />
+
+          <div className="px-5 pt-5 pb-2 shrink-0">
+            <Link to="/subscription" className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:scale-[1.02] transition-all text-xs">
+              <Zap size={18} className="fill-black animate-bounce" />
               {t.upgrade}
             </Link>
           </div>
           
-          <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar pb-24">
-            {menuItems.map((item) => {
-              if (item.children) {
-                const isOpen = openMenus[item.id];
-                return (
-                  <div key={item.id} className="space-y-1 pt-1">
-                    <button onClick={() => toggleMenu(item.id)} className="w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all hover:bg-slate-800 text-slate-300">
-                      <div className="flex items-center gap-3">
-                        <item.icon size={20} className="text-slate-400 shrink-0" />
-                        <span className="text-sm uppercase tracking-wider">{item.label}</span>
-                      </div>
-                      <ChevronDown size={16} className={`transition-transform duration-300 ${isOpen ? 'rotate-180 text-white' : 'text-slate-500'}`} />
-                    </button>
-                    <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                      <div className={`py-1 space-y-1 border-slate-800 ${language === 'ar' ? 'mr-6 border-r-2 pr-4' : 'ml-6 border-l-2 pl-4'}`}>
-                        {item.children.map(child => (
-                          <Link key={child.path} to={child.path} onClick={() => { if(window.innerWidth <= 768) setIsSidebarOpen(false); }} className={`flex items-center justify-between px-4 py-2.5 rounded-lg font-bold transition-all text-sm group ${getActiveStyle(child.path)}`}>
-                            <div className="flex items-center gap-3">
-                              <child.icon size={18} className="text-slate-500 group-hover:text-blue-400 shrink-0" />
-                              <span>{child.label}</span>
-                            </div>
-                            {child.badge > 0 && <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{child.badge}</span>}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
+          <nav className="flex-1 py-3 px-3.5 space-y-5 overflow-y-auto custom-scrollbar pb-24">
+            {categorizedSections.map((section) => {
+              const theme = WHOLESALE_SECTION_THEMES[section.key];
               return (
-                <Link key={item.path} to={item.path} onClick={() => { if(window.innerWidth <= 768) setIsSidebarOpen(false); }} className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all group ${getActiveStyle(item.path)}`}>
-                  <div className="flex items-center gap-3">
-                    <item.icon size={20} className="text-slate-400 group-hover:text-blue-400 shrink-0" />
-                    <span>{item.label}</span>
-                  </div>
-                </Link>
+                <div key={section.key} className="space-y-1.5">
+                  <SectionHeader title={section.title} themeKey={section.key} />
+
+                  {section.items.map((item) => {
+                    if (item.children) {
+                      const isOpen = openMenus[item.id];
+                      const hasActiveChild = item.children.some(c => location.pathname === c.path);
+                      return (
+                        <div key={item.id} className="space-y-1">
+                          <button
+                            onClick={() => toggleMenu(item.id)}
+                            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl font-black text-xs transition-all border cursor-pointer ${
+                              hasActiveChild
+                                ? theme.groupActive
+                                : `text-slate-300 border-transparent ${theme.hoverBtn}`
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <item.icon size={18} className={`${theme.activeIcon} shrink-0`} />
+                              <span className="uppercase tracking-wider">{item.label}</span>
+                            </div>
+                            <ChevronDown size={15} className={`transition-transform duration-300 ${isOpen ? 'rotate-180 text-white' : 'text-slate-500'}`} />
+                          </button>
+
+                          <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div className={`py-1 space-y-1 ${isRtl ? `mr-5 border-r-2 pr-3 ${theme.subBorder}` : `ml-5 border-l-2 pl-3 ${theme.subBorder}`}`}>
+                              {item.children.map(child => (
+                                <Link
+                                  key={child.path}
+                                  to={child.path}
+                                  onClick={() => { if (window.innerWidth <= 768) setIsSidebarOpen(false); }}
+                                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-black transition-all text-xs group ${getThemedLinkStyle(child.path, section.key)}`}
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    <child.icon size={16} className={`shrink-0 ${getThemedIconStyle(child.path, section.key)}`} />
+                                    <span>{child.label}</span>
+                                  </div>
+                                  {child.badge > 0 && (
+                                    <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">
+                                      {child.badge}
+                                    </span>
+                                  )}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => { if (window.innerWidth <= 768) setIsSidebarOpen(false); }}
+                        className={`flex items-center justify-between px-4 py-2.5 rounded-xl font-black text-xs transition-all group ${getThemedLinkStyle(item.path, section.key)}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <item.icon size={18} className={`shrink-0 ${getThemedIconStyle(item.path, section.key)}`} />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.tag && (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-white/10 text-white border border-white/20">
+                            {item.tag}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
               );
             })}
           </nav>
@@ -689,7 +862,7 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
 
             <GlobalSpaceSwitcher language={language} dark={true} currentSpace="wholesale" />
 
-            <div className={`flex items-center gap-3 ${language === 'ar' ? 'pr-3 border-r' : 'pl-3 border-l'} border-slate-700`}>
+            <div className={`flex items-center gap-3 ${isRtl ? 'pr-3 border-r' : 'pl-3 border-l'} border-slate-700`}>
               <div className="text-end hidden lg:block">
                 <p className="text-sm font-bold text-white">{storeName}</p>
                 <p className="text-xs text-slate-400 uppercase tracking-wider">{t.wholesaler}</p>
@@ -699,9 +872,8 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
               </div>
             </div>
 
-            {/* 🚪 زر الخروج للمورد الكبير */}
             <button onClick={handleLogout} className="flex items-center justify-center w-10 h-10 md:w-auto md:px-3.5 md:py-2 rounded-xl text-xs md:text-sm font-bold text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/20 transition-all cursor-pointer">
-              <LogOut size={17} /> <span className={`hidden sm:inline ${language === 'ar' ? 'mr-1.5' : 'ml-1.5'}`}>{t.logout}</span>
+              <LogOut size={17} /> <span className={`hidden sm:inline ${isRtl ? 'mr-1.5' : 'ml-1.5'}`}>{t.logout}</span>
             </button>
           </div>
         </header>
