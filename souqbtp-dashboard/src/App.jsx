@@ -14,7 +14,7 @@ import SupplierInvoices from './pages/SupplierInvoices';
 import SupplierAccounting from './pages/SupplierAccounting';
 import SupplierExpenses from './pages/SupplierExpenses';
 import SupplierHR from './pages/SupplierHR';
-import AISmartAdvisor from './pages/AISmartAdvisor'; 
+import SmartAdvisor from './pages/SmartAdvisor'; 
 import SupplierOverview from './pages/SupplierOverview';
 import SupplierClients from './pages/SupplierClients';
 import SupplierOrders from './pages/SupplierOrders';
@@ -1193,7 +1193,7 @@ function AppContent({ session, loading, userPrimaryRole, supplier, language, isS
               <Route path="/production" element={<PremiumGuard><SupplierProduction /></PremiumGuard>} />
               <Route path="/audit" element={<PremiumGuard><AIAudit /></PremiumGuard>} />
               <Route path="/analytics" element={<PremiumGuard><AnalyticsB2B /></PremiumGuard>} />
-              <Route path="/ai-advisor" element={<PremiumGuard><AISmartAdvisor /></PremiumGuard>} />
+              <Route path="/ai-advisor" element={<PremiumGuard><SmartAdvisor /></PremiumGuard>} />
               <Route path="/tender-radar" element={<PremiumGuard><TenderRadar /></PremiumGuard>} />
               <Route path="/logistics-bourse" element={<PremiumGuard><LogisticsBourse /></PremiumGuard>} />
               <Route path="/fleet-market" element={<PremiumGuard><FleetManagement /></PremiumGuard>} /> 
