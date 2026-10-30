@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, MonitorPlay, Package, ShoppingCart, Wallet, 
   Settings, LogOut, Receipt, Users, FileText, Briefcase, Landmark,
@@ -70,6 +70,7 @@ const translations = {
 export default function Sidebar() {
   const { supplier, isLoading } = useSupplierStore();
   const { language, setLanguage } = useSettingsStore();
+  const [currentUser, setCurrentUser] = useState(null);
   
   const handleLanguageChange = () => {
     if (language === 'fr') setLanguage('ar');
@@ -81,24 +82,30 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState({});
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUser(data?.user || null);
+    });
+  }, []);
+
   const t = translations[language] || translations['fr'];
 
   if (isLoading) return <div className={`w-[280px] h-screen bg-[#2d2252] shrink-0 ${language === 'fr' || language === 'en' ? 'border-r' : 'border-l'} border-white/10 animate-pulse`} />;
   
   const safeSupplier = supplier || { 
     store_name: 'Mon Magasin', 
-    tier: 'starter', 
-    role: 'admin'
+    subscription_plan: 'starter'
   };
 
-  const tier = safeSupplier.tier || 'starter';
-  const role = safeSupplier.role || 'admin';
+  const tier = (safeSupplier.subscription_plan || 'starter').toLowerCase();
+  
+  // 🚀 تحديد هل هو المالك الأصلي أم موظف؟
+  // نعتبره المالك إذا كان هو من أنشأ الحساب (user.id === supplier.user_id) أو لم يتم تحديد أنه حساب موظف فرعي
+  const isOwner = currentUser ? (currentUser.id === safeSupplier.user_id || currentUser.user_metadata?.role === 'admin' || !currentUser.user_metadata?.is_employee) : true;
   
   // 🚀 متغيرات التحكم الجديدة (تطابق تام بين البرمجة والتسويق)
-  // باقة Pro (أعلى باقة)
-  const isProOnly = ['pro', 'enterprise'].includes(tier); 
-  // باقة Premium وما فوق
-  const isPremiumPlus = ['premium', 'pro', 'enterprise'].includes(tier); 
+  const isProOnly = ['pro', 'enterprise', 'vip'].includes(tier); 
+  const isPremiumPlus = ['premium', 'pro', 'enterprise', 'vip'].includes(tier); 
 
   const toggleMenu = (menuName) => setOpenMenus(prev => ({ ...prev, [menuName]: !prev[menuName] }));
 
@@ -106,13 +113,13 @@ export default function Sidebar() {
   const unifiedMenu = [
     { name: t.dashboard, icon: LayoutDashboard, path: '/', alwaysShow: true },
     {
-    group: language === 'ar' ? 'التواصل والسوق' : language === 'fr' ? 'COMMUNICATION & MARCHÉ' : 'COMMUNICATION & MARKET',
-    icon: MessageCircle,
-    subItems: [
-      { name: language === 'ar' ? 'صندوق الرسائل' : language === 'fr' ? 'Boîte de Réception' : 'Inbox', path: '/messages' },
-      { name: language === 'ar' ? 'سوق BTP' : language === 'fr' ? 'Marché BTP' : 'BTP Marketplace', path: '/marketplace' }
-    ]
-  },
+      group: language === 'ar' ? 'التواصل والسوق' : language === 'fr' ? 'COMMUNICATION & MARCHÉ' : 'COMMUNICATION & MARKET',
+      icon: MessageCircle,
+      subItems: [
+        { name: language === 'ar' ? 'صندوق الرسائل' : language === 'fr' ? 'Boîte de Réception' : 'Inbox', path: '/messages' },
+        { name: language === 'ar' ? 'سوق BTP' : language === 'fr' ? 'Marché BTP' : 'BTP Marketplace', path: '/marketplace' }
+      ]
+    },
     {
       group: t.gestionAchats, icon: Truck,
       subItems: [
@@ -138,7 +145,6 @@ export default function Sidebar() {
       group: t.gestionFactures, icon: FileText,
       subItems: [
         { name: t.factures, path: '/invoices' }, 
-        // 🔒 إخفاء الفواتير المتقدمة عن الباقة المجانية (تظهر لـ Premium و Pro)
         ...(isPremiumPlus ? [
           { name: t.devis, path: '/devis' },
           { name: t.bc, path: '/bc' }, 
@@ -149,27 +155,22 @@ export default function Sidebar() {
         ] : [])
       ]
     },
-    // 🔒 الموارد البشرية: فقط لـ Pro
     ...(isProOnly ? [{
       group: t.rh, icon: Briefcase,
       subItems: [{ name: t.gestionEmployes, path: '/hr' }]
     }] : []),
-    // 🔒 الصناديق المتعددة: فقط لـ Pro
     ...(isProOnly ? [{
       group: t.gestionCaisses, icon: Wallet,
       subItems: [{ name: t.caisses, path: '/caisses' }]
     }] : []),
-    // 🔒 إدارة المصاريف: لـ Premium وما فوق
     ...(isPremiumPlus ? [{
       group: t.chargesEnt, icon: CreditCard,
       subItems: [{ name: t.gestionCharges, path: '/expenses' }]
     }] : []),
-    // 🔒 الضرائب: فقط لـ Pro
     ...(isProOnly ? [{
       group: t.fiscal, icon: Landmark,
       subItems: [{ name: t.decTva, path: '/fiscal' }]
     }] : []),
-    // 🔒 المحاسبة: فقط لـ Pro
     ...(isProOnly ? [{
       group: t.accounting, icon: Calculator,
       subItems: [{ name: t.accounting, path: '/accounting' }]
@@ -185,8 +186,8 @@ export default function Sidebar() {
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 min-w-[64px] rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center text-white font-black text-3xl shadow-xl border-2 border-white/10 overflow-hidden shrink-0">
-              {supplier?.logo_url ? (
-                <img src={supplier.logo_url} alt="Logo" className="w-full h-full object-cover" />
+              {safeSupplier.logo_url ? (
+                <img src={safeSupplier.logo_url} alt="Logo" className="w-full h-full object-cover" />
               ) : (
                 safeSupplier.store_name?.charAt(0)?.toUpperCase() || 'S'
               )}
@@ -198,12 +199,11 @@ export default function Sidebar() {
               </h2>
               
               <div className="flex flex-wrap gap-2">
-                {/* 🎯 الشارات الآن تتطابق برمجياً وتسويقياً */}
                 <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${isProOnly ? 'bg-gray-800 text-white shadow-lg shadow-gray-800/30' : tier === 'premium' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-gray-600 text-white'}`}>
                   {isProOnly ? 'Pro Retailer' : tier === 'premium' ? 'Premium Shop' : 'Basic POS'}
                 </span>
-                <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${role === 'admin' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white/10 text-gray-300'}`}>
-                  {role === 'admin' ? t.owner : t.employee}
+                <span className={`text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wide ${isOwner ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white/10 text-gray-300'}`}>
+                  {isOwner ? t.owner : t.employee}
                 </span>
               </div>
             </div>
@@ -219,7 +219,7 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {supplier?.is_founding_partner && (
+        {safeSupplier.is_founding_partner && (
           <div className="flex items-center justify-center gap-3 px-4 py-3 mt-1 rounded-xl bg-gradient-to-r from-amber-500/10 via-yellow-500/15 to-orange-500/10 border border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)] relative overflow-hidden group w-full">
             <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"></div>
             <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 uppercase tracking-widest z-10 drop-shadow-md">
@@ -232,7 +232,7 @@ export default function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar text-start pb-24">
         
-        {role === 'admin' && (
+        {isOwner && (
           <div className="px-4 mb-6">
             <button 
               onClick={() => navigate('/subscription')}
@@ -250,7 +250,7 @@ export default function Sidebar() {
 
         <div className="space-y-1">
           {unifiedMenu.map((item, idx) => {
-            if (item.adminOnly && role !== 'admin') return null;
+            if (item.adminOnly && !isOwner) return null;
 
             if (!item.group) {
               return (
