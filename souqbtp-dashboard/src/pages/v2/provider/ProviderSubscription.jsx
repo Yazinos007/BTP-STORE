@@ -26,6 +26,7 @@ const translations = {
     monthly: 'اشتراك شهري',
     yearly: 'اشتراك سنوي',
     twoMonthsFree: 'شهران مجاناً',
+    discountBadge: 'وفر 20%', // إضافة نسبة الخصم
     activePlanBadge: '✅ باقتك مفعلة حالياً',
     freePlan: {
       name: 'حساب حرفي عادي',
@@ -83,7 +84,8 @@ const translations = {
     processing: '⏳ جاري تأكيد الاشتراك ورفع الوصل...',
     confirmPayment: '✅ تأكيد وإرسال وصل الدفع',
     whatsappSupport: 'تحتاج مساعدة؟ تواصل معنا عبر واتساب',
-    secureData: '🔒 بياناتك مشفرة ومحمية بالكامل.'
+    secureData: '🔒 بياناتك مشفرة ومحمية بالكامل.',
+    cancelBtn: 'إلغاء' // تمت إضافة زر الإلغاء
   },
   fr: {
     topBadge: 'Investissez dans votre métier et doublez vos revenus',
@@ -92,6 +94,7 @@ const translations = {
     monthly: 'Mensuel',
     yearly: 'Annuel',
     twoMonthsFree: '2 mois offerts',
+    discountBadge: 'Économisez 20%', // إضافة نسبة الخصم
     activePlanBadge: '✅ Plan Actif',
     freePlan: {
       name: 'Compte Artisan Standard',
@@ -149,7 +152,8 @@ const translations = {
     processing: '⏳ Activation en cours...',
     confirmPayment: '✅ Confirmer et envoyer le reçu',
     whatsappSupport: 'Besoin d\'aide ? Contactez-nous sur WhatsApp',
-    secureData: '🔒 Vos données sont entièrement cryptées et protégées.'
+    secureData: '🔒 Vos données sont entièrement cryptées et protégées.',
+    cancelBtn: 'Annuler' // تمت إضافة زر الإلغاء
   },
   en: {
     topBadge: 'Invest in your craft & multiply your income',
@@ -158,6 +162,7 @@ const translations = {
     monthly: 'Monthly Billing',
     yearly: 'Yearly Billing',
     twoMonthsFree: '2 Months Free',
+    discountBadge: 'Save 20%', // إضافة نسبة الخصم
     activePlanBadge: '✅ Active Plan',
     freePlan: {
       name: 'Standard Artisan Account',
@@ -215,7 +220,8 @@ const translations = {
     processing: '⏳ Activating Subscription...',
     confirmPayment: '✅ Confirm & Submit Receipt',
     whatsappSupport: 'Need help? Contact us on WhatsApp',
-    secureData: '🔒 Your data is fully encrypted and protected.'
+    secureData: '🔒 Your data is fully encrypted and protected.',
+    cancelBtn: 'Cancel' // تمت إضافة زر الإلغاء
   }
 };
 
@@ -428,7 +434,7 @@ export default function ProviderSubscription() {
           {t.subtitle}
         </p>
 
-        {/* محول الدفع الشهري / السنوي */}
+        {/* محول الدفع الشهري / السنوي مع إضافة الشارة */}
         <div className="inline-flex items-center bg-slate-950 border border-slate-800 p-1.5 rounded-2xl mt-4">
           <button
             onClick={() => setBillingCycle('monthly')}
@@ -444,7 +450,7 @@ export default function ProviderSubscription() {
               billingCycle === 'yearly' ? 'bg-orange-500 text-slate-950' : 'text-slate-400 hover:text-white'
             }`}
           >
-            {t.yearly} <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md text-[10px]">{t.twoMonthsFree}</span>
+            {t.yearly} <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md text-[10px]">{t.twoMonthsFree} {t.discountBadge}</span>
           </button>
         </div>
       </div>
@@ -634,13 +640,13 @@ export default function ProviderSubscription() {
                         <button
                           type="button"
                           onClick={handleCopyRib}
-                          className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+                          className="text-xs font-bold text-blue-600 hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
                         >
-                          {copiedRib ? <Check size={14} /> : <Copy size={14} />}
+                          {copiedRib ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                           <span>{copiedRib ? (isRtl ? 'تم النسخ' : 'Copié') : (isRtl ? 'نسخ' : 'Copier')}</span>
                         </button>
                       </div>
-                      <p className="text-base sm:text-lg font-black text-blue-600 font-mono tracking-wider" dir="ltr">
+                      <p className="text-base sm:text-lg font-black text-blue-600 font-mono tracking-wider block" dir="ltr">
                         {BANK_INFO.rib}
                       </p>
                       <span className="text-[11px] font-bold text-slate-500 block mt-1">
@@ -734,24 +740,24 @@ export default function ProviderSubscription() {
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <div className="p-6 pt-0 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsCheckoutOpen(false)}
-                className="w-1/3 py-4 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black text-sm transition-all cursor-pointer"
-              >
-                {isRtl ? 'إلغاء' : 'Annuler'}
-              </button>
-              <button
-                type="button"
-                disabled={!receiptFile || isProcessing}
-                onClick={processInstantUpgrade}
-                className="w-2/3 py-4 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black text-base shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
-              >
-                {isProcessing ? t.processing : t.confirmPayment}
-              </button>
-            </div>
+              {/* أزرار الإجراء في الأسفل (تأكيد + إلغاء) */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                 <button
+                   type="button"
+                   onClick={() => setIsCheckoutOpen(false)}
+                   className="w-full sm:w-1/3 py-4 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black text-sm transition-all cursor-pointer text-center"
+                 >
+                   {t.cancelBtn}
+                 </button>
+                 <button
+                   type="button"
+                   disabled={!receiptFile || isProcessing}
+                   onClick={processInstantUpgrade}
+                   className="w-full sm:w-2/3 py-4 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black text-base shadow-lg shadow-emerald-600/25 transition-all cursor-pointer text-center"
+                 >
+                   {isProcessing ? t.processing : t.confirmPayment}
+                 </button>
+              </div>
 
               {/* WhatsApp Support Link */}
               <div className="text-center space-y-2">
