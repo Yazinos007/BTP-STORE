@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useOutletContext, useLocation } from 'react-router-dom';
 import V2Layout from '../../components/v2/V2Layout';
-import AdminLayout from '../../components/v2/AdminLayout'; // 👈 استيراد الأوتليت الخاص بالأدمن
+import AdminLayout from '../../components/v2/AdminLayout';
 import { supabase } from '../../lib/supabase';
 
 // === استيرادات المقاول العام (Contractor) ===
@@ -61,7 +61,7 @@ import AffiliateDashboard from './AffiliateDashboard';
 
 // صفحة قيد الإنشاء ذكية
 const UnderConstruction = ({ title, icon }) => {
-  const { isDarkMode } = useOutletContext(); 
+  const { isDarkMode } = useOutletContext() || { isDarkMode: true }; 
   return (
     <div className={`flex flex-col items-center justify-center h-[75vh] text-center backdrop-blur-md rounded-3xl border-2 m-4 shadow-xl transition-colors duration-700 ${isDarkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-white/90 border-white'}`}>
       <div className="text-7xl mb-6 drop-shadow-xl hover:scale-110 transition-transform cursor-pointer">{icon || '🚧'}</div>
@@ -78,6 +78,7 @@ export default function V2Router({ session, supplier }) {
     if (pathname.includes('/architect')) return 'architect';
     if (pathname.includes('/provider-')) return 'provider';
     if (pathname.includes('/supplier')) return 'supplier';
+    if (pathname.includes('/admin-')) return 'admin';
     return 'contractor';
   };
 
@@ -119,7 +120,7 @@ export default function V2Router({ session, supplier }) {
 
   const getDefaultDashboard = () => {
     const metaRole = session?.user?.user_metadata?.role || session?.user?.user_metadata?.account_type;
-    if (metaRole === 'admin') return 'admin-dashboard'; // 👈 ضمان التوجيه للأدمن
+    if (metaRole === 'admin') return 'admin-dashboard';
     if (metaRole === 'architect') return 'architect-dashboard';
     if (metaRole === 'provider') return 'provider-dashboard';
     return 'contractor-dashboard';
@@ -143,7 +144,7 @@ export default function V2Router({ session, supplier }) {
       <Route path="supplier-register" element={<SupplierAuth />} />
 
       {/* =======================================================
-          🔥 مسارات الإدارة العليا (Admin) - معزولة كلياً 🔥
+          🔥 مسارات الإدارة العليا (Admin)
       ======================================================= */}
       <Route element={<AdminLayout />}>
         <Route path="admin-dashboard" element={<AdminDashboard />} />
@@ -169,7 +170,7 @@ export default function V2Router({ session, supplier }) {
         <Route path="provider-affiliates" element={<AffiliateDashboard />} />
         <Route path="supplier-affiliates" element={<AffiliateDashboard />} />
 
-        {/* 💬 المسارات الموحدة للرسائل والماركت بليس */}
+        {/* 💬 المسارات المشتركة */}
         <Route path="messages" element={<UnifiedMessages />} />
         <Route path="architect-messages" element={<UnifiedMessages />} />
         <Route path="provider-messages" element={<UnifiedMessages />} />
@@ -178,26 +179,39 @@ export default function V2Router({ session, supplier }) {
         <Route path="architect-marketplace" element={<BTPHub />} />
         <Route path="provider-marketplace" element={<BTPHub />} />
         
-        {/* === 🏗️ سكاشن المقاول العام (Contractor) === */}
+        {/* === 🏗️ مسارات المقاول العام (Contractor & Synonyms) === */}
         <Route path="contractor-dashboard" element={<ContractorDashboard />} />
         <Route path="project-path" element={<ProjectPath />} />
+        <Route path="contractor-projects" element={<ProjectPath />} />
         <Route path="cost-calculator" element={<CostCalculator />} />
+        <Route path="contractor-calculator" element={<CostCalculator />} />
         <Route path="field-camera" element={<ContractorCamera />} />
+        <Route path="contractor-camera" element={<ContractorCamera />} />
         <Route path="store-manager" element={<VendorStoreManager />} /> 
         <Route path="tenders" element={<TenderRadar />} />
+        <Route path="contractor-radar" element={<TenderRadar />} />
         <Route path="freight-exchange" element={<FreightExchange />} />
+        <Route path="contractor-freight" element={<FreightExchange />} />
         <Route path="live-orders" element={<LiveOrders />} />
+        <Route path="contractor-live-orders" element={<LiveOrders />} />
         <Route path="hr" element={<ContractorHR />} /> 
+        <Route path="contractor-hr" element={<ContractorHR />} /> 
         <Route path="b2b-invoices" element={<B2bInvoices />} />
+        <Route path="contractor-b2b-invoices" element={<B2bInvoices />} />
         <Route path="accounts" element={<AccountsManager />} /> 
+        <Route path="contractor-caisses" element={<AccountsManager />} /> 
         <Route path="expenses" element={<ContractorExpenses />} />
+        <Route path="contractor-expenses" element={<ContractorExpenses />} />
         <Route path="taxes" element={<Taxes />} />
+        <Route path="contractor-fiscal" element={<Taxes />} />
         <Route path="accounting" element={<ContractorAccounting />} />
+        <Route path="contractor-accounting" element={<ContractorAccounting />} />
         <Route path="audit" element={<AIAudit />} />
         <Route path="profile" element={<ContractorProfile />} />
+        <Route path="contractor-settings" element={<ContractorProfile />} />
         <Route path="subscription" element={<ContractorSubscription />} />
 
-        {/* === 🏛️ سكاشن المهندس المعماري (Architect) === */}
+        {/* === 🏛️ مسارات المهندس المعماري (Architect) === */}
         <Route path="architect-subscription" element={<ArchitectSubscription />} />
         <Route path="architect/subscription" element={<ArchitectSubscription />} />
         <Route path="architect-dashboard" element={<ArchitectDashboard />} />
@@ -205,19 +219,35 @@ export default function V2Router({ session, supplier }) {
         <Route path="architect-projects" element={<ArchitectProjects />} />
         <Route path="architect-archive" element={<ArchitectArchive />} />
         <Route path="architect-tenders" element={<TenderRadar />} />
+        <Route path="architect-radar" element={<TenderRadar />} />
         <Route path="architect-hr" element={<ContractorHR />} />
         <Route path="architect-invoices" element={<B2bInvoices />} />
         <Route path="architect-accounts" element={<AccountsManager />} />
+        <Route path="architect-caisses" element={<AccountsManager />} />
         <Route path="architect-expenses" element={<ContractorExpenses />} />
         <Route path="architect-taxes" element={<Taxes />} />
+        <Route path="architect-fiscal" element={<Taxes />} />
         <Route path="architect-accounting" element={<ContractorAccounting />} />
         <Route path="architect-audit" element={<AIAudit />} />
+        <Route path="architect-live-room" element={<LiveRoom />} />
+        <Route path="architect-ruler" element={<CostCalculator />} />
+        <Route path="architect-reports" element={<ContractorCamera />} />
+        <Route path="architect-simulator" element={<UnderConstruction title="محاكي التصاميم الهندسية" icon="📐" />} />
+        <Route path="architect-settings" element={<ArchitectProfile />} />
 
-        {/* === 🛠️ سكاشن الحرفي / المقاول الصغير (Provider) === */}
+        {/* === 🛠️ مسارات الحرفي / المقاول الصغير (Provider) === */}
         <Route path="provider-subscription" element={<ProviderSubscription />} />
         <Route path="provider-dashboard" element={<ProviderDashboard />} />
         <Route path="provider-profile" element={<ProviderProfile />} />
+        <Route path="provider-settings" element={<ProviderProfile />} />
         <Route path="provider-portfolio" element={<ProviderPortfolio />} />
+        <Route path="provider-radar" element={<TenderRadar />} />
+        <Route path="provider-projects" element={<UnderConstruction title="أوراشي الجارية" icon="🏗️" />} />
+        <Route path="provider-calculator" element={<CostCalculator />} />
+        <Route path="provider-clients" element={<AccountsManager />} />
+        <Route path="provider-expenses" element={<ContractorExpenses />} />
+        <Route path="provider-materials" element={<BTPHub />} />
+        <Route path="provider-reviews" element={<UnderConstruction title="آراء وتقييمات الزبناء" icon="⭐" />} />
 
         {/* 🚦 الموزع الذكي عند الدخول إلى /v2 مباشرة */}
         <Route index element={<Navigate to={getDefaultDashboard()} replace />} />
