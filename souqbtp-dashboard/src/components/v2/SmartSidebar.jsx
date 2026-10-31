@@ -148,18 +148,35 @@ const SIDEBAR_THEMES = {
   }
 };
 
-export default function SmartSidebar({ storeName }) {
+export default function SmartSidebar({ storeName, accountType }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { language } = useSettingsStore();
   const isRtl = language === 'ar';
-  const [currentUser, setCurrentUser] = useState(null);
   
-  // تحديد الفضاء بدقة لتطبيق الثيم المناسب
-  let safeAccountType = 'contractor';
-  if (location.pathname.includes('/architect')) safeAccountType = 'architect';
-  if (location.pathname.includes('/provider-')) safeAccountType = 'provider';
-  if (location.pathname.includes('/admin-')) safeAccountType = 'admin';
+  // تحديد الفضاء بدقة مع حفظه في sessionStorage لمنع الانقلاب القسري
+  const resolveRole = () => {
+    const p = location.pathname;
+    if (p.includes('/architect')) {
+      sessionStorage.setItem('sasbtp_v2_role', 'architect');
+      return 'architect';
+    }
+    if (p.includes('/provider-')) {
+      sessionStorage.setItem('sasbtp_v2_role', 'provider');
+      return 'provider';
+    }
+    if (p.includes('/admin-')) {
+      sessionStorage.setItem('sasbtp_v2_role', 'admin');
+      return 'admin';
+    }
+    if (p.includes('/contractor-') || p.includes('/project-path') || p.includes('/cost-calculator') || p.includes('/field-camera') || p.includes('/freight-exchange') || p.includes('/live-orders')) {
+      sessionStorage.setItem('sasbtp_v2_role', 'contractor');
+      return 'contractor';
+    }
+    return accountType || sessionStorage.getItem('sasbtp_v2_role') || 'contractor';
+  };
+
+  const safeAccountType = resolveRole();
 
   const [providerPlan, setProviderPlan] = useState('free');
   const [architectPlan, setArchitectPlan] = useState('basic');
@@ -168,7 +185,6 @@ export default function SmartSidebar({ storeName }) {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (data?.user) {
-        setCurrentUser(data.user);
         const [profRes, archRes, provRes] = await Promise.all([
           supabase.from('profiles').select('subscription_plan').eq('id', data.user.id).maybeSingle(),
           supabase.from('architects').select('subscription_plan').eq('user_id', data.user.id).maybeSingle(),
@@ -212,7 +228,7 @@ export default function SmartSidebar({ storeName }) {
     );
   };
 
-  // 1. هيكلة أقسام المقاول (Contractor)
+  // 1. هيكلة أقسام المقاول (Contractor) - مسارات مطابقة 100% لـ V2Router
   const contractorMenuSections = [
     {
       key: 'dashboard',
@@ -251,7 +267,7 @@ export default function SmartSidebar({ storeName }) {
         { path: '/v2/contractor-expenses', icon: CreditCard, label: language === 'ar' ? 'المصاريف والأعباء' : 'Dépenses & Frais' },
         { path: '/v2/contractor-fiscal', icon: Landmark, label: language === 'ar' ? 'النظام الجبائي' : 'Système Fiscal' },
         { path: '/v2/contractor-accounting', icon: PieChart, label: language === 'ar' ? 'المحاسبة العامة' : 'Comptabilité Générale' },
-        { path: '/v2/audit', icon: ShieldCheck, label: language === 'ar' ? 'التدقيق الذكي' : 'Audit IA', tag: 'VIP' }
+        { path: '/v2/contractor-audit', icon: ShieldCheck, label: language === 'ar' ? 'التدقيق الذكي' : 'Audit IA', tag: 'VIP' }
       ]
     },
     {
@@ -263,23 +279,23 @@ export default function SmartSidebar({ storeName }) {
     }
   ];
 
-  // 2. هيكلة أقسام المهندس (Architect)
+  // 2. هيكلة أقسام المهندس (Architect) - تم تصحيح رابط /v2/architect-audit لمنع الانقلاب
   const architectMenuSections = [
     {
       key: 'dashboard',
       title: language === 'ar' ? 'القيادة الهندسية' : 'BUREAU D\'ÉTUDES',
       items: [
         { path: '/v2/architect-dashboard', icon: LayoutDashboard, label: language === 'ar' ? 'مكتبي (نظرة عامة)' : 'Bureau (Aperçu)' },
-        { path: '/v2/architect-simulator', icon: Zap, label: language === 'ar' ? 'محاكي التصاميم' : 'Simulateur d\'Opérations' }
+        { path: '/v2/architect-projects', icon: FolderKanban, label: language === 'ar' ? 'إدارة المشاريع والرقابة' : 'Contrôle & Approbations' },
+        { path: '/v2/architect-archive', icon: FileSignature, label: language === 'ar' ? 'الأرشيف والوثائق' : 'Archives & Plans' }
       ]
     },
     {
       key: 'tools',
       title: language === 'ar' ? 'الأدوات الميدانية (AR)' : 'OUTILS TERRAIN (AR)',
       items: [
-        { path: '/v2/architect-live-room', icon: Camera, label: language === 'ar' ? 'الغرفة الحية (AR)' : 'Salle Interactive' },
         { path: '/v2/architect-ruler', icon: Calculator, label: language === 'ar' ? 'مسطرة القياس الذكية' : 'Règle & Mesures' },
-        { path: '/v2/architect-reports', icon: FileSignature, label: language === 'ar' ? 'محاضر بختم GPS' : 'Rapports scellés GPS' }
+        { path: '/v2/architect-reports', icon: Camera, label: language === 'ar' ? 'محاضر بختم GPS' : 'Rapports scellés GPS' }
       ]
     },
     {
@@ -295,12 +311,13 @@ export default function SmartSidebar({ storeName }) {
       key: 'finance',
       title: language === 'ar' ? 'المالية، الجبايات والموارد' : 'FINANCE, FISCALITÉ & RH',
       items: [
+        { path: '/v2/architect-invoices', icon: Receipt, label: language === 'ar' ? 'فواتير المكتب B2B' : 'Factures B2B' },
         { path: '/v2/architect-caisses', icon: Wallet, label: language === 'ar' ? 'الصناديق والحسابات' : 'Caisses & Comptes' },
-        { path: '/v2/architect-expenses', icon: Receipt, label: language === 'ar' ? 'إدارة المصاريف' : 'Dépenses & Frais' },
+        { path: '/v2/architect-expenses', icon: CreditCard, label: language === 'ar' ? 'إدارة المصاريف' : 'Dépenses & Frais' },
         { path: '/v2/architect-hr', icon: Users, label: language === 'ar' ? 'الموارد البشرية' : 'Ressources Humaines' },
         { path: '/v2/architect-fiscal', icon: Landmark, label: language === 'ar' ? 'النظام الجبائي' : 'Système Fiscal' },
         { path: '/v2/architect-accounting', icon: PieChart, label: language === 'ar' ? 'المحاسبة العامة' : 'Comptabilité Générale' },
-        { path: '/v2/audit', icon: ShieldCheck, label: language === 'ar' ? 'التدقيق الذكي' : 'Audit IA', tag: 'VIP' }
+        { path: '/v2/architect-audit', icon: ShieldCheck, label: language === 'ar' ? 'التدقيق الذكي' : 'Audit IA', tag: 'VIP' }
       ]
     },
     {
@@ -395,8 +412,8 @@ export default function SmartSidebar({ storeName }) {
   if (safeAccountType === 'admin') currentMenuSections = adminMenuSections;
 
   const badgeText = 
-    safeAccountType === 'contractor' ? (['pro', 'enterprise', 'vip'].includes(contractorPlan) ? 'BUREAU D\'ENTREPRENEUR' : 'BUREAU D\'ENTREPRENEUR') :
-    safeAccountType === 'architect' ? (['pro', 'vip', 'elite'].includes(architectPlan) ? 'BUREAU VIP 👑' : 'BUREAU D\'ARCHITECTURE') :
+    safeAccountType === 'contractor' ? (['pro', 'enterprise', 'vip'].includes(contractorPlan) ? 'ENTREPRENEUR PRO 🛡️' : 'BUREAU D\'ENTREPRENEUR') :
+    safeAccountType === 'architect' ? (['pro', 'vip', 'elite'].includes(architectPlan) ? 'BUREAU VIP 👑' : 'BUREAU D\'ARCHITECTE') :
     safeAccountType === 'admin' ? 'ADMINISTRATION CENTRALE' :
     (['pro', 'maalem pro'].includes(providerPlan) ? 'MAÂLEM PRO 🔥' : 'ESPACE ARTISAN PRO');
   
@@ -415,9 +432,9 @@ export default function SmartSidebar({ storeName }) {
     <aside className={`w-[280px] h-screen bg-[#0f172a] text-slate-300 flex flex-col select-none ${isRtl ? 'border-l border-slate-800' : 'border-r border-slate-800'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       <style>{`
         @keyframes sidebarShimmer {
-          0% { filter: brightness(0.9); }
-          50% { filter: brightness(1.3); }
-          100% { filter: brightness(0.9); }
+          0% { filter: brightness(0.95); }
+          50% { filter: brightness(1.35); }
+          100% { filter: brightness(0.95); }
         }
         .shimmer-title {
           animation: sidebarShimmer 2s infinite ease-in-out;
@@ -425,38 +442,36 @@ export default function SmartSidebar({ storeName }) {
       `}</style>
       
       {/* 1. Header & Identity */}
-      <div className="p-6 border-b border-slate-800/80 bg-slate-950/40 shrink-0">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${headerGradient} flex items-center justify-center text-white font-black text-2xl shadow-xl border-2 border-white/10 shrink-0`}>
-              {storeName ? storeName.charAt(0).toUpperCase() : (safeAccountType === 'admin' ? '🛡️' : 'S')}
-            </div>
-            <div className="min-w-0 text-start">
-              <h2 className="text-white font-black text-lg truncate">SasBTP V2</h2>
-              <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest ${
-                safeAccountType === 'contractor' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                safeAccountType === 'architect' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' :
-                safeAccountType === 'admin' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-              }`}>
-                {badgeText}
-              </span>
-            </div>
+      <div className="p-5 border-b border-slate-800/80 bg-slate-950/40 shrink-0">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${headerGradient} flex items-center justify-center text-white font-black text-xl shadow-xl border-2 border-white/10 shrink-0`}>
+            {storeName ? storeName.charAt(0).toUpperCase() : (safeAccountType === 'admin' ? '🛡️' : 'S')}
+          </div>
+          <div className="min-w-0 text-start flex-1">
+            <h2 className="text-white font-black text-lg leading-tight truncate">SasBTP V2</h2>
+            <span className={`inline-block whitespace-nowrap mt-1 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider ${
+              safeAccountType === 'contractor' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+              safeAccountType === 'architect' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' :
+              safeAccountType === 'admin' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+              'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+            }`}>
+              {badgeText}
+            </span>
           </div>
         </div>
 
-        {/* زر الترقية (مخفي في لوحة الأدمن) */}
+        {/* 🔥 زر الترقية البرتقالي الذهبي اللامع الموحد */}
         {safeAccountType !== 'admin' && (
           <button 
             onClick={() => navigate(upgradePath)}
-            className={`mt-5 w-full py-3 px-4 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-lg hover:-translate-y-0.5 cursor-pointer text-slate-900 ${
-              safeAccountType === 'contractor' ? 'bg-gradient-to-r from-blue-400 to-indigo-400 hover:from-blue-300 hover:to-indigo-300 shadow-blue-500/20' :
-              safeAccountType === 'architect' ? 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 shadow-amber-500/20' :
-              'bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-300 hover:to-amber-400 shadow-orange-500/20'
-            }`}
+            className="mt-4 w-full py-3 px-4 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer text-slate-950 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 shadow-[0_0_20px_rgba(245,158,11,0.45)] hover:shadow-[0_0_28px_rgba(245,158,11,0.7)] hover:scale-[1.02]"
           >
-            <Zap size={16} className="fill-slate-900 animate-bounce" />
-            <span>{language === 'ar' ? 'ترقية الحساب (PRO)' : 'Passer à PRO'}</span>
+            <Zap size={16} className="fill-slate-950 animate-bounce" />
+            <span>
+              {safeAccountType === 'provider'
+                ? (language === 'ar' ? 'باقة المعلم PRO ⚡' : 'Pack Artisan PRO ⚡')
+                : (language === 'ar' ? 'ترقية الحساب (PRO) ⚡' : 'Passer à PRO ⚡')}
+            </span>
           </button>
         )}
       </div>
