@@ -4,7 +4,7 @@ import { supabase } from './lib/supabase';
 import { 
   Menu, X, Package, Truck, FileSignature, BarChart3, LogOut, Layers, FileText, Calculator, Users, Receipt, 
   Sparkles, LayoutDashboard, Settings, Zap, Radar, Wallet, Landmark, Globe, ShoppingCart, Factory, ShoppingBag, 
-  ChevronDown, Store, Briefcase, ArrowRightLeft, Lock, MessageCircle, Trophy, PlusCircle, Loader2, ShieldCheck
+  ChevronDown, Store, Briefcase, ArrowRightLeft, Lock, MessageCircle, Trophy, PlusCircle, Loader2, ShieldCheck, Moon, Sun
 } from 'lucide-react';
 
 import RawMaterialSuppliers from './pages/RawMaterialSuppliers';
@@ -506,6 +506,18 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
   
   const isMinimal = window.location.href.includes('minimal=true') || window.location.search.includes('minimal=true');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('sasbtp_theme_mode');
+    return saved ? saved === 'dark' : true;
+  });
+
+  const toggleThemeMode = () => {
+    setIsDarkMode(prev => {
+      const next = !prev;
+      localStorage.setItem('sasbtp_theme_mode', next ? 'dark' : 'light');
+      return next;
+    });
+  };
 
   const [openMenus, setOpenMenus] = useState({
     comm_market: false,
@@ -553,7 +565,8 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
 
   const tLayout = {
     fr: { 
-      upgrade: "Passer à l'Enterprise", affiliates: "Partenaires", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste", 
+      upgrade: "Passer à l'Enterprise", affiliates: "Partenaires", logout: "Déconnexion", portal: "Espace Fournisseur B2B", online: "Système en ligne", wholesaler: "Grossiste",
+      darkMode: "Mode Sombre", lightMode: "Mode Clair",
       sections: {
         direction: "DIRECTION & INTELLIGENCE",
         comm: "MARCHÉ, RADAR & FRET",
@@ -565,7 +578,8 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
       items: { overview: "Tableau de bord", inbox: "Boîte de Réception", btpMarket: "Marché BTP", rawSuppliers: "Fournisseurs & Prestataires", rawPurchases: "Achats & Approvisionnement", stock: "Stock Central", production: "Production", marketOrders: "Commandes Marketplace", fleetMarket: "Suivi des Commandes", clients: "Clients & Dettes", posB2B: "Ventes Directes (POS)", orders: "Commandes Reçues (B2B)", fleetB2B: "Suivi des Commandes (B2B)", contracts: "Contrats & Signatures", invoices: "Factures B2B", hr: "Ressources Humaines", caisses: "Caisses & Banques", expenses: "Gestion des Charges", fiscal: "Système Fiscal", accounting: "Comptabilité & Bilan", analytics: "Analytiques B2B", ai: "Conseiller Stratégique", radar: "Radar d'Appels d'Offres", logisticsBourse: "Bourse de Fret", team: "Utilisateurs & Permissions", settings: "Paramètres & Confiance" } 
     },
     ar: { 
-      upgrade: "ترقية للباقة الذهبية", affiliates: "شركاء النجاح", logout: "خروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة", 
+      upgrade: "ترقية للباقة الذهبية", affiliates: "شركاء النجاح", logout: "خروج", portal: "بوابة المورد الكبير", online: "النظام متصل", wholesaler: "مورد جملة",
+      darkMode: "الوضع الداكن", lightMode: "الوضع الفاتح",
       sections: {
         direction: "القيادة والذكاء الاستراتيجي",
         comm: "السوق، المناقصات واللوجستيك",
@@ -577,7 +591,8 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
       items: { overview: "لوحة القيادة", inbox: "صندوق الرسائل", btpMarket: "سوق BTP", rawSuppliers: "الموردون والشركاء", rawPurchases: "المشتريات والتوريد", stock: "المخزون المركزي", production: "الإنتاج (المعمل)", marketOrders: "طلبات الماركت بليس", fleetMarket: "تتبع شحنات المتجر", clients: "العملاء والديون (CRM)", posB2B: "المبيعات المباشرة (POS)", orders: "طلبات التزويد (B2B)", fleetB2B: "تتبع شحنات التزويد", contracts: "العقود والتوقيعات", invoices: "الفواتير الكبرى", hr: "الموارد البشرية", caisses: "الصناديق والحسابات", expenses: "إدارة المصاريف", fiscal: "النظام الجبائي (TVA)", accounting: "المحاسبة والـ CPC", analytics: "التحليلات الكبرى", ai: "المستشار الذكي", radar: "رادار المناقصات", logisticsBourse: "بورصة اللوجستيك", team: "المستخدمون والصلاحيات", settings: "الإعدادات والتوثيق" } 
     },
     en: { 
-      upgrade: "Upgrade to Enterprise", affiliates: "Affiliates", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler", 
+      upgrade: "Upgrade to Enterprise", affiliates: "Affiliates", logout: "Logout", portal: "Wholesale B2B Portal", online: "System Online", wholesaler: "Wholesaler",
+      darkMode: "Dark Mode", lightMode: "Light Mode",
       sections: {
         direction: "DIRECTION & AI STRATEGY",
         comm: "MARKET, TENDERS & FREIGHT",
@@ -619,7 +634,8 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
       items: [
         { path: '/', icon: LayoutDashboard, label: t.items.overview },
         { path: '/analytics', icon: BarChart3, label: t.items.analytics },
-        { path: '/ai-advisor', icon: Sparkles, label: t.items.ai, tag: 'IA' }
+        { path: '/ai-advisor', icon: Sparkles, label: t.items.ai, tag: 'IA' },
+        { path: '/audit', icon: ShieldCheck, label: language === 'ar' ? 'التدقيق المالي الذكي' : language === 'fr' ? 'Audit Financier IA' : 'Smart AI Audit', tag: 'VIP' }
       ]
     },
     {
@@ -678,8 +694,7 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
         { path: '/expenses', icon: Receipt, label: t.items.expenses },
         { path: '/hr', icon: Users, label: t.items.hr },
         { path: '/fiscal', icon: Landmark, label: t.items.fiscal },
-        { path: '/accounting', icon: Calculator, label: t.items.accounting },
-        { path: '/audit', icon: ShieldCheck, label: language === 'ar' ? 'التدقيق المالي الذكي (AI Audit)' : language === 'fr' ? 'Audit Financier IA' : 'Smart AI Audit', tag: 'NEW' }
+        { path: '/accounting', icon: Calculator, label: t.items.accounting }
       ]
     },
     {
@@ -723,7 +738,7 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
   };
 
   return (
-    <div className="flex h-screen w-full max-w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={`flex h-screen w-full max-w-full font-sans overflow-hidden transition-colors duration-700 ${isDarkMode ? 'bg-[#0f172a] text-slate-300' : 'bg-gradient-to-br from-emerald-200/70 via-teal-100/60 to-blue-100/70 text-slate-800'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       <style>{`
         @keyframes b2bHeaderShimmer {
           0% { filter: brightness(0.95); }
@@ -733,9 +748,34 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
         .b2b-shimmer-title {
           animation: b2bHeaderShimmer 2.4s infinite ease-in-out;
         }
+        /* تحويل البطاقات تلقائياً عند تفعيل الوضع الفاتح للمورد */
+        .wholesale-light-scope .bg-slate-900,
+        .wholesale-light-scope .bg-slate-900\\/80,
+        .wholesale-light-scope .bg-slate-900\\/50,
+        .wholesale-light-scope .bg-slate-950,
+        .wholesale-light-scope .bg-\\[\\#1e293b\\] {
+          background-color: rgba(255, 255, 255, 0.92) !important;
+          border-color: rgba(226, 232, 240, 0.9) !important;
+          color: #0f172a !important;
+          box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06) !important;
+        }
+        .wholesale-light-scope .bg-slate-800,
+        .wholesale-light-scope .bg-slate-800\\/50 {
+          background-color: #f8fafc !important;
+          border-color: #e2e8f0 !important;
+          color: #1e293b !important;
+        }
+        .wholesale-light-scope .text-white {
+          color: #0f172a !important;
+        }
+        .wholesale-light-scope .text-slate-300,
+        .wholesale-light-scope .text-slate-400 {
+          color: #475569 !important;
+        }
       `}</style>
 
-      <aside className={`shrink-0 h-full bg-slate-900 flex flex-col shadow-2xl transition-all duration-300 ease-in-out absolute md:relative z-30 ${isSidebarOpen ? 'w-72 border-r border-slate-800 opacity-100 translate-x-0' : 'w-0 border-r-0 opacity-0 overflow-hidden'}`}>
+      {/* السايدبار يظل داكناً فخماً مع التوهج النيوني تماماً مثل المقاول والمهندس */}
+      <aside className={`shrink-0 h-full bg-[#0f172a] flex flex-col shadow-2xl transition-all duration-300 ease-in-out absolute md:relative z-30 ${isSidebarOpen ? 'w-72 border-r border-slate-800 opacity-100 translate-x-0' : 'w-0 border-r-0 opacity-0 overflow-hidden'}`}>
         <div className="w-72 h-full flex flex-col">
           <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
             <div className="flex items-center gap-3">
@@ -846,46 +886,61 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
 
       <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
         <SystemNotificationBanner />
-        <header className="h-20 shrink-0 w-full border-b border-slate-800/60 bg-slate-900/90 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 sticky top-0 z-50">
+        <header className={`h-20 shrink-0 w-full border-b flex items-center justify-between px-4 md:px-6 sticky top-0 z-20 transition-colors duration-700 ${isDarkMode ? 'bg-slate-900/90 border-slate-800/60 backdrop-blur-xl' : 'bg-white/60 border-white/60 backdrop-blur-md shadow-sm'}`}>
           <div className="flex items-center gap-3 md:gap-4">
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="flex items-center gap-2 p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer">
-              {isSidebarOpen ? <X size={22} className="text-red-400" /> : <Menu size={22} className="text-blue-400" />}
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all cursor-pointer ${isDarkMode ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-700 text-slate-300 hover:text-white' : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700 shadow-sm'}`}>
+              {isSidebarOpen ? <X size={20} className="text-red-500" /> : <Menu size={20} className="text-blue-500" />}
             </button>
             <div className="truncate pr-1 text-start">
-              <h2 className="text-lg md:text-xl font-bold text-white truncate">{t.portal}</h2>
-              <p className="text-[10px] md:text-xs font-bold text-slate-500 mt-1 flex items-center gap-2">
+              <h2 className={`text-lg md:text-xl font-black truncate ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{t.portal}</h2>
+              <p className="text-[10px] md:text-xs font-bold text-slate-500 mt-0.5 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                 {t.online}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3 shrink-0">
-            <Link to="/affiliates" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 py-2 md:px-4 rounded-xl font-black flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all whitespace-nowrap text-xs md:text-sm">
-              <Trophy size={16} /> <span className="hidden sm:inline">{t.affiliates}</span>
+          <div className="flex items-center gap-2 md:gap-2.5 shrink-0">
+            <Link to="/affiliates" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 py-2 md:px-4 rounded-full font-black flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all whitespace-nowrap text-xs md:text-sm">
+              <Trophy size={15} /> <span className="hidden sm:inline">{t.affiliates}</span>
             </Link>
 
-            <GlobalSpaceSwitcher language={language} dark={true} currentSpace="wholesale" />
+            <GlobalSpaceSwitcher language={language} dark={isDarkMode} currentSpace="wholesale" />
 
-            <div className={`flex items-center gap-3 ${isRtl ? 'pr-3 border-r' : 'pl-3 border-l'} border-slate-700`}>
-              <div className="text-end hidden lg:block">
-                <p className="text-sm font-bold text-white">{storeName}</p>
-                <p className="text-xs text-slate-400 uppercase tracking-wider">{t.wholesaler}</p>
-              </div>
-              <div className="w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg">
-                {storeInitial}
-              </div>
-            </div>
+            <button
+              onClick={handleLanguageChange}
+              className={`px-3 py-2 rounded-full font-black text-xs flex items-center gap-1.5 border transition-all cursor-pointer ${
+                isDarkMode
+                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'
+              }`}
+            >
+              <Globe size={15} />
+              <span className="uppercase">{language}</span>
+            </button>
 
-            <button onClick={handleLogout} className="flex items-center justify-center w-10 h-10 md:w-auto md:px-3.5 md:py-2 rounded-xl text-xs md:text-sm font-bold text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/20 transition-all cursor-pointer">
-              <LogOut size={17} /> <span className={`hidden sm:inline ${isRtl ? 'mr-1.5' : 'ml-1.5'}`}>{t.logout}</span>
+            {/* 🌙☀️ زر الوضع الداكن / الفاتح المطابق للمقاول والمهندس */}
+            <button
+              onClick={toggleThemeMode}
+              className={`px-3.5 py-2 rounded-full font-black text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md ${
+                isDarkMode
+                  ? 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700'
+                  : 'bg-emerald-950 hover:bg-slate-900 text-white'
+              }`}
+            >
+              {isDarkMode ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} />}
+              <span className="hidden md:inline">{isDarkMode ? t.lightMode : t.darkMode}</span>
+            </button>
+
+            <button onClick={handleLogout} className={`flex items-center justify-center w-10 h-10 md:w-auto md:px-3.5 md:py-2 rounded-full text-xs font-black transition-all cursor-pointer border ${isDarkMode ? 'text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white border-red-500/20' : 'text-red-600 bg-red-50/90 hover:bg-red-500 hover:text-white border-red-200'}`}>
+              <LogOut size={16} /> <span className={`hidden sm:inline ${isRtl ? 'mr-1.5' : 'ml-1.5'}`}>{t.logout}</span>
             </button>
           </div>
         </header>
         <div className="relative z-10">
           <TrialBanner />
         </div>
-        <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-10 w-full max-w-full relative z-10">
+        <div className={`flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-10 w-full max-w-full ${!isDarkMode ? 'wholesale-light-scope' : ''}`}>
           {children}
         </div>
       </main>
@@ -893,10 +948,30 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
   );
 };
 
-// 💎 مكون التاجر الداعم لمبدل الفضاءات الشامل وزر الخروج
+// 💎 مكون التاجر الداعم لمبدل الفضاءات الشامل وزر الوضع الداكن / الفاتح
 const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { setLanguage } = useSettingsStore();
   const navigate = useNavigate();
+
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('sasbtp_theme_mode');
+    return saved ? saved === 'dark' : false;
+  });
+
+  const toggleThemeMode = () => {
+    setIsDarkMode(prev => {
+      const next = !prev;
+      localStorage.setItem('sasbtp_theme_mode', next ? 'dark' : 'light');
+      return next;
+    });
+  };
+
+  const handleLanguageChange = () => {
+    if (language === 'fr') setLanguage('ar');
+    else if (language === 'ar') setLanguage('en');
+    else setLanguage('fr');
+  };
   
   const isMinimal = window.location.search.includes('minimal=true') || window.location.href.includes('minimal=true');
 
@@ -913,51 +988,111 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
     );
   }
 
+  const isRtl = language === 'ar';
   const logoutLabel = language === 'fr' ? 'Déconnexion' : language === 'en' ? 'Logout' : 'خروج';
+  const darkLabel = language === 'fr' ? 'Mode Sombre' : language === 'en' ? 'Dark Mode' : 'الوضع الداكن';
+  const lightLabel = language === 'fr' ? 'Mode Clair' : language === 'en' ? 'Light Mode' : 'الوضع الفاتح';
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      <style>{`
+        /* تحويل صفحات التاجر تلقائياً عند تفعيل الوضع الداكن */
+        .retail-dark-scope .bg-white,
+        .retail-dark-scope .bg-gray-50,
+        .retail-dark-scope .bg-slate-50 {
+          background-color: #0f172a !important;
+          border-color: #1e293b !important;
+          color: #f1f5f9 !important;
+        }
+        .retail-dark-scope .bg-gray-100,
+        .retail-dark-scope .bg-slate-100 {
+          background-color: #1e293b !important;
+          border-color: #334155 !important;
+          color: #e2e8f0 !important;
+        }
+        .retail-dark-scope .text-gray-800,
+        .retail-dark-scope .text-gray-900,
+        .retail-dark-scope .text-slate-800,
+        .retail-dark-scope .text-slate-900 {
+          color: #f8fafc !important;
+        }
+        .retail-dark-scope .text-gray-600,
+        .retail-dark-scope .text-gray-500,
+        .retail-dark-scope .text-slate-500,
+        .retail-dark-scope .text-slate-600 {
+          color: #94a3b8 !important;
+        }
+        .retail-dark-scope input,
+        .retail-dark-scope select,
+        .retail-dark-scope textarea {
+          background-color: #1e293b !important;
+          border-color: #334155 !important;
+          color: #ffffff !important;
+        }
+      `}</style>
       <SystemNotificationBanner />
       <RetailTrialBanner />
-      <div className="flex h-screen w-full max-w-full bg-gray-50 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-        <div className={`shrink-0 h-full transition-all duration-300 ${isSidebarOpen ? (language === 'ar' ? 'w-64 border-l' : 'w-64 border-r') : 'w-0 overflow-hidden border-none'} bg-white z-20`}>
-          <div className="w-64 h-full"><Sidebar /></div>
+      <div className={`flex h-screen w-full max-w-full overflow-hidden transition-colors duration-700 ${isDarkMode ? 'bg-[#0b1120] text-slate-100' : 'bg-gradient-to-br from-emerald-200/70 via-teal-100/60 to-blue-100/70 text-slate-800'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+        <div className={`shrink-0 h-full transition-all duration-300 ${isSidebarOpen ? (isRtl ? 'w-[270px] border-l border-slate-800' : 'w-[270px] border-r border-slate-800') : 'w-0 overflow-hidden border-none'} bg-[#0f172a] z-20`}>
+          <div className="w-[270px] h-full"><Sidebar /></div>
         </div>
         
         <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full relative">
-          <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full z-50">
+          <header className={`h-20 border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full z-20 transition-colors duration-700 ${isDarkMode ? 'bg-slate-900/90 border-slate-800 backdrop-blur-xl' : 'bg-white/60 border-white/60 backdrop-blur-md shadow-sm'}`}>
             <div className="flex items-center gap-3">
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="flex items-center gap-2 p-2 bg-gray-100 hover:bg-blue-50 border border-gray-200 rounded-xl text-gray-600 hover:text-blue-600 transition-all cursor-pointer">
-                {isSidebarOpen ? <X size={22} className="text-red-500" /> : <Menu size={22} className="text-blue-500" />}
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all cursor-pointer ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200' : 'bg-white hover:bg-blue-50 border-gray-200 text-gray-700 shadow-sm'}`}>
+                {isSidebarOpen ? <X size={20} className="text-red-500" /> : <Menu size={20} className="text-blue-500" />}
               </button>
-              <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate text-start">
-                {language === 'fr' ? 'Bienvenue, ' : language === 'en' ? 'Welcome, ' : 'مرحباً بك، '} <span className="text-blue-600 truncate">{storeName}</span>
+              <h2 className={`text-lg md:text-xl font-black truncate text-start ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                {language === 'fr' ? 'Bienvenue, ' : language === 'en' ? 'Welcome, ' : 'مرحباً بك، '}
+                <span className="text-blue-500 truncate">{storeName}</span>
               </h2>
             </div>
 
-            <div className="flex items-center gap-2 md:gap-3 shrink-0">
-              <Link to="/affiliates" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 py-2 md:px-4 rounded-xl font-black flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs md:text-sm">
-                <Trophy size={16} /> <span className="hidden sm:inline">{language === 'fr' ? 'Partenaires' : language === 'en' ? 'Affiliates' : 'شركاء النجاح'}</span>
+            <div className="flex items-center gap-2 md:gap-2.5 shrink-0">
+              <Link to="/affiliates" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 py-2 md:px-4 rounded-full font-black flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs md:text-sm">
+                <Trophy size={15} /> <span className="hidden sm:inline">{language === 'fr' ? 'Partenaires' : language === 'en' ? 'Affiliates' : 'شركاء النجاح'}</span>
               </Link>
 
-              <GlobalSpaceSwitcher language={language} dark={false} currentSpace="retail" />
+              <GlobalSpaceSwitcher language={language} dark={isDarkMode} currentSpace="retail" />
 
-              <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-lg font-bold flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs md:text-sm">
-                 <Package size={18} /> <span className="hidden xl:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
+              <button
+                onClick={handleLanguageChange}
+                className={`px-3 py-2 rounded-full font-black text-xs flex items-center gap-1.5 border transition-all cursor-pointer ${
+                  isDarkMode
+                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'
+                }`}
+              >
+                <Globe size={15} />
+                <span className="uppercase">{language}</span>
+              </button>
+
+              {/* 🌙☀️ زر الوضع الداكن / الفاتح للتاجر */}
+              <button
+                onClick={toggleThemeMode}
+                className={`px-3.5 py-2 rounded-full font-black text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md ${
+                  isDarkMode
+                    ? 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700'
+                    : 'bg-emerald-950 hover:bg-slate-900 text-white'
+                }`}
+              >
+                {isDarkMode ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} />}
+                <span className="hidden md:inline">{isDarkMode ? lightLabel : darkLabel}</span>
+              </button>
+
+              <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-full font-black flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs">
+                 <Package size={16} /> <span className="hidden xl:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
               </Link>
-              
-              <div className="w-9 h-9 md:w-10 md:h-10 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
-                {storeInitial}
-              </div>
 
               {/* 🚪 زر الخروج للتاجر */}
-              <button onClick={handleLogout} className="flex items-center justify-center w-10 h-10 md:w-auto md:px-3.5 md:py-2 rounded-xl text-xs md:text-sm font-bold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white border border-red-200 transition-all cursor-pointer">
-                <LogOut size={17} /> <span className={`hidden sm:inline ${language === 'ar' ? 'mr-1.5' : 'ml-1.5'}`}>{logoutLabel}</span>
+              <button onClick={handleLogout} className={`flex items-center justify-center w-10 h-10 md:w-auto md:px-3.5 md:py-2 rounded-full text-xs font-black transition-all cursor-pointer border ${isDarkMode ? 'text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white border-red-500/20' : 'text-red-600 bg-red-50/90 hover:bg-red-500 hover:text-white border-red-200'}`}>
+                <LogOut size={16} /> <span className={`hidden sm:inline ${isRtl ? 'mr-1.5' : 'ml-1.5'}`}>{logoutLabel}</span>
               </button>
             </div>
           </header>
-          <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full relative z-10">
-            <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 min-h-[400px] w-full max-w-full overflow-x-auto">
+          <div className={`flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full ${isDarkMode ? 'retail-dark-scope' : ''}`}>
+            <div className={`rounded-3xl shadow-xl p-4 md:p-6 border min-h-[400px] w-full max-w-full overflow-x-auto transition-colors duration-500 ${isDarkMode ? 'bg-slate-900/90 border-slate-800 text-slate-100' : 'bg-white/90 backdrop-blur-md border-white text-slate-800'}`}>
               {children}
             </div>
           </div>
