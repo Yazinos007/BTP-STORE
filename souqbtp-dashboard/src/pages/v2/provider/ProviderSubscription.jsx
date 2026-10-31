@@ -527,20 +527,21 @@ export default function ProviderSubscription() {
           💳 نافذة إتمام الدفع الموحدة (Finaliser le paiement)
       ========================================================= */}
       {isCheckoutOpen && selectedPlan && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in" dir={isRtl ? 'rtl' : 'ltr'}>
-          <div className="bg-white rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 text-slate-800">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto bg-slate-950/80 backdrop-blur-md animate-fade-in" dir={isRtl ? 'rtl' : 'ltr'}>
+          <div className="bg-white rounded-3xl w-full max-w-xl my-auto max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 text-slate-800">
             
-            {/* Modal Header */}
+            {/* Header */}
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="text-blue-600" size={24} />
                 <h3 className="text-xl font-black text-slate-900">{t.checkoutTitle}</h3>
               </div>
               <button 
+                type="button"
                 onClick={() => setIsCheckoutOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors cursor-pointer"
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors cursor-pointer"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
@@ -734,14 +735,23 @@ export default function ProviderSubscription() {
               </div>
 
               {/* Submit Button */}
+              <div className="p-6 pt-0 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsCheckoutOpen(false)}
+                className="w-1/3 py-4 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black text-sm transition-all cursor-pointer"
+              >
+                {isRtl ? 'إلغاء' : 'Annuler'}
+              </button>
               <button
                 type="button"
                 disabled={!receiptFile || isProcessing}
                 onClick={processInstantUpgrade}
-                className="w-full py-4 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black text-base shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
+                className="w-2/3 py-4 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black text-base shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
               >
                 {isProcessing ? t.processing : t.confirmPayment}
               </button>
+            </div>
 
               {/* WhatsApp Support Link */}
               <div className="text-center space-y-2">

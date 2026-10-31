@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
 import useSettingsStore from '../../store/useSettingsStore';
 import { 
-  ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, ArrowLeft, Minus, Loader2,
-  X, Building2, CreditCard, Wallet, UploadCloud, Clock, MessageCircle, Trophy
+  ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, Minus, Loader2,
+  X, Building2, CreditCard, Wallet, UploadCloud, Clock, MessageCircle, Copy, Check
 } from 'lucide-react';
 
 export default function ContractorSubscription() {
@@ -15,9 +14,7 @@ export default function ContractorSubscription() {
   
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentPlan, setCurrentPlan] = useState('starter');
   const navigate = useNavigate();
-  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
   // Modal States
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -26,30 +23,6 @@ export default function ContractorSubscription() {
   const [receiptFile, setReceiptFile] = useState(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [skipVip, setSkipVip] = useState(false);
-
-  useEffect(() => {
-    const fetchCurrentPlan = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        if (user.user_metadata?.subscription_plan) {
-          setCurrentPlan(user.user_metadata.subscription_plan.toLowerCase());
-        }
-
-        const { data: supData } = await supabase
-          .from('suppliers')
-          .select('subscription_plan')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (supData?.subscription_plan) {
-          setCurrentPlan(supData.subscription_plan.toLowerCase());
-        }
-      } catch (_) {}
-    };
-    fetchCurrentPlan();
-  }, []);
 
   const translations = {
     ar: {
@@ -82,10 +55,6 @@ export default function ContractorSubscription() {
           missing: []
         }
       },
-      bannerBadge: 'ميزة حصرية للمقاولين المحترفين',
-      bannerTitle: 'كيف تسترجع ثمن اشتراكك وتحوله إلى ربح صافٍ؟',
-      bannerDesc: 'بمجرد ترقية حسابك إلى Pro أو Enterprise، ترتفع عمولتك في برنامج شركاء النجاح تلقائياً! كل زميل تدعوه للمنصة ويفعّل باقته، يمنحك عمولة نقدية مباشرة (حتى 30%) تُضاف إلى محفظتك أو تُخصم من اشتراكك القادم.',
-      bannerBtn: 'اكتشف لوحة الشركاء',
       modal: {
         vipTitle: 'خدمة كبار العملاء VIP', vipWelcome: 'مرحباً بك في نادي النخبة', vipDesc: 'مدير حسابات شخصي جاهز لخدمتك وللإجابة عن كل استفساراتك.',
         waBtn: 'تواصل معنا عبر WhatsApp', payDirectBtn: 'أفضل الدفع مباشرة', paymentTitle: 'إتمام الدفع',
@@ -127,10 +96,6 @@ export default function ContractorSubscription() {
           missing: []
         }
       },
-      bannerBadge: 'Avantage exclusif pour les pros',
-      bannerTitle: 'Comment rentabiliser votre abonnement et générer un profit net ?',
-      bannerDesc: 'Dès votre passage à Pro ou Enterprise, votre commission de partenariat augmente automatiquement ! Chaque confrère invité qui s\'abonne vous rapporte jusqu\'à 30% de commission cash directement dans votre portefeuille.',
-      bannerBtn: 'Découvrir le Tableau Partenaires',
       modal: {
         vipTitle: 'Service Client VIP', vipWelcome: 'Bienvenue dans le club d\'élite', vipDesc: 'Un manager de compte dédié est prêt à répondre à vos questions.',
         waBtn: 'Contactez-nous sur WhatsApp', payDirectBtn: 'Je préfère payer directement', paymentTitle: 'Finaliser le paiement',
@@ -172,10 +137,6 @@ export default function ContractorSubscription() {
           missing: []
         }
       },
-      bannerBadge: 'Exclusive benefit for PROs',
-      bannerTitle: 'How to recover your subscription cost and turn it into net profit?',
-      bannerDesc: 'Once you upgrade to Pro or Enterprise, your affiliate commission rate automatically jumps! Every colleague who joins and upgrades via your link earns you up to 30% direct cash commission added to your wallet.',
-      bannerBtn: 'Explore Partners Dashboard',
       modal: {
         vipTitle: 'VIP Client Service', vipWelcome: 'Welcome to the elite club', vipDesc: 'A dedicated account manager is ready to assist you.',
         waBtn: 'Contact on WhatsApp', payDirectBtn: 'Pay directly', paymentTitle: 'Finalize payment',
@@ -198,92 +159,39 @@ export default function ContractorSubscription() {
     enterprise: { monthly: 1499, annual: 14390 }
   };
 
+  const [copiedRib, setCopiedRib] = useState(false);
+
+  const handleCopyRib = () => {
+    navigator.clipboard.writeText("225 104 0447028246010126 97");
+    setCopiedRib(true);
+    setTimeout(() => setCopiedRib(false), 2000);
+  };
+
   const handleUpgradeClick = (tierKey) => {
     const planData = t.plans[tierKey];
     const price = isAnnual ? prices[tierKey].annual : prices[tierKey].monthly;
     setSelectedPlan({ id: tierKey, name: planData.name, price: price });
     setSkipVip(false);
-    setReceiptFile(null);
     setShowPaymentModal(true);
   };
 
   const handleReceiptUpload = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setReceiptFile(e.target.files[0]);
+    if (e.target.files[0]) {
+      setReceiptFile(e.target.files[0].name);
     }
   };
 
-  const submitPayment = async () => {
-    if (!receiptFile || !selectedPlan) return;
+  const submitPayment = () => {
     setIsSubmitting(true);
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      let receiptUrl = null;
-
-      // 1. رفع إيصال الدفع الفعلي إلى سحابة Supabase
-      if (receiptFile && user) {
-        const fileExt = receiptFile.name.split('.').pop();
-        const filePath = `contractors/${user.id}_${Date.now()}.${fileExt}`;
-        const { data: uploadData, error: uploadErr } = await supabase.storage
-          .from('receipts')
-          .upload(filePath, receiptFile);
-
-        if (!uploadErr && uploadData) {
-          const { data: publicUrlData } = supabase.storage.from('receipts').getPublicUrl(filePath);
-          receiptUrl = publicUrlData?.publicUrl || filePath;
-        }
-      }
-
-      if (user) {
-        const contractorName =
-          user.user_metadata?.company_name ||
-          user.user_metadata?.full_name ||
-          user.email ||
-          'مقاول / مورد';
-
-        // 2. تسجيل طلب الترقية في جدول طلبات الاشتراك الموحد (للوحة AdminBilling)
-        try {
-          await supabase.from('subscription_requests').insert([{
-            user_id: user.id,
-            user_role: 'contractor',
-            user_name: contractorName,
-            plan_code: selectedPlan.id,
-            plan_name: selectedPlan.name,
-            amount: selectedPlan.price,
-            billing_cycle: isAnnual ? 'annual' : 'monthly',
-            payment_method: paymentMethod === 'virement' ? 'bank' : 'cash',
-            receipt_url: receiptUrl,
-            status: 'pending'
-          }]);
-        } catch (err) {
-          console.error('Error inserting subscription request:', err);
-        }
-
-        // 3. توثيق العملية في الصندوق الأسود للإدارة
-        try {
-          await supabase.from('audit_logs').insert([{
-            user_name: contractorName,
-            user_role: 'contractor',
-            action_type: 'SUBSCRIPTION_UPGRADE',
-            details: `طلب ترقية حساب مقاول إلى باقة (${selectedPlan.name}) بقيمة ${selectedPlan.price} MAD عبر (${paymentMethod === 'virement' ? 'تحويل بنكي' : 'Cash Plus / Wafacash'})`
-          }]);
-        } catch (err) {
-          console.error('Error logging to Black Box:', err);
-        }
-      }
-
+    setTimeout(() => {
+      setIsSubmitting(false);
       setPaymentSuccess(true);
       setTimeout(() => {
         setShowPaymentModal(false);
         setPaymentSuccess(false);
         setReceiptFile(null);
-      }, 3500);
-    } catch (error) {
-      console.error('Payment submission error:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+      }, 4000); 
+    }, 2000);
   };
 
   const bgMain = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
@@ -299,7 +207,7 @@ export default function ContractorSubscription() {
           <Clock size={18} className="animate-pulse" />
           <span>{t.trialMsg}</span>
         </div>
-        <button onClick={() => handleUpgradeClick('pro')} className="bg-orange-500 hover:bg-orange-400 text-slate-900 px-4 py-1.5 rounded-lg font-black uppercase text-[10px] tracking-widest transition-colors flex items-center gap-1 shadow-lg shadow-orange-500/20 cursor-pointer">
+        <button onClick={() => handleUpgradeClick('pro')} className="bg-orange-500 hover:bg-orange-400 text-slate-900 px-4 py-1.5 rounded-lg font-black uppercase text-[10px] tracking-widest transition-colors flex items-center gap-1 shadow-lg shadow-orange-500/20">
           <Zap size={14} /> {t.subscribeBtn} <ArrowRight size={14} className={isRtl ? 'rotate-180' : ''} />
         </button>
       </div>
@@ -313,13 +221,13 @@ export default function ContractorSubscription() {
           </h2>
           <p className={`text-lg ${textMuted} font-medium leading-relaxed`}>{t.subtitle}</p>
 
-          {/* 🚀 Toggle Billing */}
+          {/* 🚀 Toggle Billing - تصميم الكبسولة الجديد */}
           <div className="flex items-center justify-center mt-8">
             <div className={`p-1.5 rounded-full inline-flex items-center relative select-none shadow-inner ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-slate-100 border border-slate-300'}`}>
-              <button onClick={() => setIsAnnual(false)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 cursor-pointer ${!isAnnual ? 'text-white' : textMuted}`}>
+              <button onClick={() => setIsAnnual(false)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 ${!isAnnual ? 'text-white' : textMuted}`}>
                 {t.monthly}
               </button>
-              <button onClick={() => setIsAnnual(true)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 flex items-center gap-2 cursor-pointer ${isAnnual ? 'text-white' : textMuted}`}>
+              <button onClick={() => setIsAnnual(true)} className={`relative z-10 px-8 py-3 rounded-full font-black text-sm transition-all duration-300 flex items-center gap-2 ${isAnnual ? 'text-white' : textMuted}`}>
                 {t.annual}
                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${isAnnual ? 'bg-emerald-500 text-white shadow-md' : 'bg-emerald-500/20 text-emerald-600'}`}>
                   {t.save20}
@@ -342,7 +250,7 @@ export default function ContractorSubscription() {
               <span className={`font-bold ml-2 ${textMuted}`}>{t.currency} {isAnnual ? t.yr : t.mo}</span>
             </div>
             <button disabled className={`w-full py-4 font-black rounded-2xl cursor-not-allowed border-2 mb-8 text-sm uppercase tracking-widest ${isDarkMode ? 'bg-slate-800 text-slate-500 border-slate-700' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-              {currentPlan === 'starter' ? t.currentPlan : t.plans.starter.name}
+              {t.currentPlan}
             </button>
             <div className="space-y-5 flex-1">
               {t.plans.starter.features.map((feat, i) => (
@@ -362,6 +270,7 @@ export default function ContractorSubscription() {
 
           {/* Pro Plan (Popular) */}
           <div className={`${isDarkMode ? 'bg-slate-900 border-blue-600' : 'bg-white border-blue-500'} border-2 rounded-[2.5rem] p-8 relative transform lg:-translate-y-6 shadow-2xl shadow-blue-600/20 transition-all duration-500 text-start flex flex-col`}>
+            {/* الشارة البارزة (Cutout effect) */}
             <div className={`absolute -top-5 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg border-4 ${isDarkMode ? 'border-slate-900' : 'border-white'}`}>
               {t.plans.pro.badge}
             </div>
@@ -373,20 +282,8 @@ export default function ContractorSubscription() {
               </span>
               <span className={`font-bold ml-2 ${textMuted}`}>{t.currency} {isAnnual ? t.yr : t.mo}</span>
             </div>
-            <button 
-              onClick={() => handleUpgradeClick('pro')} 
-              disabled={isSubmitting || currentPlan === 'pro'} 
-              className={`w-full py-4 font-black rounded-2xl transition-all shadow-lg mb-8 flex justify-center items-center gap-2 group text-sm uppercase tracking-widest cursor-pointer ${
-                currentPlan === 'pro'
-                  ? 'bg-emerald-600 text-white cursor-default'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
-              }`}
-            >
-              {currentPlan === 'pro' ? `✅ ${t.currentPlan}` : (
-                <>
-                  {t.upgradeBtn} <ArrowRight size={18} className={`group-hover:translate-x-1 transition-transform ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
-                </>
-              )}
+            <button onClick={() => handleUpgradeClick('pro')} disabled={isSubmitting} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-600/30 mb-8 flex justify-center items-center gap-2 group text-sm uppercase tracking-widest">
+              {t.upgradeBtn} <ArrowRight size={18} className={`group-hover:translate-x-1 transition-transform ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
             </button>
             <div className="space-y-5 flex-1">
               {t.plans.pro.features.map((feat, i) => (
@@ -407,6 +304,7 @@ export default function ContractorSubscription() {
           {/* Enterprise Plan */}
           <div className={`bg-gradient-to-br ${isDarkMode ? 'from-slate-900 to-slate-950 border-amber-500/50' : 'from-amber-50 to-white border-amber-300'} border-2 rounded-[2.5rem] p-8 relative shadow-[0_0_40px_rgba(245,158,11,0.15)] group hover:border-amber-400 transition-all duration-500 text-start flex flex-col overflow-visible`}>
             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+            {/* الشارة البارزة باللون الذهبي */}
             <div className={`absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-900 px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-amber-500/30 z-20 border-4 ${isDarkMode ? 'border-slate-900' : 'border-[#fffbeb]'}`}>
               <ShieldCheck size={16} /> {t.plans.enterprise.badge}
             </div>
@@ -422,18 +320,10 @@ export default function ContractorSubscription() {
             
             <button 
               onClick={() => handleUpgradeClick('enterprise')}
-              disabled={isSubmitting || currentPlan === 'enterprise'} 
-              className={`w-full py-4 font-black rounded-2xl transition-all mb-8 relative z-10 flex justify-center items-center gap-2 text-sm uppercase tracking-widest cursor-pointer ${
-                currentPlan === 'enterprise'
-                  ? 'bg-emerald-600 text-white cursor-default'
-                  : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-900 shadow-[0_0_20px_rgba(249,115,22,0.6)] animate-pulse hover:animate-none'
-              }`}
+              disabled={isSubmitting} 
+              className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-900 font-black rounded-2xl transition-all shadow-[0_0_20px_rgba(249,115,22,0.6)] mb-8 relative z-10 flex justify-center items-center gap-2 text-sm uppercase tracking-widest animate-pulse hover:animate-none"
             >
-              {currentPlan === 'enterprise' ? `✅ ${t.currentPlan}` : (
-                <>
-                  {t.contactSales} <Star size={18} className="fill-slate-900" />
-                </>
-              )}
+              {t.contactSales} <Star size={18} className="fill-slate-900" />
             </button>
             
             <div className="space-y-5 relative z-10 flex-1">
@@ -447,28 +337,6 @@ export default function ContractorSubscription() {
           </div>
         </div>
 
-        {/* 🚀 بانر الشركاء الذهبي أسفل الباقات */}
-        <div className={`mt-12 bg-gradient-to-r ${isDarkMode ? 'from-slate-900 via-indigo-950 to-slate-900 border-indigo-500/40' : 'from-indigo-50 via-white to-indigo-50 border-indigo-200'} border rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden`}>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none"></div>
-          <div className="space-y-3 relative z-10">
-            <div className="inline-flex items-center gap-2 text-indigo-500 font-black uppercase text-xs">
-              <Trophy size={16} /> {t.bannerBadge}
-            </div>
-            <h4 className={`text-2xl font-black ${textMain}`}>
-              {t.bannerTitle}
-            </h4>
-            <p className={`text-sm ${textMuted} leading-relaxed max-w-3xl font-medium`}>
-              {t.bannerDesc}
-            </p>
-          </div>
-          <button
-            onClick={() => navigate('/v2/affiliates')}
-            className="shrink-0 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black flex items-center gap-3 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer hover:-translate-y-1 relative z-10"
-          >
-            {t.bannerBtn} <ArrowIcon size={18} />
-          </button>
-        </div>
-
         {/* 💳 Payment Modal */}
         {showPaymentModal && selectedPlan && m && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" dir={isRtl ? 'rtl' : 'ltr'}>
@@ -479,7 +347,7 @@ export default function ContractorSubscription() {
                   <ShieldCheck className="text-blue-500" size={28}/> 
                   {selectedPlan?.id === 'enterprise' && !skipVip ? m.vipTitle : m.paymentTitle}
                 </h3>
-                <button onClick={() => setShowPaymentModal(false)} className={`p-2 rounded-xl transition-colors cursor-pointer ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}>
+                <button onClick={() => setShowPaymentModal(false)} className={`p-2 rounded-xl transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}>
                   <X size={20} />
                 </button>
               </div>
@@ -493,10 +361,10 @@ export default function ContractorSubscription() {
                     <h4 className="text-3xl font-black text-amber-500 mb-3">{m.vipWelcome}</h4>
                     <p className={`text-lg ${textMuted} font-bold`}>{m.vipDesc}</p>
                   </div>
-                  <a href={`https://wa.me/212700715399?text=${encodeURIComponent(isRtl ? 'مرحباً، أود الاستفسار عن باقة Enterprise.' : 'Bonjour, je souhaite me renseigner sur le plan Enterprise.')}`} target="_blank" rel="noopener noreferrer" className="w-full max-w-md py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-2xl transition-all shadow-lg hover:scale-105 flex justify-center items-center gap-3 text-lg mt-6 cursor-pointer">
+                  <a href={`https://wa.me/212700715399?text=${encodeURIComponent(isRtl ? 'مرحباً، أود الاستفسار عن باقة Enterprise.' : 'Bonjour, je souhaite me renseigner sur le plan Enterprise.')}`} target="_blank" rel="noopener noreferrer" className="w-full max-w-md py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-2xl transition-all shadow-lg hover:scale-105 flex justify-center items-center gap-3 text-lg mt-6">
                     <MessageCircle size={24}/> {m.waBtn}
                   </a>
-                  <button onClick={() => setSkipVip(true)} className={`font-bold text-sm transition-colors underline underline-offset-4 mt-4 cursor-pointer ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
+                  <button onClick={() => setSkipVip(true)} className={`font-bold text-sm transition-colors underline underline-offset-4 mt-4 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
                     {m.payDirectBtn}
                   </button>
                 </div>
@@ -523,10 +391,10 @@ export default function ContractorSubscription() {
 
                   <h4 className={`font-black ${textMain} mb-4`}>{m.chooseMethod}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                    <button onClick={() => setPaymentMethod('virement')} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all cursor-pointer ${paymentMethod === 'virement' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : (isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300')}`}>
+                    <button onClick={() => setPaymentMethod('virement')} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${paymentMethod === 'virement' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : (isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300')}`}>
                       <Building2 size={32} /> <span className="font-bold text-sm">{m.bank}</span>
                     </button>
-                    <button onClick={() => setPaymentMethod('cash')} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all cursor-pointer ${paymentMethod === 'cash' ? 'border-amber-500 bg-amber-500/10 text-amber-500' : (isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300')}`}>
+                    <button onClick={() => setPaymentMethod('cash')} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${paymentMethod === 'cash' ? 'border-amber-500 bg-amber-500/10 text-amber-500' : (isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300')}`}>
                       <Wallet size={32} /> <span className="font-bold text-sm">{m.cash}</span>
                     </button>
                     <button disabled className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 cursor-not-allowed relative overflow-hidden ${isDarkMode ? 'border-slate-800 bg-slate-900/50 text-slate-600' : 'border-slate-200 bg-slate-100 text-slate-400'}`}>
@@ -549,8 +417,20 @@ export default function ContractorSubscription() {
                             <strong className={`font-black ${textMain} tracking-widest`} dir="ltr">003460220000095</strong>
                           </div>
                           <div className={`p-4 rounded-xl border md:col-span-2 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-                            <span className={`block mb-2 font-bold ${textMuted}`}>RIB</span>
-                            <strong className="text-blue-500 text-xl tracking-widest font-mono font-black" dir="ltr">225 104 0447028246010126 97</strong>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className={`font-bold ${textMuted}`}>RIB</span>
+                              <button
+                                type="button"
+                                onClick={handleCopyRib}
+                                className="text-xs font-bold text-blue-500 hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
+                              >
+                                {copiedRib ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                                <span>{copiedRib ? (isRtl ? 'تم النسخ' : 'Copié') : (isRtl ? 'نسخ' : 'Copier')}</span>
+                              </button>
+                            </div>
+                            <strong className="text-blue-500 text-xl tracking-widest font-mono font-black block" dir="ltr">
+                              225 104 0447028246010126 97
+                            </strong>
                             <p className={`text-xs mt-2 font-bold ${textMuted}`}>{language === 'ar' ? 'البنك' : 'Banque'}: CREDIT AGRICOLE DU MAROC</p>
                           </div>
                         </div>
@@ -580,19 +460,20 @@ export default function ContractorSubscription() {
                     )}
                   </div>
 
+                  {/* 🚀 الزر الواضح الذي طلبته لرفع الملفات */}
                   <div className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${receiptFile ? 'border-emerald-500 bg-emerald-500/10' : (isDarkMode ? 'border-slate-700 bg-slate-900/50 hover:border-blue-500' : 'border-slate-300 bg-slate-50 hover:border-blue-400')}`}>
                     <UploadCloud size={40} className={`mx-auto mb-4 ${receiptFile ? 'text-emerald-500' : textMuted}`} />
                     <p className={`font-black mb-1 ${textMain}`}>{m.uploadTitle}</p>
                     <p className={`text-sm font-bold mb-6 ${textMuted}`}>{m.uploadDesc}</p>
                     
                     <label className="cursor-pointer px-8 py-3.5 rounded-xl font-black transition-all inline-block bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30">
-                      {receiptFile ? <span className="flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile.name.slice(0, 18)}...</span> : m.chooseFile}
+                      {receiptFile ? <span className="flex items-center gap-2" dir="ltr"><CheckCircle2 size={18}/> {receiptFile.slice(0, 15)}...</span> : m.chooseFile}
                       <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={handleReceiptUpload} />
                     </label>
                   </div>
 
                   <div className="mt-8 pt-6 border-t border-slate-800/50">
-                    <button onClick={submitPayment} disabled={!receiptFile || isSubmitting} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-3 cursor-pointer">
+                    <button onClick={submitPayment} disabled={!receiptFile || isSubmitting} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-3">
                       {isSubmitting ? <Loader2 size={24} className="animate-spin" /> : m.confirmBtn}
                     </button>
                   </div>

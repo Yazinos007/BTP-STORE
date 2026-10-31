@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import useSettingsStore from '../store/useSettingsStore';
 import { 
   ShieldCheck, CheckCircle2, Zap, Star, ArrowRight, Minus, Loader2,
-  X, Building2, CreditCard, Wallet, UploadCloud 
+  X, Building2, CreditCard, Wallet, UploadCloud, Copy, Check
 } from 'lucide-react';
 
 const translations = {
@@ -247,6 +247,14 @@ export default function SupplierSubscription() {
     starter: { monthly: 0, annual: 0 },
     pro: { monthly: 499, annual: 4790 },
     enterprise: { monthly: 1499, annual: 14390 }
+  };
+
+  const [copiedRib, setCopiedRib] = useState(false);
+
+  const handleCopyRib = () => {
+    navigator.clipboard.writeText("225 104 0447028246010126 97");
+    setCopiedRib(true);
+    setTimeout(() => setCopiedRib(false), 2000);
   };
 
   const handleUpgradeClick = (tierKey) => {
@@ -579,8 +587,20 @@ export default function SupplierSubscription() {
                           <strong className="text-white tracking-widest" dir="ltr">003460220000095</strong>
                         </div>
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 md:col-span-2">
-                          <span className="text-slate-500 block mb-1">RIB</span>
-                          <strong className="text-emerald-400 text-lg tracking-widest font-mono" dir="ltr">225 104 0447028246010126 97</strong>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-slate-500 block">RIB</span>
+                            <button
+                              type="button"
+                              onClick={handleCopyRib}
+                              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              {copiedRib ? <Check size={14} /> : <Copy size={14} />}
+                              <span>{copiedRib ? (language === 'ar' ? 'تم النسخ' : 'Copié') : (language === 'ar' ? 'نسخ' : 'Copier')}</span>
+                            </button>
+                          </div>
+                          <strong className="text-emerald-400 text-lg tracking-widest font-mono block" dir="ltr">
+                            225 104 0447028246010126 97
+                          </strong>
                           <p className="text-xs mt-1 text-slate-500">{language === 'ar' ? 'البنك' : 'Banque'}: CREDIT AGRICOLE DU MAROC</p>
                         </div>
                       </div>

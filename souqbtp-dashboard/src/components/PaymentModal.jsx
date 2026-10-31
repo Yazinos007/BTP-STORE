@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
-import { X, Building2, Wallet, CreditCard, UploadCloud, CheckCircle2, Loader2 } from 'lucide-react';
+import { X, Building2, Wallet, CreditCard, UploadCloud, CheckCircle2, Loader2, Copy, Check } from 'lucide-react';
 
 export default function PaymentModal({ plan, onClose, onSubmit }) {
   const [method, setMethod] = useState('virement'); // 'virement' or 'cash'
   const [file, setFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [copiedRib, setCopiedRib] = useState(false);
+
+  const handleCopyRib = () => {
+    navigator.clipboard.writeText("225 104 0447028246010126 97");
+    setCopiedRib(true);
+    setTimeout(() => setCopiedRib(false), 2000);
+  };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -93,8 +101,20 @@ export default function PaymentModal({ plan, onClose, onSubmit }) {
                   </div>
                 </div>
                 <div className="bg-[#12141c] p-3 rounded-lg border border-white/5">
-                  <p className="text-xs text-slate-500 mb-1">RIB</p>
-                  <p className="text-emerald-400 font-mono font-bold text-lg tracking-wider mb-1">225 104 0447028246010126 97</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-slate-500">RIB</p>
+                    <button
+                      type="button"
+                      onClick={handleCopyRib}
+                      className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      {copiedRib ? <Check size={14} /> : <Copy size={14} />}
+                      <span>{copiedRib ? 'Copié' : 'Copier'}</span>
+                    </button>
+                  </div>
+                  <p className="text-emerald-400 font-mono font-bold text-lg tracking-wider mb-1" dir="ltr">
+                    225 104 0447028246010126 97
+                  </p>
                   <p className="text-xs text-slate-500">Banque: CREDIT AGRICOLE DU MAROC</p>
                 </div>
               </div>

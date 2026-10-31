@@ -374,7 +374,7 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
 
         <main className="flex-1 flex flex-col h-full overflow-hidden w-full relative">
           
-          <header className={`h-20 border-b flex items-center justify-between px-4 md:px-6 shrink-0 z-40 shadow-sm transition-colors duration-700 ${isDarkMode ? 'bg-slate-900/80 border-slate-700/50 backdrop-blur-xl' : 'bg-white/40 border-white/50 backdrop-blur-md'}`}>
+          <header className={`h-20 border-b flex items-center justify-between px-4 md:px-6 shrink-0 z-20 shadow-sm transition-colors duration-700 ${isDarkMode ? 'bg-slate-900/80 border-slate-700/50 backdrop-blur-xl' : 'bg-white/40 border-white/50 backdrop-blur-md'}`}>
             
             <div className="flex items-center gap-4">
               <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`p-2 rounded-xl transition-colors cursor-pointer ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:text-blue-400' : 'bg-white/60 text-slate-700 hover:text-blue-600'}`}>
@@ -556,7 +556,7 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
             </div>
           </header>
 
-          <div className="flex-1 overflow-x-hidden overflow-y-auto w-full p-4 md:p-8 relative z-10 custom-scrollbar">
+          <div className="flex-1 overflow-x-hidden overflow-y-auto w-full p-4 md:p-8 custom-scrollbar">
             <Outlet context={{ isDarkMode, language }} />
           </div>
         </main>
