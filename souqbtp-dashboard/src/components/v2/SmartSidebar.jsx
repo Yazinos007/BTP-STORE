@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FolderKanban, MessageCircle, FileSignature, AlertTriangle, 
   Settings, UserCircle, Briefcase, Camera, LogOut, Search, PieChart, Users, Zap, 
   Globe, Moon, Sun, Receipt, ShieldCheck, ChevronDown, Trophy, 
-  Store, Calculator, Star, HardHat, Radar, Image
+  Store, Calculator, Star, HardHat, Radar, Image, Truck
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import useSettingsStore from '../../store/useSettingsStore';
