@@ -4,7 +4,8 @@ import {
   LayoutDashboard, FolderKanban, MessageCircle, FileSignature, AlertTriangle, 
   Settings, UserCircle, Briefcase, Camera, LogOut, Search, PieChart, Users, Zap, 
   Globe, Moon, Sun, Receipt, ShieldCheck, ChevronDown, Trophy, 
-  Store, Calculator, Star, HardHat, Radar, Image, Truck
+  Store, Calculator, Star, HardHat, Radar, Image, Truck,
+  Package, Wallet, CreditCard, Landmark
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import useSettingsStore from '../../store/useSettingsStore';
@@ -115,7 +116,7 @@ const SIDEBAR_THEMES = {
       hoverBtn: 'hover:bg-slate-500/10 hover:text-slate-300 hover:border-slate-500/30'
     }
   },
-  admin: { // 🆕 ثيم لوحة القيادة المركزية (الأدمن)
+  admin: {
     dashboard: { 
       headerText: 'text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]',
       dot: 'bg-blue-400 shadow-[0_0_10px_#60a5fa]',
@@ -158,7 +159,7 @@ export default function SmartSidebar({ storeName }) {
   let safeAccountType = 'contractor';
   if (location.pathname.includes('/architect')) safeAccountType = 'architect';
   if (location.pathname.includes('/provider-')) safeAccountType = 'provider';
-  if (location.pathname.includes('/admin-')) safeAccountType = 'admin'; // 🆕 دعم فضاء الأدمن المركزي
+  if (location.pathname.includes('/admin-')) safeAccountType = 'admin';
 
   const [providerPlan, setProviderPlan] = useState('free');
   const [architectPlan, setArchitectPlan] = useState('basic');
@@ -274,7 +275,7 @@ export default function SmartSidebar({ storeName }) {
     },
     {
       key: 'tools',
-      title: language === 'ar' ? 'الأدوات המيدانية (AR)' : 'OUTILS TERRAIN (AR)',
+      title: language === 'ar' ? 'الأدوات الميدانية (AR)' : 'OUTILS TERRAIN (AR)',
       items: [
         { path: '/v2/architect-live-room', icon: Camera, label: language === 'ar' ? 'الغرفة الحية (AR)' : 'Salle Interactive' },
         { path: '/v2/architect-ruler', icon: Calculator, label: language === 'ar' ? 'مسطرة القياس الذكية' : 'Règle & Mesures' },
@@ -311,7 +312,7 @@ export default function SmartSidebar({ storeName }) {
     }
   ];
 
-  // 3. هيكلة أقسام الحرفي (Provider) - 🆕 تم تطويرها بذكاء مع فصل الرادار
+  // 3. هيكلة أقسام الحرفي (Provider)
   const providerMenuSections = [
     {
       key: 'dashboard',
@@ -351,7 +352,7 @@ export default function SmartSidebar({ storeName }) {
     }
   ];
 
-  // 4. هيكلة لوحة التحكم المركزية للأدمن (Admin Dashboard) 🆕
+  // 4. هيكلة لوحة التحكم المركزية للأدمن (Admin Dashboard)
   const adminMenuSections = [
     {
       key: 'dashboard',
@@ -391,7 +392,7 @@ export default function SmartSidebar({ storeName }) {
   let currentMenuSections = contractorMenuSections;
   if (safeAccountType === 'architect') currentMenuSections = architectMenuSections;
   if (safeAccountType === 'provider') currentMenuSections = providerMenuSections;
-  if (safeAccountType === 'admin') currentMenuSections = adminMenuSections; // تطبيق مسارات الأدمن
+  if (safeAccountType === 'admin') currentMenuSections = adminMenuSections;
 
   const badgeText = 
     safeAccountType === 'contractor' ? (['pro', 'enterprise', 'vip'].includes(contractorPlan) ? 'BUREAU D\'ENTREPRENEUR' : 'BUREAU D\'ENTREPRENEUR') :
