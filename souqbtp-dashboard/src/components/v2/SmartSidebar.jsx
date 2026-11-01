@@ -5,7 +5,7 @@ import {
   Settings, UserCircle, Briefcase, Camera, LogOut, Search, PieChart, Users, Zap, 
   Globe, Moon, Sun, Receipt, ShieldCheck, ChevronDown, Trophy, 
   Store, Calculator, Star, HardHat, Radar, Image, Truck,
-  Package, Wallet, CreditCard, Landmark
+  Package, Wallet, CreditCard, Landmark, ShoppingCart
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import useSettingsStore from '../../store/useSettingsStore';
@@ -145,6 +145,37 @@ const SIDEBAR_THEMES = {
       activeIcon: 'text-purple-400 drop-shadow-[0_0_8px_rgba(192,132,252,0.9)]',
       hoverBtn: 'hover:bg-purple-500/10 hover:text-purple-300 hover:border-purple-500/30'
     }
+  },
+  // 🛒 منظومة ألوان فضاء التاجر (Retailer)
+  retailer: {
+    dashboard: { 
+      headerText: 'text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]',
+      dot: 'bg-blue-400 shadow-[0_0_10px_#60a5fa]',
+      activeBtn: 'bg-blue-600/20 text-blue-300 border border-blue-500/70 shadow-[0_0_20px_rgba(59,130,246,0.45)] animate-pulse',
+      activeIcon: 'text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.9)]',
+      hoverBtn: 'hover:bg-blue-500/10 hover:text-blue-300 hover:border-blue-500/30'
+    },
+    market: {
+      headerText: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]',
+      dot: 'bg-emerald-400 shadow-[0_0_10px_#34d399]',
+      activeBtn: 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/70 shadow-[0_0_20px_rgba(16,185,129,0.45)] animate-pulse',
+      activeIcon: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.9)]',
+      hoverBtn: 'hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/30'
+    },
+    finance: {
+      headerText: 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]',
+      dot: 'bg-purple-400 shadow-[0_0_10px_#c084fc]',
+      activeBtn: 'bg-purple-600/20 text-purple-300 border border-purple-500/70 shadow-[0_0_20px_rgba(168,85,247,0.45)] animate-pulse',
+      activeIcon: 'text-purple-400 drop-shadow-[0_0_8px_rgba(192,132,252,0.9)]',
+      hoverBtn: 'hover:bg-purple-500/10 hover:text-purple-300 hover:border-purple-500/30'
+    },
+    settings: {
+      headerText: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]',
+      dot: 'bg-cyan-400 shadow-[0_0_10px_#22d3ee]',
+      activeBtn: 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/70 shadow-[0_0_20px_rgba(34,211,238,0.45)] animate-pulse',
+      activeIcon: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.9)]',
+      hoverBtn: 'hover:bg-cyan-500/10 hover:text-cyan-300 hover:border-cyan-500/30'
+    }
   }
 };
 
@@ -169,6 +200,10 @@ export default function SmartSidebar({ storeName, accountType }) {
       sessionStorage.setItem('sasbtp_v2_role', 'admin');
       return 'admin';
     }
+    if (p.includes('/retailer') || p.includes('/pos')) {
+      sessionStorage.setItem('sasbtp_v2_role', 'retailer');
+      return 'retailer';
+    }
     if (p.includes('/contractor-') || p.includes('/project-path') || p.includes('/cost-calculator') || p.includes('/field-camera') || p.includes('/freight-exchange') || p.includes('/live-orders')) {
       sessionStorage.setItem('sasbtp_v2_role', 'contractor');
       return 'contractor';
@@ -181,6 +216,7 @@ export default function SmartSidebar({ storeName, accountType }) {
   const [providerPlan, setProviderPlan] = useState('free');
   const [architectPlan, setArchitectPlan] = useState('basic');
   const [contractorPlan, setContractorPlan] = useState('starter');
+  const [retailerPlan, setRetailerPlan] = useState('basic');
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -190,7 +226,10 @@ export default function SmartSidebar({ storeName, accountType }) {
           supabase.from('architects').select('subscription_plan').eq('user_id', data.user.id).maybeSingle(),
           supabase.from('providers').select('subscription_plan').eq('user_id', data.user.id).maybeSingle()
         ]);
-        if (profRes.data?.subscription_plan) setContractorPlan(profRes.data.subscription_plan.toLowerCase());
+        if (profRes.data?.subscription_plan) {
+          setContractorPlan(profRes.data.subscription_plan.toLowerCase());
+          setRetailerPlan(profRes.data.subscription_plan.toLowerCase());
+        }
         if (archRes.data?.subscription_plan) setArchitectPlan(archRes.data.subscription_plan.toLowerCase());
         if (provRes.data?.subscription_plan) setProviderPlan(provRes.data.subscription_plan.toLowerCase());
       }
@@ -406,26 +445,51 @@ export default function SmartSidebar({ storeName, accountType }) {
     }
   ];
 
+  // 5. هيكلة أقسام التاجر (Retailer) - مطابقة للصورة 1
+  const retailerMenuSections = [
+    {
+      key: 'dashboard',
+      title: language === 'ar' ? 'الإدارة والصندوق' : 'DIRECTION & CAISSE',
+      items: [
+        { path: '/v2/retailer-dashboard', icon: LayoutDashboard, label: language === 'ar' ? 'لوحة القيادة' : 'Tableau de bord' },
+        { path: '/v2/retailer-pos', icon: ShoppingCart, label: language === 'ar' ? 'نقطة البيع (POS)' : 'Point de Vente (POS)', tag: 'LIVE' },
+        { path: '/v2/retailer-inventory', icon: Package, label: language === 'ar' ? 'إدارة المخزون والمنتجات' : 'Gestion du Stock & Produits' }
+      ]
+    },
+    {
+      key: 'market',
+      title: language === 'ar' ? 'التواصل والسوق' : 'COMMUNICATION & MARCHÉ',
+      items: [
+        { path: '/v2/retailer-messages', icon: MessageCircle, label: language === 'ar' ? 'صندوق الرسائل' : 'Boîte de Réception' },
+        { path: '/v2/retailer-marketplace', icon: Store, label: language === 'ar' ? 'سوق BTP' : 'Marché BTP' }
+      ]
+    }
+  ];
+
   let currentMenuSections = contractorMenuSections;
   if (safeAccountType === 'architect') currentMenuSections = architectMenuSections;
   if (safeAccountType === 'provider') currentMenuSections = providerMenuSections;
+  if (safeAccountType === 'retailer') currentMenuSections = retailerMenuSections;
   if (safeAccountType === 'admin') currentMenuSections = adminMenuSections;
 
   const badgeText = 
     safeAccountType === 'contractor' ? (['pro', 'enterprise', 'vip'].includes(contractorPlan) ? 'ENTREPRENEUR PRO 🛡️' : 'BUREAU D\'ENTREPRENEUR') :
     safeAccountType === 'architect' ? (['pro', 'vip', 'elite'].includes(architectPlan) ? 'BUREAU VIP 👑' : 'BUREAU D\'ARCHITECTE') :
     safeAccountType === 'admin' ? 'ADMINISTRATION CENTRALE' :
+    safeAccountType === 'retailer' ? (['pro', 'vip', 'enterprise'].includes(retailerPlan) ? 'PRO RETAILER ⚡' : 'ESPACE COMMERÇANT (POS)') :
     (['pro', 'maalem pro'].includes(providerPlan) ? 'MAÂLEM PRO 🔥' : 'ESPACE ARTISAN PRO');
   
   const headerGradient = 
     safeAccountType === 'contractor' ? 'from-blue-600 to-indigo-700' :
     safeAccountType === 'architect' ? 'from-indigo-600 to-purple-700' :
     safeAccountType === 'admin' ? 'from-emerald-600 to-teal-700' :
+    safeAccountType === 'retailer' ? 'from-blue-600 to-indigo-700' :
     'from-orange-600 to-amber-700';
     
   const upgradePath = 
     safeAccountType === 'architect' ? '/v2/architect-subscription' : 
     safeAccountType === 'provider' ? '/v2/provider-subscription' :
+    safeAccountType === 'retailer' ? '/v2/retailer-subscription' :
     '/v2/subscription';
 
   return (
@@ -441,18 +505,19 @@ export default function SmartSidebar({ storeName, accountType }) {
         }
       `}</style>
       
-      {/* 1. Header & Identity */}
+      {/* 1. Header & Identity - تم تثبيت اسم المنصة SasBTP وتحته نوع الحساب */}
       <div className="p-5 border-b border-slate-800/80 bg-slate-950/40 shrink-0">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${headerGradient} flex items-center justify-center text-white font-black text-xl shadow-xl border-2 border-white/10 shrink-0`}>
-            {storeName ? storeName.charAt(0).toUpperCase() : (safeAccountType === 'admin' ? '🛡️' : 'S')}
+            {safeAccountType === 'admin' ? '🛡️' : 'S'}
           </div>
           <div className="min-w-0 text-start flex-1">
-            <h2 className="text-white font-black text-lg leading-tight truncate">SasBTP V2</h2>
+            <h2 className="text-white font-black text-lg leading-tight truncate tracking-wide">SasBTP</h2>
             <span className={`inline-block whitespace-nowrap mt-1 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider ${
               safeAccountType === 'contractor' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
               safeAccountType === 'architect' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' :
               safeAccountType === 'admin' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+              safeAccountType === 'retailer' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
               'bg-orange-500/20 text-orange-400 border border-orange-500/30'
             }`}>
               {badgeText}
@@ -470,6 +535,8 @@ export default function SmartSidebar({ storeName, accountType }) {
             <span>
               {safeAccountType === 'provider'
                 ? (language === 'ar' ? 'باقة المعلم PRO ⚡' : 'Pack Artisan PRO ⚡')
+                : safeAccountType === 'retailer'
+                ? (language === 'ar' ? 'الترقية إلى تاجر PRO ⚡' : 'Passer à Pro Retailer ⚡')
                 : (language === 'ar' ? 'ترقية الحساب (PRO) ⚡' : 'Passer à PRO ⚡')}
             </span>
           </button>
