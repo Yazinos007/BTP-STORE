@@ -75,7 +75,7 @@ import ContractorLanding from './landing-pages/ContractorLanding';
 import CostCalculatorLanding from './landing-pages/CostCalculatorLanding'; 
 import ClientPortal from './landing-pages/ClientPortal';
 
-// 🎨 محرك التصميم الموحد للوضع الفاتح + ألوان الباستيل الخافتة (ص8) + بروز 3D الديناميكي للبطاقات
+// 🎨 محرك التصميم الموحد للوضع الفاتح + ألوان الباستيل الخافتة + بروز 3D الديناميكي للبطاقات
 const UNIFIED_LIGHT_AND_3D_STYLES = `
   @keyframes b2bHeaderShimmer {
     0% { filter: brightness(0.95); }
@@ -104,7 +104,6 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
     will-change: transform, box-shadow;
   }
 
-  /* بروز 3D للأعلى عند تمرير الماوس */
   .wholesale-light-scope .rounded-2xl:hover,
   .wholesale-light-scope .rounded-3xl:hover,
   .wholesale-light-scope .rounded-\\[2rem\\]:hover,
@@ -124,7 +123,6 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
                 0 0 20px -2px rgba(59, 130, 246, 0.22) !important;
   }
 
-  /* استجابة سريعة 3D عند النقر (Active Click Pop) */
   .wholesale-light-scope .rounded-2xl:active,
   .wholesale-light-scope .rounded-3xl:active,
   .wholesale-dark-scope .rounded-2xl:active,
@@ -134,24 +132,28 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
   }
 
   /* =========================================================================
-     ☀️ 2. معالجة شاملة للبطاقات الداكنة والرمادية في الوضع الفاتح
+     ☀️ 2. معالجة الحاويات الداكنة فقط (دون المساس ببطاقات الداشبورد الملونة!)
      ========================================================================= */
   .wholesale-light-scope {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #eff6ff 100%) !important;
     color: #0f172a !important;
   }
 
-  /* تحويل جميع البطاقات والحاويات الداكنة (بما فيها درجات الشفافية /40, /50, /80 والتدرجات الداكنة) إلى أبيض ناصع بحواف بارزة */
-  .wholesale-light-scope [class*="bg-slate-9"],
-  .wholesale-light-scope [class*="bg-slate-8"],
-  .wholesale-light-scope [class*="bg-gray-9"],
-  .wholesale-light-scope [class*="bg-gray-8"],
-  .wholesale-light-scope [class*="bg-[#0"],
-  .wholesale-light-scope [class*="bg-[#1"],
+  /* استهداف الألوان الكحلية الداكنة حصرياً واستثناء أي بطاقة تحتوي على تدرج لوني */
+  .wholesale-light-scope .bg-slate-950:not([class*="bg-gradient-"]),
+  .wholesale-light-scope .bg-slate-900:not([class*="bg-gradient-"]),
+  .wholesale-light-scope .bg-slate-800:not([class*="bg-gradient-"]),
+  .wholesale-light-scope .bg-gray-900:not([class*="bg-gradient-"]),
+  .wholesale-light-scope .bg-gray-800:not([class*="bg-gradient-"]),
+  .wholesale-light-scope [class*="bg-slate-900/"],
+  .wholesale-light-scope [class*="bg-slate-800/"],
+  .wholesale-light-scope [class*="bg-slate-950/"],
+  .wholesale-light-scope .bg-\\[\\#0f172a\\],
+  .wholesale-light-scope .bg-\\[\\#1e293b\\],
+  .wholesale-light-scope .bg-\\[\\#12141c\\],
+  .wholesale-light-scope .bg-\\[\\#0b1120\\],
   .wholesale-light-scope [class*="from-slate-9"],
-  .wholesale-light-scope [class*="from-slate-8"],
-  .wholesale-light-scope [class*="to-slate-9"],
-  .wholesale-light-scope [class*="to-slate-8"] {
+  .wholesale-light-scope [class*="from-slate-8"] {
     background-color: #ffffff !important;
     background-image: none !important;
     border: 1.5px solid #cbd5e1 !important;
@@ -160,75 +162,45 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
                 0 2px 6px -1px rgba(15, 23, 42, 0.04) !important;
   }
 
-  /* عند تمرير الماوس على البطاقات البيضاء تكتسب لون باستيل خافت وأنيق كما في ص8 */
-  .wholesale-light-scope [class*="bg-slate-9"].rounded-2xl:hover,
-  .wholesale-light-scope [class*="bg-slate-9"].rounded-3xl:hover,
-  .wholesale-light-scope [class*="bg-slate-8"].rounded-2xl:hover,
-  .wholesale-light-scope [class*="bg-slate-8"].rounded-3xl:hover,
-  .wholesale-light-scope [class*="from-slate-9"].rounded-2xl:hover,
-  .wholesale-light-scope [class*="from-slate-9"].rounded-3xl:hover {
-    background-image: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f0f9ff 100%) !important;
-    border-color: #60a5fa !important;
-  }
-
-  /* الحاويات الداخلية وعناوين الجداول (مثل bg-slate-700 و thead) تتحول إلى رمادي فاتح متباين */
-  .wholesale-light-scope [class*="bg-slate-7"],
   .wholesale-light-scope thead,
   .wholesale-light-scope thead tr {
     background-color: #f1f5f9 !important;
-    background-image: none !important;
     border-color: #cbd5e1 !important;
     color: #0f172a !important;
   }
 
   /* =========================================================================
-     ✒️ 3. وضوح النصوص والأرقام بنسبة 100% في كافة الأقسام
+     ✒️ 3. وضوح النصوص والأرقام العامة في الواجهة الفاتحة
      ========================================================================= */
   .wholesale-light-scope .text-white,
   .wholesale-light-scope .text-slate-100,
   .wholesale-light-scope .text-slate-200,
-  .wholesale-light-scope .text-slate-300,
-  .wholesale-light-scope .text-gray-100,
-  .wholesale-light-scope .text-gray-200,
-  .wholesale-light-scope .text-gray-300 {
+  .wholesale-light-scope .text-slate-300 {
     color: #0f172a !important;
   }
 
   .wholesale-light-scope .text-slate-400,
-  .wholesale-light-scope .text-slate-500,
-  .wholesale-light-scope .text-gray-400,
-  .wholesale-light-scope .text-gray-500 {
+  .wholesale-light-scope .text-slate-500 {
     color: #334155 !important;
     font-weight: 600 !important;
   }
 
-  /* تقوية ألوان النصوص الملونة لتكون واضحة جداً على الخلفيات الفاتحة */
   .wholesale-light-scope .text-emerald-400,
   .wholesale-light-scope .text-emerald-300,
   .wholesale-light-scope .text-green-400 { color: #047857 !important; }
-  
   .wholesale-light-scope .text-blue-400,
   .wholesale-light-scope .text-blue-300 { color: #1d4ed8 !important; }
-  
   .wholesale-light-scope .text-indigo-400,
   .wholesale-light-scope .text-indigo-300 { color: #4338ca !important; }
-  
   .wholesale-light-scope .text-amber-400,
-  .wholesale-light-scope .text-amber-300,
-  .wholesale-light-scope .text-orange-400,
-  .wholesale-light-scope .text-yellow-400 { color: #b45309 !important; }
-  
+  .wholesale-light-scope .text-orange-400 { color: #b45309 !important; }
   .wholesale-light-scope .text-red-400,
   .wholesale-light-scope .text-rose-400 { color: #b91c1c !important; }
-  
-  .wholesale-light-scope .text-purple-400,
-  .wholesale-light-scope .text-fuchsia-400 { color: #6d28d9 !important; }
-  
-  .wholesale-light-scope .text-cyan-400,
-  .wholesale-light-scope .text-teal-400 { color: #0f766e !important; }
+  .wholesale-light-scope .text-purple-400 { color: #6d28d9 !important; }
+  .wholesale-light-scope .text-cyan-400 { color: #0f766e !important; }
 
   /* =========================================================================
-     🎨 4. تحويل الصناديق الشفافة (/10, /15, /20, /30) إلى بطاقات باستيل خافتة كالصورة ص8
+     🎨 4. الصناديق الشفافة (/10, /15, /20, /30) تتحول إلى ألوان باستيل خافتة وواضحة
      ========================================================================= */
   .wholesale-light-scope [class*="bg-blue-"][class*="/"],
   .wholesale-light-scope [class*="from-blue-"][class*="/"] {
@@ -238,9 +210,7 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
     color: #1e3a8a !important;
   }
   .wholesale-light-scope [class*="bg-blue-"][class*="/"] *,
-  .wholesale-light-scope [class*="from-blue-"][class*="/"] * {
-    color: #1e3a8a !important;
-  }
+  .wholesale-light-scope [class*="from-blue-"][class*="/"] * { color: #1e3a8a !important; }
 
   .wholesale-light-scope [class*="bg-indigo-"][class*="/"],
   .wholesale-light-scope [class*="from-indigo-"][class*="/"] {
@@ -250,9 +220,7 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
     color: #312e81 !important;
   }
   .wholesale-light-scope [class*="bg-indigo-"][class*="/"] *,
-  .wholesale-light-scope [class*="from-indigo-"][class*="/"] * {
-    color: #312e81 !important;
-  }
+  .wholesale-light-scope [class*="from-indigo-"][class*="/"] * { color: #312e81 !important; }
 
   .wholesale-light-scope [class*="bg-emerald-"][class*="/"],
   .wholesale-light-scope [class*="bg-green-"][class*="/"],
@@ -264,9 +232,7 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
   }
   .wholesale-light-scope [class*="bg-emerald-"][class*="/"] *,
   .wholesale-light-scope [class*="bg-green-"][class*="/"] *,
-  .wholesale-light-scope [class*="from-emerald-"][class*="/"] * {
-    color: #065f46 !important;
-  }
+  .wholesale-light-scope [class*="from-emerald-"][class*="/"] * { color: #065f46 !important; }
 
   .wholesale-light-scope [class*="bg-amber-"][class*="/"],
   .wholesale-light-scope [class*="bg-orange-"][class*="/"],
@@ -282,9 +248,7 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
   .wholesale-light-scope [class*="bg-orange-"][class*="/"] *,
   .wholesale-light-scope [class*="bg-yellow-"][class*="/"] *,
   .wholesale-light-scope [class*="from-amber-"][class*="/"] *,
-  .wholesale-light-scope [class*="from-orange-"][class*="/"] * {
-    color: #9a3412 !important;
-  }
+  .wholesale-light-scope [class*="from-orange-"][class*="/"] * { color: #9a3412 !important; }
 
   .wholesale-light-scope [class*="bg-red-"][class*="/"],
   .wholesale-light-scope [class*="bg-rose-"][class*="/"],
@@ -296,115 +260,127 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
   }
   .wholesale-light-scope [class*="bg-red-"][class*="/"] *,
   .wholesale-light-scope [class*="bg-rose-"][class*="/"] *,
-  .wholesale-light-scope [class*="from-red-"][class*="/"] * {
-    color: #991b1b !important;
-  }
-
-  .wholesale-light-scope [class*="bg-purple-"][class*="/"],
-  .wholesale-light-scope [class*="from-purple-"][class*="/"] {
-    background-color: #faf5ff !important;
-    background-image: none !important;
-    border: 1.5px solid #d8b4fe !important;
-    color: #581c87 !important;
-  }
-  .wholesale-light-scope [class*="bg-purple-"][class*="/"] *,
-  .wholesale-light-scope [class*="from-purple-"][class*="/"] * {
-    color: #581c87 !important;
-  }
+  .wholesale-light-scope [class*="from-red-"][class*="/"] * { color: #991b1b !important; }
 
   /* =========================================================================
-      💎 5. حماية البطاقات والأزرار الملونة الصلبة (Solid Colored Cards & Buttons)
+     💎 5. حماية جميع بطاقات الداشبورد الملونة والرمادية ونصوصها البيضاء الناصعة
      ========================================================================= */
-        
-        /* أ- حماية التدرجات اللونية (Gradients) للبطاقات الكبرى */
-        .wholesale-light-scope [class*="from-blue-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="from-indigo-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="from-emerald-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="from-teal-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="from-cyan-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="from-orange-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="from-amber-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="from-pink-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="from-fuchsia-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="from-purple-"]:not([class*="/"]) {
-          color: #ffffff !important;
-        }
+  .wholesale-light-scope [class*="from-blue-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-indigo-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-emerald-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-teal-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-cyan-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-sky-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-green-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-orange-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-amber-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-pink-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-fuchsia-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-purple-"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-slate-7"]:not([class*="/"]),
+  .wholesale-light-scope [class*="from-slate-6"]:not([class*="/"]),
+  .wholesale-light-scope .bg-blue-600,
+  .wholesale-light-scope .bg-blue-500,
+  .wholesale-light-scope .bg-indigo-600,
+  .wholesale-light-scope .bg-indigo-500,
+  .wholesale-light-scope .bg-emerald-600,
+  .wholesale-light-scope .bg-emerald-500,
+  .wholesale-light-scope .bg-teal-600,
+  .wholesale-light-scope .bg-teal-500,
+  .wholesale-light-scope .bg-cyan-600,
+  .wholesale-light-scope .bg-cyan-500,
+  .wholesale-light-scope .bg-green-600,
+  .wholesale-light-scope .bg-green-500,
+  .wholesale-light-scope .bg-orange-600,
+  .wholesale-light-scope .bg-orange-500,
+  .wholesale-light-scope .bg-amber-600,
+  .wholesale-light-scope .bg-amber-500,
+  .wholesale-light-scope .bg-purple-600,
+  .wholesale-light-scope .bg-purple-500,
+  .wholesale-light-scope .bg-fuchsia-600,
+  .wholesale-light-scope .bg-fuchsia-500,
+  .wholesale-light-scope .bg-pink-600,
+  .wholesale-light-scope .bg-pink-500,
+  .wholesale-light-scope .bg-red-600,
+  .wholesale-light-scope .bg-red-500,
+  .wholesale-light-scope .bg-slate-700,
+  .wholesale-light-scope .bg-slate-600,
+  .wholesale-light-scope [class*="bg-[#10b981"],
+  .wholesale-light-scope [class*="bg-[#059669"],
+  .wholesale-light-scope [class*="bg-[#06b6d4"],
+  .wholesale-light-scope [class*="bg-[#0ea5e9"],
+  .wholesale-light-scope [class*="bg-[#0284c7"],
+  .wholesale-light-scope [class*="bg-[#4f46e5"],
+  .wholesale-light-scope [class*="bg-[#6366f1"],
+  .wholesale-light-scope [class*="bg-[#d946ef"],
+  .wholesale-light-scope [class*="bg-[#ec4899"],
+  .wholesale-light-scope [class*="bg-[#f97316"],
+  .wholesale-light-scope [class*="bg-[#3b82f6"],
+  .wholesale-light-scope [class*="bg-[#334155"],
+  .wholesale-light-scope [class*="bg-[#475569"],
+  .wholesale-light-scope [class*="bg-[#64748b"] {
+    color: #ffffff !important;
+  }
 
-        .wholesale-light-scope [class*="from-blue-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="from-indigo-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="from-emerald-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="from-teal-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="from-cyan-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="from-orange-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="from-pink-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="from-fuchsia-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="from-purple-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *) {
-          color: #ffffff !important;
-        }
-
-        /* ب- حماية الكلاسات الصلبة (Solid Backgrounds) لبطاقات الداشبورد */
-        /* استهداف دقيق للكلاسات المستخدمة في لوحة القيادة لمنع تحولها للأبيض */
-        .wholesale-light-scope .bg-blue-600,
-        .wholesale-light-scope .bg-blue-500,
-        .wholesale-light-scope .bg-indigo-600,
-        .wholesale-light-scope .bg-indigo-500,
-        .wholesale-light-scope .bg-emerald-600,
-        .wholesale-light-scope .bg-emerald-500, /* 👈 بطاقة الطلبيات PENDING ORDERS */
-        .wholesale-light-scope .bg-teal-600,
-        .wholesale-light-scope .bg-teal-500,
-        .wholesale-light-scope .bg-green-600,
-        .wholesale-light-scope .bg-green-500,
-        .wholesale-light-scope .bg-cyan-600,
-        .wholesale-light-scope .bg-cyan-500,   /* 👈 بطاقة المنتجات ACTIVE PRODUCTS */
-        .wholesale-light-scope .bg-orange-600,
-        .wholesale-light-scope .bg-orange-500,
-        .wholesale-light-scope .bg-amber-600,
-        .wholesale-light-scope .bg-amber-500,
-        .wholesale-light-scope .bg-red-600,
-        .wholesale-light-scope .bg-red-500,
-        .wholesale-light-scope .bg-purple-600,
-        .wholesale-light-scope .bg-purple-500,
-        .wholesale-light-scope .bg-pink-600,
-        .wholesale-light-scope .bg-pink-500 {
-          color: #ffffff !important;
-          background-image: none !important;
-        }
-
-        /* فرض ألوان الخلفية الحقيقية بقوة لتتغلب على أي قاعدة تبييض سابقة */
-        .wholesale-light-scope .bg-emerald-500 { background-color: #10b981 !important; border-color: #059669 !important; }
-        .wholesale-light-scope .bg-cyan-500 { background-color: #06b6d4 !important; border-color: #0891b2 !important; }
-        .wholesale-light-scope .bg-orange-500 { background-color: #f97316 !important; border-color: #ea580c !important; }
-        .wholesale-light-scope .bg-blue-500 { background-color: #3b82f6 !important; border-color: #2563eb !important; }
-        .wholesale-light-scope .bg-purple-500 { background-color: #a855f7 !important; border-color: #9333ea !important; }
-
-        /* حماية النصوص داخل هذه البطاقات الصلبة */
-        .wholesale-light-scope .bg-blue-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-blue-500 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-indigo-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-indigo-500 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-emerald-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-emerald-500 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-teal-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-teal-500 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-green-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-green-500 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-cyan-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-cyan-500 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-orange-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-orange-500 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-amber-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-amber-500 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-red-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-red-500 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-purple-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-purple-500 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-pink-600 *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope .bg-pink-500 *:not(.bg-white):not(.bg-white *) {
-          color: #ffffff !important;
-        }
+  .wholesale-light-scope [class*="from-blue-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-indigo-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-emerald-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-teal-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-cyan-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-sky-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-green-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-orange-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-amber-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-pink-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-fuchsia-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-purple-"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-slate-7"]:not([class*="/"]) *,
+  .wholesale-light-scope [class*="from-slate-6"]:not([class*="/"]) *,
+  .wholesale-light-scope .bg-blue-600 *,
+  .wholesale-light-scope .bg-blue-500 *,
+  .wholesale-light-scope .bg-indigo-600 *,
+  .wholesale-light-scope .bg-indigo-500 *,
+  .wholesale-light-scope .bg-emerald-600 *,
+  .wholesale-light-scope .bg-emerald-500 *,
+  .wholesale-light-scope .bg-teal-600 *,
+  .wholesale-light-scope .bg-teal-500 *,
+  .wholesale-light-scope .bg-cyan-600 *,
+  .wholesale-light-scope .bg-cyan-500 *,
+  .wholesale-light-scope .bg-green-600 *,
+  .wholesale-light-scope .bg-green-500 *,
+  .wholesale-light-scope .bg-orange-600 *,
+  .wholesale-light-scope .bg-orange-500 *,
+  .wholesale-light-scope .bg-amber-600 *,
+  .wholesale-light-scope .bg-amber-500 *,
+  .wholesale-light-scope .bg-purple-600 *,
+  .wholesale-light-scope .bg-purple-500 *,
+  .wholesale-light-scope .bg-fuchsia-600 *,
+  .wholesale-light-scope .bg-fuchsia-500 *,
+  .wholesale-light-scope .bg-pink-600 *,
+  .wholesale-light-scope .bg-pink-500 *,
+  .wholesale-light-scope .bg-red-600 *,
+  .wholesale-light-scope .bg-red-500 *,
+  .wholesale-light-scope .bg-slate-700 *,
+  .wholesale-light-scope .bg-slate-600 *,
+  .wholesale-light-scope [class*="bg-[#10b981"] *,
+  .wholesale-light-scope [class*="bg-[#059669"] *,
+  .wholesale-light-scope [class*="bg-[#06b6d4"] *,
+  .wholesale-light-scope [class*="bg-[#0ea5e9"] *,
+  .wholesale-light-scope [class*="bg-[#0284c7"] *,
+  .wholesale-light-scope [class*="bg-[#4f46e5"] *,
+  .wholesale-light-scope [class*="bg-[#6366f1"] *,
+  .wholesale-light-scope [class*="bg-[#d946ef"] *,
+  .wholesale-light-scope [class*="bg-[#ec4899"] *,
+  .wholesale-light-scope [class*="bg-[#f97316"] *,
+  .wholesale-light-scope [class*="bg-[#3b82f6"] *,
+  .wholesale-light-scope [class*="bg-[#334155"] *,
+  .wholesale-light-scope [class*="bg-[#475569"] *,
+  .wholesale-light-scope [class*="bg-[#64748b"] * {
+    color: #ffffff !important;
+  }
 
   /* =========================================================================
-     🔘 6. حماية جميع الأزرار البيضاء (مثل Voir le rapport و Choisir un fichier و Détails du marché)
+     🔘 6. حماية جميع الأزرار البيضاء الداخلية (تأتي في النهاية لتتغلب على القاعدة 5)
      ========================================================================= */
   .wholesale-light-scope button.bg-white,
   .wholesale-light-scope a.bg-white,
