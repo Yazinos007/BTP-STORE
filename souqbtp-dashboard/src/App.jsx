@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { 
@@ -1274,11 +1274,12 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
   );
 };
 
-// 💎 مكون التاجر الداعم لمبدل الفضاءات الشامل وزر الوضع الداكن / الفاتح + تأثير الـ 3D
+// 💎 مكون التاجر الداعم لمبدل الفضاءات الشامل وزر الوضع الداكن / الفاتح + تأثير الـ 3D والإطار النابض وتباين النصوص والأيقونات
 const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { setLanguage } = useSettingsStore();
   const navigate = useNavigate();
+  const sidebarWrapperRef = useRef(null);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('sasbtp_theme_mode');
@@ -1306,6 +1307,80 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
     navigate('/v2/auth');
   };
 
+  // 🔥 تثبيت اسم المنصة "SasBTP" وحرف "S" ونوع الحساب في أعلى سايدبار التاجر تلقائياً (معالجة ص1)
+  useEffect(() => {
+    const container = sidebarWrapperRef.current;
+    if (!container) return;
+
+    const accountTypeLabel =
+      language === 'ar'
+        ? 'فضاء تاجر التجزئة'
+        : language === 'en'
+        ? 'RETAILER SPACE'
+        : 'ESPACE COMMERÇANT';
+
+    const enforceSidebarHeaderIdentity = () => {
+      const asideEl = container.querySelector('aside') || container.firstElementChild;
+      if (!asideEl) return;
+
+      const headerBlock = asideEl.firstElementChild;
+      if (!headerBlock) return;
+
+      // 1. تبديل اسم صاحب الحساب إلى SasBTP
+      const titleEl = headerBlock.querySelector('h1, h2, h3, .truncate');
+      if (titleEl && titleEl.textContent !== 'SasBTP') {
+        titleEl.textContent = 'SasBTP';
+      }
+
+      // 2. تثبيت حرف S في دائرة الشعار
+      const avatarCandidates = headerBlock.querySelectorAll('div');
+      avatarCandidates.forEach((div) => {
+        if (
+          div.children.length === 0 &&
+          div.textContent &&
+          div.textContent.trim().length === 1 &&
+          div.textContent.trim() !== 'S'
+        ) {
+          div.textContent = 'S';
+        }
+      });
+
+      // 3. إظهار نوع الحساب تحت اسم المنصة بوضوح
+      const badges = headerBlock.querySelectorAll('span');
+      let updatedAccountBadge = false;
+      badges.forEach((badge) => {
+        const txt = (badge.textContent || '').trim().toUpperCase();
+        if (
+          txt.includes('PROPRIÉTAIRE') ||
+          txt.includes('PROPRIETAIRE') ||
+          txt.includes('OWNER') ||
+          txt.includes('مالك') ||
+          txt.includes('ESPACE COMMERÇANT') ||
+          txt.includes('RETAILER SPACE') ||
+          txt.includes('فضاء تاجر التجزئة')
+        ) {
+          if (badge.textContent !== accountTypeLabel) {
+            badge.textContent = accountTypeLabel;
+          }
+          updatedAccountBadge = true;
+        }
+      });
+
+      if (!updatedAccountBadge && titleEl && titleEl.parentElement) {
+        const firstBadge = titleEl.parentElement.querySelector('span');
+        if (firstBadge && firstBadge.textContent !== accountTypeLabel) {
+          firstBadge.textContent = accountTypeLabel;
+        }
+      }
+    };
+
+    enforceSidebarHeaderIdentity();
+    const observer = new MutationObserver(enforceSidebarHeaderIdentity);
+    observer.observe(container, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, [language, storeName]);
+
   if (isMinimal) {
     return (
       <div className="w-full min-h-screen overflow-x-hidden overflow-y-auto p-4 md:p-6 bg-gray-50 text-gray-800" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -1323,6 +1398,230 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
     <div className="flex flex-col h-screen overflow-hidden">
       <style>{`
         ${UNIFIED_LIGHT_AND_3D_STYLES}
+
+        /* =========================================================================
+           🔥 تحسينات خاصة وحصرية بفضاء التاجر (Retailer UI Scope) - ص1، ص2، ص3
+           ========================================================================= */
+
+        @keyframes retailPulseBorder {
+          0%, 100% {
+            box-shadow: 0 8px 22px -6px rgba(15, 23, 42, 0.1),
+                        0 0 0 1.5px rgba(59, 130, 246, 0.28);
+          }
+          50% {
+            box-shadow: 0 12px 28px -6px rgba(37, 99, 235, 0.22),
+                        0 0 0 2.5px rgba(59, 130, 246, 0.65),
+                        0 0 16px rgba(59, 130, 246, 0.25);
+          }
+        }
+
+        @keyframes retailColoredCardPulse {
+          0%, 100% {
+            box-shadow: 0 12px 26px -6px rgba(15, 23, 42, 0.22),
+                        inset 0 0 0 1.5px rgba(255, 255, 255, 0.35),
+                        0 0 0 1.5px rgba(59, 130, 246, 0.3);
+          }
+          50% {
+            box-shadow: 0 16px 32px -6px rgba(37, 99, 235, 0.35),
+                        inset 0 0 0 2px rgba(255, 255, 255, 0.75),
+                        0 0 0 3px rgba(96, 165, 250, 0.75),
+                        0 0 22px rgba(59, 130, 246, 0.4);
+          }
+        }
+
+        /* 1. إطار ينبض في حواف جميع البطائق + صعود 3D للأعلى عند التمرير أو الضغط (ص3 وكافة الأقسام) */
+        .retail-ui-scope .rounded-xl:not(input):not(select):not(textarea):not(button):not(a),
+        .retail-ui-scope .rounded-2xl:not(input):not(select):not(textarea):not(button):not(a),
+        .retail-ui-scope .rounded-3xl:not(.retail-main-wrapper):not(input):not(select):not(textarea):not(button):not(a) {
+          transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                      box-shadow 0.28s ease,
+                      border-color 0.28s ease !important;
+          animation: retailPulseBorder 2.8s infinite ease-in-out;
+          will-change: transform, box-shadow;
+        }
+
+        .retail-ui-scope [class*="bg-gradient-"].rounded-xl,
+        .retail-ui-scope [class*="bg-gradient-"].rounded-2xl,
+        .retail-ui-scope [class*="bg-gradient-"].rounded-3xl {
+          animation: retailColoredCardPulse 2.4s infinite ease-in-out !important;
+        }
+
+        .retail-ui-scope .rounded-xl:not(input):not(select):not(textarea):not(button):not(a):hover,
+        .retail-ui-scope .rounded-2xl:not(input):not(select):not(textarea):not(button):not(a):hover,
+        .retail-ui-scope .rounded-3xl:not(.retail-main-wrapper):not(input):not(select):not(textarea):not(button):not(a):hover {
+          transform: translateY(-8px) scale(1.015) !important;
+          box-shadow: 0 24px 44px -10px rgba(37, 99, 235, 0.34),
+                      0 12px 22px -6px rgba(15, 23, 42, 0.18),
+                      0 0 0 2.5px rgba(59, 130, 246, 0.85),
+                      inset 0 1px 0 0 rgba(255, 255, 255, 0.5) !important;
+          z-index: 10;
+        }
+
+        .retail-ui-scope .rounded-xl:not(input):not(select):not(textarea):not(button):not(a):active,
+        .retail-ui-scope .rounded-2xl:not(input):not(select):not(textarea):not(button):not(a):active,
+        .retail-ui-scope .rounded-3xl:not(.retail-main-wrapper):not(input):not(select):not(textarea):not(button):not(a):active {
+          transform: translateY(-4px) scale(1.006) !important;
+          box-shadow: 0 16px 30px -8px rgba(37, 99, 235, 0.45),
+                      0 0 0 3px rgba(37, 99, 235, 0.95) !important;
+          transition-duration: 0.08s !important;
+        }
+
+        /* 2. إصلاح البطاقات الملونة (بما فيها الحمراء Rupture de Stock والصفراء والبرتقالية) لتكون الكتابة والأيقونات بيضاء بارزة (ص3) */
+        .retail-ui-scope [class*="from-red-"]:not([class*="/"]),
+        .retail-ui-scope [class*="from-rose-"]:not([class*="/"]),
+        .retail-ui-scope [class*="from-yellow-"]:not([class*="/"]),
+        .retail-ui-scope [class*="from-amber-"]:not([class*="/"]),
+        .retail-ui-scope [class*="from-orange-"]:not([class*="/"]),
+        .retail-ui-scope [class*="from-blue-"]:not([class*="/"]),
+        .retail-ui-scope [class*="from-indigo-"]:not([class*="/"]),
+        .retail-ui-scope [class*="from-emerald-"]:not([class*="/"]),
+        .retail-ui-scope [class*="from-green-"]:not([class*="/"]),
+        .retail-ui-scope [class*="from-teal-"]:not([class*="/"]),
+        .retail-ui-scope [class*="from-purple-"]:not([class*="/"]),
+        .retail-ui-scope .bg-red-500,
+        .retail-ui-scope .bg-red-600,
+        .retail-ui-scope .bg-rose-500,
+        .retail-ui-scope .bg-rose-600,
+        .retail-ui-scope .bg-amber-500,
+        .retail-ui-scope .bg-amber-600,
+        .retail-ui-scope .bg-orange-500,
+        .retail-ui-scope .bg-orange-600,
+        .retail-ui-scope .bg-emerald-500,
+        .retail-ui-scope .bg-emerald-600,
+        .retail-ui-scope .bg-blue-500,
+        .retail-ui-scope .bg-blue-600 {
+          color: #ffffff !important;
+        }
+
+        .retail-ui-scope [class*="from-red-"]:not([class*="/"]) *,
+        .retail-ui-scope [class*="from-rose-"]:not([class*="/"]) *,
+        .retail-ui-scope [class*="from-yellow-"]:not([class*="/"]) *,
+        .retail-ui-scope [class*="from-amber-"]:not([class*="/"]) *,
+        .retail-ui-scope [class*="from-orange-"]:not([class*="/"]) *,
+        .retail-ui-scope [class*="from-blue-"]:not([class*="/"]) *,
+        .retail-ui-scope [class*="from-indigo-"]:not([class*="/"]) *,
+        .retail-ui-scope [class*="from-emerald-"]:not([class*="/"]) *,
+        .retail-ui-scope [class*="from-green-"]:not([class*="/"]) *,
+        .retail-ui-scope [class*="from-teal-"]:not([class*="/"]) *,
+        .retail-ui-scope [class*="from-purple-"]:not([class*="/"]) *,
+        .retail-ui-scope .bg-red-500 *,
+        .retail-ui-scope .bg-red-600 *,
+        .retail-ui-scope .bg-rose-500 *,
+        .retail-ui-scope .bg-rose-600 * {
+          color: #ffffff !important;
+          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+        }
+
+        /* إبراز الأيقونات داخل البطائق الملونة لتكون ساطعة وواضحة (ص3) */
+        .retail-ui-scope [class*="from-blue-"]:not([class*="/"]) svg,
+        .retail-ui-scope [class*="from-indigo-"]:not([class*="/"]) svg,
+        .retail-ui-scope [class*="from-emerald-"]:not([class*="/"]) svg,
+        .retail-ui-scope [class*="from-green-"]:not([class*="/"]) svg,
+        .retail-ui-scope [class*="from-teal-"]:not([class*="/"]) svg,
+        .retail-ui-scope [class*="from-amber-"]:not([class*="/"]) svg,
+        .retail-ui-scope [class*="from-orange-"]:not([class*="/"]) svg,
+        .retail-ui-scope [class*="from-yellow-"]:not([class*="/"]) svg,
+        .retail-ui-scope [class*="from-red-"]:not([class*="/"]) svg,
+        .retail-ui-scope [class*="from-rose-"]:not([class*="/"]) svg,
+        .retail-ui-scope [class*="from-purple-"]:not([class*="/"]) svg {
+          color: #ffffff !important;
+          stroke: #ffffff !important;
+          filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.28));
+        }
+
+        /* تجميل مربع الأيقونة الزجاجي داخل البطاقات الملونة */
+        .retail-ui-scope [class*="bg-gradient-"] [class*="bg-white/"] {
+          background-color: rgba(255, 255, 255, 0.26) !important;
+          border: 1.5px solid rgba(255, 255, 255, 0.55) !important;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16) !important;
+          backdrop-filter: blur(6px);
+        }
+
+        /* 3. إصلاح بطاقة المساعد الذكي السوداء (ص1) وبطاقة السلة Panier الداكنة (ص2) */
+        .retail-ui-scope .bg-slate-900,
+        .retail-ui-scope .bg-slate-950,
+        .retail-ui-scope .bg-gray-900,
+        .retail-ui-scope .bg-indigo-950,
+        .retail-ui-scope .bg-\\[\\#0f172a\\],
+        .retail-ui-scope .bg-\\[\\#1e1b4b\\],
+        .retail-ui-scope .bg-\\[\\#1e293b\\],
+        .retail-ui-scope [class*="from-slate-9"],
+        .retail-ui-scope [class*="from-slate-8"],
+        .retail-ui-scope [class*="from-gray-9"],
+        .retail-ui-scope [class*="from-indigo-9"] {
+          background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0f172a 100%) !important;
+          border: 2px solid rgba(99, 102, 241, 0.55) !important;
+          color: #ffffff !important;
+          box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.45),
+                      0 0 20px rgba(79, 70, 229, 0.2) !important;
+        }
+
+        /* فرض اللون الأبيض الناصع للنصوص والعناوين والأرقام فوق البطاقات السوداء/الداكنة (ص1 وص2) */
+        .retail-ui-scope .bg-slate-900 *:not(button):not(input):not(select),
+        .retail-ui-scope .bg-slate-950 *:not(button):not(input):not(select),
+        .retail-ui-scope .bg-gray-900 *:not(button):not(input):not(select),
+        .retail-ui-scope .bg-indigo-950 *:not(button):not(input):not(select),
+        .retail-ui-scope .bg-\\[\\#0f172a\\] *:not(button):not(input):not(select),
+        .retail-ui-scope .bg-\\[\\#1e1b4b\\] *:not(button):not(input):not(select),
+        .retail-ui-scope [class*="from-slate-9"] *:not(button):not(input):not(select),
+        .retail-ui-scope [class*="from-slate-8"] *:not(button):not(input):not(select),
+        .retail-ui-scope [class*="from-gray-9"] *:not(button):not(input):not(select),
+        .retail-ui-scope [class*="from-indigo-9"] *:not(button):not(input):not(select) {
+          color: #ffffff !important;
+          opacity: 1 !important;
+        }
+
+        /* حماية صندوق الأيقونة الفاتح (مثل أيقونة القفل وأيقونة المساعد الذكي في ص1) داخل البطاقات الداكنة */
+        .retail-ui-scope [class*="from-slate-9"] .bg-white svg,
+        .retail-ui-scope [class*="from-gray-9"] .bg-white svg,
+        .retail-ui-scope .bg-slate-900 .bg-white svg,
+        .retail-ui-scope .bg-gray-900 .bg-white svg,
+        .retail-ui-scope [class*="from-slate-9"] .bg-indigo-50 svg,
+        .retail-ui-scope [class*="from-slate-9"] .bg-amber-50 svg {
+          color: #4f46e5 !important;
+          stroke: #4f46e5 !important;
+        }
+
+        /* 4. إزالة البهتان عن أزرار السلة Panier والأزرار المعطلة لتبدو حية وواضحة دائماً (ص2) */
+        .retail-ui-scope button:disabled,
+        .retail-ui-scope button[disabled],
+        .retail-ui-scope .opacity-50,
+        .retail-ui-scope .opacity-40 {
+          opacity: 0.94 !important;
+          filter: saturate(1.2) contrast(1.08) !important;
+        }
+
+        .retail-ui-scope .bg-slate-900 button,
+        .retail-ui-scope .bg-gray-900 button,
+        .retail-ui-scope .bg-indigo-950 button,
+        .retail-ui-scope [class*="from-slate-9"] button,
+        .retail-ui-scope [class*="from-gray-9"] button,
+        .retail-ui-scope [class*="from-indigo-9"] button {
+          color: #ffffff !important;
+          font-weight: 800 !important;
+          border: 1px solid rgba(255, 255, 255, 0.25) !important;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
+        }
+
+        .retail-ui-scope .bg-slate-900 button *,
+        .retail-ui-scope .bg-gray-900 button *,
+        .retail-ui-scope .bg-indigo-950 button *,
+        .retail-ui-scope [class*="from-slate-9"] button *,
+        .retail-ui-scope [class*="from-gray-9"] button *,
+        .retail-ui-scope [class*="from-indigo-9"] button * {
+          color: #ffffff !important;
+          stroke: #ffffff !important;
+        }
+
+        /* إبراز الأيقونات الرمادية الباهتة في الجداول والسلة الفارغة (ص2 وص3) */
+        .retail-ui-scope .text-gray-300,
+        .retail-ui-scope .text-gray-400,
+        .retail-ui-scope .text-slate-300,
+        .retail-ui-scope .text-slate-400 {
+          color: #475569 !important;
+          opacity: 0.95 !important;
+        }
+
         /* تحويل صفحات التاجر تلقائياً عند تفعيل الوضع الداكن */
         .retail-dark-scope .bg-white,
         .retail-dark-scope .bg-gray-50,
@@ -1346,8 +1645,10 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
         .retail-dark-scope .text-gray-600,
         .retail-dark-scope .text-gray-500,
         .retail-dark-scope .text-slate-500,
-        .retail-dark-scope .text-slate-600 {
-          color: #94a3b8 !important;
+        .retail-dark-scope .text-slate-600,
+        .retail-dark-scope .text-gray-400,
+        .retail-dark-scope .text-slate-400 {
+          color: #cbd5e1 !important;
         }
         .retail-dark-scope input,
         .retail-dark-scope select,
@@ -1360,7 +1661,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
       <SystemNotificationBanner />
       <RetailTrialBanner />
       <div className={`flex h-screen w-full max-w-full overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-[#0b1120] text-slate-100' : 'bg-gradient-to-br from-[#f8fafc] via-[#f2fbf7] to-[#f1f5f9] text-slate-800'}`} dir={isRtl ? 'rtl' : 'ltr'}>
-        <div className={`shrink-0 h-full transition-all duration-300 ${isSidebarOpen ? (isRtl ? 'w-[270px] border-l border-slate-800' : 'w-[270px] border-r border-slate-800') : 'w-0 overflow-hidden border-none'} bg-[#0f172a] z-20`}>
+        <div ref={sidebarWrapperRef} className={`shrink-0 h-full transition-all duration-300 ${isSidebarOpen ? (isRtl ? 'w-[270px] border-l border-slate-800' : 'w-[270px] border-r border-slate-800') : 'w-0 overflow-hidden border-none'} bg-[#0f172a] z-20`}>
           <div className="w-[270px] h-full"><Sidebar /></div>
         </div>
         
@@ -1417,8 +1718,8 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
               </button>
             </div>
           </header>
-          <div className={`flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full ${isDarkMode ? 'retail-dark-scope wholesale-dark-scope' : 'wholesale-light-scope'}`}>
-            <div className={`rounded-3xl shadow-xl p-4 md:p-6 border min-h-[400px] w-full max-w-full overflow-x-auto transition-colors duration-500 ${isDarkMode ? 'bg-slate-900/90 border-slate-800 text-slate-100' : 'bg-white/95 backdrop-blur-md border-slate-200 text-slate-800'}`}>
+          <div className={`retail-ui-scope flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full ${isDarkMode ? 'retail-dark-scope wholesale-dark-scope' : 'wholesale-light-scope'}`}>
+            <div className={`retail-main-wrapper rounded-3xl shadow-xl p-4 md:p-6 border min-h-[400px] w-full max-w-full overflow-x-auto transition-colors duration-500 ${isDarkMode ? 'bg-slate-900/90 border-slate-800 text-slate-100' : 'bg-white/95 backdrop-blur-md border-slate-200 text-slate-800'}`}>
               {children}
             </div>
           </div>
