@@ -313,20 +313,10 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
   }
 
   /* =========================================================================
-           💎 5. حماية البطاقات والأزرار الملونة الصلبة (Solid Colored Cards & Buttons)
-           ========================================================================= */
-        .wholesale-light-scope [class*="bg-blue-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-indigo-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-emerald-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-teal-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-green-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-orange-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-amber-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-red-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-purple-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-pink-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-cyan-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
-        .wholesale-light-scope [class*="bg-fuchsia-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+      💎 5. حماية البطاقات والأزرار الملونة الصلبة (Solid Colored Cards & Buttons)
+     ========================================================================= */
+        
+        /* أ- حماية التدرجات اللونية (Gradients) للبطاقات الكبرى */
         .wholesale-light-scope [class*="from-blue-"]:not([class*="/"]),
         .wholesale-light-scope [class*="from-indigo-"]:not([class*="/"]),
         .wholesale-light-scope [class*="from-emerald-"]:not([class*="/"]),
@@ -340,14 +330,6 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
           color: #ffffff !important;
         }
 
-        .wholesale-light-scope [class*="bg-blue-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="bg-indigo-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="bg-emerald-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="bg-green-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="bg-orange-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="bg-red-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="bg-purple-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
-        .wholesale-light-scope [class*="bg-cyan-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
         .wholesale-light-scope [class*="from-blue-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
         .wholesale-light-scope [class*="from-indigo-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
         .wholesale-light-scope [class*="from-emerald-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
@@ -357,6 +339,67 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
         .wholesale-light-scope [class*="from-pink-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
         .wholesale-light-scope [class*="from-fuchsia-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
         .wholesale-light-scope [class*="from-purple-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *) {
+          color: #ffffff !important;
+        }
+
+        /* ب- حماية الكلاسات الصلبة (Solid Backgrounds) لبطاقات الداشبورد */
+        /* استهداف دقيق للكلاسات المستخدمة في لوحة القيادة لمنع تحولها للأبيض */
+        .wholesale-light-scope .bg-blue-600,
+        .wholesale-light-scope .bg-blue-500,
+        .wholesale-light-scope .bg-indigo-600,
+        .wholesale-light-scope .bg-indigo-500,
+        .wholesale-light-scope .bg-emerald-600,
+        .wholesale-light-scope .bg-emerald-500, /* 👈 بطاقة الطلبيات PENDING ORDERS */
+        .wholesale-light-scope .bg-teal-600,
+        .wholesale-light-scope .bg-teal-500,
+        .wholesale-light-scope .bg-green-600,
+        .wholesale-light-scope .bg-green-500,
+        .wholesale-light-scope .bg-cyan-600,
+        .wholesale-light-scope .bg-cyan-500,   /* 👈 بطاقة المنتجات ACTIVE PRODUCTS */
+        .wholesale-light-scope .bg-orange-600,
+        .wholesale-light-scope .bg-orange-500,
+        .wholesale-light-scope .bg-amber-600,
+        .wholesale-light-scope .bg-amber-500,
+        .wholesale-light-scope .bg-red-600,
+        .wholesale-light-scope .bg-red-500,
+        .wholesale-light-scope .bg-purple-600,
+        .wholesale-light-scope .bg-purple-500,
+        .wholesale-light-scope .bg-pink-600,
+        .wholesale-light-scope .bg-pink-500 {
+          color: #ffffff !important;
+          background-image: none !important;
+        }
+
+        /* فرض ألوان الخلفية الحقيقية بقوة لتتغلب على أي قاعدة تبييض سابقة */
+        .wholesale-light-scope .bg-emerald-500 { background-color: #10b981 !important; border-color: #059669 !important; }
+        .wholesale-light-scope .bg-cyan-500 { background-color: #06b6d4 !important; border-color: #0891b2 !important; }
+        .wholesale-light-scope .bg-orange-500 { background-color: #f97316 !important; border-color: #ea580c !important; }
+        .wholesale-light-scope .bg-blue-500 { background-color: #3b82f6 !important; border-color: #2563eb !important; }
+        .wholesale-light-scope .bg-purple-500 { background-color: #a855f7 !important; border-color: #9333ea !important; }
+
+        /* حماية النصوص داخل هذه البطاقات الصلبة */
+        .wholesale-light-scope .bg-blue-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-blue-500 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-indigo-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-indigo-500 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-emerald-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-emerald-500 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-teal-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-teal-500 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-green-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-green-500 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-cyan-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-cyan-500 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-orange-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-orange-500 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-amber-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-amber-500 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-red-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-red-500 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-purple-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-purple-500 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-pink-600 *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope .bg-pink-500 *:not(.bg-white):not(.bg-white *) {
           color: #ffffff !important;
         }
 
