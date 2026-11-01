@@ -1098,7 +1098,14 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
   const lightLabel = language === 'fr' ? 'Mode Clair' : language === 'en' ? 'Light Mode' : 'الوضع الفاتح';
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div
+      className={`flex h-screen w-full max-w-full font-sans overflow-hidden transition-colors duration-500 ${
+        isDarkMode
+          ? 'bg-[#0f172a] text-slate-300'
+          : 'bg-gradient-to-br from-[#f8fafc] via-[#f2fbf7] to-[#f1f5f9] text-slate-800'
+      }`}
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
       <style>{`
         @keyframes b2bHeaderShimmer {
           0% { filter: brightness(0.95); }
@@ -1109,194 +1116,264 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
           animation: b2bHeaderShimmer 2.4s infinite ease-in-out;
         }
 
-        /* =================================================================
-           ☀️ نظام الوضع الفاتح الذكي للمورد (تباين مثالي ووضوح 100%)
-           ================================================================= */
-
-        /* 1. الخلفية العامة للوضع الفاتح */
-        .wholesale-light-scope {
-          background-color: #f8fafc !important;
-          background-image: linear-gradient(to bottom right, #f8fafc, #f1f5f9, #f2fbf7) !important;
-          color: #1e293b !important;
-        }
-
-        /* 2. تحويل الحاويات الداكنة إلى بيضاء أو رمادية فاتحة مع نصوص داكنة مقروءة */
-        .wholesale-light-scope .bg-slate-950,
-        .wholesale-light-scope .bg-slate-900,
-        .wholesale-light-scope .bg-slate-800,
-        .wholesale-light-scope .bg-gray-900,
-        .wholesale-light-scope .bg-\\[\\#0f172a\\],
-        .wholesale-light-scope .bg-\\[\\#1e293b\\],
-        .wholesale-light-scope .bg-\\[\\#12141c\\] {
+        /* ☀️ نظام الوضع الفاتح الذكي للمورد (خلفية ناعمة + وضوح تام للبطاقات والنصوص) */
+        .wholesale-light-scope [class*="bg-slate-9"],
+        .wholesale-light-scope [class*="bg-slate-8"],
+        .wholesale-light-scope [class*="bg-gray-9"],
+        .wholesale-light-scope [class*="bg-[#0"],
+        .wholesale-light-scope [class*="bg-[#1"],
+        .wholesale-light-scope [class*="from-slate-9"],
+        .wholesale-light-scope [class*="from-slate-8"] {
           background-color: #ffffff !important;
+          background-image: none !important;
           border-color: #e2e8f0 !important;
           color: #0f172a !important;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+          box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06) !important;
         }
 
-        /* 3. ضمان وضوح النصوص الأساسية داخل الواجهة */
+        /* تحويل النصوص البيضاء والرمادية داخل البطاقات البيضاء إلى داكنة واضحة */
         .wholesale-light-scope .text-white,
         .wholesale-light-scope .text-slate-100,
-        .wholesale-light-scope .text-slate-200,
-        .wholesale-light-scope .text-slate-300 {
-          color: #1e293b !important; /* رمادي داكن مائل للأسود */
-        }
-        
-        .wholesale-light-scope .text-slate-400,
-        .wholesale-light-scope .text-slate-500 {
-          color: #475569 !important; /* رمادي متوسط للقراءة المريحة */
-        }
-
-        /* 4. حماية البطاقات والأزرار الملونة الصلبة لتبقى ناصعة (استثناء صريح من القاعدة السابقة) */
-        .wholesale-light-scope [class*="bg-blue-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="bg-indigo-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="bg-emerald-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="bg-teal-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="bg-green-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="bg-orange-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="bg-amber-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="bg-red-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="bg-purple-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="bg-pink-"]:not([class*="/"]),
-        .wholesale-light-scope [class*="from-blue-"],
-        .wholesale-light-scope [class*="from-indigo-"],
-        .wholesale-light-scope [class*="from-emerald-"],
-        .wholesale-light-scope [class*="from-orange-"] {
-          color: #ffffff !important;
-        }
-
-        /* حماية النصوص داخل هذه البطاقات الملونة لتبقى بيضاء */
-        .wholesale-light-scope [class*="bg-blue-"]:not([class*="/"]) *,
-        .wholesale-light-scope [class*="bg-indigo-"]:not([class*="/"]) *,
-        .wholesale-light-scope [class*="bg-emerald-"]:not([class*="/"]) *,
-        .wholesale-light-scope [class*="bg-orange-"]:not([class*="/"]) *,
-        .wholesale-light-scope [class*="bg-red-"]:not([class*="/"]) *,
-        .wholesale-light-scope [class*="from-blue-"] *,
-        .wholesale-light-scope [class*="from-indigo-"] *,
-        .wholesale-light-scope [class*="from-emerald-"] *,
-        .wholesale-light-scope [class*="from-orange-"] * {
-          color: #ffffff !important;
-        }
-
-        /* 5. معالجة الصناديق الشفافة (مثل /10 و /20) وتقوية ألوان نصوصها (لحل مشكلة ص1, ص2, ص4) */
-        .wholesale-light-scope [class*="/10"],
-        .wholesale-light-scope [class*="/20"] {
-           background-image: none !important;
-        }
-
-        /* تقوية الألوان الفاتحة (مثل text-emerald-400) لتصبح داكنة ومقروءة في الوضع الفاتح */
-        .wholesale-light-scope .text-emerald-400,
-        .wholesale-light-scope .text-emerald-300 { color: #059669 !important; }
-        
-        .wholesale-light-scope .text-blue-400,
-        .wholesale-light-scope .text-blue-300 { color: #2563eb !important; }
-        
-        .wholesale-light-scope .text-orange-400,
-        .wholesale-light-scope .text-amber-400 { color: #d97706 !important; }
-        
-        .wholesale-light-scope .text-red-400,
-        .wholesale-light-scope .text-rose-400 { color: #dc2626 !important; }
-
-        /* 6. تحسين الأزرار وحقول الإدخال البيضاء/الفاتحة (لحل مشكلة ص2 و ص3) */
-        .wholesale-light-scope button.bg-white,
-        .wholesale-light-scope a.bg-white {
-          background-color: #f1f5f9 !important;
+        .wholesale-light-scope .text-slate-200 {
           color: #0f172a !important;
-          border: 1px solid #cbd5e1 !important;
         }
-        .wholesale-light-scope button.bg-white:hover,
-        .wholesale-light-scope a.bg-white:hover {
-          background-color: #e2e8f0 !important;
-        }
-        .wholesale-light-scope button.bg-white *,
-        .wholesale-light-scope a.bg-white * {
-           color: #0f172a !important;
+        .wholesale-light-scope .text-slate-300,
+        .wholesale-light-scope .text-slate-400 {
+          color: #475569 !important;
         }
 
-        /* حقول الإدخال */
+        /* تحسين حقول الإدخال والأزرار الداخلية في الوضع الفاتح */
         .wholesale-light-scope input,
         .wholesale-light-scope select,
         .wholesale-light-scope textarea {
           background-color: #ffffff !important;
+          border-color: #cbd5e1 !important;
+          color: #0f172a !important;
+        }
+
+        /* تحسين زر تفاصيل الصفقة داخل بطاقات رادار المناقصات في الوضع الفاتح */
+        .wholesale-light-scope a.bg-white,
+        .wholesale-light-scope button.bg-white {
+          background-color: #f1f5f9 !important;
           border: 1px solid #cbd5e1 !important;
           color: #0f172a !important;
         }
-        
-        /* 7. استثناءات لأزرار وشارات محددة (مثل أزرار التصفية في الماركت بليس) */
-        .wholesale-light-scope .bg-slate-800.text-slate-200 {
-           background-color: #f1f5f9 !important;
-           color: #334155 !important;
-           border-color: #cbd5e1 !important;
+        .wholesale-light-scope a.bg-white:hover,
+        .wholesale-light-scope button.bg-white:hover {
+          background-color: #e2e8f0 !important;
+        }
+
+        /* 🎨 حماية البطاقات الملونة والأزرار البارزة لتحتفظ بألوانها ونصها الأبيض الناصع */
+        .wholesale-light-scope [class*="from-indigo-"],
+        .wholesale-light-scope [class*="from-blue-"],
+        .wholesale-light-scope [class*="from-emerald-"],
+        .wholesale-light-scope [class*="from-teal-"],
+        .wholesale-light-scope [class*="from-cyan-"],
+        .wholesale-light-scope [class*="from-pink-"],
+        .wholesale-light-scope [class*="from-fuchsia-"],
+        .wholesale-light-scope [class*="from-purple-"],
+        .wholesale-light-scope [class*="from-orange-"],
+        .wholesale-light-scope [class*="from-amber-"],
+        .wholesale-light-scope [class*="from-red-"],
+        .wholesale-light-scope [class*="bg-indigo-6"],
+        .wholesale-light-scope [class*="bg-blue-6"],
+        .wholesale-light-scope [class*="bg-emerald-6"],
+        .wholesale-light-scope [class*="bg-emerald-5"],
+        .wholesale-light-scope [class*="bg-orange-5"],
+        .wholesale-light-scope [class*="bg-purple-6"],
+        .wholesale-light-scope [class*="bg-red-5"] {
+          color: #ffffff !important;
+        }
+
+        .wholesale-light-scope [class*="from-indigo-"] *,
+        .wholesale-light-scope [class*="from-blue-"] *,
+        .wholesale-light-scope [class*="from-emerald-"] *,
+        .wholesale-light-scope [class*="from-teal-"] *,
+        .wholesale-light-scope [class*="from-cyan-"] *,
+        .wholesale-light-scope [class*="from-pink-"] *,
+        .wholesale-light-scope [class*="from-fuchsia-"] *,
+        .wholesale-light-scope [class*="from-purple-"] *,
+        .wholesale-light-scope [class*="from-orange-"] *,
+        .wholesale-light-scope [class*="from-amber-"] *,
+        .wholesale-light-scope [class*="bg-indigo-6"] *,
+        .wholesale-light-scope [class*="bg-blue-6"] *,
+        .wholesale-light-scope [class*="bg-emerald-6"] *,
+        .wholesale-light-scope [class*="bg-emerald-5"] *,
+        .wholesale-light-scope [class*="bg-purple-6"] * {
+          color: #ffffff !important;
         }
       `}</style>
-      <SystemNotificationBanner />
-      <RetailTrialBanner />
-      <div className={`flex h-screen w-full max-w-full overflow-hidden transition-colors duration-700 ${isDarkMode ? 'bg-[#0b1120] text-slate-100' : 'bg-gradient-to-br from-emerald-200/70 via-teal-100/60 to-blue-100/70 text-slate-800'}`} dir={isRtl ? 'rtl' : 'ltr'}>
-        <div className={`shrink-0 h-full transition-all duration-300 ${isSidebarOpen ? (isRtl ? 'w-[270px] border-l border-slate-800' : 'w-[270px] border-r border-slate-800') : 'w-0 overflow-hidden border-none'} bg-[#0f172a] z-20`}>
-          <div className="w-[270px] h-full"><Sidebar /></div>
-        </div>
-        
-        <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 w-full max-w-full relative">
-          <header className={`h-20 border-b flex items-center justify-between px-4 md:px-6 shrink-0 w-full z-20 transition-colors duration-700 ${isDarkMode ? 'bg-slate-900/90 border-slate-800 backdrop-blur-xl' : 'bg-white/60 border-white/60 backdrop-blur-md shadow-sm'}`}>
+
+      {/* السايدبار يظل داكناً فخماً مع التوهج النيوني */}
+      <aside className={`shrink-0 h-full bg-[#0f172a] flex flex-col shadow-2xl transition-all duration-300 ease-in-out absolute md:relative z-30 ${isSidebarOpen ? 'w-72 border-r border-slate-800 opacity-100 translate-x-0' : 'w-0 border-r-0 opacity-0 overflow-hidden'}`}>
+        <div className="w-72 h-full flex flex-col">
+          <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
             <div className="flex items-center gap-3">
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all cursor-pointer ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200' : 'bg-white hover:bg-blue-50 border-gray-200 text-gray-700 shadow-sm'}`}>
-                {isSidebarOpen ? <X size={20} className="text-red-500" /> : <Menu size={20} className="text-blue-500" />}
-              </button>
-              <h2 className={`text-lg md:text-xl font-black truncate text-start ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                {language === 'fr' ? 'Bienvenue, ' : language === 'en' ? 'Welcome, ' : 'مرحباً بك، '}
-                <span className="text-blue-500 truncate">{storeName}</span>
-              </h2>
+              <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-[0_0_20px_rgba(37,99,235,0.4)] border border-white/10">
+                {storeInitial}
+              </div>
+              <div className="flex flex-col text-start">
+                <h1 className="text-xl font-black text-white tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight">
+                  SasBTP
+                </h1>
+                <span className="text-[10px] font-black px-2 py-0.5 mt-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-widest">
+                  B2B EMPIRE
+                </span>
+              </div>
             </div>
+            <button onClick={handleLanguageChange} className="flex flex-col items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-all text-slate-300 hover:text-white group cursor-pointer">
+              <Globe size={18} />
+              <span className="text-[9px] font-black uppercase mt-1 tracking-wider">{language}</span>
+            </button>
+          </div>
 
-            <div className="flex items-center gap-2 md:gap-2.5 shrink-0">
-              <Link to="/affiliates" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 py-2 md:px-4 rounded-full font-black flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs md:text-sm">
-                <Trophy size={15} /> <span className="hidden sm:inline">{language === 'fr' ? 'Partenaires' : language === 'en' ? 'Affiliates' : 'شركاء النجاح'}</span>
-              </Link>
+          <div className="px-5 pt-5 pb-2 shrink-0">
+            <Link to="/subscription" className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:scale-[1.02] transition-all text-xs">
+              <Zap size={18} className="fill-black animate-bounce" />
+              {t.upgrade}
+            </Link>
+          </div>
+          
+          <nav className="flex-1 py-3 px-3.5 space-y-5 overflow-y-auto custom-scrollbar pb-24">
+            {categorizedSections.map((section) => {
+              const theme = WHOLESALE_SECTION_THEMES[section.key];
+              return (
+                <div key={section.key} className="space-y-1.5">
+                  <SectionHeader title={section.title} themeKey={section.key} />
 
-              <GlobalSpaceSwitcher language={language} dark={isDarkMode} currentSpace="retail" />
+                  {section.items.map((item) => {
+                    if (item.children) {
+                      const isOpen = openMenus[item.id];
+                      const hasActiveChild = item.children.some(c => location.pathname === c.path);
+                      return (
+                        <div key={item.id} className="space-y-1">
+                          <button
+                            onClick={() => toggleMenu(item.id)}
+                            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl font-black text-xs transition-all border cursor-pointer ${
+                              hasActiveChild
+                                ? theme.groupActive
+                                : `text-slate-300 border-transparent ${theme.hoverBtn}`
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <item.icon size={18} className={`${theme.activeIcon} shrink-0`} />
+                              <span className="uppercase tracking-wider">{item.label}</span>
+                            </div>
+                            <ChevronDown size={15} className={`transition-transform duration-300 ${isOpen ? 'rotate-180 text-white' : 'text-slate-500'}`} />
+                          </button>
 
-              <button
-                onClick={handleLanguageChange}
-                className={`px-3 py-2 rounded-full font-black text-xs flex items-center gap-1.5 border transition-all cursor-pointer ${
-                  isDarkMode
-                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'
-                }`}
-              >
-                <Globe size={15} />
-                <span className="uppercase">{language}</span>
-              </button>
+                          <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div className={`py-1 space-y-1 ${isRtl ? `mr-5 border-r-2 pr-3 ${theme.subBorder}` : `ml-5 border-l-2 pl-3 ${theme.subBorder}`}`}>
+                              {item.children.map(child => (
+                                <Link
+                                  key={child.path}
+                                  to={child.path}
+                                  onClick={() => { if (window.innerWidth <= 768) setIsSidebarOpen(false); }}
+                                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-black transition-all text-xs group ${getThemedLinkStyle(child.path, section.key)}`}
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    <child.icon size={16} className={`shrink-0 ${getThemedIconStyle(child.path, section.key)}`} />
+                                    <span>{child.label}</span>
+                                  </div>
+                                  {child.badge > 0 && (
+                                    <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">
+                                      {child.badge}
+                                    </span>
+                                  )}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
 
-              {/* 🌙☀️ زر الوضع الداكن / الفاتح للتاجر */}
-              <button
-                onClick={toggleThemeMode}
-                className={`px-3.5 py-2 rounded-full font-black text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md ${
-                  isDarkMode
-                    ? 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700'
-                    : 'bg-emerald-950 hover:bg-slate-900 text-white'
-                }`}
-              >
-                {isDarkMode ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} />}
-                <span className="hidden md:inline">{isDarkMode ? lightLabel : darkLabel}</span>
-              </button>
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => { if (window.innerWidth <= 768) setIsSidebarOpen(false); }}
+                        className={`flex items-center justify-between px-4 py-2.5 rounded-xl font-black text-xs transition-all group ${getThemedLinkStyle(item.path, section.key)}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <item.icon size={18} className={`shrink-0 ${getThemedIconStyle(item.path, section.key)}`} />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.tag && (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-white/10 text-white border border-white/20">
+                            {item.tag}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
 
-              <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 rounded-full font-black flex items-center gap-2 shadow-md transition-all whitespace-nowrap text-xs">
-                 <Package size={16} /> <span className="hidden xl:inline">{language === 'fr' ? 'Gérer le Magasin' : language === 'en' ? 'Manage Store' : 'إدارة سلع المتجر'}</span>
-              </Link>
-
-              {/* 🚪 زر الخروج للتاجر */}
-              <button onClick={handleLogout} className={`flex items-center justify-center w-10 h-10 md:w-auto md:px-3.5 md:py-2 rounded-full text-xs font-black transition-all cursor-pointer border ${isDarkMode ? 'text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white border-red-500/20' : 'text-red-600 bg-red-50/90 hover:bg-red-500 hover:text-white border-red-200'}`}>
-                <LogOut size={16} /> <span className={`hidden sm:inline ${isRtl ? 'mr-1.5' : 'ml-1.5'}`}>{logoutLabel}</span>
-              </button>
-            </div>
-          </header>
-          <div className={`flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full ${isDarkMode ? 'retail-dark-scope' : ''}`}>
-            <div className={`rounded-3xl shadow-xl p-4 md:p-6 border min-h-[400px] w-full max-w-full overflow-x-auto transition-colors duration-500 ${isDarkMode ? 'bg-slate-900/90 border-slate-800 text-slate-100' : 'bg-white/90 backdrop-blur-md border-white text-slate-800'}`}>
-              {children}
+      <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
+        <SystemNotificationBanner />
+        <header className={`h-20 shrink-0 w-full border-b flex items-center justify-between px-4 md:px-6 sticky top-0 z-20 transition-colors duration-500 ${isDarkMode ? 'bg-slate-900/90 border-slate-800/60 backdrop-blur-xl' : 'bg-white/90 border-slate-200/80 backdrop-blur-md shadow-sm'}`}>
+          <div className="flex items-center gap-3 md:gap-4">
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all cursor-pointer ${isDarkMode ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-700 text-slate-300 hover:text-white' : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 shadow-sm'}`}>
+              {isSidebarOpen ? <X size={20} className="text-red-500" /> : <Menu size={20} className="text-blue-500" />}
+            </button>
+            <div className="truncate pr-1 text-start">
+              <h2 className={`text-lg md:text-xl font-black truncate ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{t.portal}</h2>
+              <p className="text-[10px] md:text-xs font-bold text-slate-500 mt-0.5 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                {t.online}
+              </p>
             </div>
           </div>
-        </main>
-      </div>
+
+          <div className="flex items-center gap-2 md:gap-2.5 shrink-0">
+            <Link to="/affiliates" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 px-3 py-2 md:px-4 rounded-full font-black flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all whitespace-nowrap text-xs md:text-sm">
+              <Trophy size={15} /> <span className="hidden sm:inline">{t.affiliates}</span>
+            </Link>
+
+            <GlobalSpaceSwitcher language={language} dark={isDarkMode} currentSpace="wholesale" />
+
+            <button
+              onClick={handleLanguageChange}
+              className={`px-3 py-2 rounded-full font-black text-xs flex items-center gap-1.5 border transition-all cursor-pointer ${
+                isDarkMode
+                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
+              }`}
+            >
+              <Globe size={15} />
+              <span className="uppercase">{language}</span>
+            </button>
+
+            {/* 🌙☀️ زر الوضع الداكن / الفاتح */}
+            <button
+              onClick={toggleThemeMode}
+              className={`px-3.5 py-2 rounded-full font-black text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md ${
+                isDarkMode
+                  ? 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700'
+                  : 'bg-emerald-950 hover:bg-slate-900 text-white'
+              }`}
+            >
+              {isDarkMode ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} />}
+              <span className="hidden md:inline">{isDarkMode ? t.lightMode : t.darkMode}</span>
+            </button>
+
+            <button onClick={handleLogout} className={`flex items-center justify-center w-10 h-10 md:w-auto md:px-3.5 md:py-2 rounded-full text-xs font-black transition-all cursor-pointer border ${isDarkMode ? 'text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white border-red-500/20' : 'text-red-600 bg-red-50/90 hover:bg-red-500 hover:text-white border-red-200'}`}>
+              <LogOut size={16} /> <span className={`hidden sm:inline ${isRtl ? 'mr-1.5' : 'ml-1.5'}`}>{t.logout}</span>
+            </button>
+          </div>
+        </header>
+        <div className="relative z-10">
+          <TrialBanner />
+        </div>
+        <div className={`flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-10 w-full max-w-full ${!isDarkMode ? 'wholesale-light-scope' : ''}`}>
+          {children}
+        </div>
+      </main>
     </div>
   );
 };
