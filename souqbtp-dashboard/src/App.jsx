@@ -380,41 +380,36 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
   }
 
   /* =========================================================================
-     🔘 6. حماية جميع الأزرار والعناصر البيضاء الداخلية (تأتي في النهاية لتتغلب على القاعدة 5)
+     🔘 6. حماية الأزرار البيضاء التفاعلية فقط (أزرار وحقول وليس الأيقونات)
      ========================================================================= */
+  
+  /* استهداف الأزرار والروابط التي تحمل الكلاس bg-white بشكل مباشر */
   .wholesale-light-scope button.bg-white,
   .wholesale-light-scope a.bg-white,
-  .wholesale-light-scope label.bg-white,
-  .wholesale-light-scope .bg-white,
-  .wholesale-light-scope [class*="bg-white"] {
+  .wholesale-light-scope label.bg-white {
     background-color: #ffffff !important;
     color: #0f172a !important;
     border: 1.5px solid #cbd5e1 !important;
   }
-
-  /* فرض اللون الكحلي الداكن على جميع النصوص والأيقونات داخل أي عنصر أبيض مهما كان نوعه */
+  
+  /* فرض لون داكن فقط على النصوص داخل الأزرار والروابط البيضاء */
   .wholesale-light-scope button.bg-white *,
   .wholesale-light-scope a.bg-white *,
-  .wholesale-light-scope label.bg-white *,
-  .wholesale-light-scope .bg-white *,
-  .wholesale-light-scope [class*="bg-white"] * {
+  .wholesale-light-scope label.bg-white * {
     color: #0f172a !important;
   }
-
-  /* تأثير التمرير (Hover) */
+  
+  /* تأثير التمرير للأزرار */
   .wholesale-light-scope button.bg-white:hover,
   .wholesale-light-scope a.bg-white:hover,
-  .wholesale-light-scope label.bg-white:hover,
-  .wholesale-light-scope .bg-white:hover {
+  .wholesale-light-scope label.bg-white:hover {
     background-color: #eff6ff !important;
     border-color: #3b82f6 !important;
     color: #1d4ed8 !important;
   }
-
   .wholesale-light-scope button.bg-white:hover *,
   .wholesale-light-scope a.bg-white:hover *,
-  .wholesale-light-scope label.bg-white:hover *,
-  .wholesale-light-scope .bg-white:hover * {
+  .wholesale-light-scope label.bg-white:hover * {
     color: #1d4ed8 !important;
   }
 
