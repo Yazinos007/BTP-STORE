@@ -756,14 +756,21 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
           animation: b2bHeaderShimmer 2.4s infinite ease-in-out;
         }
 
-        /* ☀️ نظام الوضع الفاتح الذكي للمورد (خلفية ناعمة + وضوح تام للبطاقات والنصوص) */
-        .wholesale-light-scope [class*="bg-slate-9"],
-        .wholesale-light-scope [class*="bg-slate-8"],
-        .wholesale-light-scope [class*="bg-gray-9"],
-        .wholesale-light-scope [class*="bg-[#0"],
-        .wholesale-light-scope [class*="bg-[#1"],
-        .wholesale-light-scope [class*="from-slate-9"],
-        .wholesale-light-scope [class*="from-slate-8"] {
+        /* =================================================================
+           ☀️ نظام الوضع الفاتح الذكي للمورد (تباين مثالي ووضوح 100%)
+           ================================================================= */
+
+        /* 1. تحويل الحاويات والبطاقات الكحلية/الرمادية الداكنة فقط إلى الأبيض الناصع */
+        .wholesale-light-scope .bg-slate-950,
+        .wholesale-light-scope .bg-slate-900,
+        .wholesale-light-scope .bg-slate-800,
+        .wholesale-light-scope .bg-gray-900,
+        .wholesale-light-scope .bg-\\[\\#0f172a\\],
+        .wholesale-light-scope .bg-\\[\\#1e293b\\],
+        .wholesale-light-scope .bg-\\[\\#12141c\\],
+        .wholesale-light-scope .from-slate-900,
+        .wholesale-light-scope .from-slate-950,
+        .wholesale-light-scope .from-slate-800 {
           background-color: #ffffff !important;
           background-image: none !important;
           border-color: #e2e8f0 !important;
@@ -771,7 +778,18 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
           box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06) !important;
         }
 
-        /* تحويل النصوص البيضاء والرمادية داخل البطاقات البيضاء إلى داكنة واضحة */
+        /* الحاويات الفرعية الشفافة الداكنة تتحول إلى رمادي فاتح أنيق */
+        .wholesale-light-scope .bg-slate-900\\/50,
+        .wholesale-light-scope .bg-slate-900\\/80,
+        .wholesale-light-scope .bg-slate-800\\/50,
+        .wholesale-light-scope .bg-slate-800\\/40,
+        .wholesale-light-scope .bg-slate-950\\/50 {
+          background-color: #f8fafc !important;
+          border-color: #e2e8f0 !important;
+          color: #0f172a !important;
+        }
+
+        /* 2. تحويل النصوص العامة البيضاء والرمادية الفاتحة إلى كحلي داكن واضح */
         .wholesale-light-scope .text-white,
         .wholesale-light-scope .text-slate-100,
         .wholesale-light-scope .text-slate-200 {
@@ -782,65 +800,104 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
           color: #475569 !important;
         }
 
-        /* تحسين حقول الإدخال والأزرار الداخلية في الوضع الفاتح */
+        /* 3. تقوية ألوان النصوص الملونة الفاتحة داخل الصناديق الشفافة (ص2، ص3، ص4، ص5، ص6) */
+        .wholesale-light-scope .text-blue-400,
+        .wholesale-light-scope .text-blue-300 {
+          color: #1d4ed8 !important;
+        }
+        .wholesale-light-scope .text-indigo-400,
+        .wholesale-light-scope .text-indigo-300 {
+          color: #4338ca !important;
+        }
+        .wholesale-light-scope .text-emerald-400,
+        .wholesale-light-scope .text-emerald-300,
+        .wholesale-light-scope .text-green-400 {
+          color: #047857 !important;
+        }
+        .wholesale-light-scope .text-red-400,
+        .wholesale-light-scope .text-rose-400 {
+          color: #b91c1c !important;
+        }
+        .wholesale-light-scope .text-amber-400,
+        .wholesale-light-scope .text-orange-400 {
+          color: #b45309 !important;
+        }
+        .wholesale-light-scope .text-purple-400 {
+          color: #6d28d9 !important;
+        }
+        .wholesale-light-scope .text-cyan-400 {
+          color: #0e7490 !important;
+        }
+
+        /* 4. حماية البطاقات الملونة الصلبة في لوحة القيادة (PENDING ORDERS, ACTIVE PRODUCTS, TOTAL SALES...) */
+        .wholesale-light-scope .bg-gradient-to-br:not(.from-slate-900):not(.from-slate-800):not(.from-slate-950),
+        .wholesale-light-scope .bg-gradient-to-r:not(.from-slate-900):not(.from-slate-800):not(.from-slate-950),
+        .wholesale-light-scope .bg-blue-600,
+        .wholesale-light-scope .bg-indigo-600,
+        .wholesale-light-scope .bg-emerald-600,
+        .wholesale-light-scope .bg-emerald-500,
+        .wholesale-light-scope .bg-teal-600,
+        .wholesale-light-scope .bg-cyan-600,
+        .wholesale-light-scope .bg-orange-500,
+        .wholesale-light-scope .bg-amber-500,
+        .wholesale-light-scope .bg-purple-600,
+        .wholesale-light-scope .bg-pink-600,
+        .wholesale-light-scope .bg-red-600 {
+          color: #ffffff !important;
+        }
+
+        .wholesale-light-scope .bg-gradient-to-br:not(.from-slate-900):not(.from-slate-800):not(.from-slate-950) *,
+        .wholesale-light-scope .bg-gradient-to-r:not(.from-slate-900):not(.from-slate-800):not(.from-slate-950) *,
+        .wholesale-light-scope .bg-blue-600 *,
+        .wholesale-light-scope .bg-indigo-600 *,
+        .wholesale-light-scope .bg-emerald-600 *,
+        .wholesale-light-scope .bg-emerald-500 *,
+        .wholesale-light-scope .bg-teal-600 *,
+        .wholesale-light-scope .bg-cyan-600 *,
+        .wholesale-light-scope .bg-orange-500 *,
+        .wholesale-light-scope .bg-purple-600 *,
+        .wholesale-light-scope .bg-pink-600 *,
+        .wholesale-light-scope .bg-red-600 * {
+          color: #ffffff !important;
+        }
+
+        /* 5. ضمان وضوح الصناديق الشفافة الملونة (مثل TOTAL 0 MAD و Starter B2B و Public Tender و Cash) */
+        .wholesale-light-scope [class*="/10"],
+        .wholesale-light-scope [class*="/15"],
+        .wholesale-light-scope [class*="/20"] {
+          background-image: none !important;
+        }
+        .wholesale-light-scope [class*="/10"] .text-white,
+        .wholesale-light-scope [class*="/15"] .text-white,
+        .wholesale-light-scope [class*="/20"] .text-white {
+          color: #0f172a !important;
+        }
+
+        /* 6. إبراز زر تفاصيل الصفقة (Détails du marché) في رادار المناقصات (ص3) */
+        .wholesale-light-scope a.bg-white,
+        .wholesale-light-scope button.bg-white {
+          background-color: #0f172a !important;
+          color: #ffffff !important;
+          border: 1px solid #0f172a !important;
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15) !important;
+        }
+        .wholesale-light-scope a.bg-white *,
+        .wholesale-light-scope button.bg-white * {
+          color: #ffffff !important;
+        }
+        .wholesale-light-scope a.bg-white:hover,
+        .wholesale-light-scope button.bg-white:hover {
+          background-color: #2563eb !important;
+          border-color: #2563eb !important;
+        }
+
+        /* 7. تحسين حقول الإدخال والجداول في الوضع الفاتح */
         .wholesale-light-scope input,
         .wholesale-light-scope select,
         .wholesale-light-scope textarea {
           background-color: #ffffff !important;
           border-color: #cbd5e1 !important;
           color: #0f172a !important;
-        }
-
-        /* تحسين زر تفاصيل الصفقة داخل بطاقات رادار المناقصات في الوضع الفاتح */
-        .wholesale-light-scope a.bg-white,
-        .wholesale-light-scope button.bg-white {
-          background-color: #f1f5f9 !important;
-          border: 1px solid #cbd5e1 !important;
-          color: #0f172a !important;
-        }
-        .wholesale-light-scope a.bg-white:hover,
-        .wholesale-light-scope button.bg-white:hover {
-          background-color: #e2e8f0 !important;
-        }
-
-        /* 🎨 حماية البطاقات الملونة والأزرار البارزة لتحتفظ بألوانها ونصها الأبيض الناصع */
-        .wholesale-light-scope [class*="from-indigo-"],
-        .wholesale-light-scope [class*="from-blue-"],
-        .wholesale-light-scope [class*="from-emerald-"],
-        .wholesale-light-scope [class*="from-teal-"],
-        .wholesale-light-scope [class*="from-cyan-"],
-        .wholesale-light-scope [class*="from-pink-"],
-        .wholesale-light-scope [class*="from-fuchsia-"],
-        .wholesale-light-scope [class*="from-purple-"],
-        .wholesale-light-scope [class*="from-orange-"],
-        .wholesale-light-scope [class*="from-amber-"],
-        .wholesale-light-scope [class*="from-red-"],
-        .wholesale-light-scope [class*="bg-indigo-6"],
-        .wholesale-light-scope [class*="bg-blue-6"],
-        .wholesale-light-scope [class*="bg-emerald-6"],
-        .wholesale-light-scope [class*="bg-emerald-5"],
-        .wholesale-light-scope [class*="bg-orange-5"],
-        .wholesale-light-scope [class*="bg-purple-6"],
-        .wholesale-light-scope [class*="bg-red-5"] {
-          color: #ffffff !important;
-        }
-
-        .wholesale-light-scope [class*="from-indigo-"] *,
-        .wholesale-light-scope [class*="from-blue-"] *,
-        .wholesale-light-scope [class*="from-emerald-"] *,
-        .wholesale-light-scope [class*="from-teal-"] *,
-        .wholesale-light-scope [class*="from-cyan-"] *,
-        .wholesale-light-scope [class*="from-pink-"] *,
-        .wholesale-light-scope [class*="from-fuchsia-"] *,
-        .wholesale-light-scope [class*="from-purple-"] *,
-        .wholesale-light-scope [class*="from-orange-"] *,
-        .wholesale-light-scope [class*="from-amber-"] *,
-        .wholesale-light-scope [class*="bg-indigo-6"] *,
-        .wholesale-light-scope [class*="bg-blue-6"] *,
-        .wholesale-light-scope [class*="bg-emerald-6"] *,
-        .wholesale-light-scope [class*="bg-emerald-5"] *,
-        .wholesale-light-scope [class*="bg-purple-6"] * {
-          color: #ffffff !important;
         }
       `}</style>
 
