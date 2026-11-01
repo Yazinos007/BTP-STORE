@@ -738,7 +738,14 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
   };
 
   return (
-    <div className={`flex h-screen w-full max-w-full font-sans overflow-hidden transition-colors duration-700 ${isDarkMode ? 'bg-[#0f172a] text-slate-300' : 'bg-gradient-to-br from-emerald-200/70 via-teal-100/60 to-blue-100/70 text-slate-800'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+    <div
+      className={`flex h-screen w-full max-w-full font-sans overflow-hidden transition-colors duration-500 ${
+        isDarkMode
+          ? 'bg-[#0f172a] text-slate-300'
+          : 'bg-gradient-to-br from-[#f8fafc] via-[#f2fbf7] to-[#f1f5f9] text-slate-800'
+      }`}
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
       <style>{`
         @keyframes b2bHeaderShimmer {
           0% { filter: brightness(0.95); }
@@ -748,33 +755,96 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
         .b2b-shimmer-title {
           animation: b2bHeaderShimmer 2.4s infinite ease-in-out;
         }
-        /* تحويل البطاقات تلقائياً عند تفعيل الوضع الفاتح للمورد */
-        .wholesale-light-scope .bg-slate-900,
-        .wholesale-light-scope .bg-slate-900\\/80,
-        .wholesale-light-scope .bg-slate-900\\/50,
-        .wholesale-light-scope .bg-slate-950,
-        .wholesale-light-scope .bg-\\[\\#1e293b\\] {
-          background-color: rgba(255, 255, 255, 0.92) !important;
-          border-color: rgba(226, 232, 240, 0.9) !important;
-          color: #0f172a !important;
-          box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06) !important;
-        }
-        .wholesale-light-scope .bg-slate-800,
-        .wholesale-light-scope .bg-slate-800\\/50 {
-          background-color: #f8fafc !important;
+
+        /* ☀️ نظام الوضع الفاتح الذكي للمورد (خلفية ناعمة + وضوح تام للبطاقات والنصوص) */
+        .wholesale-light-scope [class*="bg-slate-9"],
+        .wholesale-light-scope [class*="bg-slate-8"],
+        .wholesale-light-scope [class*="bg-gray-9"],
+        .wholesale-light-scope [class*="bg-[#0"],
+        .wholesale-light-scope [class*="bg-[#1"],
+        .wholesale-light-scope [class*="from-slate-9"],
+        .wholesale-light-scope [class*="from-slate-8"] {
+          background-color: #ffffff !important;
+          background-image: none !important;
           border-color: #e2e8f0 !important;
-          color: #1e293b !important;
+          color: #0f172a !important;
+          box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06) !important;
         }
-        .wholesale-light-scope .text-white {
+
+        /* تحويل النصوص البيضاء والرمادية داخل البطاقات البيضاء إلى داكنة واضحة */
+        .wholesale-light-scope .text-white,
+        .wholesale-light-scope .text-slate-100,
+        .wholesale-light-scope .text-slate-200 {
           color: #0f172a !important;
         }
         .wholesale-light-scope .text-slate-300,
         .wholesale-light-scope .text-slate-400 {
           color: #475569 !important;
         }
+
+        /* تحسين حقول الإدخال والأزرار الداخلية في الوضع الفاتح */
+        .wholesale-light-scope input,
+        .wholesale-light-scope select,
+        .wholesale-light-scope textarea {
+          background-color: #ffffff !important;
+          border-color: #cbd5e1 !important;
+          color: #0f172a !important;
+        }
+
+        /* تحسين زر تفاصيل الصفقة داخل بطاقات رادار المناقصات في الوضع الفاتح */
+        .wholesale-light-scope a.bg-white,
+        .wholesale-light-scope button.bg-white {
+          background-color: #f1f5f9 !important;
+          border: 1px solid #cbd5e1 !important;
+          color: #0f172a !important;
+        }
+        .wholesale-light-scope a.bg-white:hover,
+        .wholesale-light-scope button.bg-white:hover {
+          background-color: #e2e8f0 !important;
+        }
+
+        /* 🎨 حماية البطاقات الملونة والأزرار البارزة لتحتفظ بألوانها ونصها الأبيض الناصع */
+        .wholesale-light-scope [class*="from-indigo-"],
+        .wholesale-light-scope [class*="from-blue-"],
+        .wholesale-light-scope [class*="from-emerald-"],
+        .wholesale-light-scope [class*="from-teal-"],
+        .wholesale-light-scope [class*="from-cyan-"],
+        .wholesale-light-scope [class*="from-pink-"],
+        .wholesale-light-scope [class*="from-fuchsia-"],
+        .wholesale-light-scope [class*="from-purple-"],
+        .wholesale-light-scope [class*="from-orange-"],
+        .wholesale-light-scope [class*="from-amber-"],
+        .wholesale-light-scope [class*="from-red-"],
+        .wholesale-light-scope [class*="bg-indigo-6"],
+        .wholesale-light-scope [class*="bg-blue-6"],
+        .wholesale-light-scope [class*="bg-emerald-6"],
+        .wholesale-light-scope [class*="bg-emerald-5"],
+        .wholesale-light-scope [class*="bg-orange-5"],
+        .wholesale-light-scope [class*="bg-purple-6"],
+        .wholesale-light-scope [class*="bg-red-5"] {
+          color: #ffffff !important;
+        }
+
+        .wholesale-light-scope [class*="from-indigo-"] *,
+        .wholesale-light-scope [class*="from-blue-"] *,
+        .wholesale-light-scope [class*="from-emerald-"] *,
+        .wholesale-light-scope [class*="from-teal-"] *,
+        .wholesale-light-scope [class*="from-cyan-"] *,
+        .wholesale-light-scope [class*="from-pink-"] *,
+        .wholesale-light-scope [class*="from-fuchsia-"] *,
+        .wholesale-light-scope [class*="from-purple-"] *,
+        .wholesale-light-scope [class*="from-orange-"] *,
+        .wholesale-light-scope [class*="from-amber-"] *,
+        .wholesale-light-scope [class*="bg-indigo-6"] *,
+        .wholesale-light-scope [class*="bg-blue-6"] *,
+        .wholesale-light-scope [class*="bg-emerald-6"] *,
+        .wholesale-light-scope [class*="bg-emerald-5"] *,
+        .wholesale-light-scope [class*="bg-purple-6"] * {
+          color: #ffffff !important;
+        }
       `}</style>
 
-      {/* السايدبار يظل داكناً فخماً مع التوهج النيوني تماماً مثل المقاول والمهندس */}
+      {/* السايدبار يظل داكناً فخماً مع التوهج النيوني */}
       <aside className={`shrink-0 h-full bg-[#0f172a] flex flex-col shadow-2xl transition-all duration-300 ease-in-out absolute md:relative z-30 ${isSidebarOpen ? 'w-72 border-r border-slate-800 opacity-100 translate-x-0' : 'w-0 border-r-0 opacity-0 overflow-hidden'}`}>
         <div className="w-72 h-full flex flex-col">
           <div className="h-24 shrink-0 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
@@ -886,9 +956,9 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
 
       <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0 w-full max-w-full">
         <SystemNotificationBanner />
-        <header className={`h-20 shrink-0 w-full border-b flex items-center justify-between px-4 md:px-6 sticky top-0 z-20 transition-colors duration-700 ${isDarkMode ? 'bg-slate-900/90 border-slate-800/60 backdrop-blur-xl' : 'bg-white/60 border-white/60 backdrop-blur-md shadow-sm'}`}>
+        <header className={`h-20 shrink-0 w-full border-b flex items-center justify-between px-4 md:px-6 sticky top-0 z-20 transition-colors duration-500 ${isDarkMode ? 'bg-slate-900/90 border-slate-800/60 backdrop-blur-xl' : 'bg-white/90 border-slate-200/80 backdrop-blur-md shadow-sm'}`}>
           <div className="flex items-center gap-3 md:gap-4">
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all cursor-pointer ${isDarkMode ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-700 text-slate-300 hover:text-white' : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700 shadow-sm'}`}>
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all cursor-pointer ${isDarkMode ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-700 text-slate-300 hover:text-white' : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 shadow-sm'}`}>
               {isSidebarOpen ? <X size={20} className="text-red-500" /> : <Menu size={20} className="text-blue-500" />}
             </button>
             <div className="truncate pr-1 text-start">
@@ -912,14 +982,14 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
               className={`px-3 py-2 rounded-full font-black text-xs flex items-center gap-1.5 border transition-all cursor-pointer ${
                 isDarkMode
                   ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
               }`}
             >
               <Globe size={15} />
               <span className="uppercase">{language}</span>
             </button>
 
-            {/* 🌙☀️ زر الوضع الداكن / الفاتح المطابق للمقاول والمهندس */}
+            {/* 🌙☀️ زر الوضع الداكن / الفاتح */}
             <button
               onClick={toggleThemeMode}
               className={`px-3.5 py-2 rounded-full font-black text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md ${
