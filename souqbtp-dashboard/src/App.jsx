@@ -1279,7 +1279,9 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { setLanguage } = useSettingsStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const sidebarWrapperRef = useRef(null);
+  const retailContentRef = useRef(null);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('sasbtp_theme_mode');
@@ -1307,7 +1309,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
     navigate('/v2/auth');
   };
 
-  // 🔥 تثبيت اسم المنصة "SasBTP" وحرف "S" ونوع الحساب في أعلى سايدبار التاجر تلقائياً (معالجة ص1)
+  // 🔥 1. تثبيت اسم المنصة "SasBTP" وحرف "S" ونوع الحساب تحت اسم المنصة مباشرة في أعلى سايدبار التاجر (معالجة ص1)
   useEffect(() => {
     const container = sidebarWrapperRef.current;
     if (!container) return;
@@ -1320,66 +1322,254 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
         : 'ESPACE COMMERÇANT';
 
     const enforceSidebarHeaderIdentity = () => {
-      const asideEl = container.querySelector('aside') || container.firstElementChild;
-      if (!asideEl) return;
+      const navEl = container.querySelector('nav');
+      const allEls = Array.from(container.querySelectorAll('*'));
 
-      const headerBlock = asideEl.firstElementChild;
-      if (!headerBlock) return;
+      // حصر العناصر التي تقع في الترويسة العليا للسيدبار (قبل قائمة التنقل <nav>)
+      const headerLeaves = allEls.filter((el) => {
+        if (navEl && (navEl === el || navEl.contains(el))) return false;
+        if (['STYLE', 'SCRIPT', 'SVG', 'PATH', 'CIRCLE', 'RECT', 'LINE', 'POLYGON', 'POLYLINE'].includes(el.tagName)) return false;
+        if (el.closest('svg')) return false;
+        if (el.children.length > 0) return false;
+        const txt = (el.textContent || '').trim();
+        return txt.length > 0;
+      });
 
-      // 1. تبديل اسم صاحب الحساب إلى SasBTP
-      const titleEl = headerBlock.querySelector('h1, h2, h3, .truncate');
-      if (titleEl && titleEl.textContent !== 'SasBTP') {
-        titleEl.textContent = 'SasBTP';
+      // استبعاد أزرار اللغة والترقية من نصوص الهوية
+      const identityLeaves = headerLeaves.filter((el) => {
+        const txt = (el.textContent || '').trim().toUpperCase();
+        if (['FR', 'AR', 'EN'].includes(txt)) return false;
+        if (el.closest('button') || el.closest('a')) {
+          if (
+            txt.includes('PASSER') ||
+            txt.includes('PRO RETAILER') ||
+            txt.includes('UPGRADE') ||
+            txt.includes('ترقية') ||
+            txt.includes('باقة') ||
+            ['FR', 'AR', 'EN'].includes(txt)
+          ) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      if (identityLeaves.length === 0) return;
+
+      // أ) تحويل حرف الشعار الدائري/المربع (مثل A) إلى S
+      let avatarFixed = false;
+      const nonAvatarLeaves = [];
+
+      identityLeaves.forEach((el) => {
+        const txt = (el.textContent || '').trim();
+        if (!avatarFixed && txt.length === 1) {
+          if (el.textContent !== 'S') {
+            el.textContent = 'S';
+          }
+          avatarFixed = true;
+        } else {
+          nonAvatarLeaves.push(el);
+        }
+      });
+
+      // ب) السطر الأول: استبدال اسم صاحب الحساب (مثل Almo9awil) باسم المنصة SasBTP
+      if (nonAvatarLeaves.length >= 1) {
+        const titleEl = nonAvatarLeaves[0];
+        if (titleEl.textContent !== 'SasBTP') {
+          titleEl.textContent = 'SasBTP';
+        }
+        titleEl.style.setProperty('color', '#ffffff', 'important');
+        titleEl.style.setProperty('font-weight', '900', 'important');
+        titleEl.style.setProperty('letter-spacing', '0.02em', 'important');
       }
 
-      // 2. تثبيت حرف S في دائرة الشعار
-      const avatarCandidates = headerBlock.querySelectorAll('div');
-      avatarCandidates.forEach((div) => {
-        if (
-          div.children.length === 0 &&
-          div.textContent &&
-          div.textContent.trim().length === 1 &&
-          div.textContent.trim() !== 'S'
-        ) {
-          div.textContent = 'S';
+      // ج) السطر الثاني (تحت SasBTP مباشرة): كتابة نوع الحساب بوضوح
+      if (nonAvatarLeaves.length >= 2) {
+        const typeBadgeEl = nonAvatarLeaves[1];
+        if (typeBadgeEl.textContent !== accountTypeLabel) {
+          typeBadgeEl.textContent = accountTypeLabel;
         }
-      });
+        typeBadgeEl.style.setProperty('color', '#38bdf8', 'important');
+        typeBadgeEl.style.setProperty('background-color', 'rgba(56, 189, 248, 0.16)', 'important');
+        typeBadgeEl.style.setProperty('border', '1px solid rgba(56, 189, 248, 0.4)', 'important');
+        typeBadgeEl.style.setProperty('font-weight', '900', 'important');
+        typeBadgeEl.style.setProperty('padding', '2px 8px', 'important');
+        typeBadgeEl.style.setProperty('border-radius', '6px', 'important');
+        typeBadgeEl.style.setProperty('display', 'inline-block', 'important');
+      }
 
-      // 3. إظهار نوع الحساب تحت اسم المنصة بوضوح
-      const badges = headerBlock.querySelectorAll('span');
-      let updatedAccountBadge = false;
-      badges.forEach((badge) => {
-        const txt = (badge.textContent || '').trim().toUpperCase();
+      // د) السطر الثالث (إن وجد مثل PROPRIÉTAIRE): يعرض باقة المتجر BASIC POS بشكل متناسق
+      if (nonAvatarLeaves.length >= 3) {
+        const planBadgeEl = nonAvatarLeaves[2];
+        const currentTxt = (planBadgeEl.textContent || '').trim().toUpperCase();
         if (
-          txt.includes('PROPRIÉTAIRE') ||
-          txt.includes('PROPRIETAIRE') ||
-          txt.includes('OWNER') ||
-          txt.includes('مالك') ||
-          txt.includes('ESPACE COMMERÇANT') ||
-          txt.includes('RETAILER SPACE') ||
-          txt.includes('فضاء تاجر التجزئة')
+          currentTxt.includes('PROPRIÉTAIRE') ||
+          currentTxt.includes('PROPRIETAIRE') ||
+          currentTxt.includes('OWNER') ||
+          currentTxt.includes('مالك')
         ) {
-          if (badge.textContent !== accountTypeLabel) {
-            badge.textContent = accountTypeLabel;
-          }
-          updatedAccountBadge = true;
-        }
-      });
-
-      if (!updatedAccountBadge && titleEl && titleEl.parentElement) {
-        const firstBadge = titleEl.parentElement.querySelector('span');
-        if (firstBadge && firstBadge.textContent !== accountTypeLabel) {
-          firstBadge.textContent = accountTypeLabel;
+          planBadgeEl.textContent = 'BASIC POS';
         }
       }
     };
 
     enforceSidebarHeaderIdentity();
     const observer = new MutationObserver(enforceSidebarHeaderIdentity);
-    observer.observe(container, { childList: true, subtree: true });
+    observer.observe(container, { childList: true, subtree: true, characterData: true });
+    const intervalId = setInterval(enforceSidebarHeaderIdentity, 350);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearInterval(intervalId);
+    };
   }, [language, storeName]);
+
+  // 🔥 2. معالج التباين الذكي للنصوص فوق البطاقات الداكنة (بطاقة المساعد الذكي ص1 + ترويسة السلة Panier ص2)
+  useEffect(() => {
+    const contentRoot = retailContentRef.current;
+    if (!contentRoot) return;
+
+    const parseRgbValues = (str) => {
+      if (!str) return [];
+      const matches = [...str.matchAll(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/g)];
+      return matches.map((m) => ({
+        r: Number(m[1]),
+        g: Number(m[2]),
+        b: Number(m[3]),
+        a: m[4] !== undefined ? Number(m[4]) : 1
+      }));
+    };
+
+    const getLuminance = ({ r, g, b }) => 0.299 * r + 0.587 * g + 0.114 * b;
+
+    const hasDarkSurface = (el) => {
+      if (!el || el.nodeType !== 1) return false;
+      const cs = window.getComputedStyle(el);
+      const bgColors = parseRgbValues(cs.backgroundColor).filter((c) => c.a > 0.35);
+      if (bgColors.length > 0 && getLuminance(bgColors[0]) < 105) {
+        return true;
+      }
+      const gradColors = parseRgbValues(cs.backgroundImage).filter((c) => c.a > 0.3);
+      if (gradColors.length > 0) {
+        const avgLum = gradColors.reduce((acc, c) => acc + getLuminance(c), 0) / gradColors.length;
+        if (avgLum < 105) return true;
+      }
+      return false;
+    };
+
+    const hasLightIconSurface = (el) => {
+      if (!el || el.nodeType !== 1) return false;
+      const cs = window.getComputedStyle(el);
+      const bgColors = parseRgbValues(cs.backgroundColor).filter((c) => c.a > 0.45);
+      if (bgColors.length > 0 && getLuminance(bgColors[0]) > 185) {
+        return true;
+      }
+      return false;
+    };
+
+    const enforceDarkCardsWhiteText = () => {
+      const allContainers = Array.from(contentRoot.querySelectorAll('div, section, article, aside, header, footer'));
+      const darkContainers = new Set();
+
+      // أ) الكشف التلقائي لأي بطاقة أو صندوق ذي خلفية داكنة (مثل بطاقة المساعد الذكي، صندوق القفل، وبطاقة السلة Panier)
+      allContainers.forEach((el) => {
+        if (hasDarkSurface(el)) {
+          darkContainers.add(el);
+        }
+      });
+
+      // ب) التأكيد النصي المباشر لبطاقة المساعد الذكي (ص1) وبطاقة السلة Panier/سلة (ص2)
+      const allElements = Array.from(contentRoot.querySelectorAll('*'));
+      allElements.forEach((el) => {
+        if (el.children.length === 0) {
+          const txt = (el.textContent || '').trim();
+          if (
+            txt.includes('Assistant Intelligent') ||
+            txt.includes('المساعد الذكي') ||
+            txt.includes('Fonctionnalité Premium') ||
+            txt.includes('ميزة مدفوعة') ||
+            txt.includes('Mettez à niveau votre compte') ||
+            txt === 'Panier' ||
+            txt === 'سلة' ||
+            txt === 'السلة' ||
+            txt.includes('Le panier est vide') ||
+            txt.includes('السلة فارغة')
+          ) {
+            el.style.setProperty('color', '#ffffff', 'important');
+            // تلوين أيقونة السلة المجاورة لكلمة Panier باللون الأبيض/الأزرق الساطع
+            if (txt === 'Panier' || txt === 'سلة' || txt === 'السلة') {
+              const parentHeader = el.parentElement;
+              if (parentHeader) {
+                parentHeader.style.setProperty('color', '#ffffff', 'important');
+                parentHeader.querySelectorAll('svg').forEach((svg) => {
+                  svg.style.setProperty('color', '#60a5fa', 'important');
+                  svg.style.setProperty('stroke', '#60a5fa', 'important');
+                });
+              }
+            }
+            // البحث عن البطاقة الحاضنة وإضافتها لقائمة الحاويات الداكنة
+            let curr = el.parentElement;
+            while (curr && curr !== contentRoot) {
+              if (hasDarkSurface(curr)) {
+                darkContainers.add(curr);
+              }
+              curr = curr.parentElement;
+            }
+          }
+        }
+      });
+
+      // ج) فرض اللون الأبيض الناصع على جميع النصوص والعناوين داخل الحاويات الداكنة المرصودة
+      darkContainers.forEach((darkBox) => {
+        darkBox.style.setProperty('color', '#ffffff', 'important');
+        const descendants = darkBox.querySelectorAll('*');
+        descendants.forEach((child) => {
+          const tag = child.tagName;
+          if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) return;
+
+          // حماية المربعات الفاتحة الصغيرة للأيقونات (مثل مربع أيقونة المساعد الذكي ودائرة القفل في ص1)
+          const lightParent = child.closest('div, span');
+          if (lightParent && lightParent !== darkBox && hasLightIconSurface(lightParent)) {
+            return;
+          }
+
+          // حماية الشارات والأزرار البرتقالية/الصفراء/الخضراء
+          const cls = typeof child.className === 'string' ? child.className : '';
+          if (
+            tag === 'BUTTON' ||
+            tag === 'A' ||
+            cls.includes('bg-amber-500') ||
+            cls.includes('bg-orange-500') ||
+            cls.includes('from-amber-') ||
+            cls.includes('from-orange-')
+          ) {
+            child.style.setProperty('color', '#ffffff', 'important');
+            return;
+          }
+
+          // إبقاء كلمة Général أو الكلمات المميزة باللون الأزرق الفاتح الساطع فوق الخلفية السوداء
+          if (cls.includes('text-blue-400') || cls.includes('text-indigo-400') || cls.includes('text-blue-500')) {
+            child.style.setProperty('color', '#60a5fa', 'important');
+            return;
+          }
+
+          if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'DIV', 'STRONG', 'B', 'LABEL'].includes(tag)) {
+            child.style.setProperty('color', '#ffffff', 'important');
+          }
+        });
+      });
+    };
+
+    enforceDarkCardsWhiteText();
+    const observer = new MutationObserver(enforceDarkCardsWhiteText);
+    observer.observe(contentRoot, { childList: true, subtree: true });
+    const timer = setTimeout(enforceDarkCardsWhiteText, 250);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(timer);
+    };
+  }, [location.pathname, isDarkMode, language]);
 
   if (isMinimal) {
     return (
@@ -1537,80 +1727,13 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
           backdrop-filter: blur(6px);
         }
 
-        /* 3. إصلاح بطاقة المساعد الذكي السوداء (ص1) وبطاقة السلة Panier الداكنة (ص2) */
-        .retail-ui-scope .bg-slate-900,
-        .retail-ui-scope .bg-slate-950,
-        .retail-ui-scope .bg-gray-900,
-        .retail-ui-scope .bg-indigo-950,
-        .retail-ui-scope .bg-\\[\\#0f172a\\],
-        .retail-ui-scope .bg-\\[\\#1e1b4b\\],
-        .retail-ui-scope .bg-\\[\\#1e293b\\],
-        .retail-ui-scope [class*="from-slate-9"],
-        .retail-ui-scope [class*="from-slate-8"],
-        .retail-ui-scope [class*="from-gray-9"],
-        .retail-ui-scope [class*="from-indigo-9"] {
-          background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0f172a 100%) !important;
-          border: 2px solid rgba(99, 102, 241, 0.55) !important;
-          color: #ffffff !important;
-          box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.45),
-                      0 0 20px rgba(79, 70, 229, 0.2) !important;
-        }
-
-        /* فرض اللون الأبيض الناصع للنصوص والعناوين والأرقام فوق البطاقات السوداء/الداكنة (ص1 وص2) */
-        .retail-ui-scope .bg-slate-900 *:not(button):not(input):not(select),
-        .retail-ui-scope .bg-slate-950 *:not(button):not(input):not(select),
-        .retail-ui-scope .bg-gray-900 *:not(button):not(input):not(select),
-        .retail-ui-scope .bg-indigo-950 *:not(button):not(input):not(select),
-        .retail-ui-scope .bg-\\[\\#0f172a\\] *:not(button):not(input):not(select),
-        .retail-ui-scope .bg-\\[\\#1e1b4b\\] *:not(button):not(input):not(select),
-        .retail-ui-scope [class*="from-slate-9"] *:not(button):not(input):not(select),
-        .retail-ui-scope [class*="from-slate-8"] *:not(button):not(input):not(select),
-        .retail-ui-scope [class*="from-gray-9"] *:not(button):not(input):not(select),
-        .retail-ui-scope [class*="from-indigo-9"] *:not(button):not(input):not(select) {
-          color: #ffffff !important;
-          opacity: 1 !important;
-        }
-
-        /* حماية صندوق الأيقونة الفاتح (مثل أيقونة القفل وأيقونة المساعد الذكي في ص1) داخل البطاقات الداكنة */
-        .retail-ui-scope [class*="from-slate-9"] .bg-white svg,
-        .retail-ui-scope [class*="from-gray-9"] .bg-white svg,
-        .retail-ui-scope .bg-slate-900 .bg-white svg,
-        .retail-ui-scope .bg-gray-900 .bg-white svg,
-        .retail-ui-scope [class*="from-slate-9"] .bg-indigo-50 svg,
-        .retail-ui-scope [class*="from-slate-9"] .bg-amber-50 svg {
-          color: #4f46e5 !important;
-          stroke: #4f46e5 !important;
-        }
-
-        /* 4. إزالة البهتان عن أزرار السلة Panier والأزرار المعطلة لتبدو حية وواضحة دائماً (ص2) */
+        /* 3. إزالة البهتان عن أزرار السلة Panier والأزرار المعطلة لتبدو حية وواضحة دائماً (ص2) */
         .retail-ui-scope button:disabled,
         .retail-ui-scope button[disabled],
         .retail-ui-scope .opacity-50,
         .retail-ui-scope .opacity-40 {
           opacity: 0.94 !important;
           filter: saturate(1.2) contrast(1.08) !important;
-        }
-
-        .retail-ui-scope .bg-slate-900 button,
-        .retail-ui-scope .bg-gray-900 button,
-        .retail-ui-scope .bg-indigo-950 button,
-        .retail-ui-scope [class*="from-slate-9"] button,
-        .retail-ui-scope [class*="from-gray-9"] button,
-        .retail-ui-scope [class*="from-indigo-9"] button {
-          color: #ffffff !important;
-          font-weight: 800 !important;
-          border: 1px solid rgba(255, 255, 255, 0.25) !important;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
-        }
-
-        .retail-ui-scope .bg-slate-900 button *,
-        .retail-ui-scope .bg-gray-900 button *,
-        .retail-ui-scope .bg-indigo-950 button *,
-        .retail-ui-scope [class*="from-slate-9"] button *,
-        .retail-ui-scope [class*="from-gray-9"] button *,
-        .retail-ui-scope [class*="from-indigo-9"] button * {
-          color: #ffffff !important;
-          stroke: #ffffff !important;
         }
 
         /* إبراز الأيقونات الرمادية الباهتة في الجداول والسلة الفارغة (ص2 وص3) */
@@ -1718,7 +1841,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
               </button>
             </div>
           </header>
-          <div className={`retail-ui-scope flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full ${isDarkMode ? 'retail-dark-scope wholesale-dark-scope' : 'wholesale-light-scope'}`}>
+          <div ref={retailContentRef} className={`retail-ui-scope flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 w-full max-w-full ${isDarkMode ? 'retail-dark-scope wholesale-dark-scope' : 'wholesale-light-scope'}`}>
             <div className={`retail-main-wrapper rounded-3xl shadow-xl p-4 md:p-6 border min-h-[400px] w-full max-w-full overflow-x-auto transition-colors duration-500 ${isDarkMode ? 'bg-slate-900/90 border-slate-800 text-slate-100' : 'bg-white/95 backdrop-blur-md border-slate-200 text-slate-800'}`}>
               {children}
             </div>
