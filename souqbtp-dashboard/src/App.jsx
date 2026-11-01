@@ -313,62 +313,52 @@ const UNIFIED_LIGHT_AND_3D_STYLES = `
   }
 
   /* =========================================================================
-     💎 5. حماية البطاقات والأزرار الملونة الصلبة (Solid Colored Cards & Buttons)
-     ========================================================================= */
-  .wholesale-light-scope .bg-blue-600,
-  .wholesale-light-scope .bg-blue-500,
-  .wholesale-light-scope .bg-indigo-600,
-  .wholesale-light-scope .bg-emerald-600,
-  .wholesale-light-scope .bg-emerald-500,
-  .wholesale-light-scope .bg-green-600,
-  .wholesale-light-scope .bg-orange-600,
-  .wholesale-light-scope .bg-orange-500,
-  .wholesale-light-scope .bg-amber-600,
-  .wholesale-light-scope .bg-red-600,
-  .wholesale-light-scope .bg-red-500,
-  .wholesale-light-scope .bg-purple-600,
-  .wholesale-light-scope .bg-pink-600,
-  .wholesale-light-scope [class*="from-blue-6"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-blue-5"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-indigo-6"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-indigo-5"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-emerald-6"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-emerald-5"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-teal-5"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-cyan-5"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-orange-5"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-amber-5"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-pink-5"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-fuchsia-6"]:not([class*="/"]),
-  .wholesale-light-scope [class*="from-purple-6"]:not([class*="/"]) {
-    color: #ffffff !important;
-  }
+           💎 5. حماية البطاقات والأزرار الملونة الصلبة (Solid Colored Cards & Buttons)
+           ========================================================================= */
+        .wholesale-light-scope [class*="bg-blue-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-indigo-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-emerald-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-teal-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-green-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-orange-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-amber-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-red-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-purple-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-pink-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-cyan-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="bg-fuchsia-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]),
+        .wholesale-light-scope [class*="from-blue-"]:not([class*="/"]),
+        .wholesale-light-scope [class*="from-indigo-"]:not([class*="/"]),
+        .wholesale-light-scope [class*="from-emerald-"]:not([class*="/"]),
+        .wholesale-light-scope [class*="from-teal-"]:not([class*="/"]),
+        .wholesale-light-scope [class*="from-cyan-"]:not([class*="/"]),
+        .wholesale-light-scope [class*="from-orange-"]:not([class*="/"]),
+        .wholesale-light-scope [class*="from-amber-"]:not([class*="/"]),
+        .wholesale-light-scope [class*="from-pink-"]:not([class*="/"]),
+        .wholesale-light-scope [class*="from-fuchsia-"]:not([class*="/"]),
+        .wholesale-light-scope [class*="from-purple-"]:not([class*="/"]) {
+          color: #ffffff !important;
+        }
 
-  .wholesale-light-scope .bg-blue-600 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope .bg-blue-500 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope .bg-indigo-600 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope .bg-emerald-600 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope .bg-emerald-500 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope .bg-green-600 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope .bg-orange-600 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope .bg-orange-500 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope .bg-red-600 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope .bg-red-500 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope .bg-purple-600 *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-blue-6"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-blue-5"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-indigo-6"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-indigo-5"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-emerald-6"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-emerald-5"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-teal-5"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-cyan-5"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-orange-5"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-pink-5"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-fuchsia-6"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
-  .wholesale-light-scope [class*="from-purple-6"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *) {
-    color: #ffffff !important;
-  }
+        .wholesale-light-scope [class*="bg-blue-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="bg-indigo-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="bg-emerald-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="bg-green-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="bg-orange-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="bg-red-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="bg-purple-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="bg-cyan-"]:not([class*="/"]):not([class*="50"]):not([class*="100"]):not([class*="200"]):not([class*="800"]):not([class*="900"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="from-blue-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="from-indigo-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="from-emerald-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="from-teal-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="from-cyan-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="from-orange-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="from-pink-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="from-fuchsia-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *),
+        .wholesale-light-scope [class*="from-purple-"]:not([class*="/"]) *:not(.bg-white):not(.bg-white *) {
+          color: #ffffff !important;
+        }
 
   /* =========================================================================
      🔘 6. حماية جميع الأزرار البيضاء (مثل Voir le rapport و Choisir un fichier و Détails du marché)
