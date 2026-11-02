@@ -1424,7 +1424,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
     };
   }, [language, storeName]);
 
-  // 🔥 2. معالج التباين الذكي للنصوص فوق البطاقات الداكنة (بطاقة المساعد الذكي ص1 + ترويسة السلة Panier ص2)
+  // 🔥 2. معالج التباين الذكي للنصوص فوق البطاقات الداكنة والفاتحة (ص1، ص2، وقسم POS)
   useEffect(() => {
     const contentRoot = retailContentRef.current;
     if (!contentRoot) return;
@@ -1457,32 +1457,51 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
       return false;
     };
 
-    const hasLightIconSurface = (el) => {
+    const hasLightSurface = (el) => {
       if (!el || el.nodeType !== 1) return false;
       const cs = window.getComputedStyle(el);
       const bgColors = parseRgbValues(cs.backgroundColor).filter((c) => c.a > 0.45);
-      if (bgColors.length > 0 && getLuminance(bgColors[0]) > 185) {
+      if (bgColors.length > 0 && getLuminance(bgColors[0]) > 175) {
         return true;
       }
       return false;
     };
 
-    const enforceDarkCardsWhiteText = () => {
+    const enforceSmartContrast = () => {
       const allContainers = Array.from(contentRoot.querySelectorAll('div, section, article, aside, header, footer'));
       const darkContainers = new Set();
 
-      // أ) الكشف التلقائي لأي بطاقة أو صندوق ذي خلفية داكنة (مثل بطاقة المساعد الذكي، صندوق القفل، وبطاقة السلة Panier)
+      // أ) رصد الحاويات الداكنة (بطاقة المساعد الذكي وبطاقة السلة Panier)
       allContainers.forEach((el) => {
         if (hasDarkSurface(el)) {
           darkContainers.add(el);
         }
       });
 
-      // ب) التأكيد النصي المباشر لبطاقة المساعد الذكي (ص1) وبطاقة السلة Panier/سلة (ص2)
       const allElements = Array.from(contentRoot.querySelectorAll('*'));
       allElements.forEach((el) => {
+        const cls = typeof el.className === 'string' ? el.className : '';
+        const txt = (el.textContent || '').trim();
+
+        // 1. إصلاح عنوان Point de Vente (POS) وأي عنوان يستخدم bg-clip-text فوق بطاقة بيضاء
+        if (
+          cls.includes('bg-clip-text') ||
+          (el.children.length === 0 && (
+            txt.includes('Point de Vente') ||
+            txt.includes('نقطة البيع') ||
+            txt.includes('Point of Sale')
+          ))
+        ) {
+          const insideDark = Array.from(darkContainers).some((d) => d.contains(el));
+          if (!insideDark && !isDarkMode) {
+            el.style.setProperty('color', '#0f172a', 'important');
+            el.style.setProperty('-webkit-text-fill-color', '#0f172a', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+          }
+        }
+
+        // 2. التأكيد النصي المباشر لبطاقة المساعد الذكي وترويسة السلة Panier
         if (el.children.length === 0) {
-          const txt = (el.textContent || '').trim();
           if (
             txt.includes('Assistant Intelligent') ||
             txt.includes('المساعد الذكي') ||
@@ -1496,7 +1515,6 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
             txt.includes('السلة فارغة')
           ) {
             el.style.setProperty('color', '#ffffff', 'important');
-            // تلوين أيقونة السلة المجاورة لكلمة Panier باللون الأبيض/الأزرق الساطع
             if (txt === 'Panier' || txt === 'سلة' || txt === 'السلة') {
               const parentHeader = el.parentElement;
               if (parentHeader) {
@@ -1507,7 +1525,6 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
                 });
               }
             }
-            // البحث عن البطاقة الحاضنة وإضافتها لقائمة الحاويات الداكنة
             let curr = el.parentElement;
             while (curr && curr !== contentRoot) {
               if (hasDarkSurface(curr)) {
@@ -1519,7 +1536,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
         }
       });
 
-      // ج) فرض اللون الأبيض الناصع على جميع النصوص والعناوين داخل الحاويات الداكنة المرصودة
+      // ج) معالجة النصوص والأزرار داخل الحاويات الداكنة (مع حماية زر Générer Devis/BC ذي الخلفية الفاتحة)
       darkContainers.forEach((darkBox) => {
         darkBox.style.setProperty('color', '#ffffff', 'important');
         const descendants = darkBox.querySelectorAll('*');
@@ -1527,13 +1544,29 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
           const tag = child.tagName;
           if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) return;
 
-          // حماية المربعات الفاتحة الصغيرة للأيقونات (مثل مربع أيقونة المساعد الذكي ودائرة القفل في ص1)
-          const lightParent = child.closest('div, span');
-          if (lightParent && lightParent !== darkBox && hasLightIconSurface(lightParent)) {
+          // حماية المربعات والأزرار ذات الخلفية الفاتحة داخل البطاقات الداكنة (مثل زر Générer Devis/BC ومربع القفل)
+          const lightParent = child.closest('button, a, div, span');
+          const childTxt = (child.textContent || '').trim();
+          const isDevisBtn =
+            childTxt.includes('Générer Devis') ||
+            childTxt.includes('Devis/BC') ||
+            childTxt.includes('إنشاء عرض') ||
+            (lightParent && (
+              (lightParent.textContent || '').includes('Générer Devis') ||
+              (lightParent.textContent || '').includes('Devis/BC')
+            ));
+
+          if (isDevisBtn || (lightParent && lightParent !== darkBox && hasLightSurface(lightParent))) {
+            if (isDevisBtn || (lightParent && (lightParent.tagName === 'BUTTON' || lightParent.tagName === 'A'))) {
+              child.style.setProperty('color', '#1e3a8a', 'important');
+              child.style.setProperty('-webkit-text-fill-color', '#1e3a8a', 'important');
+              if (tag === 'SVG' || tag === ' svg') {
+                child.style.setProperty('stroke', '#1d4ed8', 'important');
+              }
+            }
             return;
           }
 
-          // حماية الشارات والأزرار البرتقالية/الصفراء/الخضراء
           const cls = typeof child.className === 'string' ? child.className : '';
           if (
             tag === 'BUTTON' ||
@@ -1547,7 +1580,6 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
             return;
           }
 
-          // إبقاء كلمة Général أو الكلمات المميزة باللون الأزرق الفاتح الساطع فوق الخلفية السوداء
           if (cls.includes('text-blue-400') || cls.includes('text-indigo-400') || cls.includes('text-blue-500')) {
             child.style.setProperty('color', '#60a5fa', 'important');
             return;
@@ -1560,10 +1592,10 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
       });
     };
 
-    enforceDarkCardsWhiteText();
-    const observer = new MutationObserver(enforceDarkCardsWhiteText);
+    enforceSmartContrast();
+    const observer = new MutationObserver(enforceSmartContrast);
     observer.observe(contentRoot, { childList: true, subtree: true });
-    const timer = setTimeout(enforceDarkCardsWhiteText, 250);
+    const timer = setTimeout(enforceSmartContrast, 250);
 
     return () => {
       observer.disconnect();
