@@ -1,18 +1,36 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext, useLocation } from 'react-router-dom';
 import useProjectStore from '../../store/useProjectStore';
-import { Calculator, LayoutDashboard, Map, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Calculator, LayoutDashboard, Map, CheckCircle2, AlertCircle, HardHat, Edit3 } from 'lucide-react';
 
 export default function CostCalculator() {
   const { isDarkMode, language = 'ar' } = useOutletContext();
+  const location = useLocation();
   const isRtl = language === 'ar';
+
+  // 🔥 تحديد ما إذا كان المستخدم يتصفح الحاسبة من فضاء الحرفي (Provider) أو المقاول (Contractor)
+  const isProviderSpace =
+    location.pathname.includes('/provider') ||
+    sessionStorage.getItem('sasbtp_v2_role') === 'provider';
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   
-  // 🚀 استدعاء الورش النشط
+  // 🚀 استدعاء الورش النشط (للمقاول فقط)
   const { activeProject } = useProjectStore();
+
+  // 🛠️ حالة خاصة بأوراش وتسعيرات الحرفي (معزولة تماماً عن ورش المقاول)
+  const [providerProjects, setProviderProjects] = useState([]);
+  const [selectedProviderProject, setSelectedProviderProject] = useState({
+    id: 'provider-default-devis',
+    name: language === 'ar' ? 'تسعيرة زبون (Devis Pro)' : 'Devis Client Pro'
+  });
+  const [customDevisName, setCustomDevisName] = useState('');
+  const [isEditingDevisName, setIsEditingDevisName] = useState(false);
+
+  // الورش الفعلي المعتمد حسب الفضاء الحالي (عزل تام بين المقاول والحرفي)
+  const effectiveProject = isProviderSpace ? selectedProviderProject : activeProject;
   
   const [selectedStage, setSelectedStage] = useState(1);
   const [costItems, setCostItems] = useState([]);
@@ -25,10 +43,12 @@ export default function CostCalculator() {
 
   const t = {
     ar: {
-      title: "حاسبة التكاليف",
-      subtitle: "احسب تكلفة مشروعك بدقة واحترافية",
+      title: isProviderSpace ? "حاسبة السلعة & Devis" : "حاسبة التكاليف",
+      subtitle: isProviderSpace ? "احسب كميات السلعة وتكلفة اليد العاملة لزبنائك بدقة" : "احسب تكلفة مشروعك بدقة واحترافية",
       backDash: "لوحة التحكم",
-      backPath: "مسار الورش",
+      backPath: isProviderSpace ? "أوراشي الجارية" : "مسار الورش",
+      devisLabel: isProviderSpace ? "التسعيرة / الورش:" : "الورش الحالي:",
+      editDevisPlaceholder: "اسم الزبون أو الورش...",
       stages: [
         { id: 1, name: "التخطيط", desc: "التصميم والدراسات", icon: "📋" },
         { id: 2, name: "التنفيذ", desc: "البناء والتشييد", icon: "🏗️" },
@@ -59,10 +79,12 @@ export default function CostCalculator() {
       noProject: "⚠️ يرجى إنشاء ورش أولاً في لوحة القيادة لحفظ التقديرات!"
     },
     fr: {
-      title: "Calculateur de Coûts",
-      subtitle: "Estimez le coût de votre projet avec précision",
+      title: isProviderSpace ? "Calculateur Matériaux & Devis" : "Calculateur de Coûts",
+      subtitle: isProviderSpace ? "Calculez vos matériaux et devis clients avec précision" : "Estimez le coût de votre projet avec précision",
       backDash: "Tableau de bord",
-      backPath: "Parcours",
+      backPath: isProviderSpace ? "Chantiers en Cours" : "Parcours",
+      devisLabel: isProviderSpace ? "Devis / Chantier :" : "Chantier actuel :",
+      editDevisPlaceholder: "Nom du client ou chantier...",
       stages: [
         { id: 1, name: "Planification", desc: "Conception et études", icon: "📋" },
         { id: 2, name: "Exécution", desc: "Construction", icon: "🏗️" },
@@ -93,10 +115,12 @@ export default function CostCalculator() {
       noProject: "⚠️ Veuillez créer un chantier d'abord pour enregistrer les estimations !"
     },
     en: {
-      title: "Cost Calculator",
-      subtitle: "Calculate your project cost accurately",
+      title: isProviderSpace ? "Material & Devis Calculator" : "Cost Calculator",
+      subtitle: isProviderSpace ? "Calculate materials and client quotes accurately" : "Calculate your project cost accurately",
       backDash: "Dashboard",
-      backPath: "Project Path",
+      backPath: isProviderSpace ? "Active Workshops" : "Project Path",
+      devisLabel: isProviderSpace ? "Quote / Workshop:" : "Current Project:",
+      editDevisPlaceholder: "Client or workshop name...",
       stages: [
         { id: 1, name: "Planning", desc: "Design & Studies", icon: "📋" },
         { id: 2, name: "Execution", desc: "Construction", icon: "🏗️" },
@@ -165,11 +189,11 @@ export default function CostCalculator() {
     "حفر الأساسات": { fr: "Terrassement", en: "Excavation (Terrassement)" },
     "صب الخرسانة المسلحة (سلعة ويد)": { fr: "Béton armé (Fourniture et Pose)", en: "Reinforced Concrete (Material & Labor)" },
     "بناء الجدران": { fr: "Maçonnerie et Cloisons (Briques)", en: "Wall Construction & Partitioning" },
-     "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
+    "التكييف والتهوية": { fr: "Climatisation et Ventilation", en: "HVAC / Ventilation" },
     
     // Stage 3
     "صيانة": { fr: "Entretien et Rénovation", en: "Maintenance & Renovation" },
-     "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
+    "عزل": { fr: "Isolation & Étanchéité", en: "Insulation" },
     "جبص": { fr: "Plâtre & Céramique", en: "Plaster & Ceramic" },
     "دهان": { fr: "Peinture et Enduit", en: "Painting & Plastering" },
     "أعمال الجبس والأسقف": { fr: "Travaux de Plâtre et Plafonds", en: "Plaster & Ceiling Works" },
@@ -228,6 +252,46 @@ export default function CostCalculator() {
   const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-800 shadow-md';
   const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
 
+  // 🛠️ جلب أوراش الحرفي الخاصة (إن وجدت) عند فتح الحاسبة في فضاء الحرفي
+  useEffect(() => {
+    if (!isProviderSpace) return;
+    const fetchProviderWorkshops = async () => {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) return;
+
+      const savedCustomName = localStorage.getItem(`sasbtp_provider_devis_name_${currentUser.id}`);
+      const defaultObj = {
+        id: 'provider-default-devis',
+        name: savedCustomName || (language === 'ar' ? 'تسعيرة زبون (Devis Pro)' : 'Devis Client Pro')
+      };
+
+      try {
+        const { data: provData } = await supabase
+          .from('provider_projects')
+          .select('id, title, client_name')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false });
+
+        if (provData && provData.length > 0) {
+          const formatted = provData.map(p => ({
+            id: `prov_${p.id}`,
+            name: p.title || p.client_name || 'Chantier Artisan'
+          }));
+          setProviderProjects([defaultObj, ...formatted]);
+          setSelectedProviderProject(formatted[0]);
+          return;
+        }
+      } catch (err) {
+        // جدول provider_projects اختياري، نستمر بالوضع الافتراضي للحرفي
+      }
+
+      setProviderProjects([defaultObj]);
+      setSelectedProviderProject(defaultObj);
+    };
+
+    fetchProviderWorkshops();
+  }, [isProviderSpace, language]);
+
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -237,8 +301,8 @@ export default function CostCalculator() {
       try {
         const { data: settings } = await supabase.from('platform_settings').select('*').limit(1).maybeSingle();
         if (settings) {
-          if(settings.currency) setCurrency(settings.currency);
-          if(settings.tva) setGlobalTva(settings.tva);
+          if (settings.currency) setCurrency(settings.currency);
+          if (settings.tva) setGlobalTva(settings.tva);
         }
       } catch (e) { console.log('Using default settings'); }
 
@@ -257,15 +321,15 @@ export default function CostCalculator() {
       }
     });
 
-    return () => { if(authListener) authListener.subscription.unsubscribe(); };
+    return () => { if (authListener) authListener.subscription.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStage, language, activeProject]); // 🚀 تمت إضافة activeProject لمراقبة تغيير الورش
+  }, [selectedStage, language, effectiveProject?.id, isProviderSpace]);
 
   const loadCostItems = async (stageId, passedUser = user) => {
     setLoading(true);
     try {
-      // تفريغ الفاتورة إذا لم يكن هناك ورش نشط
-      if (!activeProject) {
+      // تفريغ الفاتورة إذا لم يكن هناك ورش نشط (للمقاول)
+      if (!effectiveProject) {
         setCostItems([]);
         setEstimate([]);
         setInputs({});
@@ -273,23 +337,43 @@ export default function CostCalculator() {
         return;
       }
 
-      const { data, error } = await supabase.from('cost_items').select('*').eq('is_active', true).eq('stage_id', stageId).order('sort_order', { ascending: true });
+      const { data, error } = await supabase
+        .from('cost_items')
+        .select('*')
+        .eq('is_active', true)
+        .eq('stage_id', stageId)
+        .order('sort_order', { ascending: true });
 
-      // 🚀 جلب الميزانية المحفوظة مسبقاً لهذا الورش
+      // 🚀 جلب الميزانية المحفوظة مسبقاً (مع عزل تقديرات الحرفي عن تقديرات المقاول)
       let savedEstimates = [];
-      if (passedUser && activeProject) {
-        const { data: estData } = await supabase
-          .from('user_estimates')
-          .select('details')
-          .eq('user_id', passedUser.id)
-          .eq('project_id', activeProject.id)
-          .maybeSingle();
-          
-        if (estData && estData.details) {
-          savedEstimates = estData.details;
-          setEstimate(savedEstimates);
+      if (passedUser && effectiveProject) {
+        if (isProviderSpace) {
+          const storageKey = `sasbtp_provider_est_${passedUser.id}_${effectiveProject.id}`;
+          const localSaved = localStorage.getItem(storageKey);
+          if (localSaved) {
+            try {
+              savedEstimates = JSON.parse(localSaved);
+              setEstimate(savedEstimates);
+            } catch (e) {
+              setEstimate([]);
+            }
+          } else {
+            setEstimate([]);
+          }
         } else {
-          setEstimate([]);
+          const { data: estData } = await supabase
+            .from('user_estimates')
+            .select('details')
+            .eq('user_id', passedUser.id)
+            .eq('project_id', effectiveProject.id)
+            .maybeSingle();
+            
+          if (estData && estData.details) {
+            savedEstimates = estData.details;
+            setEstimate(savedEstimates);
+          } else {
+            setEstimate([]);
+          }
         }
       }
 
@@ -313,7 +397,7 @@ export default function CostCalculator() {
   };
 
   const handleAddItem = (item) => {
-    if (!activeProject) {
+    if (!effectiveProject) {
       alert(t.noProject);
       return;
     }
@@ -341,15 +425,24 @@ export default function CostCalculator() {
   const handleSaveEstimate = async () => {
     if (estimate.length === 0) return;
     if (!user) return alert("Please login");
-    if (!activeProject) return alert(t.noProject);
+    if (!effectiveProject) return alert(t.noProject);
     
     setSaveStatus({ type: 'loading', msg: t.saving });
     try {
+      // 🛠️ إذا كان في فضاء الحرفي: حفظ التقدير في المساحة المستقلة للحرفي دون الاصطدام بجدول أوراش المقاول
+      if (isProviderSpace) {
+        const storageKey = `sasbtp_provider_est_${user.id}_${effectiveProject.id}`;
+        localStorage.setItem(storageKey, JSON.stringify(estimate));
+        setSaveStatus({ type: 'success', msg: t.saveSuccess });
+        setTimeout(() => setSaveStatus(null), 3000);
+        return;
+      }
+
       const { data: existingEstimate, error: fetchError } = await supabase
         .from('user_estimates')
         .select('id')
         .eq('user_id', user.id)
-        .eq('project_id', activeProject.id)
+        .eq('project_id', effectiveProject.id)
         .maybeSingle();
 
       if (fetchError) {
@@ -373,7 +466,7 @@ export default function CostCalculator() {
           .from('user_estimates')
           .insert({
             user_id: user.id,
-            project_id: activeProject.id,
+            project_id: effectiveProject.id,
             total_cost: grandTotal,
             total_budget: grandTotal,
             details: estimate,
@@ -393,27 +486,104 @@ export default function CostCalculator() {
     }
   };
 
+  const handleSaveCustomDevisName = () => {
+    if (!customDevisName.trim()) {
+      setIsEditingDevisName(false);
+      return;
+    }
+    const updatedName = customDevisName.trim();
+    if (user?.id) {
+      localStorage.setItem(`sasbtp_provider_devis_name_${user.id}`, updatedName);
+    }
+    const updatedProj = { ...selectedProviderProject, name: updatedName };
+    setSelectedProviderProject(updatedProj);
+    setProviderProjects(prev =>
+      prev.map(p => (p.id === updatedProj.id ? updatedProj : p))
+    );
+    setIsEditingDevisName(false);
+  };
+
   const subTotal = estimate.reduce((sum, item) => sum + item.subtotal, 0);
   const tvaAmount = subTotal * (globalTva / 100);
   const grandTotal = subTotal + tvaAmount;
+
+  // 🔗 المسارات الديناميكية للأزرار العليا لمنع الانقلاب القسري بين الحرفي والمقاول
+  const dashboardRoute = isProviderSpace ? '/v2/provider-dashboard' : '/v2/contractor-dashboard';
+  const secondaryRoute = isProviderSpace ? '/v2/provider-projects' : '/v2/project-path';
 
   return (
     <div className="animate-fade-in pb-24 max-w-6xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="bg-gradient-to-r from-blue-800 to-blue-600 rounded-3xl p-6 md:p-8 mb-8 flex flex-col md:flex-row justify-between items-center gap-6 shadow-lg shadow-blue-900/20">
         <div className={`flex gap-3 w-full md:w-auto ${isRtl ? 'md:order-2' : ''}`}>
-          <Link to="/v2/contractor-dashboard" className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl font-bold transition-all backdrop-blur-sm">
+          <Link to={dashboardRoute} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl font-bold transition-all backdrop-blur-sm">
             <LayoutDashboard size={18} /> {t.backDash}
           </Link>
-          <Link to="/v2/project-path" className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl font-bold transition-all backdrop-blur-sm">
-            <Map size={18} /> {t.backPath}
+          <Link to={secondaryRoute} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl font-bold transition-all backdrop-blur-sm">
+            {isProviderSpace ? <HardHat size={18} /> : <Map size={18} />} {t.backPath}
           </Link>
         </div>
         <div className={`text-center md:text-${isRtl ? 'right' : 'left'} w-full md:w-auto ${isRtl ? 'md:order-1' : ''}`}>
           <h1 className="text-3xl font-black text-white mb-2 flex items-center justify-center md:justify-start gap-2">💰 {t.title}</h1>
           <p className="text-blue-100 font-bold">{t.subtitle}</p>
-          {activeProject && (
-            <div className="mt-4 inline-block bg-white/10 px-4 py-1.5 rounded-full border border-white/20 text-white font-bold text-sm backdrop-blur-sm">
-              {isRtl ? 'الورش الحالي:' : 'Chantier actuel :'} <span className="text-amber-300">{activeProject.name}</span>
+          
+          {/* عرض الورش للمقاول أو التسعيرة/الورش المستقل للحرفي */}
+          {effectiveProject && (
+            <div className="mt-4 inline-flex flex-wrap items-center gap-2 bg-white/10 px-4 py-1.5 rounded-full border border-white/20 text-white font-bold text-sm backdrop-blur-sm">
+              <span>{t.devisLabel}</span>
+              {isProviderSpace ? (
+                isEditingDevisName ? (
+                  <div className="inline-flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={customDevisName}
+                      onChange={(e) => setCustomDevisName(e.target.value)}
+                      placeholder={t.editDevisPlaceholder}
+                      className="bg-slate-900/80 text-amber-300 px-2.5 py-0.5 rounded-lg border border-amber-400/50 text-xs font-bold outline-none"
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveCustomDevisName(); }}
+                    />
+                    <button
+                      onClick={handleSaveCustomDevisName}
+                      className="bg-amber-500 text-slate-950 px-2 py-0.5 rounded-md text-xs font-black cursor-pointer"
+                    >
+                      OK
+                    </button>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2">
+                    {providerProjects.length > 1 ? (
+                      <select
+                        value={selectedProviderProject.id}
+                        onChange={(e) => {
+                          const found = providerProjects.find(p => p.id === e.target.value);
+                          if (found) setSelectedProviderProject(found);
+                        }}
+                        className="bg-transparent text-amber-300 font-black outline-none cursor-pointer"
+                      >
+                        {providerProjects.map(p => (
+                          <option key={p.id} value={p.id} className="bg-slate-900 text-white">
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-amber-300">{effectiveProject.name}</span>
+                    )}
+                    <button
+                      onClick={() => {
+                        setCustomDevisName(effectiveProject.name);
+                        setIsEditingDevisName(true);
+                      }}
+                      title="تعديل اسم التسعيرة / الزبون"
+                      className="text-white/80 hover:text-amber-300 transition-colors cursor-pointer"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                  </div>
+                )
+              ) : (
+                <span className="text-amber-300">{effectiveProject.name}</span>
+              )}
             </div>
           )}
         </div>
@@ -428,7 +598,7 @@ export default function CostCalculator() {
       )}
 
       {/* 🚀 إخفاء محتوى الحاسبة إذا لم يكن هناك ورش */}
-      {!activeProject ? (
+      {!effectiveProject ? (
         <div className={`text-center py-16 rounded-3xl border-2 border-dashed font-bold ${isDarkMode ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
           {t.noProject}
         </div>
