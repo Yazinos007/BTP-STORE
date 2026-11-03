@@ -2,17 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Link, useOutletContext, useLocation } from 'react-router-dom';
 import useProjectStore from '../../store/useProjectStore';
-import { Calculator, LayoutDashboard, Map, CheckCircle2, AlertCircle, HardHat, Edit3 } from 'lucide-react';
+import { Calculator, LayoutDashboard, Map, CheckCircle2, AlertCircle, HardHat, Edit3, FolderKanban } from 'lucide-react';
 
 export default function CostCalculator() {
   const { isDarkMode, language = 'ar' } = useOutletContext();
   const location = useLocation();
   const isRtl = language === 'ar';
 
-  // 🔥 تحديد ما إذا كان المستخدم يتصفح الحاسبة من فضاء الحرفي (Provider) أو المقاول (Contractor)
-  const isProviderSpace =
-    location.pathname.includes('/provider') ||
-    sessionStorage.getItem('sasbtp_v2_role') === 'provider';
+  // 🔥 تحديد الفضاء الحالي بدقة (مقاول، حرفي، أو مهندس)
+  const currentRole = sessionStorage.getItem('sasbtp_v2_role');
+  const isProviderSpace = location.pathname.includes('/provider') || currentRole === 'provider';
+  const isArchitectSpace = location.pathname.includes('/architect') || currentRole === 'architect';
+  const isIndependentSpace = isProviderSpace || isArchitectSpace; // الفضاءات التي تحتاج عزلاً عن المقاول
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
@@ -20,17 +21,17 @@ export default function CostCalculator() {
   // 🚀 استدعاء الورش النشط (للمقاول فقط)
   const { activeProject } = useProjectStore();
 
-  // 🛠️ حالة خاصة بأوراش وتسعيرات الحرفي (معزولة تماماً عن ورش المقاول)
-  const [providerProjects, setProviderProjects] = useState([]);
-  const [selectedProviderProject, setSelectedProviderProject] = useState({
-    id: 'provider-default-devis',
-    name: language === 'ar' ? 'تسعيرة زبون (Devis Pro)' : 'Devis Client Pro'
+  // 🛠️ حالة خاصة بأوراش وتسعيرات الحرفي والمهندس (معزولة تماماً عن ورش المقاول)
+  const [customProjects, setCustomProjects] = useState([]);
+  const [selectedCustomProject, setSelectedCustomProject] = useState({
+    id: 'custom-default-devis',
+    name: language === 'ar' ? 'مشروع جديد' : 'Nouveau Projet'
   });
   const [customDevisName, setCustomDevisName] = useState('');
   const [isEditingDevisName, setIsEditingDevisName] = useState(false);
 
-  // الورش الفعلي المعتمد حسب الفضاء الحالي (عزل تام بين المقاول والحرفي)
-  const effectiveProject = isProviderSpace ? selectedProviderProject : activeProject;
+  // الورش الفعلي المعتمد حسب الفضاء الحالي (عزل تام للمقاول عن البقية)
+  const effectiveProject = isIndependentSpace ? selectedCustomProject : activeProject;
   
   const [selectedStage, setSelectedStage] = useState(1);
   const [costItems, setCostItems] = useState([]);
@@ -43,12 +44,12 @@ export default function CostCalculator() {
 
   const t = {
     ar: {
-      title: isProviderSpace ? "حاسبة السلعة & Devis" : "حاسبة التكاليف",
-      subtitle: isProviderSpace ? "احسب كميات السلعة وتكلفة اليد العاملة لزبنائك بدقة" : "احسب تكلفة مشروعك بدقة واحترافية",
+      title: isArchitectSpace ? "مسطرة القياس الذكية" : (isProviderSpace ? "حاسبة السلعة & Devis" : "حاسبة التكاليف"),
+      subtitle: isArchitectSpace ? "حساب التكلفة التقديرية للمشروع والدراسات الهندسية" : (isProviderSpace ? "احسب كميات السلعة وتكلفة اليد العاملة لزبنائك بدقة" : "احسب تكلفة مشروعك بدقة واحترافية"),
       backDash: "لوحة التحكم",
-      backPath: isProviderSpace ? "أوراشي الجارية" : "مسار الورش",
-      devisLabel: isProviderSpace ? "التسعيرة / الورش:" : "الورش الحالي:",
-      editDevisPlaceholder: "اسم الزبون أو الورش...",
+      backPath: isArchitectSpace ? "إدارة المشاريع" : (isProviderSpace ? "أوراشي الجارية" : "مسار الورش"),
+      devisLabel: isArchitectSpace ? "المشروع الهندسي:" : (isProviderSpace ? "التسعيرة / الورش:" : "الورش الحالي:"),
+      editDevisPlaceholder: isArchitectSpace ? "اسم المشروع أو الزبون..." : "اسم الزبون أو الورش...",
       stages: [
         { id: 1, name: "التخطيط", desc: "التصميم والدراسات", icon: "📋" },
         { id: 2, name: "التنفيذ", desc: "البناء والتشييد", icon: "🏗️" },
@@ -76,15 +77,15 @@ export default function CostCalculator() {
       saving: "جاري الحفظ...",
       saveSuccess: "✅ تم حفظ التقدير بنجاح!",
       currency: "درهم",
-      noProject: "⚠️ يرجى إنشاء ورش أولاً في لوحة القيادة لحفظ التقديرات!"
+      noProject: "⚠️ يرجى إنشاء ورش أولاً لحفظ التقديرات!"
     },
     fr: {
-      title: isProviderSpace ? "Calculateur Matériaux & Devis" : "Calculateur de Coûts",
-      subtitle: isProviderSpace ? "Calculez vos matériaux et devis clients avec précision" : "Estimez le coût de votre projet avec précision",
+      title: isArchitectSpace ? "Règle & Mesures" : (isProviderSpace ? "Calculateur Matériaux & Devis" : "Calculateur de Coûts"),
+      subtitle: isArchitectSpace ? "Estimation des coûts et études du projet" : (isProviderSpace ? "Calculez vos matériaux et devis clients avec précision" : "Estimez le coût de votre projet avec précision"),
       backDash: "Tableau de bord",
-      backPath: isProviderSpace ? "Chantiers en Cours" : "Parcours",
-      devisLabel: isProviderSpace ? "Devis / Chantier :" : "Chantier actuel :",
-      editDevisPlaceholder: "Nom du client ou chantier...",
+      backPath: isArchitectSpace ? "Contrôle & Projets" : (isProviderSpace ? "Chantiers en Cours" : "Parcours"),
+      devisLabel: isArchitectSpace ? "Projet Architectural :" : (isProviderSpace ? "Devis / Chantier :" : "Chantier actuel :"),
+      editDevisPlaceholder: "Nom du client ou projet...",
       stages: [
         { id: 1, name: "Planification", desc: "Conception et études", icon: "📋" },
         { id: 2, name: "Exécution", desc: "Construction", icon: "🏗️" },
@@ -112,15 +113,15 @@ export default function CostCalculator() {
       saving: "Enregistrement...",
       saveSuccess: "✅ Estimation enregistrée avec succès !",
       currency: "MAD",
-      noProject: "⚠️ Veuillez créer un chantier d'abord pour enregistrer les estimations !"
+      noProject: "⚠️ Veuillez créer un projet d'abord pour enregistrer les estimations !"
     },
     en: {
-      title: isProviderSpace ? "Material & Devis Calculator" : "Cost Calculator",
-      subtitle: isProviderSpace ? "Calculate materials and client quotes accurately" : "Calculate your project cost accurately",
+      title: isArchitectSpace ? "Smart Ruler & Calculator" : (isProviderSpace ? "Material & Devis Calculator" : "Cost Calculator"),
+      subtitle: isArchitectSpace ? "Project cost estimation and architectural studies" : (isProviderSpace ? "Calculate materials and client quotes accurately" : "Calculate your project cost accurately"),
       backDash: "Dashboard",
-      backPath: isProviderSpace ? "Active Workshops" : "Project Path",
-      devisLabel: isProviderSpace ? "Quote / Workshop:" : "Current Project:",
-      editDevisPlaceholder: "Client or workshop name...",
+      backPath: isArchitectSpace ? "Projects & Approvals" : (isProviderSpace ? "Active Workshops" : "Project Path"),
+      devisLabel: isArchitectSpace ? "Architectural Project:" : (isProviderSpace ? "Quote / Workshop:" : "Current Project:"),
+      editDevisPlaceholder: "Client or project name...",
       stages: [
         { id: 1, name: "Planning", desc: "Design & Studies", icon: "📋" },
         { id: 2, name: "Execution", desc: "Construction", icon: "🏗️" },
@@ -252,45 +253,51 @@ export default function CostCalculator() {
   const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-800 shadow-md';
   const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
 
-  // 🛠️ جلب أوراش الحرفي الخاصة (إن وجدت) عند فتح الحاسبة في فضاء الحرفي
+  // 🛠️ جلب أوراش الحرفي أو المهندس المستقلة (لعزلهم تماماً عن المقاول)
   useEffect(() => {
-    if (!isProviderSpace) return;
-    const fetchProviderWorkshops = async () => {
+    if (!isIndependentSpace) return;
+    const fetchIndependentProjects = async () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) return;
 
-      const savedCustomName = localStorage.getItem(`sasbtp_provider_devis_name_${currentUser.id}`);
+      const roleKey = isArchitectSpace ? 'architect' : 'provider';
+      const defaultName = isArchitectSpace 
+        ? (language === 'ar' ? 'مشروع هندسي جديد' : 'Nouveau Projet Architectural')
+        : (language === 'ar' ? 'تسعيرة زبون (Devis Pro)' : 'Devis Client Pro');
+
+      const savedCustomName = localStorage.getItem(`sasbtp_${roleKey}_devis_name_${currentUser.id}`);
       const defaultObj = {
-        id: 'provider-default-devis',
-        name: savedCustomName || (language === 'ar' ? 'تسعيرة زبون (Devis Pro)' : 'Devis Client Pro')
+        id: `${roleKey}-default-devis`,
+        name: savedCustomName || defaultName
       };
 
       try {
-        const { data: provData } = await supabase
-          .from('provider_projects')
+        const tableName = isArchitectSpace ? 'architect_projects' : 'provider_projects';
+        const { data: customData } = await supabase
+          .from(tableName)
           .select('id, title, client_name')
           .eq('user_id', currentUser.id)
           .order('created_at', { ascending: false });
 
-        if (provData && provData.length > 0) {
-          const formatted = provData.map(p => ({
-            id: `prov_${p.id}`,
-            name: p.title || p.client_name || 'Chantier Artisan'
+        if (customData && customData.length > 0) {
+          const formatted = customData.map(p => ({
+            id: `${roleKey}_${p.id}`,
+            name: p.title || p.client_name || (isArchitectSpace ? 'Projet Architecte' : 'Chantier Artisan')
           }));
-          setProviderProjects([defaultObj, ...formatted]);
-          setSelectedProviderProject(formatted[0]);
+          setCustomProjects([defaultObj, ...formatted]);
+          setSelectedCustomProject(formatted[0]);
           return;
         }
       } catch (err) {
-        // جدول provider_projects اختياري، نستمر بالوضع الافتراضي للحرفي
+        // جداول المشاريع للمهندس أو الحرفي اختيارية، نستمر بالوضع الافتراضي
       }
 
-      setProviderProjects([defaultObj]);
-      setSelectedProviderProject(defaultObj);
+      setCustomProjects([defaultObj]);
+      setSelectedCustomProject(defaultObj);
     };
 
-    fetchProviderWorkshops();
-  }, [isProviderSpace, language]);
+    fetchIndependentProjects();
+  }, [isIndependentSpace, isArchitectSpace, language]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -323,12 +330,12 @@ export default function CostCalculator() {
 
     return () => { if (authListener) authListener.subscription.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStage, language, effectiveProject?.id, isProviderSpace]);
+  }, [selectedStage, language, effectiveProject?.id, isIndependentSpace]);
 
   const loadCostItems = async (stageId, passedUser = user) => {
     setLoading(true);
     try {
-      // تفريغ الفاتورة إذا لم يكن هناك ورش نشط (للمقاول)
+      // تفريغ الفاتورة إذا لم يكن هناك ورش نشط
       if (!effectiveProject) {
         setCostItems([]);
         setEstimate([]);
@@ -344,11 +351,12 @@ export default function CostCalculator() {
         .eq('stage_id', stageId)
         .order('sort_order', { ascending: true });
 
-      // 🚀 جلب الميزانية المحفوظة مسبقاً (مع عزل تقديرات الحرفي عن تقديرات المقاول)
+      // 🚀 جلب الميزانية المحفوظة مسبقاً (مع عزل المهندس والحرفي عن المقاول تماماً)
       let savedEstimates = [];
       if (passedUser && effectiveProject) {
-        if (isProviderSpace) {
-          const storageKey = `sasbtp_provider_est_${passedUser.id}_${effectiveProject.id}`;
+        if (isIndependentSpace) {
+          const roleKey = isArchitectSpace ? 'architect' : 'provider';
+          const storageKey = `sasbtp_${roleKey}_est_${passedUser.id}_${effectiveProject.id}`;
           const localSaved = localStorage.getItem(storageKey);
           if (localSaved) {
             try {
@@ -429,9 +437,10 @@ export default function CostCalculator() {
     
     setSaveStatus({ type: 'loading', msg: t.saving });
     try {
-      // 🛠️ إذا كان في فضاء الحرفي: حفظ التقدير في المساحة المستقلة للحرفي دون الاصطدام بجدول أوراش المقاول
-      if (isProviderSpace) {
-        const storageKey = `sasbtp_provider_est_${user.id}_${effectiveProject.id}`;
+      // 🛠️ إذا كان في فضاء المهندس أو الحرفي: يتم الحفظ في مساحتهم المستقلة بعيداً عن جدول المقاول
+      if (isIndependentSpace) {
+        const roleKey = isArchitectSpace ? 'architect' : 'provider';
+        const storageKey = `sasbtp_${roleKey}_est_${user.id}_${effectiveProject.id}`;
         localStorage.setItem(storageKey, JSON.stringify(estimate));
         setSaveStatus({ type: 'success', msg: t.saveSuccess });
         setTimeout(() => setSaveStatus(null), 3000);
@@ -480,7 +489,6 @@ export default function CostCalculator() {
       setSaveStatus({ type: 'success', msg: t.saveSuccess });
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
-      // 🚀 هذا السطر سيفضح لنا سبب المشكلة الحقيقي في الكونسول
       console.error("❌ الخطأ التفصيلي من قاعدة البيانات:", error);
       setSaveStatus({ type: 'error', msg: "Error saving estimate" });
     }
@@ -493,11 +501,12 @@ export default function CostCalculator() {
     }
     const updatedName = customDevisName.trim();
     if (user?.id) {
-      localStorage.setItem(`sasbtp_provider_devis_name_${user.id}`, updatedName);
+      const roleKey = isArchitectSpace ? 'architect' : 'provider';
+      localStorage.setItem(`sasbtp_${roleKey}_devis_name_${user.id}`, updatedName);
     }
-    const updatedProj = { ...selectedProviderProject, name: updatedName };
-    setSelectedProviderProject(updatedProj);
-    setProviderProjects(prev =>
+    const updatedProj = { ...selectedCustomProject, name: updatedName };
+    setSelectedCustomProject(updatedProj);
+    setCustomProjects(prev =>
       prev.map(p => (p.id === updatedProj.id ? updatedProj : p))
     );
     setIsEditingDevisName(false);
@@ -507,9 +516,14 @@ export default function CostCalculator() {
   const tvaAmount = subTotal * (globalTva / 100);
   const grandTotal = subTotal + tvaAmount;
 
-  // 🔗 المسارات الديناميكية للأزرار العليا لمنع الانقلاب القسري بين الحرفي والمقاول
-  const dashboardRoute = isProviderSpace ? '/v2/provider-dashboard' : '/v2/contractor-dashboard';
-  const secondaryRoute = isProviderSpace ? '/v2/provider-projects' : '/v2/project-path';
+  // 🔗 المسارات الديناميكية للأزرار العليا لمنع الانقلاب القسري بين الفضاءات الثلاث
+  const dashboardRoute = isArchitectSpace ? '/v2/architect-dashboard' 
+                       : isProviderSpace ? '/v2/provider-dashboard' 
+                       : '/v2/contractor-dashboard';
+                       
+  const secondaryRoute = isArchitectSpace ? '/v2/architect-projects' 
+                       : isProviderSpace ? '/v2/provider-projects' 
+                       : '/v2/project-path';
 
   return (
     <div className="animate-fade-in pb-24 max-w-6xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
@@ -519,18 +533,18 @@ export default function CostCalculator() {
             <LayoutDashboard size={18} /> {t.backDash}
           </Link>
           <Link to={secondaryRoute} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl font-bold transition-all backdrop-blur-sm">
-            {isProviderSpace ? <HardHat size={18} /> : <Map size={18} />} {t.backPath}
+            {isArchitectSpace ? <FolderKanban size={18} /> : isProviderSpace ? <HardHat size={18} /> : null} {t.backPath}
           </Link>
         </div>
         <div className={`text-center md:text-${isRtl ? 'right' : 'left'} w-full md:w-auto ${isRtl ? 'md:order-1' : ''}`}>
           <h1 className="text-3xl font-black text-white mb-2 flex items-center justify-center md:justify-start gap-2">💰 {t.title}</h1>
           <p className="text-blue-100 font-bold">{t.subtitle}</p>
           
-          {/* عرض الورش للمقاول أو التسعيرة/الورش المستقل للحرفي */}
+          {/* عرض الورش للمقاول أو التسعيرة/الورش المستقل للحرفي والمهندس */}
           {effectiveProject && (
             <div className="mt-4 inline-flex flex-wrap items-center gap-2 bg-white/10 px-4 py-1.5 rounded-full border border-white/20 text-white font-bold text-sm backdrop-blur-sm">
               <span>{t.devisLabel}</span>
-              {isProviderSpace ? (
+              {isIndependentSpace ? (
                 isEditingDevisName ? (
                   <div className="inline-flex items-center gap-1.5">
                     <input
@@ -551,16 +565,16 @@ export default function CostCalculator() {
                   </div>
                 ) : (
                   <div className="inline-flex items-center gap-2">
-                    {providerProjects.length > 1 ? (
+                    {customProjects.length > 1 ? (
                       <select
-                        value={selectedProviderProject.id}
+                        value={selectedCustomProject.id}
                         onChange={(e) => {
-                          const found = providerProjects.find(p => p.id === e.target.value);
-                          if (found) setSelectedProviderProject(found);
+                          const found = customProjects.find(p => p.id === e.target.value);
+                          if (found) setSelectedCustomProject(found);
                         }}
                         className="bg-transparent text-amber-300 font-black outline-none cursor-pointer"
                       >
-                        {providerProjects.map(p => (
+                        {customProjects.map(p => (
                           <option key={p.id} value={p.id} className="bg-slate-900 text-white">
                             {p.name}
                           </option>
@@ -574,7 +588,7 @@ export default function CostCalculator() {
                         setCustomDevisName(effectiveProject.name);
                         setIsEditingDevisName(true);
                       }}
-                      title="تعديل اسم التسعيرة / الزبون"
+                      title="تعديل الاسم"
                       className="text-white/80 hover:text-amber-300 transition-colors cursor-pointer"
                     >
                       <Edit3 size={14} />
