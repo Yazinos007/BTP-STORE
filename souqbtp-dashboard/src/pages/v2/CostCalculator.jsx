@@ -1,46 +1,88 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Link, useOutletContext, useLocation } from 'react-router-dom';
 import useProjectStore from '../../store/useProjectStore';
 import { Calculator, LayoutDashboard, Map, CheckCircle2, AlertCircle, HardHat, Edit3, FolderKanban } from 'lucide-react';
+
+// ⚡ ذاكرة تخزين فورية على مستوى الجلسة لمنع إعادة التحميل والوميض عند الخروج والدخول المتكرر
+const CALCULATOR_CACHE = {
+  user: null,
+  settingsLoaded: false,
+  currency: 'MAD',
+  globalTva: 20,
+  stagesData: {}, // تخزين عناصر كل مرحلة: { 1: [...], 2: [...], ... }
+  customProjectsByRole: {}
+};
 
 export default function CostCalculator() {
   const { isDarkMode, language = 'ar' } = useOutletContext();
   const location = useLocation();
   const isRtl = language === 'ar';
 
-  // 🔥 تحديد الفضاء الحالي بدقة (مقاول، حرفي، أو مهندس)
+  // 🔥 تحديد الفضاء الحالي بدقة منذ اللحظة الأولى (0ms)
   const currentRole = sessionStorage.getItem('sasbtp_v2_role');
   const isProviderSpace = location.pathname.includes('/provider') || currentRole === 'provider';
   const isArchitectSpace = location.pathname.includes('/architect') || currentRole === 'architect';
-  const isIndependentSpace = isProviderSpace || isArchitectSpace; // الفضاءات التي تحتاج عزلاً عن المقاول
+  const isIndependentSpace = isProviderSpace || isArchitectSpace;
+  const roleKey = isArchitectSpace ? 'architect' : isProviderSpace ? 'provider' : 'contractor';
 
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  
+  // دالة متزامنة لتحديد المشروع الافتراضي فوراً دون انتظار الشبكة (تمنع قفزة الاسم من Nouveau Projet إلى Nouveau Projet Architectural)
+  const getInitialIndependentProject = () => {
+    const defaultName = isArchitectSpace
+      ? (language === 'ar' ? 'مشروع هندسي جديد' : 'Nouveau Projet Architectural')
+      : (language === 'ar' ? 'تسعيرة زبون (Devis Pro)' : 'Devis Client Pro');
+
+    let savedCustomName = null;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(`sasbtp_${roleKey}_devis_name_`)) {
+          savedCustomName = localStorage.getItem(k);
+          break;
+        }
+      }
+    } catch (e) {}
+
+    return {
+      id: `${roleKey}-default-devis`,
+      name: savedCustomName || defaultName
+    };
+  };
+
   // 🚀 استدعاء الورش النشط (للمقاول فقط)
   const { activeProject } = useProjectStore();
 
-  // 🛠️ حالة خاصة بأوراش وتسعيرات الحرفي والمهندس (معزولة تماماً عن ورش المقاول)
-  const [customProjects, setCustomProjects] = useState([]);
-  const [selectedCustomProject, setSelectedCustomProject] = useState({
-    id: 'custom-default-devis',
-    name: language === 'ar' ? 'مشروع جديد' : 'Nouveau Projet'
+  // 🛠️ حالة خاصة بأوراش وتسعيرات الحرفي والمهندس تبدأ بقيمتها النهائية فوراً
+  const [customProjects, setCustomProjects] = useState(() => {
+    return CALCULATOR_CACHE.customProjectsByRole[roleKey] || [getInitialIndependentProject()];
   });
+
+  const [selectedCustomProject, setSelectedCustomProject] = useState(() => {
+    const cachedList = CALCULATOR_CACHE.customProjectsByRole[roleKey];
+    return cachedList && cachedList.length > 0 ? cachedList[0] : getInitialIndependentProject();
+  });
+
   const [customDevisName, setCustomDevisName] = useState('');
   const [isEditingDevisName, setIsEditingDevisName] = useState(false);
 
-  // الورش الفعلي المعتمد حسب الفضاء الحالي (عزل تام للمقاول عن البقية)
+  // الورش الفعلي المعتمد حسب الفضاء الحالي
   const effectiveProject = isIndependentSpace ? selectedCustomProject : activeProject;
-  
+
   const [selectedStage, setSelectedStage] = useState(1);
-  const [costItems, setCostItems] = useState([]);
-  const [estimate, setEstimate] = useState([]); 
-  const [inputs, setInputs] = useState({}); 
-  
-  const [globalTva, setGlobalTva] = useState(20);
-  const [currency, setCurrency] = useState('MAD');
+
+  // تهيئة العناصر من الكاش مباشرة لمنع ظهور "جاري التحميل..." عند الخروج والدخول
+  const [costItems, setCostItems] = useState(() => CALCULATOR_CACHE.stagesData[1] || []);
+  const [loading, setLoading] = useState(() => !CALCULATOR_CACHE.stagesData[1]);
+  const [user, setUser] = useState(() => CALCULATOR_CACHE.user);
+
+  const [estimate, setEstimate] = useState([]);
+  const [inputs, setInputs] = useState({});
+
+  const [globalTva, setGlobalTva] = useState(() => CALCULATOR_CACHE.globalTva);
+  const [currency, setCurrency] = useState(() => CALCULATOR_CACHE.currency);
   const [saveStatus, setSaveStatus] = useState(null);
+
+  const fetchLockRef = useRef(false);
 
   const t = {
     ar: {
@@ -232,110 +274,40 @@ export default function CostCalculator() {
   };
 
   const translateDB = (text) => {
-    // 🛡️ حماية ضد القيم الفارغة
     if (!text || typeof text !== 'string') return text; 
     if (language === 'ar') return text;
     const clean = text.trim();
-    // 1. محاولة التطابق التام أولاً (السرعة القصوى)
     if (dbTranslations[clean] && dbTranslations[clean][language]) {
       return dbTranslations[clean][language];
     }
-    // 2. السحر الجديد: الترتيب التكتيكي (من الأطول إلى الأقصر)
-    // يمنع الكلمات القصيرة (مثل: يوم، رخصة، كهرباء) من اختطاف الجمل الطويلة
     const sortedKeys = Object.keys(dbTranslations).sort((a, b) => b.length - a.length);
-    // 3. البحث الذكي الآمن
     for (const arKey of sortedKeys) {
       if (clean.includes(arKey)) return dbTranslations[arKey][language];
     }
-    return text; // إرجاع النص الأصلي إذا لم نجد له ترجمة
+    return text;
   };
 
   const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-800 shadow-md';
   const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
 
-  // 🛠️ جلب أوراش الحرفي أو المهندس المستقلة (لعزلهم تماماً عن المقاول)
+  // 🛠️ تحديث اسم المشروع الافتراضي عند تغيير اللغة دون تغيير الـ ID (حتى لا يعيد تحميل الصفحة)
   useEffect(() => {
     if (!isIndependentSpace) return;
-    const fetchIndependentProjects = async () => {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) return;
-
-      const roleKey = isArchitectSpace ? 'architect' : 'provider';
-      const defaultName = isArchitectSpace 
-        ? (language === 'ar' ? 'مشروع هندسي جديد' : 'Nouveau Projet Architectural')
-        : (language === 'ar' ? 'تسعيرة زبون (Devis Pro)' : 'Devis Client Pro');
-
-      const savedCustomName = localStorage.getItem(`sasbtp_${roleKey}_devis_name_${currentUser.id}`);
-      const defaultObj = {
-        id: `${roleKey}-default-devis`,
-        name: savedCustomName || defaultName
-      };
-
-      try {
-        const tableName = isArchitectSpace ? 'architect_projects' : 'provider_projects';
-        const { data: customData } = await supabase
-          .from(tableName)
-          .select('id, title, client_name')
-          .eq('user_id', currentUser.id)
-          .order('created_at', { ascending: false });
-
-        if (customData && customData.length > 0) {
-          const formatted = customData.map(p => ({
-            id: `${roleKey}_${p.id}`,
-            name: p.title || p.client_name || (isArchitectSpace ? 'Projet Architecte' : 'Chantier Artisan')
-          }));
-          setCustomProjects([defaultObj, ...formatted]);
-          setSelectedCustomProject(formatted[0]);
-          return;
-        }
-      } catch (err) {
-        // جداول المشاريع للمهندس أو الحرفي اختيارية، نستمر بالوضع الافتراضي
+    const updatedDefault = getInitialIndependentProject();
+    setSelectedCustomProject(prev => {
+      if (prev.id === `${roleKey}-default-devis`) {
+        return { ...prev, name: updatedDefault.name };
       }
-
-      setCustomProjects([defaultObj]);
-      setSelectedCustomProject(defaultObj);
-    };
-
-    fetchIndependentProjects();
-  }, [isIndependentSpace, isArchitectSpace, language]);
-
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (currentUser) setUser(currentUser);
-
-      try {
-        const { data: settings } = await supabase.from('platform_settings').select('*').limit(1).maybeSingle();
-        if (settings) {
-          if (settings.currency) setCurrency(settings.currency);
-          if (settings.tva) setGlobalTva(settings.tva);
-        }
-      } catch (e) { console.log('Using default settings'); }
-
-      await loadCostItems(selectedStage, currentUser);
-    };
-
-    fetchInitialData();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        loadCostItems(selectedStage, session.user);
-      } else {
-        setUser(null);
-        loadCostItems(selectedStage, null);
-      }
+      return prev;
     });
-
-    return () => { if (authListener) authListener.subscription.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStage, language, effectiveProject?.id, isIndependentSpace]);
+  }, [language, roleKey, isIndependentSpace]);
 
-  const loadCostItems = async (stageId, passedUser = user) => {
-    setLoading(true);
-    try {
-      // تفريغ الفاتورة إذا لم يكن هناك ورش نشط
+  // 🚀 جلب البيانات لمرة واحدة وبشكل نظيف دون وميض أو تكرار
+  useEffect(() => {
+    let isMounted = true;
+
+    const syncCalculatorData = async () => {
       if (!effectiveProject) {
         setCostItems([]);
         setEstimate([]);
@@ -344,61 +316,117 @@ export default function CostCalculator() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('cost_items')
-        .select('*')
-        .eq('is_active', true)
-        .eq('stage_id', stageId)
-        .order('sort_order', { ascending: true });
+      // 1. إذا كانت عناصر المرحلة موجودة في الكاش، نعرضها فوراً بدون شاشة تحميل
+      const cachedStageItems = CALCULATOR_CACHE.stagesData[selectedStage];
+      if (cachedStageItems) {
+        setCostItems(cachedStageItems);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
 
-      // 🚀 جلب الميزانية المحفوظة مسبقاً (مع عزل المهندس والحرفي عن المقاول تماماً)
-      let savedEstimates = [];
-      if (passedUser && effectiveProject) {
-        if (isIndependentSpace) {
-          const roleKey = isArchitectSpace ? 'architect' : 'provider';
-          const storageKey = `sasbtp_${roleKey}_est_${passedUser.id}_${effectiveProject.id}`;
-          const localSaved = localStorage.getItem(storageKey);
-          if (localSaved) {
-            try {
-              savedEstimates = JSON.parse(localSaved);
-              setEstimate(savedEstimates);
-            } catch (e) {
-              setEstimate([]);
+      try {
+        // 2. جلب المستخدم (من الكاش أو من Supabase لمرة واحدة)
+        let currentUser = CALCULATOR_CACHE.user;
+        if (!currentUser) {
+          const { data: { user: fetchedUser } } = await supabase.auth.getUser();
+          currentUser = fetchedUser;
+          CALCULATOR_CACHE.user = fetchedUser;
+        }
+        if (isMounted && currentUser) setUser(currentUser);
+
+        // 3. جلب إعدادات الضريبة والعملة لمرة واحدة فقط طوال الجلسة
+        if (!CALCULATOR_CACHE.settingsLoaded) {
+          try {
+            const { data: settings } = await supabase.from('platform_settings').select('*').limit(1).maybeSingle();
+            if (settings) {
+              if (settings.currency) {
+                CALCULATOR_CACHE.currency = settings.currency;
+                if (isMounted) setCurrency(settings.currency);
+              }
+              if (settings.tva) {
+                CALCULATOR_CACHE.globalTva = settings.tva;
+                if (isMounted) setGlobalTva(settings.tva);
+              }
+            }
+          } catch (e) {}
+          CALCULATOR_CACHE.settingsLoaded = true;
+        }
+
+        // 4. جلب التقديرات المحفوظة لهذا المشروع
+        let savedEstimates = [];
+        if (currentUser && effectiveProject) {
+          if (isIndependentSpace) {
+            const storageKey = `sasbtp_${roleKey}_est_${currentUser.id}_${effectiveProject.id}`;
+            const localSaved = localStorage.getItem(storageKey);
+            if (localSaved) {
+              try {
+                savedEstimates = JSON.parse(localSaved);
+              } catch (e) {
+                savedEstimates = [];
+              }
             }
           } else {
-            setEstimate([]);
-          }
-        } else {
-          const { data: estData } = await supabase
-            .from('user_estimates')
-            .select('details')
-            .eq('user_id', passedUser.id)
-            .eq('project_id', effectiveProject.id)
-            .maybeSingle();
-            
-          if (estData && estData.details) {
-            savedEstimates = estData.details;
-            setEstimate(savedEstimates);
-          } else {
-            setEstimate([]);
+            const { data: estData } = await supabase
+              .from('user_estimates')
+              .select('details')
+              .eq('user_id', currentUser.id)
+              .eq('project_id', effectiveProject.id)
+              .maybeSingle();
+
+            if (estData && estData.details) {
+              savedEstimates = estData.details;
+            }
           }
         }
-      }
 
-      if (!error && data && data.length > 0) {
-        setCostItems(data);
-        const newInputs = {};
-        data.forEach(item => {
-          const existing = savedEstimates.find(e => e.itemId === item.id);
-          newInputs[item.id] = { qty: existing ? existing.quantity : '', price: existing ? existing.unitPrice : '' };
-        });
-        setInputs(newInputs);
-      } else {
-        setCostItems([]);
+        if (isMounted) {
+          setEstimate(savedEstimates);
+        }
+
+        // 5. جلب عناصر المرحلة (أو استخدام الكاش مباشرة لتفادي التأخير)
+        let stageItems = cachedStageItems;
+        if (!stageItems) {
+          const { data, error } = await supabase
+            .from('cost_items')
+            .select('*')
+            .eq('is_active', true)
+            .eq('stage_id', selectedStage)
+            .order('sort_order', { ascending: true });
+
+          if (!error && data) {
+            stageItems = data;
+            CALCULATOR_CACHE.stagesData[selectedStage] = data;
+          } else {
+            stageItems = [];
+          }
+        }
+
+        if (isMounted) {
+          setCostItems(stageItems);
+          const newInputs = {};
+          stageItems.forEach(item => {
+            const existing = savedEstimates.find(e => e.itemId === item.id);
+            newInputs[item.id] = {
+              qty: existing ? existing.quantity : '',
+              price: existing ? existing.unitPrice : ''
+            };
+          });
+          setInputs(newInputs);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+        if (isMounted) setLoading(false);
       }
-    } catch (error) { console.error(error); }
-    setLoading(false);
-  };
+    };
+
+    syncCalculatorData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedStage, effectiveProject?.id, isIndependentSpace, roleKey]);
 
   const handleInputChange = (itemId, field, value) => {
     setInputs(prev => ({ ...prev, [itemId]: { ...prev[itemId], [field]: value } }));
@@ -437,9 +465,7 @@ export default function CostCalculator() {
     
     setSaveStatus({ type: 'loading', msg: t.saving });
     try {
-      // 🛠️ إذا كان في فضاء المهندس أو الحرفي: يتم الحفظ في مساحتهم المستقلة بعيداً عن جدول المقاول
       if (isIndependentSpace) {
-        const roleKey = isArchitectSpace ? 'architect' : 'provider';
         const storageKey = `sasbtp_${roleKey}_est_${user.id}_${effectiveProject.id}`;
         localStorage.setItem(storageKey, JSON.stringify(estimate));
         setSaveStatus({ type: 'success', msg: t.saveSuccess });
@@ -500,15 +526,16 @@ export default function CostCalculator() {
       return;
     }
     const updatedName = customDevisName.trim();
-    if (user?.id) {
-      const roleKey = isArchitectSpace ? 'architect' : 'provider';
-      localStorage.setItem(`sasbtp_${roleKey}_devis_name_${user.id}`, updatedName);
-    }
+    const uid = user?.id || 'default';
+    localStorage.setItem(`sasbtp_${roleKey}_devis_name_${uid}`, updatedName);
+
     const updatedProj = { ...selectedCustomProject, name: updatedName };
     setSelectedCustomProject(updatedProj);
-    setCustomProjects(prev =>
-      prev.map(p => (p.id === updatedProj.id ? updatedProj : p))
-    );
+    setCustomProjects(prev => {
+      const next = prev.map(p => (p.id === updatedProj.id ? updatedProj : p));
+      CALCULATOR_CACHE.customProjectsByRole[roleKey] = next;
+      return next;
+    });
     setIsEditingDevisName(false);
   };
 
@@ -540,7 +567,6 @@ export default function CostCalculator() {
           <h1 className="text-3xl font-black text-white mb-2 flex items-center justify-center md:justify-start gap-2">💰 {t.title}</h1>
           <p className="text-blue-100 font-bold">{t.subtitle}</p>
           
-          {/* عرض الورش للمقاول أو التسعيرة/الورش المستقل للحرفي والمهندس */}
           {effectiveProject && (
             <div className="mt-4 inline-flex flex-wrap items-center gap-2 bg-white/10 px-4 py-1.5 rounded-full border border-white/20 text-white font-bold text-sm backdrop-blur-sm">
               <span>{t.devisLabel}</span>
@@ -611,7 +637,6 @@ export default function CostCalculator() {
         </div>
       )}
 
-      {/* 🚀 إخفاء محتوى الحاسبة إذا لم يكن هناك ورش */}
       {!effectiveProject ? (
         <div className={`text-center py-16 rounded-3xl border-2 border-dashed font-bold ${isDarkMode ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
           {t.noProject}
