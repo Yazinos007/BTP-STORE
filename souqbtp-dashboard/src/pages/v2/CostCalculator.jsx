@@ -1,32 +1,36 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Link, useOutletContext, useLocation } from 'react-router-dom';
 import useProjectStore from '../../store/useProjectStore';
 import { Calculator, LayoutDashboard, Map, CheckCircle2, AlertCircle, HardHat, Edit3, FolderKanban } from 'lucide-react';
 
-// ⚡ ذاكرة تخزين فورية على مستوى الجلسة لمنع إعادة التحميل والوميض عند الخروج والدخول المتكرر
+// ⚡ ذاكرة تخزين فورية على مستوى الجلسة لمنع إعادة التحميل عند الخروج والدخول المتكرر
 const CALCULATOR_CACHE = {
   user: null,
   settingsLoaded: false,
   currency: 'MAD',
   globalTva: 20,
-  stagesData: {}, // تخزين عناصر كل مرحلة: { 1: [...], 2: [...], ... }
+  stagesData: {},
   customProjectsByRole: {}
 };
+
+// فاحص صيغة UUID لحماية قاعدة البيانات من خطأ 400 Bad Request
+const isValidUUID = (val) =>
+  typeof val === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
 
 export default function CostCalculator() {
   const { isDarkMode, language = 'ar' } = useOutletContext();
   const location = useLocation();
   const isRtl = language === 'ar';
 
-  // 🔥 تحديد الفضاء الحالي بدقة منذ اللحظة الأولى (0ms)
+  // 🔥 تحديد الفضاء الحالي بدقة منذ اللحظة الأولى
   const currentRole = sessionStorage.getItem('sasbtp_v2_role');
   const isProviderSpace = location.pathname.includes('/provider') || currentRole === 'provider';
   const isArchitectSpace = location.pathname.includes('/architect') || currentRole === 'architect';
   const isIndependentSpace = isProviderSpace || isArchitectSpace;
   const roleKey = isArchitectSpace ? 'architect' : isProviderSpace ? 'provider' : 'contractor';
 
-  // دالة متزامنة لتحديد المشروع الافتراضي فوراً دون انتظار الشبكة (تمنع قفزة الاسم من Nouveau Projet إلى Nouveau Projet Architectural)
   const getInitialIndependentProject = () => {
     const defaultName = isArchitectSpace
       ? (language === 'ar' ? 'مشروع هندسي جديد' : 'Nouveau Projet Architectural')
@@ -52,7 +56,7 @@ export default function CostCalculator() {
   // 🚀 استدعاء الورش النشط (للمقاول فقط)
   const { activeProject } = useProjectStore();
 
-  // 🛠️ حالة خاصة بأوراش وتسعيرات الحرفي والمهندس تبدأ بقيمتها النهائية فوراً
+  // 🛠️ حالة خاصة بأوراش وتسعيرات الحرفي والمهندس
   const [customProjects, setCustomProjects] = useState(() => {
     return CALCULATOR_CACHE.customProjectsByRole[roleKey] || [getInitialIndependentProject()];
   });
@@ -70,7 +74,6 @@ export default function CostCalculator() {
 
   const [selectedStage, setSelectedStage] = useState(1);
 
-  // تهيئة العناصر من الكاش مباشرة لمنع ظهور "جاري التحميل..." عند الخروج والدخول
   const [costItems, setCostItems] = useState(() => CALCULATOR_CACHE.stagesData[1] || []);
   const [loading, setLoading] = useState(() => !CALCULATOR_CACHE.stagesData[1]);
   const [user, setUser] = useState(() => CALCULATOR_CACHE.user);
@@ -81,8 +84,6 @@ export default function CostCalculator() {
   const [globalTva, setGlobalTva] = useState(() => CALCULATOR_CACHE.globalTva);
   const [currency, setCurrency] = useState(() => CALCULATOR_CACHE.currency);
   const [saveStatus, setSaveStatus] = useState(null);
-
-  const fetchLockRef = useRef(false);
 
   const t = {
     ar: {
@@ -119,7 +120,7 @@ export default function CostCalculator() {
       saving: "جاري الحفظ...",
       saveSuccess: "✅ تم حفظ التقدير بنجاح!",
       currency: "درهم",
-      noProject: "⚠️ يرجى إنشاء ورش أولاً لحفظ التقديرات!"
+      noProject: "⚠️ يرجى إنشاء ورش أولاً في لوحة القيادة لحفظ التقديرات!"
     },
     fr: {
       title: isArchitectSpace ? "Règle & Mesures" : (isProviderSpace ? "Calculateur Matériaux & Devis" : "Calculateur de Coûts"),
@@ -155,7 +156,7 @@ export default function CostCalculator() {
       saving: "Enregistrement...",
       saveSuccess: "✅ Estimation enregistrée avec succès !",
       currency: "MAD",
-      noProject: "⚠️ Veuillez créer un projet d'abord pour enregistrer les estimations !"
+      noProject: "⚠️ Veuillez créer un chantier d'abord pour enregistrer les estimations !"
     },
     en: {
       title: isArchitectSpace ? "Smart Ruler & Calculator" : (isProviderSpace ? "Material & Devis Calculator" : "Cost Calculator"),
@@ -290,12 +291,11 @@ export default function CostCalculator() {
   const cardBg = isDarkMode ? 'bg-slate-800/90 border-slate-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-800 shadow-md';
   const inputBg = isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800';
 
-  // 🛠️ تحديث اسم المشروع الافتراضي عند تغيير اللغة دون تغيير الـ ID (حتى لا يعيد تحميل الصفحة)
   useEffect(() => {
     if (!isIndependentSpace) return;
     const updatedDefault = getInitialIndependentProject();
     setSelectedCustomProject(prev => {
-      if (prev.id === `${roleKey}-default-devis`) {
+      if (prev.id === `${roleKey}-default-devis` && prev.name !== updatedDefault.name) {
         return { ...prev, name: updatedDefault.name };
       }
       return prev;
@@ -303,7 +303,7 @@ export default function CostCalculator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, roleKey, isIndependentSpace]);
 
-  // 🚀 جلب البيانات لمرة واحدة وبشكل نظيف دون وميض أو تكرار
+  // 🚀 جلب البيانات بدون أي ارتعاش أو أخطاء 400 / 404
   useEffect(() => {
     let isMounted = true;
 
@@ -316,7 +316,6 @@ export default function CostCalculator() {
         return;
       }
 
-      // 1. إذا كانت عناصر المرحلة موجودة في الكاش، نعرضها فوراً بدون شاشة تحميل
       const cachedStageItems = CALCULATOR_CACHE.stagesData[selectedStage];
       if (cachedStageItems) {
         setCostItems(cachedStageItems);
@@ -326,17 +325,18 @@ export default function CostCalculator() {
       }
 
       try {
-        // 2. جلب المستخدم (من الكاش أو من Supabase لمرة واحدة)
         let currentUser = CALCULATOR_CACHE.user;
         if (!currentUser) {
           const { data: { user: fetchedUser } } = await supabase.auth.getUser();
           currentUser = fetchedUser;
           CALCULATOR_CACHE.user = fetchedUser;
         }
-        if (isMounted && currentUser) setUser(currentUser);
+        if (isMounted && currentUser && (!user || user.id !== currentUser.id)) {
+          setUser(currentUser);
+        }
 
-        // 3. جلب إعدادات الضريبة والعملة لمرة واحدة فقط طوال الجلسة
         if (!CALCULATOR_CACHE.settingsLoaded) {
+          CALCULATOR_CACHE.settingsLoaded = true;
           try {
             const { data: settings } = await supabase.from('platform_settings').select('*').limit(1).maybeSingle();
             if (settings) {
@@ -350,13 +350,12 @@ export default function CostCalculator() {
               }
             }
           } catch (e) {}
-          CALCULATOR_CACHE.settingsLoaded = true;
         }
 
-        // 4. جلب التقديرات المحفوظة لهذا المشروع
+        // جلب التقديرات المحفوظة مع فحص UUID لمنع خطأ 400 Bad Request
         let savedEstimates = [];
         if (currentUser && effectiveProject) {
-          if (isIndependentSpace) {
+          if (isIndependentSpace || !isValidUUID(String(effectiveProject.id))) {
             const storageKey = `sasbtp_${roleKey}_est_${currentUser.id}_${effectiveProject.id}`;
             const localSaved = localStorage.getItem(storageKey);
             if (localSaved) {
@@ -384,7 +383,6 @@ export default function CostCalculator() {
           setEstimate(savedEstimates);
         }
 
-        // 5. جلب عناصر المرحلة (أو استخدام الكاش مباشرة لتفادي التأخير)
         let stageItems = cachedStageItems;
         if (!stageItems) {
           const { data, error } = await supabase
@@ -426,6 +424,7 @@ export default function CostCalculator() {
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStage, effectiveProject?.id, isIndependentSpace, roleKey]);
 
   const handleInputChange = (itemId, field, value) => {
@@ -465,7 +464,7 @@ export default function CostCalculator() {
     
     setSaveStatus({ type: 'loading', msg: t.saving });
     try {
-      if (isIndependentSpace) {
+      if (isIndependentSpace || !isValidUUID(String(effectiveProject.id))) {
         const storageKey = `sasbtp_${roleKey}_est_${user.id}_${effectiveProject.id}`;
         localStorage.setItem(storageKey, JSON.stringify(estimate));
         setSaveStatus({ type: 'success', msg: t.saveSuccess });
@@ -543,7 +542,7 @@ export default function CostCalculator() {
   const tvaAmount = subTotal * (globalTva / 100);
   const grandTotal = subTotal + tvaAmount;
 
-  // 🔗 المسارات الديناميكية للأزرار العليا لمنع الانقلاب القسري بين الفضاءات الثلاث
+  // مسارات وعناصر الأزرار العليا النظيفة لتفادي أخطاء JSX Parsing
   const dashboardRoute = isArchitectSpace ? '/v2/architect-dashboard' 
                        : isProviderSpace ? '/v2/provider-dashboard' 
                        : '/v2/contractor-dashboard';
@@ -552,18 +551,52 @@ export default function CostCalculator() {
                        : isProviderSpace ? '/v2/provider-projects' 
                        : '/v2/project-path';
 
+  const SecondaryIcon = isArchitectSpace ? FolderKanban : isProviderSpace ? HardHat : Map;
+  const headerAlignClass = isRtl ? 'text-center md:text-right md:order-1' : 'text-center md:text-left';
+  const headerBtnOrderClass = isRtl ? 'md:order-2' : '';
+
   return (
-    <div className="animate-fade-in pb-24 max-w-6xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
-      <div className="bg-gradient-to-r from-blue-800 to-blue-600 rounded-3xl p-6 md:p-8 mb-8 flex flex-col md:flex-row justify-between items-center gap-6 shadow-lg shadow-blue-900/20">
-        <div className={`flex gap-3 w-full md:w-auto ${isRtl ? 'md:order-2' : ''}`}>
+    <div className="calc-stable-scope pb-24 max-w-6xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* 🛡️ درع تثبيت الحاسبة لمنع ارتعاش وقفز الحاويات المتداخلة عند تحريك الماوس */}
+      <style>{`
+        .calc-stable-scope .calc-static-box,
+        .calc-stable-scope .calc-static-box:hover,
+        .calc-stable-scope .calc-static-box:active {
+          transform: none !important;
+          will-change: auto !important;
+        }
+        .calc-stable-scope .calc-item-row,
+        .calc-stable-scope .calc-item-row:hover,
+        .calc-stable-scope .calc-item-row:active {
+          transform: none !important;
+          will-change: auto !important;
+        }
+        .calc-stable-scope .calc-stage-card {
+          transform: translateY(0) scale(1) !important;
+          transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease !important;
+          will-change: auto !important;
+        }
+        .calc-stable-scope .calc-stage-card:hover {
+          transform: translateY(-2px) scale(1) !important;
+        }
+        .calc-stable-scope .calc-stage-card.calc-stage-active,
+        .calc-stable-scope .calc-stage-card.calc-stage-active:hover {
+          transform: translateY(-2px) scale(1) !important;
+          border-color: #fb923c !important;
+          box-shadow: 0 12px 24px -6px rgba(249, 115, 22, 0.25) !important;
+        }
+      `}</style>
+
+      <div className="calc-static-box bg-gradient-to-r from-blue-800 to-blue-600 rounded-3xl p-6 md:p-8 mb-8 flex flex-col md:flex-row justify-between items-center gap-6 shadow-lg shadow-blue-900/20">
+        <div className={`flex gap-3 w-full md:w-auto ${headerBtnOrderClass}`}>
           <Link to={dashboardRoute} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl font-bold transition-all backdrop-blur-sm">
             <LayoutDashboard size={18} /> {t.backDash}
           </Link>
           <Link to={secondaryRoute} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl font-bold transition-all backdrop-blur-sm">
-            {isArchitectSpace ? <FolderKanban size={18} /> : isProviderSpace ? <HardHat size={18} /> : null} {t.backPath}
+            <SecondaryIcon size={18} /> {t.backPath}
           </Link>
         </div>
-        <div className={`text-center md:text-${isRtl ? 'right' : 'left'} w-full md:w-auto ${isRtl ? 'md:order-1' : ''}`}>
+        <div className={`${headerAlignClass} w-full md:w-auto`}>
           <h1 className="text-3xl font-black text-white mb-2 flex items-center justify-center md:justify-start gap-2">💰 {t.title}</h1>
           <p className="text-blue-100 font-bold">{t.subtitle}</p>
           
@@ -630,7 +663,7 @@ export default function CostCalculator() {
       </div>
 
       {saveStatus && (
-        <div className={`p-4 rounded-2xl mb-6 font-bold flex items-center gap-3 animate-fade-in ${
+        <div className={`p-4 rounded-2xl mb-6 font-bold flex items-center gap-3 ${
           saveStatus.type === 'error' ? 'bg-red-100 text-red-700' : saveStatus.type === 'loading' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
         }`}>
           {saveStatus.type === 'error' ? <AlertCircle /> : <CheckCircle2 />} {saveStatus.msg}
@@ -638,7 +671,7 @@ export default function CostCalculator() {
       )}
 
       {!effectiveProject ? (
-        <div className={`text-center py-16 rounded-3xl border-2 border-dashed font-bold ${isDarkMode ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
+        <div className={`calc-static-box text-center py-16 rounded-3xl border-2 border-dashed font-bold ${isDarkMode ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
           {t.noProject}
         </div>
       ) : (
@@ -650,10 +683,10 @@ export default function CostCalculator() {
                 <div 
                   key={stage.id} 
                   onClick={() => setSelectedStage(stage.id)}
-                  className={`p-6 rounded-2xl border-4 cursor-pointer transition-all duration-300 text-center flex flex-col items-center justify-center gap-3 ${
+                  className={`calc-stage-card p-6 rounded-2xl border-4 cursor-pointer text-center flex flex-col items-center justify-center gap-3 ${
                     isActive 
-                      ? 'border-orange-400 bg-orange-50/50 shadow-lg transform scale-105 z-10' 
-                      : `border-transparent hover:border-blue-200 hover:-translate-y-1 shadow-sm ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`
+                      ? 'calc-stage-active border-orange-400 bg-orange-50/50 shadow-lg z-10' 
+                      : `border-transparent hover:border-blue-200 shadow-sm ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`
                   }`}
                 >
                   <span className="text-4xl drop-shadow-sm">{stage.icon}</span>
@@ -662,11 +695,11 @@ export default function CostCalculator() {
                     <p className={`text-xs font-bold ${isActive ? 'text-orange-600' : 'text-slate-400'}`}>{stage.desc}</p>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
 
-          <div className={`p-6 md:p-8 rounded-3xl border mb-8 shadow-sm ${cardBg}`}>
+          <div className={`calc-static-box p-6 md:p-8 rounded-3xl border mb-8 shadow-sm min-h-[420px] ${cardBg}`}>
             <h2 className="text-2xl font-black text-blue-600 mb-2">{t.stagePrefix} {t.stages.find(s => s.id === selectedStage)?.name}</h2>
             <p className={`font-bold mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.stageSub}</p>
 
@@ -684,7 +717,7 @@ export default function CostCalculator() {
                   const rowTotal = (parseFloat(currentQty) || 0) * (parseFloat(currentPrice) || 0);
 
                   return (
-                    <div key={item.id} className={`p-5 rounded-2xl border-2 transition-colors ${isAdded ? 'border-emerald-200 bg-emerald-50/30' : (isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-slate-100 bg-slate-50')}`}>
+                    <div key={item.id} className={`calc-item-row p-5 rounded-2xl border-2 transition-colors ${isAdded ? 'border-emerald-200 bg-emerald-50/30' : (isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-slate-100 bg-slate-50')}`}>
                       <div className="flex justify-between items-start mb-4">
                         <h4 className={`font-black text-lg ${isDarkMode ? 'text-blue-400' : 'text-blue-800'}`}>{translateDB(item.name)}</h4>
                         <span className="font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-lg text-sm border border-emerald-500/20">
@@ -721,7 +754,7 @@ export default function CostCalculator() {
                         </div>
                         <button 
                           onClick={() => handleAddItem(item)}
-                          className={`w-full p-3 rounded-xl font-black text-white transition-all hover:-translate-y-1 shadow-md ${
+                          className={`w-full p-3 rounded-xl font-black text-white transition-colors shadow-md cursor-pointer ${
                             isAdded ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30'
                           }`}
                         >
@@ -729,31 +762,31 @@ export default function CostCalculator() {
                         </button>
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             )}
           </div>
 
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-700 rounded-3xl p-6 md:p-10 shadow-2xl shadow-purple-900/30 text-white">
+          <div className="calc-static-box bg-gradient-to-br from-indigo-500 to-purple-700 rounded-3xl p-6 md:p-10 shadow-2xl shadow-purple-900/30 text-white">
             <h2 className="text-2xl font-black mb-6 flex items-center gap-2">📊 {t.summaryTitle}</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20">
+              <div className="calc-static-box bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20">
                 <div className="text-sm font-bold opacity-80 mb-2">{t.ht}</div>
                 <div className="text-3xl font-black">{subTotal.toLocaleString()} {t.currency}</div>
               </div>
-              <div className="bg-orange-500/20 backdrop-blur-sm rounded-2xl p-6 text-center border border-orange-400/30">
+              <div className="calc-static-box bg-orange-500/20 backdrop-blur-sm rounded-2xl p-6 text-center border border-orange-400/30">
                 <div className="text-sm font-bold opacity-80 mb-2">{t.tvaLabel} {globalTva}%)</div>
                 <div className="text-3xl font-black text-orange-300">{tvaAmount.toLocaleString()} {t.currency}</div>
               </div>
-              <div className="bg-emerald-500/20 backdrop-blur-sm rounded-2xl p-6 text-center border border-emerald-400/30">
+              <div className="calc-static-box bg-emerald-500/20 backdrop-blur-sm rounded-2xl p-6 text-center border border-emerald-400/30">
                 <div className="text-sm font-bold opacity-80 mb-2">{t.ttc}</div>
                 <div className="text-3xl font-black text-emerald-300">{grandTotal.toLocaleString()} {t.currency}</div>
               </div>
             </div>
 
-            <div className="bg-white text-slate-800 rounded-2xl p-6 shadow-inner">
+            <div className="calc-static-box bg-white text-slate-800 rounded-2xl p-6 shadow-inner">
               <h3 className="font-black text-blue-800 mb-4 text-lg">{t.estDetails}</h3>
               
               {estimate.length === 0 ? (
@@ -776,10 +809,10 @@ export default function CostCalculator() {
             <button 
               onClick={handleSaveEstimate}
               disabled={estimate.length === 0 || saveStatus?.type === 'loading'}
-              className={`w-full mt-6 py-4 rounded-xl font-black text-lg transition-all shadow-xl ${
+              className={`w-full mt-6 py-4 rounded-xl font-black text-lg transition-colors shadow-xl ${
                 estimate.length === 0 
                   ? 'bg-white/20 text-white/50 cursor-not-allowed' 
-                  : 'bg-blue-900 hover:bg-blue-950 text-white hover:-translate-y-1 shadow-black/20'
+                  : 'bg-blue-900 hover:bg-blue-950 text-white shadow-black/20 cursor-pointer'
               }`}
             >
               {saveStatus?.type === 'loading' ? t.saving : t.saveBtn}
