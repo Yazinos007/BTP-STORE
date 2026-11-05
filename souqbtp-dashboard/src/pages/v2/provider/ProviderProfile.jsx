@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import useSettingsStore from '../../../store/useSettingsStore';
-import { User, Eye, Save, Star, MapPin, Phone, CheckCircle2, AlertCircle, Info, Briefcase, FileText, Clock } from 'lucide-react';
+import { 
+  User, Eye, Save, Star, MapPin, Phone, CheckCircle2, AlertCircle, 
+  Info, Briefcase, FileText, Clock, X, ShieldCheck, HardHat, Image 
+} from 'lucide-react';
 
 const translations = {
   ar: {
@@ -26,7 +30,13 @@ const translations = {
     saveBtn: "حفظ وتحديث ملفي العام",
     savingBtn: "جاري الحفظ...",
     successMsg: "تم الحفظ بنجاح! تم تحديث بياناتك وستظهر الآن في ملفك العام للزوار.",
-    errorMsg: "حدث خطأ أثناء حفظ البيانات."
+    errorMsg: "حدث خطأ أثناء حفظ البيانات.",
+    // نصوص نافذة معاينة الملف العام
+    previewModalBadge: "معاينة حية لملفك كما يراه الزبناء",
+    verifiedArtisan: "حرفي معتمد في منصة SasBTP",
+    emptySection: "لم تتم إضافة معلومات في هذا القسم بعد.",
+    viewPortfolioBtn: "عرض معرض أعمالي (Portfolio)",
+    closePreviewBtn: "إغلاق المعاينة"
   },
   fr: {
     pageTitle: "Mon Profil et Paramètres d'Affichage",
@@ -50,7 +60,13 @@ const translations = {
     saveBtn: "Enregistrer et mettre à jour",
     savingBtn: "Enregistrement...",
     successMsg: "Enregistré avec succès ! Vos données sont maintenant visibles par les visiteurs.",
-    errorMsg: "Une erreur est survenue lors de l'enregistrement."
+    errorMsg: "Une erreur est survenue lors de l'enregistrement.",
+    // نصوص نافذة معاينة الملف العام
+    previewModalBadge: "Aperçu en direct de votre profil public",
+    verifiedArtisan: "Artisan Vérifié SasBTP",
+    emptySection: "Aucune information renseignée pour le moment.",
+    viewPortfolioBtn: "Voir Mon Portfolio",
+    closePreviewBtn: "Fermer l'aperçu"
   },
   en: {
     pageTitle: "My Profile and Display Settings",
@@ -74,21 +90,29 @@ const translations = {
     saveBtn: "Save and Update Public Profile",
     savingBtn: "Saving...",
     successMsg: "Saved successfully! Your data is updated and visible on your public profile.",
-    errorMsg: "An error occurred while saving."
+    errorMsg: "An error occurred while saving.",
+    // نصوص نافذة معاينة الملف العام
+    previewModalBadge: "Live Preview of Your Public Profile",
+    verifiedArtisan: "Verified SasBTP Artisan",
+    emptySection: "No information provided in this section yet.",
+    viewPortfolioBtn: "View My Portfolio",
+    closePreviewBtn: "Close Preview"
   }
 };
 
 export default function ProviderProfile() {
   const { language = 'ar' } = useSettingsStore();
+  const navigate = useNavigate();
   const isRtl = language === 'ar';
   const t = translations[language] || translations.ar;
 
   const [providerId, setProviderId] = useState(null);
-  const [basicInfo, setBasicInfo] = useState({ full_name: '', city: '', phone: '', rating: 0 });
+  const [basicInfo, setBasicInfo] = useState({ full_name: '', city: '', phone: '', rating: 0, specialty: '' });
   const [formData, setFormData] = useState({ bio_text: '', experience_text: '', terms_text: '', quick_info: '' });
   
   const [isSaving, setIsSaving] = useState(false);
   const [alertMsg, setAlertMsg] = useState({ show: false, type: '', text: '' });
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // جلب البيانات من قاعدة البيانات عند التحميل
   useEffect(() => {
@@ -96,7 +120,7 @@ export default function ProviderProfile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('providers')
         .select('*')
         .eq('user_id', user.id)
@@ -105,10 +129,11 @@ export default function ProviderProfile() {
       if (data) {
         setProviderId(data.id);
         setBasicInfo({
-          full_name: data.full_name || '',
+          full_name: data.full_name || user.user_metadata?.full_name || 'SasBTP Artisan',
           city: data.city || 'غير محددة',
           phone: data.phone || '',
-          rating: data.rating || 0
+          rating: data.rating || 0,
+          specialty: data.specialty || data.category || ''
         });
         setFormData({
           bio_text: data.bio_text || '',
@@ -167,8 +192,9 @@ export default function ProviderProfile() {
           {t.pageTitle}
         </h1>
         <button 
-          onClick={() => providerId && window.open(`/profile.php?id=${providerId}`, '_blank')}
-          className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors shadow-sm"
+          type="button"
+          onClick={() => setShowPreviewModal(true)}
+          className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors shadow-sm cursor-pointer"
         >
           <Eye className="w-4 h-4" />
           {t.previewBtn}
@@ -258,7 +284,7 @@ export default function ProviderProfile() {
             <button 
               type="submit" 
               disabled={isSaving}
-              className="w-full py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-black text-lg shadow-[0_4px_15px_rgba(234,88,12,0.3)] transition-transform hover:-translate-y-1 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-black text-lg shadow-[0_4px_15px_rgba(234,88,12,0.3)] transition-transform hover:-translate-y-1 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
             >
               <Save className="w-5 h-5" />
               {isSaving ? t.savingBtn : t.saveBtn}
@@ -315,6 +341,132 @@ export default function ProviderProfile() {
         </div>
 
       </div>
+
+      {/* ========================================================= */}
+      {/* 👁️ نافذة معاينة الملف العام للحرفي (تعمل داخل فضاء الحرفي مباشرة) */}
+      {/* ========================================================= */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl my-8 animate-fade-in">
+            
+            {/* شريط علوي للمعاينة */}
+            <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 px-6 py-5 text-white relative">
+              <div className="flex items-center justify-between mb-4">
+                <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider bg-black/25 px-3 py-1 rounded-full border border-white/20">
+                  <Eye className="w-3.5 h-3.5" />
+                  {t.previewModalBadge}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowPreviewModal(false)}
+                  className="w-9 h-9 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 pt-2">
+                <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-start">
+                  <div className="w-20 h-20 rounded-2xl bg-white text-orange-600 font-black text-3xl flex items-center justify-center shadow-lg border-4 border-white/30 shrink-0">
+                    {basicInfo.full_name ? basicInfo.full_name.charAt(0).toUpperCase() : <HardHat className="w-10 h-10" />}
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                      <h2 className="text-2xl font-black text-white">{basicInfo.full_name || 'SasBTP Artisan'}</h2>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-black bg-emerald-500 text-white px-2.5 py-0.5 rounded-full shadow-sm">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        {t.verifiedArtisan}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-2 text-sm font-bold text-orange-50">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" /> {basicInfo.city}
+                      </span>
+                      {basicInfo.phone && (
+                        <span className="flex items-center gap-1" dir="ltr">
+                          <Phone className="w-4 h-4" /> {basicInfo.phone}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/15 backdrop-blur-md border border-white/25 px-4 py-2.5 rounded-2xl flex items-center gap-2 shrink-0">
+                  <Star className="w-6 h-6 text-amber-300 fill-amber-300" />
+                  <span className="text-2xl font-black text-white">{Number(basicInfo.rating).toFixed(1)}</span>
+                  <span className="text-xs text-orange-100 font-bold">/ 5.0</span>
+                </div>
+              </div>
+            </div>
+
+            {/* محتوى الملف العام */}
+            <div className="p-6 md:p-8 space-y-5 max-h-[65vh] overflow-y-auto bg-slate-50/60">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h4 className="font-black text-blue-900 text-sm mb-2 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-orange-500" /> {t.bioLabel}
+                </h4>
+                <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line font-medium">
+                  {formData.bio_text ? formData.bio_text : <span className="text-slate-400 italic">{t.emptySection}</span>}
+                </p>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h4 className="font-black text-blue-900 text-sm mb-2 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-orange-500" /> {t.expLabel}
+                </h4>
+                <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line font-medium">
+                  {formData.experience_text ? formData.experience_text : <span className="text-slate-400 italic">{t.emptySection}</span>}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                  <h4 className="font-black text-blue-900 text-sm mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-orange-500" /> {t.termsLabel}
+                  </h4>
+                  <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line font-medium">
+                    {formData.terms_text ? formData.terms_text : <span className="text-slate-400 italic">{t.emptySection}</span>}
+                  </p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                  <h4 className="font-black text-blue-900 text-sm mb-2 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-orange-500" /> {t.quickLabel}
+                  </h4>
+                  <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line font-medium">
+                    {formData.quick_info ? formData.quick_info : <span className="text-slate-400 italic">{t.emptySection}</span>}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* أزرار التحكم السفلية */}
+            <div className="px-6 py-4 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPreviewModal(false);
+                  navigate('/v2/provider-portfolio');
+                }}
+                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <Image className="w-4 h-4" />
+                {t.viewPortfolioBtn}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowPreviewModal(false)}
+                className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+              >
+                {t.closePreviewBtn}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
