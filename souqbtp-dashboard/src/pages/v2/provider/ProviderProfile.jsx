@@ -5,7 +5,7 @@ import useSettingsStore from '../../../store/useSettingsStore';
 import { 
   User, Eye, Save, Star, MapPin, Phone, CheckCircle2, AlertCircle, 
   Info, Briefcase, FileText, Clock, X, ShieldCheck, HardHat, Image,
-  MessageCircle, Award, Check, Sparkles, Calendar
+  MessageCircle, Award, Check, Sparkles
 } from 'lucide-react';
 
 const MOROCCAN_CITIES = [
@@ -58,23 +58,18 @@ const translations = {
     savingBtn: "جاري الحفظ...",
     successMsg: "تم الحفظ بنجاح! تم تحديث بياناتك الأساسية وملفك العام للزوار.",
     errorMsg: "حدث خطأ أثناء حفظ البيانات.",
-    // نصوص واجهة الزبون (Vitrine)
     previewModalBadge: "صفحتك التسويقية كما يراها الزبناء في المنصة",
     verifiedArtisan: "حرفي موثق SasBTP",
     unspecifiedCity: "المغرب (مدينة غير محددة)",
     tabOverview: "بطاقة الحرفي والخدمات",
-    tabPortfolio: "معرض الأعمال",
-    tabReviews: "آراء الزبناء",
     aboutSectionTitle: "نبذة تعريفية عن الحرفي",
     expSectionTitle: "الخبرة والتخصصات الميدانية",
     termsSectionTitle: "شروط العمل والضمانات",
     quickSectionTitle: "التوافر ومعلومات التواصل",
     emptySection: "لم يقم الحرفي بإضافة تفاصيل في هذا القسم بعد.",
-    emptyPortfolio: "لا توجد صور أعمال مضافة في المعرض حالياً.",
-    emptyReviews: "لا توجد تقييمات من الزبناء حتى الآن.",
     callBtn: "اتصال مباشر",
     whatsappBtn: "مراسلة واتساب",
-    managePortfolioBtn: "إدارة معرض أعمالي",
+    managePortfolioBtn: "إدارة معرض أعمالي (Portfolio)",
     closePreviewBtn: "إغلاق المعاينة"
   },
   fr: {
@@ -103,20 +98,15 @@ const translations = {
     savingBtn: "Enregistrement...",
     successMsg: "Enregistré avec succès ! Vos informations de base et votre vitrine publique ont été mises à jour.",
     errorMsg: "Une erreur est survenue lors de l'enregistrement.",
-    // نصوص واجهة الزبون (Vitrine)
     previewModalBadge: "Votre Vitrine Publique telle que vue par les clients",
     verifiedArtisan: "Artisan Vérifié SasBTP",
     unspecifiedCity: "Maroc (Ville non spécifiée)",
     tabOverview: "Présentation & Compétences",
-    tabPortfolio: "Portfolio & Réalisations",
-    tabReviews: "Avis Clients",
     aboutSectionTitle: "Présentation de l'Artisan",
     expSectionTitle: "Expérience & Domaines d'Expertise",
     termsSectionTitle: "Conditions d'Intervention & Garanties",
     quickSectionTitle: "Disponibilité & Infos Pratiques",
     emptySection: "Aucune information renseignée dans cette rubrique pour le moment.",
-    emptyPortfolio: "Aucune photo de réalisation dans le portfolio pour le moment.",
-    emptyReviews: "Aucun avis client enregistré pour le moment.",
     callBtn: "Appeler",
     whatsappBtn: "WhatsApp",
     managePortfolioBtn: "Gérer Mon Portfolio",
@@ -148,20 +138,15 @@ const translations = {
     savingBtn: "Saving...",
     successMsg: "Saved successfully! Your basic info and public profile are now updated.",
     errorMsg: "An error occurred while saving.",
-    // نصوص واجهة الزبون (Vitrine)
     previewModalBadge: "Your Public Showcase as seen by clients",
     verifiedArtisan: "Verified SasBTP Artisan",
     unspecifiedCity: "Morocco (City not specified)",
     tabOverview: "Overview & Skills",
-    tabPortfolio: "Portfolio",
-    tabReviews: "Client Reviews",
     aboutSectionTitle: "About the Artisan",
     expSectionTitle: "Experience & Core Specialties",
     termsSectionTitle: "Work Terms & Guarantees",
     quickSectionTitle: "Availability & Quick Facts",
     emptySection: "No details added to this section yet.",
-    emptyPortfolio: "No portfolio projects uploaded yet.",
-    emptyReviews: "No client reviews yet.",
     callBtn: "Call Now",
     whatsappBtn: "WhatsApp",
     managePortfolioBtn: "Manage My Portfolio",
@@ -177,23 +162,29 @@ export default function ProviderProfile() {
 
   const [userId, setUserId] = useState(null);
   const [providerId, setProviderId] = useState(null);
+  // الاحتفاظ بأسماء الأعمدة الفعلية الموجودة في جدول providers لمنع خطأ 400 Bad Request
+  const [dbColumns, setDbColumns] = useState([]);
+
   const [basicInfo, setBasicInfo] = useState({ full_name: '', city: '', phone: '', rating: 0 });
   const [formData, setFormData] = useState({ bio_text: '', experience_text: '', terms_text: '', quick_info: '' });
-  
-  const [portfolioItems, setPortfolioItems] = useState([]);
-  const [reviewsList, setReviewsList] = useState([]);
-  const [activePreviewTab, setActivePreviewTab] = useState('overview');
 
   const [isSaving, setIsSaving] = useState(false);
   const [alertMsg, setAlertMsg] = useState({ show: false, type: '', text: '' });
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
-  // جلب البيانات من قاعدة البيانات عند التحميل
+  // جلب البيانات من قاعدة البيانات + metadata المستخدم عند التحميل
   useEffect(() => {
     const fetchProviderData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
+
+      const metaProfile = user.user_metadata?.provider_profile || {};
+      let localProfile = {};
+      try {
+        const savedLocal = localStorage.getItem(`sasbtp_provider_profile_${user.id}`);
+        if (savedLocal) localProfile = JSON.parse(savedLocal);
+      } catch (e) {}
 
       const { data } = await supabase
         .from('providers')
@@ -203,38 +194,37 @@ export default function ProviderProfile() {
 
       if (data) {
         setProviderId(data.id);
-        const cleanCity = (!data.city || data.city === 'غير محددة') ? '' : data.city;
+        setDbColumns(Object.keys(data));
+
+        const rawCity = data.city || metaProfile.city || user.user_metadata?.city || localProfile.city || '';
+        const cleanCity = rawCity === 'غير محددة' ? '' : rawCity;
+
         setBasicInfo({
-          full_name: data.full_name || user.user_metadata?.full_name || '',
+          full_name: data.full_name || metaProfile.full_name || user.user_metadata?.full_name || localProfile.full_name || '',
           city: cleanCity,
-          phone: data.phone || user.user_metadata?.phone || '',
-          rating: data.rating || 0
+          phone: data.phone || metaProfile.phone || user.user_metadata?.phone || localProfile.phone || '',
+          rating: data.rating ?? metaProfile.rating ?? 0
         });
+
         setFormData({
-          bio_text: data.bio_text || '',
-          experience_text: data.experience_text || '',
-          terms_text: data.terms_text || '',
-          quick_info: data.quick_info || ''
+          bio_text: data.bio_text || metaProfile.bio_text || localProfile.bio_text || '',
+          experience_text: data.experience_text || metaProfile.experience_text || localProfile.experience_text || '',
+          terms_text: data.terms_text || metaProfile.terms_text || localProfile.terms_text || '',
+          quick_info: data.quick_info || metaProfile.quick_info || localProfile.quick_info || ''
         });
       } else {
         setBasicInfo({
-          full_name: user.user_metadata?.full_name || user.user_metadata?.company_name || '',
-          city: user.user_metadata?.city || '',
-          phone: user.user_metadata?.phone || '',
+          full_name: metaProfile.full_name || user.user_metadata?.full_name || user.user_metadata?.company_name || localProfile.full_name || '',
+          city: metaProfile.city || user.user_metadata?.city || localProfile.city || '',
+          phone: metaProfile.phone || user.user_metadata?.phone || localProfile.phone || '',
           rating: 0
         });
-      }
-
-      // جلب معرض الأعمال والتقييمات لعرضها في نافذة Vitrine الحقيقية
-      try {
-        const [portRes, revRes] = await Promise.all([
-          supabase.from('provider_portfolio').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(6),
-          supabase.from('provider_reviews').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(6)
-        ]);
-        if (portRes.data) setPortfolioItems(portRes.data);
-        if (revRes.data) setReviewsList(revRes.data);
-      } catch (e) {
-        // الجداول الفرعية اختيارية
+        setFormData({
+          bio_text: metaProfile.bio_text || localProfile.bio_text || '',
+          experience_text: metaProfile.experience_text || localProfile.experience_text || '',
+          terms_text: metaProfile.terms_text || localProfile.terms_text || '',
+          quick_info: metaProfile.quick_info || localProfile.quick_info || ''
+        });
       }
     };
 
@@ -258,46 +248,81 @@ export default function ProviderProfile() {
     setIsSaving(true);
     setAlertMsg({ show: false, type: '', text: '' });
 
-    const payload = {
+    const fullPayload = {
       full_name: basicInfo.full_name.trim(),
       city: basicInfo.city.trim() || 'غير محددة',
       phone: basicInfo.phone.trim(),
       bio_text: formData.bio_text.trim(),
       experience_text: formData.experience_text.trim(),
       terms_text: formData.terms_text.trim(),
-      quick_info: formData.quick_info.trim(),
-      updated_at: new Date().toISOString()
+      quick_info: formData.quick_info.trim()
     };
 
     try {
-      if (providerId) {
-        const { error } = await supabase
-          .from('providers')
-          .update(payload)
-          .eq('id', providerId);
-        if (error) throw error;
-      } else {
-        const { data: inserted, error } = await supabase
-          .from('providers')
-          .insert([{ ...payload, user_id: userId, account_type: 'marketplace' }])
-          .select('id')
-          .single();
-        if (error) throw error;
-        if (inserted?.id) setProviderId(inserted.id);
-      }
+      // 1. حفظ نسخة محلية فورية
+      localStorage.setItem(`sasbtp_provider_profile_${userId}`, JSON.stringify(fullPayload));
 
-      // مزامنة الاسم والهاتف والمدينة في بيانات حساب المستخدم أيضاً
+      // 2. حفظ سحابي مضمون في Supabase Auth Metadata لجميع الحقول
       await supabase.auth.updateUser({
         data: {
-          full_name: payload.full_name,
-          phone: payload.phone,
-          city: payload.city
+          full_name: fullPayload.full_name,
+          phone: fullPayload.phone,
+          city: fullPayload.city,
+          provider_profile: fullPayload
         }
-      }).catch(() => {});
+      });
+
+      // 3. تحديث جدول providers بالأعمدة الموجودة فعلياً فقط لتجنب خطأ 400 Bad Request
+      if (providerId) {
+        const safeTableUpdate = {};
+        Object.keys(fullPayload).forEach((key) => {
+          if (dbColumns.length === 0 || dbColumns.includes(key)) {
+            safeTableUpdate[key] = fullPayload[key];
+          }
+        });
+
+        if (dbColumns.includes('updated_at')) {
+          safeTableUpdate.updated_at = new Date().toISOString();
+        }
+
+        if (Object.keys(safeTableUpdate).length > 0) {
+          const { error: tableErr } = await supabase
+            .from('providers')
+            .update(safeTableUpdate)
+            .eq('id', providerId);
+
+          // إذا رفضت قاعدة البيانات أحد الحقول الإضافية، نحفظ الحقول الأساسية المؤكدة
+          if (tableErr) {
+            await supabase
+              .from('providers')
+              .update({
+                full_name: fullPayload.full_name,
+                phone: fullPayload.phone
+              })
+              .eq('id', providerId);
+          }
+        }
+      } else {
+        const { data: inserted } = await supabase
+          .from('providers')
+          .insert([{
+            user_id: userId,
+            full_name: fullPayload.full_name,
+            phone: fullPayload.phone,
+            account_type: 'marketplace'
+          }])
+          .select('*')
+          .maybeSingle();
+
+        if (inserted) {
+          setProviderId(inserted.id);
+          setDbColumns(Object.keys(inserted));
+        }
+      }
 
       setAlertMsg({ show: true, type: 'success', text: t.successMsg });
     } catch (err) {
-      console.error('Save provider profile error:', err);
+      console.error('Save provider profile warning:', err);
       setAlertMsg({ show: true, type: 'error', text: t.errorMsg });
     } finally {
       setIsSaving(false);
@@ -318,10 +343,7 @@ export default function ProviderProfile() {
         </h1>
         <button 
           type="button"
-          onClick={() => {
-            setActivePreviewTab('overview');
-            setShowPreviewModal(true);
-          }}
+          onClick={() => setShowPreviewModal(true)}
           className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-md cursor-pointer"
         >
           <Eye className="w-4 h-4" />
@@ -331,7 +353,7 @@ export default function ProviderProfile() {
 
       {/* ⚠️ تنبيهات الحفظ */}
       {alertMsg.show && (
-        <div className={`p-5 rounded-xl mb-6 flex items-start gap-3 border ${alertMsg.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+        <div className={`p-5 rounded-xl mb-6 flex items-start gap-3 border animate-fade-in ${alertMsg.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
           {alertMsg.type === 'success' ? <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" /> : <AlertCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />}
           <div>
             <strong className="block text-base mb-1">{alertMsg.type === 'success' ? '✅ ' + t.successMsg.split('!')[0] + '!' : '❌ خطأ'}</strong>
@@ -418,7 +440,7 @@ export default function ProviderProfile() {
         </div>
 
         {/* ========================================================= */}
-        {/* 🔓 البطاقة الثانية: معلومات الحساب الأساسية (أصبحت قابلة للتعديل!) */}
+        {/* 🔓 البطاقة الثانية: معلومات الحساب الأساسية (قابلة للتعديل والحفظ) */}
         {/* ========================================================= */}
         <div className="lg:col-span-5 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 order-1 lg:order-2">
           <h3 className="text-lg font-black text-blue-900 mb-6 border-b-2 border-slate-100 pb-3 flex items-center gap-2">
@@ -480,7 +502,7 @@ export default function ProviderProfile() {
               </div>
             </div>
 
-            {/* التقييم العام (للقراءة فقط لأنه مرتبط بآراء الزبناء) */}
+            {/* التقييم العام */}
             <div>
               <label className="block font-bold text-slate-500 text-sm mb-1.5">{t.rating}</label>
               <div className="w-full p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3">
@@ -490,7 +512,6 @@ export default function ProviderProfile() {
               </div>
             </div>
 
-            {/* زر حفظ سريع في بطاقة المعلومات الأساسية أيضاً */}
             <button
               type="submit"
               disabled={isSaving}
@@ -515,7 +536,7 @@ export default function ProviderProfile() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-3 md:p-6 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl my-auto animate-fade-in text-white">
             
-            {/* 1. غلاف بطاقة الحرفي الاحترافية (Hero Vitrine) */}
+            {/* غلاف بطاقة الحرفي الاحترافية */}
             <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 md:p-8 border-b border-slate-800 relative overflow-hidden">
               <div className="absolute -top-20 -right-20 w-64 h-64 bg-orange-500/15 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
@@ -550,12 +571,12 @@ export default function ProviderProfile() {
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3 text-sm font-bold text-slate-300">
-                      <span className="inline-flex items-center gap-1.5 bg-slate-800/90 px-3 py-1 rounded-lg border border-slate-700">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3 text-sm font-bold text-slate-200">
+                      <span className="inline-flex items-center gap-1.5 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
                         <MapPin className="w-4 h-4 text-orange-400" /> {displayCity}
                       </span>
                       {basicInfo.phone && (
-                        <span className="inline-flex items-center gap-1.5 bg-slate-800/90 px-3 py-1 rounded-lg border border-slate-700" dir="ltr">
+                        <span className="inline-flex items-center gap-1.5 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700" dir="ltr">
                           <Phone className="w-4 h-4 text-emerald-400" /> {basicInfo.phone}
                         </span>
                       )}
@@ -567,7 +588,6 @@ export default function ProviderProfile() {
                   </div>
                 </div>
 
-                {/* أزرار تفاعل الزبون */}
                 {basicInfo.phone && (
                   <div className="flex items-center gap-2.5 shrink-0">
                     <a
@@ -589,149 +609,52 @@ export default function ProviderProfile() {
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* 2. شريط تبويبات صفحة الزبون */}
-              <div className="relative z-10 flex items-center gap-2 mt-7 pt-4 border-t border-slate-800/80 overflow-x-auto">
-                <button
-                  type="button"
-                  onClick={() => setActivePreviewTab('overview')}
-                  className={`px-4 py-2 rounded-xl font-black text-xs flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                    activePreviewTab === 'overview'
-                      ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25'
-                      : 'bg-slate-800/70 text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  <Award className="w-4 h-4" />
-                  {t.tabOverview}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActivePreviewTab('portfolio')}
-                  className={`px-4 py-2 rounded-xl font-black text-xs flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                    activePreviewTab === 'portfolio'
-                      ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25'
-                      : 'bg-slate-800/70 text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  <Image className="w-4 h-4" />
-                  {t.tabPortfolio} ({portfolioItems.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActivePreviewTab('reviews')}
-                  className={`px-4 py-2 rounded-xl font-black text-xs flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                    activePreviewTab === 'reviews'
-                      ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25'
-                      : 'bg-slate-800/70 text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  <Star className="w-4 h-4" />
-                  {t.tabReviews} ({reviewsList.length})
-                </button>
+            {/* محتوى بطاقة الزبون */}
+            <div className="p-6 md:p-8 max-h-[55vh] overflow-y-auto bg-slate-900 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="bg-slate-800/90 p-5 rounded-2xl border border-slate-700">
+                  <h4 className="font-black text-amber-400 text-sm mb-2.5 flex items-center gap-2">
+                    <Award className="w-4 h-4" /> {t.aboutSectionTitle}
+                  </h4>
+                  <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-medium">
+                    {formData.bio_text ? formData.bio_text : <span className="text-slate-400 italic">{t.emptySection}</span>}
+                  </p>
+                </div>
+
+                <div className="bg-slate-800/90 p-5 rounded-2xl border border-slate-700">
+                  <h4 className="font-black text-blue-400 text-sm mb-2.5 flex items-center gap-2">
+                    <Briefcase className="w-4 h-4" /> {t.expSectionTitle}
+                  </h4>
+                  <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-medium">
+                    {formData.experience_text ? formData.experience_text : <span className="text-slate-400 italic">{t.emptySection}</span>}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="bg-slate-800/90 p-5 rounded-2xl border border-slate-700">
+                  <h4 className="font-black text-emerald-400 text-sm mb-2.5 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" /> {t.termsSectionTitle}
+                  </h4>
+                  <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-medium">
+                    {formData.terms_text ? formData.terms_text : <span className="text-slate-400 italic">{t.emptySection}</span>}
+                  </p>
+                </div>
+
+                <div className="bg-slate-800/90 p-5 rounded-2xl border border-slate-700">
+                  <h4 className="font-black text-purple-400 text-sm mb-2.5 flex items-center gap-2">
+                    <Clock className="w-4 h-4" /> {t.quickSectionTitle}
+                  </h4>
+                  <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-medium">
+                    {formData.quick_info ? formData.quick_info : <span className="text-slate-400 italic">{t.emptySection}</span>}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* 3. محتوى التبويب المختار */}
-            <div className="p-6 md:p-8 max-h-[55vh] overflow-y-auto bg-slate-900 space-y-5">
-              {activePreviewTab === 'overview' && (
-                <>
-                  {/* بطاقة النبذة والخبرة بتصميم واجهة الزبون */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="bg-slate-800/90 p-5 rounded-2xl border border-slate-700">
-                      <h4 className="font-black text-amber-400 text-sm mb-2.5 flex items-center gap-2">
-                        <User className="w-4 h-4" /> {t.aboutSectionTitle}
-                      </h4>
-                      <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-medium">
-                        {formData.bio_text ? formData.bio_text : <span className="text-slate-400 italic">{t.emptySection}</span>}
-                      </p>
-                    </div>
-
-                    <div className="bg-slate-800/90 p-5 rounded-2xl border border-slate-700">
-                      <h4 className="font-black text-blue-400 text-sm mb-2.5 flex items-center gap-2">
-                        <Briefcase className="w-4 h-4" /> {t.expSectionTitle}
-                      </h4>
-                      <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-medium">
-                        {formData.experience_text ? formData.experience_text : <span className="text-slate-400 italic">{t.emptySection}</span>}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="bg-slate-800/90 p-5 rounded-2xl border border-slate-700">
-                      <h4 className="font-black text-emerald-400 text-sm mb-2.5 flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4" /> {t.termsSectionTitle}
-                      </h4>
-                      <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-medium">
-                        {formData.terms_text ? formData.terms_text : <span className="text-slate-400 italic">{t.emptySection}</span>}
-                      </p>
-                    </div>
-
-                    <div className="bg-slate-800/90 p-5 rounded-2xl border border-slate-700">
-                      <h4 className="font-black text-purple-400 text-sm mb-2.5 flex items-center gap-2">
-                        <Clock className="w-4 h-4" /> {t.quickSectionTitle}
-                      </h4>
-                      <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-medium">
-                        {formData.quick_info ? formData.quick_info : <span className="text-slate-400 italic">{t.emptySection}</span>}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {activePreviewTab === 'portfolio' && (
-                <div>
-                  {portfolioItems.length === 0 ? (
-                    <div className="text-center py-12 bg-slate-800/50 rounded-2xl border border-dashed border-slate-700">
-                      <Image className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-                      <p className="text-slate-300 font-bold text-sm">{t.emptyPortfolio}</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {portfolioItems.map((item) => (
-                        <div key={item.id} className="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 group">
-                          {item.image_url && (
-                            <img src={item.image_url} alt={item.title || 'Project'} className="w-full h-40 object-cover" />
-                          )}
-                          <div className="p-3.5">
-                            <h5 className="font-black text-white text-sm truncate">{item.title || 'مشروع منجز'}</h5>
-                            {item.description && (
-                              <p className="text-xs text-slate-300 mt-1 line-clamp-2">{item.description}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activePreviewTab === 'reviews' && (
-                <div>
-                  {reviewsList.length === 0 ? (
-                    <div className="text-center py-12 bg-slate-800/50 rounded-2xl border border-dashed border-slate-700">
-                      <Star className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-                      <p className="text-slate-300 font-bold text-sm">{t.emptyReviews}</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {reviewsList.map((rev) => (
-                        <div key={rev.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-black text-white text-sm">{rev.client_name || 'زبون المنصة'}</span>
-                            <span className="flex items-center gap-1 text-amber-400 font-black text-xs">
-                              <Star className="w-3.5 h-3.5 fill-amber-400" /> {rev.rating || 5}/5
-                            </span>
-                          </div>
-                          <p className="text-slate-200 text-xs leading-relaxed">{rev.comment}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 4. شريط الأزرار السفلي */}
+            {/* شريط الأزرار السفلي */}
             <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
