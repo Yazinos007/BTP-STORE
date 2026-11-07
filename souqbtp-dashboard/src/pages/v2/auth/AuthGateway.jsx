@@ -4,45 +4,49 @@ import { supabase } from '../../../lib/supabase';
 import { bindReferralOnSignup } from '../../../lib/referralHandler';
 import useSettingsStore from '../../../store/useSettingsStore';
 import { 
-  Mail, Lock, User, Phone, Loader2, CheckCircle2, AlertCircle, 
+  Lock, Phone, Loader2, CheckCircle2, AlertCircle, 
   Mic, MicOff, Volume2, Camera, Sparkles, ShieldCheck, KeyRound, 
-  MapPin, ArrowRight, Eye, EyeOff
+  Eye, EyeOff, Globe
 } from 'lucide-react';
 
-// 🏙️ قائمة المدن المغربية للالتقاط الصوتي الذكي
-const MOROCCAN_CITIES_MAP = [
-  { keywords: ['الدار البيضاء', 'كازا', 'casablanca', 'casa'], label: 'الدار البيضاء - Casablanca' },
-  { keywords: ['الرباط', 'رباط', 'rabat'], label: 'الرباط - Rabat' },
-  { keywords: ['مراكش', 'marrakech', 'marrakesh'], label: 'مراكش - Marrakech' },
-  { keywords: ['طنجة', 'طنجه', 'tanger', 'tangier'], label: 'طنجة - Tanger' },
-  { keywords: ['فاس', 'fes', 'fès'], label: 'فاس - Fès' },
-  { keywords: ['أكادير', 'اكادير', 'agadir'], label: 'أكادير - Agadir' },
-  { keywords: ['مكناس', 'meknes', 'meknès'], label: 'مكناس - Meknès' },
-  { keywords: ['وجدة', 'وجده', 'oujda'], label: 'وجدة - Oujda' },
-  { keywords: ['بني ملال', 'بنيملال', 'beni mellal', 'béni mellal'], label: 'بني ملال - Béni Mellal' },
-  { keywords: ['قصبة تادلة', 'تادلة', 'تادلا', 'kasbah tadla', 'tadla'], label: 'قصبة تادلة - Kasbah Tadla' },
-  { keywords: ['خنيفرة', 'خنيفره', 'khenifra', 'khénifra'], label: 'خنيفرة - Khénifra' },
-  { keywords: ['خريبكة', 'خريبكه', 'khouribga'], label: 'خريبكة - Khouribga' },
-  { keywords: ['القنيطرة', 'قنيطرة', 'kenitra', 'kénitra'], label: 'القنيطرة - Kénitra' },
-  { keywords: ['تطوان', 'tetouan', 'tétouan'], label: 'تطوان - Tétouan' },
-  { keywords: ['الجديدة', 'جديدة', 'el jadida', 'jadida'], label: 'الجديدة - El Jadida' },
-  { keywords: ['آسفي', 'اسفي', 'safi'], label: 'آسفي - Safi' },
-  { keywords: ['الناظور', 'ناظور', 'nador'], label: 'الناظور - Nador' },
-  { keywords: ['المحمدية', 'محمدية', 'mohammedia'], label: 'المحمدية - Mohammedia' },
-  { keywords: ['ورزازات', 'ouarzazate'], label: 'ورزازات - Ouarzazate' },
-  { keywords: ['العيون', 'laayoune', 'laâyoune'], label: 'العيون - Laâyoune' }
+// 🏙️ خريطة المدن المغربية للالتقاط الصوتي بالدارجة والترجمة التلقائية
+const MOROCCAN_CITIES_DATA = [
+  { id: 'casablanca', ar: 'الدار البيضاء', fr: 'Casablanca', en: 'Casablanca', keywords: ['الدار البيضاء', 'كازا', 'casablanca', 'casa'] },
+  { id: 'rabat', ar: 'الرباط', fr: 'Rabat', en: 'Rabat', keywords: ['الرباط', 'رباط', 'rabat'] },
+  { id: 'marrakech', ar: 'مراكش', fr: 'Marrakech', en: 'Marrakech', keywords: ['مراكش', 'marrakech', 'marrakesh'] },
+  { id: 'tanger', ar: 'طنجة', fr: 'Tanger', en: 'Tangier', keywords: ['طنجة', 'طنجه', 'tanger', 'tangier'] },
+  { id: 'fes', ar: 'فاس', fr: 'Fès', en: 'Fes', keywords: ['فاس', 'fes', 'fès'] },
+  { id: 'agadir', ar: 'أكادير', fr: 'Agadir', en: 'Agadir', keywords: ['أكادير', 'اكادير', 'agadir'] },
+  { id: 'meknes', ar: 'مكناس', fr: 'Meknès', en: 'Meknes', keywords: ['مكناس', 'meknes', 'meknès'] },
+  { id: 'oujda', ar: 'وجدة', fr: 'Oujda', en: 'Oujda', keywords: ['وجدة', 'وجده', 'oujda'] },
+  { id: 'beni_mellal', ar: 'بني ملال', fr: 'Béni Mellal', en: 'Beni Mellal', keywords: ['بني ملال', 'بنيملال', 'beni mellal', 'béni mellal'] },
+  { id: 'kasbah_tadla', ar: 'قصبة تادلة', fr: 'Kasbah Tadla', en: 'Kasbah Tadla', keywords: ['قصبة تادلة', 'تادلة', 'تادلا', 'kasbah tadla', 'tadla'] },
+  { id: 'khenifra', ar: 'خنيفرة', fr: 'Khénifra', en: 'Khenifra', keywords: ['خنيفرة', 'خنيفره', 'khenifra', 'khénifra'] },
+  { id: 'khouribga', ar: 'خريبكة', fr: 'Khouribga', en: 'Khouribga', keywords: ['خريبكة', 'خريبكه', 'khouribga'] },
+  { id: 'kenitra', ar: 'القنيطرة', fr: 'Kénitra', en: 'Kenitra', keywords: ['القنيطرة', 'قنيطرة', 'kenitra', 'kénitra'] },
+  { id: 'tetouan', ar: 'تطوان', fr: 'Tétouan', en: 'Tetouan', keywords: ['تطوان', 'tetouan', 'tétouan'] },
+  { id: 'el_jadida', ar: 'الجديدة', fr: 'El Jadida', en: 'El Jadida', keywords: ['الجديدة', 'جديدة', 'el jadida', 'jadida'] },
+  { id: 'safi', ar: 'آسفي', fr: 'Safi', en: 'Safi', keywords: ['آسفي', 'اسفي', 'safi'] },
+  { id: 'nador', ar: 'الناظور', fr: 'Nador', en: 'Nador', keywords: ['الناظور', 'ناظور', 'nador'] },
+  { id: 'mohammedia', ar: 'المحمدية', fr: 'Mohammedia', en: 'Mohammedia', keywords: ['المحمدية', 'محمدية', 'mohammedia'] },
+  { id: 'ouarzazate', ar: 'ورزازات', fr: 'Ouarzazate', en: 'Ouarzazate', keywords: ['ورزازات', 'ouarzazate'] },
+  { id: 'laayoune', ar: 'العيون', fr: 'Laâyoune', en: 'Laayoune', keywords: ['العيون', 'laayoune', 'laâyoune'] }
 ];
 
-// 🛠️ التخصصات البصرية للحرفيين بالصور والأيقونات الكبيرة
+// 🛠️ التخصصات البصرية للحرفيين + خيار "حرفة أخرى"
 const ARTISAN_SPECIALTIES = [
   { id: 'macon', icon: '🧱', ar: 'بناي / أعمال البناء', fr: 'Maçon / Gros Œuvres', en: 'Mason / Construction', keywords: ['بناي', 'بناء', 'ضالة', 'ياجور', 'maçon', 'macon', 'construction'] },
   { id: 'plombier', icon: '🚰', ar: 'بلومبي / رصاص وسباكة', fr: 'Plombier / Sanitaire', en: 'Plumber / Sanitary', keywords: ['بلومبي', 'سباك', 'رصاص', 'ماء', 'قوادس', 'plombier', 'plomberie'] },
   { id: 'electricien', icon: '⚡', ar: 'تريسيان / كهرباء البناء', fr: 'Électricien Bâtiment', en: 'Electrician', keywords: ['تريسيان', 'كهربائي', 'كهرباء', 'ضو', 'ضوء', 'électricien', 'electricien'] },
-  { id: 'peintre', icon: '🎨', ar: 'صباغ / ديكور وواجهات', fr: 'Peintre & Décoration', en: 'Painter & Decor', keywords: ['صباغ', 'صباغة', 'صباغه', 'خياط', 'peintre', 'peinture'] },
-  { id: 'carreleur', icon: '⬜', ar: 'زلايجي / رخام وسيراميك', fr: 'Carreleur & Marbre', en: 'Tiler & Marble', keywords: ['زلايجي', 'زليج', 'رخام', 'سيراميك', 'carreleur', 'carrelage', 'zellige'] },
+  { id: 'peintre', icon: '🎨', ar: 'صباغ / ديكور وواجهات', fr: 'Peintre & Décoration', en: 'Painter & Decor', keywords: ['صباغ', 'صباغة', 'صباغه', 'خياط', 'دهان', 'peintre', 'peinture'] },
+  { id: 'carreleur', icon: '⬜', ar: 'زلايجي / رخام وسيراميك', fr: 'Carreleur & Marbre', en: 'Tiler & Marble', keywords: ['زلايجي', 'زليج', 'رخام', 'سيراميك', 'فايونص', 'carreleur', 'carrelage', 'zellige'] },
   { id: 'platrier', icon: '🏛️', ar: 'جباس / أسقف وديكور جبس', fr: 'Plâtrier & Faux Plafond', en: 'Plaster & Ceiling', keywords: ['جباس', 'جبس', 'قبص', 'بلافو', 'plâtrier', 'platrier', 'plâtre'] },
   { id: 'menuisier', icon: '🪵', ar: 'نجار خشب وألمنيوم', fr: 'Menuisier Bois & Alu', en: 'Wood & Alu Carpenter', keywords: ['نجار', 'خشب', 'ألمنيوم', 'المنيوم', 'menuisier', 'aluminium'] },
-  { id: 'ferronnier', icon: '🔩', ar: 'حداد / تلحيم وشباك', fr: 'Ferronnier & Soudure', en: 'Blacksmith & Welder', keywords: ['حداد', 'سودور', 'حديد', 'ferronnier', 'soudure'] }
+  { id: 'ferronnier', icon: '🔩', ar: 'حداد / تلحيم وشباك', fr: 'Ferronnier & Soudure', en: 'Blacksmith & Welder', keywords: ['حداد', 'سودور', 'حديد', 'تلحيم', 'ferronnier', 'soudure'] },
+  { id: 'etancheite', icon: '🛡️', ar: 'عزل وإيتانشيتي', fr: 'Étanchéité & Isolation', en: 'Waterproofing', keywords: ['عزل', 'ايتانشيتي', 'إيتانشيتي', 'زفت', 'étanchéité', 'isolation'] },
+  { id: 'clim_solaire', icon: '☀️', ar: 'تكييف وطاقة شمسية', fr: 'Climatisation & Solaire', en: 'HVAC & Solar', keywords: ['تكييف', 'كليما', 'طاقة شمسية', 'climatisation', 'solaire'] },
+  { id: 'verrier', icon: '🪟', ar: 'زجاج ومرايا وواجهات', fr: 'Vitrerie & Miroiterie', en: 'Glass & Glazing', keywords: ['زجاج', 'جاج', 'مرايا', 'vitrerie', 'verre'] },
+  { id: 'other', icon: '➕', ar: 'حرفة أخرى (حددها)', fr: 'Autre Métier (Préciser)', en: 'Other Trade (Specify)', keywords: [] }
 ];
 
 // 🏪 أنواع حسابات الموردين والتجار
@@ -53,24 +57,22 @@ const SUPPLIER_TYPES = [
 
 const translations = {
   ar: {
-    roleClientTitle: "مقاول / صاحب مشروع (شركة, مقاولة)",
+    roleClientTitle: "مقاول / صاحب مشروع",
     roleProviderTitle: "معلم / حرفي",
     roleArchitectTitle: "مهندس معماري",
-    roleSupplierTitle: "مورد مواد بناء",
-    msgProvider: "يمكنك الآن إنشاء حسابك فوراً بالصوت أو الكتابة في ثوانٍ، أو الانتقال لصفحة المعلمين التفصيلية.",
-    btnProvider: "👷‍♂️ أو الانتقال لصفحة تسجيل المعلمين الكاملة",
+    roleSupplierTitle: "تاجر / مورد سلعة",
+    btnProvider: "👷‍♂️ الانتقال لصفحة تسجيل المعلمين الكاملة",
     msgArchitect: "بصفتك مهندساً، يتطلب حسابك إدخال 'رقم الهيئة' و'مكتب الدراسات' لتفعيل ميزات الرقابة الهندسية.",
     btnArchitect: "📐 الانتقال لصفحة تسجيل المهندسين",
-    msgSupplier: "يمكنك تسجيل متجرك أو شركتك فوراً بالصوت أو الكتابة، أو الانتقال لصفحة الموردين المتقدمة.",
-    btnSupplier: "🧱 أو الانتقال لصفحة تسجيل الموردين الكاملة",
-    portalSubtitle: "سجل دخولك أو أنشئ حسابك بالكتابة أو التحدث الصوتي الذكي",
-    tabRegister: "إنشاء حساب",
+    btnSupplier: "🧱 الانتقال لصفحة تسجيل الموردين الكاملة",
+    portalSubtitle: "سجل دخولك أو أنشئ حسابك بالكتابة أو بالتحدث بالدارجة المغربية",
+    tabRegister: "إنشاء حساب جديد",
     tabLogin: "تسجيل الدخول",
     emailOrPhoneLabel: "رقم الهاتف أو البريد الإلكتروني",
     emailOrPhonePlaceholder: "0612345678 أو example@email.com",
-    emailLabel: "البريد الإلكتروني (اختياري مع الهاتف)",
+    emailLabel: "البريد الإلكتروني (اختياري - يكفي رقم الهاتف)",
     passwordOrPinLabel: "الرمز السري (4 أرقام PIN) أو كلمة المرور",
-    loginBtn: "دخول آمن",
+    loginBtn: "دخول آمن للمنصة",
     forgotPassword: "نسيت الرمز السري أو كلمة المرور؟",
     iAmHereAs: "أنا هنا بصفتي:",
     fullNameLabel: "الاسم الكامل أو اسم المحل",
@@ -78,40 +80,38 @@ const translations = {
     phonePlaceholder: "مثال: 0612345678",
     cityLabel: "المدينة",
     cityPlaceholder: "مثال: قصبة تادلة، الدار البيضاء...",
-    specialtyLabel: "اختر حرفتك / تخصصك بالصورة:",
+    specialtyLabel: "اختر حرفتك بالصورة (أو اضغط + لحرفة أخرى):",
+    customSpecialtyPlace: "اكتب أو انطق اسم حرفتك أو تجارتك هنا...",
     supplierTypeLabel: "اختر نوع نشاطك التجاري:",
     registerBtn: "إنشاء حسابي ودخول المنصة الآن",
     errInvalidLogin: "رقم الهاتف/البريد أو الرمز السري غير صحيح.",
     successLogin: "✅ تم تسجيل الدخول بنجاح! جاري التوجيه...",
-    errEmailExists: "هذا الرقم أو البريد الإلكتروني مسجل مسبقاً. يرجى تسجيل الدخول.",
+    errEmailExists: "هذا الرقم أو البريد مسجل مسبقاً. يرجى تسجيل الدخول.",
     successRegister: "✅ تم إنشاء حسابك بنجاح وتجهيز ملفك المهني! جاري الدخول...",
     errUnexpected: "حدث خطأ أثناء التسجيل.",
-    // مزايا الصوت والذكاء الاصطناعي
     audioGuideBtn: "🔊 استمع للشرح الصوتي",
     audioGuideStop: "⏹️ إيقاف الصوت",
-    voiceSmartTitle: "🎙️ التسجيل الصوتي الذكي (بدون كتابة)",
-    voiceSmartDesc: "اضغط الميكروفون وتحدث بعفوية: قل اسمك، مدينتك، حرفتك، ورقم هاتفك",
-    voiceStartBtn: "اضغط وتحدث الآن",
-    voiceListeningBtn: "جاري الاستماع... تحدث الآن (اضغط للإيقاف)",
-    scanCardBtn: "📷 مسح كارط فيزيت / بطاقة مهنية",
-    scanningCardMsg: "جاري قراءة البطاقة بالذكاء الاصطناعي...",
+    voiceSmartTitle: "🎙️ التسجيل الصوتي الذكي (يفهم الدارجة المغربية والعربية)",
+    voiceSmartDesc: "اضغط الميكروفون وتكلم بالدارجة: قل اسمك، مدينتك، حرفتك، ورقم هاتفك وسنملأ الخانات بلغة سليمة!",
+    voiceStartBtn: "اضغط وتكلم بالدارجة أو العربية",
+    voiceListeningBtn: "جاري الاستماع... تكلم الآن",
+    scanCardBtn: "📷 تصوير كارط فيزيت",
+    scanningCardMsg: "جاري القراءة...",
     aiBioPreviewLabel: "✨ النبذة المهنية التي صاغها الذكاء الاصطناعي لملفك:",
     voiceLoginHint: "💡 يمكنك كتابة رقم هاتفك أو نطقه عبر زر الميكروفون",
     rateLimitLocked: "🔒 تم قفل المحاولات مؤقتاً لحماية حسابك بعد عدة محاولات خاطئة. يرجى الانتظار 15 دقيقة.",
-    pinSecurityHint: "🛡️ احفظ رمزاً سرياً بسيطاً (من 4 أرقام مثل 2580 أو كلمة مرور) لحماية حسابك من أي متطفل."
+    pinSecurityHint: "🛡️ احفظ رمزاً سرياً بسيطاً (من 4 أرقام مثل 2580) لحماية حسابك."
   },
   fr: {
-    roleClientTitle: "Entrepreneur / Maître d'ouvrage",
-    roleProviderTitle: "Artisan / Maître",
+    roleClientTitle: "Entrepreneur / Projet",
+    roleProviderTitle: "Artisan / Maâlem",
     roleArchitectTitle: "Architecte",
-    roleSupplierTitle: "Fournisseur Matériaux",
-    msgProvider: "Créez votre compte immédiatement par la voix ou par écrit, ou utilisez le formulaire détaillé.",
-    btnProvider: "👷‍♂️ Ou aller à l'inscription Artisan complète",
+    roleSupplierTitle: "Détaillant / Fournisseur",
+    btnProvider: "👷‍♂️ Aller à l'inscription Artisan complète",
     msgArchitect: "En tant qu'architecte, votre numéro d'ordre est requis pour activer les fonctionnalités.",
     btnArchitect: "📐 Aller à l'inscription Architecte",
-    msgSupplier: "Inscrivez votre magasin immédiatement par la voix ou par écrit.",
-    btnSupplier: "🧱 Ou aller à l'inscription Fournisseur complète",
-    portalSubtitle: "Connectez-vous ou inscrivez-vous par écrit ou par commande vocale IA",
+    btnSupplier: "🧱 Aller à l'inscription Fournisseur complète",
+    portalSubtitle: "Connectez-vous ou inscrivez-vous par écrit ou par la voix (Darija / FR)",
     tabRegister: "Créer un compte",
     tabLogin: "Se connecter",
     emailOrPhoneLabel: "Numéro de Téléphone ou Email",
@@ -122,11 +122,12 @@ const translations = {
     forgotPassword: "Code PIN ou mot de passe oublié ?",
     iAmHereAs: "Je suis ici en tant que :",
     fullNameLabel: "Nom Complet ou Nom du Magasin",
-    phoneLabel: "Téléphone (Principal pour connexion et contact)",
+    phoneLabel: "Téléphone (Principal pour connexion)",
     phonePlaceholder: "Ex : 0612345678",
     cityLabel: "Ville",
     cityPlaceholder: "Ex : Kasbah Tadla, Casablanca...",
-    specialtyLabel: "Choisissez votre métier en image :",
+    specialtyLabel: "Choisissez votre métier (ou + pour autre métier) :",
+    customSpecialtyPlace: "Écrivez ou dictez votre métier ou secteur...",
     supplierTypeLabel: "Type d'activité commerciale :",
     registerBtn: "Créer mon compte maintenant",
     errInvalidLogin: "Téléphone/Email ou code incorrect.",
@@ -136,29 +137,27 @@ const translations = {
     errUnexpected: "Une erreur est survenue lors de l'inscription.",
     audioGuideBtn: "🔊 Écouter le guide vocal",
     audioGuideStop: "⏹️ Arrêter l'audio",
-    voiceSmartTitle: "🎙️ Inscription Vocale IA (Sans clavier)",
-    voiceSmartDesc: "Appuyez sur le micro et dites votre nom, ville, métier et téléphone",
+    voiceSmartTitle: "🎙️ Inscription Vocale IA (Comprend Darija & Français)",
+    voiceSmartDesc: "Appuyez sur le micro et dites votre nom, ville, métier et téléphone en Darija ou Français",
     voiceStartBtn: "Appuyez et parlez",
-    voiceListeningBtn: "Écoute en cours... Parlez maintenant",
-    scanCardBtn: "📷 Scanner Carte de Visite / Carte Pro",
-    scanningCardMsg: "Lecture intelligente de la carte en cours...",
+    voiceListeningBtn: "Écoute en direct... Parlez",
+    scanCardBtn: "📷 Scanner Carte de Visite",
+    scanningCardMsg: "Lecture...",
     aiBioPreviewLabel: "✨ Présentation professionnelle rédigée par l'IA :",
     voiceLoginHint: "💡 Vous pouvez dicter votre numéro avec le micro",
-    rateLimitLocked: "🔒 Compte temporairement verrouillé par sécurité après plusieurs essais. Réessayez dans 15 min.",
-    pinSecurityHint: "🛡️ Choisissez un code PIN simple (4 chiffres ex: 2580) ou un mot de passe pour protéger votre compte."
+    rateLimitLocked: "🔒 Compte temporairement verrouillé par sécurité. Réessayez dans 15 min.",
+    pinSecurityHint: "🛡️ Choisissez un code PIN simple (4 chiffres ex: 2580) pour protéger votre compte."
   },
   en: {
-    roleClientTitle: "Contractor / Project Owner",
+    roleClientTitle: "Contractor / Project",
     roleProviderTitle: "Artisan / Craftsman",
     roleArchitectTitle: "Architect",
-    roleSupplierTitle: "Materials Supplier",
-    msgProvider: "Create your account instantly via voice or text, or visit the detailed page.",
-    btnProvider: "👷‍♂️ Or go to full Artisan Registration",
+    roleSupplierTitle: "Retailer / Supplier",
+    btnProvider: "👷‍♂️ Go to full Artisan Registration",
     msgArchitect: "As an architect, your registration number is required to activate engineering features.",
     btnArchitect: "📐 Go to Architect Registration",
-    msgSupplier: "Register your store instantly via voice or text.",
-    btnSupplier: "🧱 Or go to full Supplier Registration",
-    portalSubtitle: "Login or register via text or smart AI voice assistant",
+    btnSupplier: "🧱 Go to full Supplier Registration",
+    portalSubtitle: "Login or register via text or smart voice assistant (Darija / AR / EN)",
     tabRegister: "Create Account",
     tabLogin: "Login",
     emailOrPhoneLabel: "Phone Number or Email",
@@ -169,11 +168,12 @@ const translations = {
     forgotPassword: "Forgot PIN or Password?",
     iAmHereAs: "I am here as:",
     fullNameLabel: "Full Name or Store Name",
-    phoneLabel: "Phone Number (Primary for login & contact)",
+    phoneLabel: "Phone Number (Primary for login)",
     phonePlaceholder: "E.g., 0612345678",
     cityLabel: "City",
     cityPlaceholder: "E.g., Kasbah Tadla, Casablanca...",
-    specialtyLabel: "Select your trade visually:",
+    specialtyLabel: "Select your trade (or + for another trade):",
+    customSpecialtyPlace: "Type or speak your specific trade or sector...",
     supplierTypeLabel: "Select business type:",
     registerBtn: "Create My Account Now",
     errInvalidLogin: "Invalid phone/email or secret code.",
@@ -183,20 +183,19 @@ const translations = {
     errUnexpected: "An error occurred during registration.",
     audioGuideBtn: "🔊 Listen to Audio Guide",
     audioGuideStop: "⏹️ Stop Audio",
-    voiceSmartTitle: "🎙️ Smart AI Voice Registration",
+    voiceSmartTitle: "🎙️ Smart AI Voice Registration (Understands Darija & AR/EN)",
     voiceSmartDesc: "Tap the mic and say your name, city, trade, and phone number",
     voiceStartBtn: "Tap & Speak Now",
-    voiceListeningBtn: "Listening... Speak now",
-    scanCardBtn: "📷 Scan Business / Pro Card",
-    scanningCardMsg: "Scanning card with AI...",
+    voiceListeningBtn: "Listening live... Speak now",
+    scanCardBtn: "📷 Scan Business Card",
+    scanningCardMsg: "Scanning...",
     aiBioPreviewLabel: "✨ AI-Generated Professional Bio:",
     voiceLoginHint: "💡 You can speak your phone number using the mic",
-    rateLimitLocked: "🔒 Temporarily locked for security after multiple failed attempts. Wait 15 minutes.",
-    pinSecurityHint: "🛡️ Choose a simple 4-digit PIN (e.g., 2580) or password to protect your account."
+    rateLimitLocked: "🔒 Temporarily locked for security. Wait 15 minutes.",
+    pinSecurityHint: "🛡️ Choose a simple 4-digit PIN (e.g., 2580) to protect your account."
   }
 };
 
-// 🔢 تحويل الأرقام المنطوقة بالعربية/الدارجة/الفرنسية إلى أرقام رقمية
 const convertSpokenWordsToDigits = (text) => {
   if (!text) return '';
   let str = text.toLowerCase();
@@ -210,65 +209,73 @@ const convertSpokenWordsToDigits = (text) => {
     'ستة': '6', 'سته': '6', 'ست': '6', 'six': '6',
     'سبعة': '7', 'سبعه': '7', 'sept': '7', 'seven': '7',
     'ثمانية': '8', 'تمنية': '8', 'ثمانيه': '8', 'تمنيه': '8', 'huit': '8', 'eight': '8',
-    'تسعة': '9', 'تسعود': '9', 'تسعه': '9', 'neuf': '9', 'nine': '9'
+    'تسعة': '9', 'تسعود': '9', 'تسعه': '9', 'neuf': '9', 'nine': '9',
+    'عشرة': '10', 'عشره': '10', 'طنعش': '12', 'خمسطاش': '15', 'عشرين': '20'
   };
   Object.keys(wordMap).forEach((w) => {
     const regex = new RegExp(`(^|\\s)${w}(?=\\s|$)`, 'g');
     str = str.replace(regex, ` ${wordMap[w]} `);
   });
-  // تحويل الأرقام العربية الشرقية (٠-٩) إلى غربية (0-9)
   const easternDigits = '٠١٢٣٤٥٦٧٨٩';
   str = str.replace(/[٠-٩]/g, (d) => easternDigits.indexOf(d));
   return str;
 };
 
-// 🔐 توحيد رقم الهاتف إلى بريد مقنع داخلي (@sasbtp.ma) عند عدم إدخال بريد إلكتروني
 const resolveIdentifierToEmail = (identifier, fallbackPhone = '') => {
   const raw = (identifier || fallbackPhone || '').trim();
   if (raw.includes('@')) return raw.toLowerCase();
   let digits = convertSpokenWordsToDigits(raw).replace(/\D/g, '');
-  if (digits.startsWith('212') && digits.length >= 11) {
-    digits = '0' + digits.slice(3);
-  }
-  if (digits.startsWith('00212') && digits.length >= 13) {
-    digits = '0' + digits.slice(5);
-  }
+  if (digits.startsWith('212') && digits.length >= 11) digits = '0' + digits.slice(3);
+  if (digits.startsWith('00212') && digits.length >= 13) digits = '0' + digits.slice(5);
   return digits ? `${digits}@sasbtp.ma` : '';
 };
 
-// 🛡️ تغليف رمز PIN القصير (4 أو 5 أرقام) ليحقق شرط 6 أحرف في Supabase مع تشفير قوي
 const wrapPinOrPassword = (secret) => {
   const clean = (secret || '').trim();
-  if (clean.length > 0 && clean.length < 6) {
-    return `SAS#PIN#${clean}#BTP`;
-  }
+  if (clean.length > 0 && clean.length < 6) return `SAS#PIN#${clean}#BTP`;
   return clean;
+};
+
+const matchCityInLang = (rawInput, lang) => {
+  if (!rawInput) return null;
+  const lower = rawInput.toLowerCase().trim();
+  for (const c of MOROCCAN_CITIES_DATA) {
+    if (
+      c.keywords.some((k) => lower.includes(k)) ||
+      lower.includes(c.ar.toLowerCase()) ||
+      lower.includes(c.fr.toLowerCase())
+    ) {
+      return lang === 'ar' ? c.ar : lang === 'fr' ? c.fr : c.en;
+    }
+  }
+  return null;
 };
 
 export default function AuthGateway() {
   const navigate = useNavigate();
-  const { language = 'ar' } = useSettingsStore();
+  const { language, setLanguage } = useSettingsStore();
   const isRtl = language === 'ar';
   const t = translations[language] || translations.ar;
 
   const [activeTab, setActiveTab] = useState(() =>
     window.location.search.includes('ref=') ? 'register' : 'login'
   );
-  const [selectedRole, setSelectedRole] = useState('client'); // 'client' | 'provider' | 'architect' | 'supplier'
+  const [selectedRole, setSelectedRole] = useState('provider');
   const [selectedSpecialty, setSelectedSpecialty] = useState('macon');
+  const [customSpecialtyText, setCustomSpecialtyText] = useState('');
   const [selectedSupplierType, setSelectedSupplierType] = useState('retail');
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [alert, setAlert] = useState({ show: false, type: '', text: '' });
 
-  // حالات الصوت والمسح الذكي
   const [isSpeakingGuide, setIsSpeakingGuide] = useState(false);
-  const [listeningTarget, setListeningTarget] = useState(null); // 'smartAll' | 'loginId' | 'loginPin' | 'fullName' | 'phone' | 'city' | 'password'
+  const [listeningTarget, setListeningTarget] = useState(null);
   const [spokenTranscript, setSpokenTranscript] = useState('');
   const [isScanningCard, setIsScanningCard] = useState(false);
 
   const recognitionRef = useRef(null);
+  const cloudAudioRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -282,14 +289,66 @@ export default function AuthGateway() {
     experienceYears: ''
   });
 
+  // 🇲🇦 جعل اللغة العربية هي الافتراضية في أول مصافحة للحرفي أو المورد إذا لم يختر لغة بعد
   useEffect(() => {
+    const hasExplicitlyPickedLang = sessionStorage.getItem('sasbtp_auth_lang_picked');
+    if (!hasExplicitlyPickedLang && language !== 'ar') {
+      setLanguage('ar');
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+    }
     return () => {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (cloudAudioRef.current) {
+        cloudAudioRef.current.pause();
+        cloudAudioRef.current = null;
+      }
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch (e) {}
+        try { recognitionRef.current.abort(); } catch (e) {}
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 🔄 ترجمة النبذة والمدينة تلقائياً عند تغيير اللغة في أعلى واجهة الدخول
+  const handleSelectLanguage = (newLang) => {
+    sessionStorage.setItem('sasbtp_auth_lang_picked', 'true');
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (cloudAudioRef.current) {
+      cloudAudioRef.current.pause();
+      cloudAudioRef.current = null;
+    }
+    setIsSpeakingGuide(false);
+    setLanguage(newLang);
+
+    setFormData((prev) => {
+      const translatedCity = matchCityInLang(prev.city, newLang) || prev.city;
+      const specObj = ARTISAN_SPECIALTIES.find((s) => s.id === selectedSpecialty) || ARTISAN_SPECIALTIES[0];
+      const specTitle =
+        selectedSpecialty === 'other' && customSpecialtyText
+          ? customSpecialtyText
+          : newLang === 'ar'
+          ? specObj.ar
+          : newLang === 'fr'
+          ? specObj.fr
+          : specObj.en;
+
+      const updatedBio = prev.aiBio
+        ? newLang === 'ar'
+          ? `حرفي ومهني معتمد في منصة SasBTP متخصص في (${specTitle})${translatedCity ? ` بمدينة ${translatedCity}` : ''}. أضمن للزبناء إتقان العمل، احترام المواعيد، والجودة العالية.`
+          : newLang === 'fr'
+          ? `Artisan professionnel vérifié SasBTP spécialisé en (${specTitle})${translatedCity ? ` à ${translatedCity}` : ''}. Travail soigné, respect des délais et qualité garantie.`
+          : `Verified professional craftsman on SasBTP specializing in (${specTitle})${translatedCity ? ` in ${translatedCity}` : ''}. High quality workmanship and timely delivery guaranteed.`
+        : '';
+
+      return {
+        ...prev,
+        city: translatedCity,
+        aiBio: updatedBio
+      };
+    });
+  };
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -299,105 +358,136 @@ export default function AuthGateway() {
   };
 
   // ==========================================
-  // 🔊 1. المرشد الصوتي الناطق (Audio Guide)
+  // 🔊 1. المرشد الصوتي الطبيعي السليم في اللغات الثلاث
   // ==========================================
   const toggleAudioGuide = () => {
-    if (!('speechSynthesis' in window)) return;
     if (isSpeakingGuide) {
-      window.speechSynthesis.cancel();
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (cloudAudioRef.current) {
+        cloudAudioRef.current.pause();
+        cloudAudioRef.current = null;
+      }
       setIsSpeakingGuide(false);
       return;
     }
 
-    window.speechSynthesis.cancel();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (cloudAudioRef.current) {
+      cloudAudioRef.current.pause();
+      cloudAudioRef.current = null;
+    }
+
     const guideText =
       language === 'ar'
         ? activeTab === 'login'
-          ? 'مرحباً بك في منصة ساس بي تي بي. لتسجيل الدخول، يمكنك كتابة رقم هاتفك أو الضغط على زر الميكروفون ونطق رقم هاتفك، ثم إدخال رمزك السري المكون من أربعة أرقام.'
-          : 'مرحباً بك في صفحة إنشاء الحساب. إذا كنت تجد صعوبة في الكتابة، اختر مهنتك ثم اضغط على زر الميكروفون البرتقالي، وقل اسمك، مدينتك، حرفتك، ورقم هاتفك، وسنقوم بملء جميع الخانات وتجهيز ملفك تلقائياً.'
+          ? 'مرحباً بك في منصة ساس بي تي بي. لتسجيل الدخول، اضغط على زر الميكروفون وانطق رقم هاتفك، ثم أدخل رمزك السري المكون من أربعة أرقام.'
+          : 'مرحباً بك في صفحة إنشاء الحساب. اضغط على الزر البرتقالي وتكلم بالدارجة المغربية أو العربية: قل اسمك، مدينتك، حرفتك، ورقم هاتفك، وسنملأ جميع الخانات تلقائياً.'
         : language === 'fr'
         ? activeTab === 'login'
-          ? 'Bienvenue sur SasBTP. Entrez ou dictez votre numéro de téléphone et votre code secret pour vous connecter.'
-          : 'Bienvenue. Appuyez sur le microphone orange et dites votre nom, votre ville, votre métier et votre numéro de téléphone, nous remplirons tout automatiquement.'
-        : 'Welcome to SasBTP. Tap the orange microphone and speak your name, city, trade, and phone number to fill your account automatically.';
+          ? 'Bienvenue sur SasBTP. Dictez ou tapez votre numéro de téléphone et votre code secret pour vous connecter.'
+          : 'Bienvenue sur SasBTP. Appuyez sur le bouton orange et dites votre nom, votre ville, votre métier et votre numéro de téléphone.'
+        : 'Welcome to SasBTP. Tap the orange microphone and speak your name, city, trade, and phone number to create your account automatically.';
 
-    const utterance = new SpeechSynthesisUtterance(guideText);
-    utterance.lang = language === 'ar' ? 'ar-SA' : language === 'fr' ? 'fr-FR' : 'en-US';
-    utterance.rate = 0.95;
-    utterance.onend = () => setIsSpeakingGuide(false);
-    utterance.onerror = () => setIsSpeakingGuide(false);
+    const voices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
+    const blockedRobotic = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox'];
 
-    setIsSpeakingGuide(true);
-    window.speechSynthesis.speak(utterance);
+    let chosenVoice = null;
+    if (language === 'ar') {
+      chosenVoice = voices.find((v) => v.lang.toLowerCase().startsWith('ar') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+    } else if (language === 'fr') {
+      chosenVoice = voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+    } else {
+      chosenVoice =
+        voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Google US') || v.name.includes('Daniel') || v.name.includes('Karen') || v.name.includes('Alex'))) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+    }
+
+    if (!chosenVoice && language === 'ar') {
+      try {
+        const encoded = encodeURIComponent(guideText);
+        const audio = new Audio(`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=${encoded}`);
+        cloudAudioRef.current = audio;
+        setIsSpeakingGuide(true);
+        audio.onended = () => setIsSpeakingGuide(false);
+        audio.onerror = () => setIsSpeakingGuide(false);
+        audio.play().catch(() => setIsSpeakingGuide(false));
+        return;
+      } catch (e) {}
+    }
+
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(guideText);
+      if (chosenVoice) {
+        utterance.voice = chosenVoice;
+        utterance.lang = chosenVoice.lang;
+      } else {
+        utterance.lang = language === 'ar' ? 'ar-SA' : language === 'fr' ? 'fr-FR' : 'en-US';
+      }
+      utterance.rate = 0.95;
+      utterance.onend = () => setIsSpeakingGuide(false);
+      utterance.onerror = () => setIsSpeakingGuide(false);
+
+      setIsSpeakingGuide(true);
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   // ==========================================
-  // 🧠 2. المحلل الذكي للكلام وصياغة النبذة (NLP Voice-to-Form)
+  // 🧠 2. فهم الدارجة المغربية وتحويلها لبيانات سليمة
   // ==========================================
   const parseSmartVoiceProfile = (rawSpeech) => {
     const normalized = convertSpokenWordsToDigits(rawSpeech);
     const lower = normalized.toLowerCase();
 
-    // أ) استخراج رقم الهاتف المغربي (06 / 07 / 05)
     const compactDigits = normalized.replace(/[\s\-./]/g, '');
     const phoneMatch = compactDigits.match(/(?:00212|\+212|212|0)([567]\d{8})/);
     const extractedPhone = phoneMatch ? `0${phoneMatch[1]}` : '';
 
-    // ب) استخراج المدينة
-    let detectedCity = '';
-    for (const c of MOROCCAN_CITIES_MAP) {
-      if (c.keywords.some((k) => lower.includes(k))) {
-        detectedCity = c.label;
-        break;
-      }
-    }
+    const detectedCity = matchCityInLang(normalized, language) || '';
 
-    // ج) استخراج الحرفة / التخصص
     let detectedSpecObj = null;
     for (const sp of ARTISAN_SPECIALTIES) {
+      if (sp.id === 'other') continue;
       if (sp.keywords.some((k) => lower.includes(k))) {
         detectedSpecObj = sp;
         break;
       }
     }
 
-    // د) استخراج سنوات الخبرة
     const expMatch = normalized.match(/(\d{1,2})\s*(?:سنة|سنه|سنين|سنوات|عام|أعوام|ans|an|years)/i);
     const extractedYears = expMatch ? expMatch[1] : '';
 
-    // هـ) استخراج الاسم
     let extractedName = '';
     const namePatterns = [
-      /(?:أنا|انا|اسمي|إسمي|سميتي|معكم)\s+(?:المعلم\s+|الشاف\s+|الحاج\s+)?([أ-يa-zA-Z]+(?:\s+[أ-يa-zA-Z]+){0,2})/i,
+      /(?:أنا|انا|اسمي|إسمي|سميتي|معكم|دروكري|محل|شركة)\s+(?:المعلم\s+|الشاف\s+|الحاج\s+)?([أ-يa-zA-Z]+(?:\s+[أ-يa-zA-Z]+){0,2})/i,
       /(?:je suis|je m'appelle|moi c'est)\s+([a-zA-ZÀ-ÿ]+(?:\s+[a-zA-ZÀ-ÿ]+){0,2})/i
     ];
     for (const pat of namePatterns) {
       const m = rawSpeech.match(pat);
       if (m && m[1]) {
         extractedName = m[1]
-          .replace(/\b(من|في|مدينة|مدينه|معلم|بلومبي|تريسيان|بناي|صباغ|نجار|زلايجي|جباس|حداد|de|à)\b.*/i, '')
+          .replace(/\b(من|في|ف|مدينة|مدينه|معلم|بلومبي|تريسيان|بناي|صباغ|نجار|زلايجي|جباس|حداد|de|à)\b.*/i, '')
           .trim();
         break;
       }
     }
 
-    // و) الصياغة التلقائية للنبذة المهنية بلغة سليمة وجذابة للزبناء
-    const specTitle = detectedSpecObj
-      ? (language === 'ar' ? detectedSpecObj.ar : detectedSpecObj.fr)
-      : (ARTISAN_SPECIALTIES.find((s) => s.id === selectedSpecialty)?.[language === 'ar' ? 'ar' : 'fr'] || 'البناء والأشغال');
-
-    const cityClean = detectedCity ? detectedCity.split(' - ')[language === 'ar' ? 0 : 1] || detectedCity : '';
-    const expPhraseAr = extractedYears ? `بخبرة ميدانية تمتد لأكثر من ${extractedYears} سنة` : 'بخبرة ميدانية واسعة';
-    const expPhraseFr = extractedYears ? `avec plus de ${extractedYears} ans d'expérience` : 'avec une solide expérience terrain';
-
-    const composedBio =
-      language === 'ar'
-        ? `حرفي ومهني معتمد في منصة SasBTP متخصص في (${specTitle})${cityClean ? ` بمدينة ${cityClean} والنواحي` : ''}، ${expPhraseAr}. أضمن للزبناء إتقان العمل، احترام المواعيد، واستخدام أفضل المعايير المهنية في جميع الأوراش.`
-        : `Artisan professionnel vérifié SasBTP spécialisé en ${specTitle}${cityClean ? ` sur ${cityClean} et régions` : ''}, ${expPhraseFr}. Travail soigné, respect des délais et devis transparents.`;
-
     if (detectedSpecObj) {
       setSelectedSpecialty(detectedSpecObj.id);
     }
+
+    const specTitle = detectedSpecObj
+      ? (language === 'ar' ? detectedSpecObj.ar : language === 'fr' ? detectedSpecObj.fr : detectedSpecObj.en)
+      : (selectedSpecialty === 'other' && customSpecialtyText ? customSpecialtyText : (language === 'ar' ? 'الأشغال العامة والبناء' : 'Travaux BTP'));
+
+    const cityFinal = detectedCity || formData.city;
+
+    const composedBio =
+      language === 'ar'
+        ? `حرفي ومهني معتمد في منصة SasBTP متخصص في (${specTitle})${cityFinal ? ` بمدينة ${cityFinal} والنواحي` : ''}${extractedYears ? ` بخبرة تزيد عن ${extractedYears} سنة` : ''}. أضمن للزبناء إتقان العمل واحترام المواعيد.`
+        : language === 'fr'
+        ? `Artisan professionnel vérifié SasBTP spécialisé en (${specTitle})${cityFinal ? ` à ${cityFinal}` : ''}${extractedYears ? ` avec ${extractedYears} ans d'expérience` : ''}. Travail soigné et respect des délais.`
+        : `Verified professional craftsman on SasBTP specializing in (${specTitle})${cityFinal ? ` in ${cityFinal}` : ''}${extractedYears ? ` with ${extractedYears} years of experience` : ''}. Quality work guaranteed.`;
 
     setFormData((prev) => ({
       ...prev,
@@ -410,12 +500,12 @@ export default function AuthGateway() {
   };
 
   // ==========================================
-  // 🎙️ 3. تشغيل الميكروفون (للاستمارة الكاملة أو لحقل محدد)
+  // 🎙️ 3. الميكروفون الفوري الموثوق (يدعم الدارجة ويكتب لحظياً)
   // ==========================================
   const toggleVoiceInput = (targetField = 'smartAll') => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      showAlert('error', language === 'ar' ? 'متصفحك لا يدعم الميكروفون الصوتي، يرجى استخدام Chrome أو Safari.' : 'Votre navigateur ne supporte pas la reconnaissance vocale.');
+      showAlert('error', language === 'ar' ? 'يرجى استخدام متصفح Chrome أو Safari لتشغيل الميكروفون.' : 'Veuillez utiliser Chrome ou Safari pour le micro.');
       return;
     }
 
@@ -426,66 +516,70 @@ export default function AuthGateway() {
     }
 
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) {}
+      try { recognitionRef.current.abort(); } catch (e) {}
+      recognitionRef.current = null;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    setTimeout(() => {
+      try {
+        const recognition = new SpeechRecognition();
+        // الاستماع بالدارجة المغربية والعربية دائماً لضمان فهم الأسماء والمدن والأرقام المغربية
+        recognition.lang = 'ar-MA';
+        recognition.interimResults = true;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
 
-    recognition.onstart = () => {
-      setListeningTarget(targetField);
-    };
+        recognition.onstart = () => setListeningTarget(targetField);
 
-    recognition.onresult = (event) => {
-      const transcript = event.results?.[0]?.[0]?.transcript || '';
-      setSpokenTranscript(transcript);
+        recognition.onresult = (event) => {
+          let transcript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          const clean = transcript.trim();
+          if (!clean) return;
 
-      if (targetField === 'smartAll') {
-        parseSmartVoiceProfile(transcript);
-      } else if (targetField === 'loginId' || targetField === 'phone') {
-        const digits = convertSpokenWordsToDigits(transcript).replace(/\D/g, '');
-        setFormData((prev) => ({
-          ...prev,
-          [targetField === 'loginId' ? 'loginIdentifier' : 'phone']: digits || transcript.trim()
-        }));
-      } else if (targetField === 'loginPin' || targetField === 'password') {
-        const digits = convertSpokenWordsToDigits(transcript).replace(/\s+/g, '');
-        setFormData((prev) => ({ ...prev, password: digits }));
-      } else if (targetField === 'fullName') {
-        setFormData((prev) => ({ ...prev, fullName: transcript.trim() }));
-      } else if (targetField === 'city') {
-        setFormData((prev) => ({ ...prev, city: transcript.trim() }));
+          setSpokenTranscript(clean);
+
+          if (targetField === 'smartAll') {
+            parseSmartVoiceProfile(clean);
+          } else if (targetField === 'customSpecialty') {
+            setCustomSpecialtyText(clean);
+          } else if (targetField === 'loginId' || targetField === 'phone') {
+            const digits = convertSpokenWordsToDigits(clean).replace(/\D/g, '');
+            setFormData((prev) => ({
+              ...prev,
+              [targetField === 'loginId' ? 'loginIdentifier' : 'phone']: digits || clean
+            }));
+          } else if (targetField === 'loginPin' || targetField === 'password') {
+            const digits = convertSpokenWordsToDigits(clean).replace(/\s+/g, '');
+            setFormData((prev) => ({ ...prev, password: digits }));
+          } else if (targetField === 'fullName') {
+            setFormData((prev) => ({ ...prev, fullName: clean.replace(/^(أنا|انا|اسمي|سميتي)\s+/i, '') }));
+          } else if (targetField === 'city') {
+            const matched = matchCityInLang(clean, language);
+            setFormData((prev) => ({ ...prev, city: matched || clean }));
+          }
+        };
+
+        recognition.onerror = () => setListeningTarget(null);
+        recognition.onend = () => setListeningTarget(null);
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (e) {
+        setListeningTarget(null);
       }
-    };
-
-    recognition.onerror = () => {
-      setListeningTarget(null);
-    };
-
-    recognition.onend = () => {
-      setListeningTarget(null);
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
+    }, 120);
   };
 
-  // ==========================================
-  // 📷 4. مسح البطاقة المهنية / الكارط فيزيت (Card OCR Assist)
-  // ==========================================
   const handleCardImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsScanningCard(true);
-    setAlert({ show: false, type: '', text: '' });
-
     try {
       let extractedText = '';
-
-      // محاولة استخدام كاشف النصوص المدمج في المتصفح إن وجد
       if ('TextDetector' in window) {
         try {
           const bitmap = await createImageBitmap(file);
@@ -495,30 +589,10 @@ export default function AuthGateway() {
           extractedText = blocks.map((b) => b.rawValue).join(' ');
         } catch (err) {}
       }
-
       if (extractedText) {
         parseSmartVoiceProfile(extractedText);
-        showAlert('success', language === 'ar' ? '✅ تم مسح البطاقة واستخراج البيانات بنجاح!' : '✅ Carte scannée avec succès !');
-      } else {
-        // استخلاص اسم الملف إن وجد وتجهيز النبذة المهنية تلقائياً
-        const specTitle = ARTISAN_SPECIALTIES.find((s) => s.id === selectedSpecialty)?.[language === 'ar' ? 'ar' : 'fr'] || '';
-        const autoBio =
-          language === 'ar'
-            ? `مهني معتمد في منصة SasBTP (${specTitle}). تم توثيق البطاقة المهنية، ملتزم بأعلى معايير الجودة وإتقان العمل.`
-            : `Professionnel vérifié SasBTP (${specTitle}). Carte professionnelle jointe, qualité et sérieux garantis.`;
-
-        setFormData((prev) => ({
-          ...prev,
-          aiBio: prev.aiBio || autoBio
-        }));
-
-        showAlert(
-          'success',
-          language === 'ar'
-            ? '📷 تم إرفاق صورة البطاقة المهنية وتجهيز نبذتك! يرجى التأكد من رقم الهاتف والاسم.'
-            : '📷 Carte professionnelle jointe ! Veuillez vérifier votre nom et téléphone.'
-        );
       }
+      showAlert('success', language === 'ar' ? '📷 تم قراءة البطاقة وتجهيز ملفك!' : '📷 Carte lue avec succès !');
     } catch (err) {
       console.error(err);
     } finally {
@@ -526,20 +600,14 @@ export default function AuthGateway() {
     }
   };
 
-  // ==========================================
-  // 🔒 5. فحص جدار الحماية ضد تخمين الرمز السري (Rate Limiter)
-  // ==========================================
+  // جدار الحماية ضد تخمين رمز PIN
   const checkBruteForceLock = (emailKey) => {
     try {
       const raw = localStorage.getItem(`sasbtp_guard_${emailKey}`);
       if (!raw) return false;
       const record = JSON.parse(raw);
-      if (record.lockUntil && Date.now() < record.lockUntil) {
-        return true;
-      }
-      if (record.lockUntil && Date.now() >= record.lockUntil) {
-        localStorage.removeItem(`sasbtp_guard_${emailKey}`);
-      }
+      if (record.lockUntil && Date.now() < record.lockUntil) return true;
+      localStorage.removeItem(`sasbtp_guard_${emailKey}`);
       return false;
     } catch (e) {
       return false;
@@ -551,22 +619,11 @@ export default function AuthGateway() {
       const raw = localStorage.getItem(`sasbtp_guard_${emailKey}`);
       const record = raw ? JSON.parse(raw) : { attempts: 0, lockUntil: null };
       record.attempts += 1;
-      if (record.attempts >= 5) {
-        record.lockUntil = Date.now() + 15 * 60 * 1000; // قفل لمدة 15 دقيقة
-      }
+      if (record.attempts >= 5) record.lockUntil = Date.now() + 15 * 60 * 1000;
       localStorage.setItem(`sasbtp_guard_${emailKey}`, JSON.stringify(record));
     } catch (e) {}
   };
 
-  const clearFailedAttempts = (emailKey) => {
-    try {
-      localStorage.removeItem(`sasbtp_guard_${emailKey}`);
-    } catch (e) {}
-  };
-
-  // ==========================================
-  // 🔑 6. معالجة تسجيل الدخول (تقبل الهاتف أو الإيميل + PIN أو كلمة مرور)
-  // ==========================================
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -587,13 +644,11 @@ export default function AuthGateway() {
       const rawSecret = formData.password.trim();
       const wrappedSecret = wrapPinOrPassword(rawSecret);
 
-      // المحاولة الأولى (باستخدام الرمز المكيف أو كلمة المرور)
       let authRes = await supabase.auth.signInWithPassword({
         email: targetEmail,
         password: wrappedSecret
       });
 
-      // إذا أدخل المستخدم كلمة مرور عادية أو رمزاً مختلفاً، نجرب القيمة الخام الاحتياطية
       if (authRes.error && wrappedSecret !== rawSecret && rawSecret.length >= 6) {
         authRes = await supabase.auth.signInWithPassword({
           email: targetEmail,
@@ -606,13 +661,12 @@ export default function AuthGateway() {
         throw new Error(t.errInvalidLogin);
       }
 
-      clearFailedAttempts(targetEmail);
+      localStorage.removeItem(`sasbtp_guard_${targetEmail}`);
 
       const user = authRes.data?.user;
       const metaRole = user?.user_metadata?.role || user?.user_metadata?.account_type;
       const metaSupplierType = user?.user_metadata?.supplier_type;
 
-      // فحص ما إذا كان الحساب لمورد أو تاجر في قاعدة البيانات
       const { data: supData } = await supabase
         .from('suppliers')
         .select('supplier_type')
@@ -646,9 +700,6 @@ export default function AuthGateway() {
     }
   };
 
-  // ==========================================
-  // 🚀 7. معالجة التسجيل الموحد والذكي (مقاول، حرفي، مورد)
-  // ==========================================
   const handleSmartRegister = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -661,7 +712,7 @@ export default function AuthGateway() {
       }
 
       const finalPassword = wrapPinOrPassword(formData.password);
-      if (!finalPassword || finalPassword.length < 4) {
+      if (!finalPassword || formData.password.trim().length < 4) {
         throw new Error(language === 'ar' ? 'يرجى اختيار رمز سري (4 أرقام على الأقل).' : 'Veuillez choisir un code PIN (min 4 chiffres).');
       }
 
@@ -675,7 +726,12 @@ export default function AuthGateway() {
           : 'architect';
 
       const specObj = ARTISAN_SPECIALTIES.find((s) => s.id === selectedSpecialty);
-      const specialtyName = specObj ? (language === 'ar' ? specObj.ar : specObj.fr) : '';
+      const specialtyName =
+        selectedSpecialty === 'other' && customSpecialtyText.trim()
+          ? customSpecialtyText.trim()
+          : specObj
+          ? (language === 'ar' ? specObj.ar : specObj.fr)
+          : '';
 
       const autoGeneratedBio =
         formData.aiBio ||
@@ -690,7 +746,12 @@ export default function AuthGateway() {
         bio_text: autoGeneratedBio,
         experience_text: specialtyName + (formData.experienceYears ? ` (${formData.experienceYears} سنوات خبرة)` : ''),
         terms_text: '',
-        quick_info: ''
+        quick_info: '',
+        structuredMeta: {
+          tradeId: selectedSpecialty,
+          customTradeName: customSpecialtyText.trim(),
+          yearsExp: formData.experienceYears
+        }
       };
 
       const { data, error } = await supabase.auth.signUp({
@@ -719,38 +780,31 @@ export default function AuthGateway() {
       const uid = data?.user?.id;
 
       if (uid) {
-        // 1. ربط الإحالة
         await bindReferralOnSignup(uid);
 
-        // 2. إذا كان المسجل حرفياً (Provider): ننشئ سجله في جدول providers ونحفظ نبذته الذكية
         if (selectedRole === 'provider') {
           localStorage.setItem(`sasbtp_provider_profile_${uid}`, JSON.stringify(providerProfileMeta));
           await supabase
             .from('providers')
-            .insert([
-              {
-                user_id: uid,
-                full_name: formData.fullName.trim(),
-                phone: formData.phone.trim(),
-                account_type: 'marketplace'
-              }
-            ])
+            .insert([{
+              user_id: uid,
+              full_name: formData.fullName.trim(),
+              phone: formData.phone.trim(),
+              account_type: 'marketplace'
+            }])
             .catch(() => {});
         }
 
-        // 3. إذا كان المسجل مورداً أو تاجراً (Supplier): ننشئ سجله في جدول suppliers
         if (selectedRole === 'supplier') {
           await supabase
             .from('suppliers')
-            .insert([
-              {
-                user_id: uid,
-                store_name: formData.fullName.trim(),
-                email: effectiveEmail,
-                phone: formData.phone.trim(),
-                supplier_type: selectedSupplierType
-              }
-            ])
+            .insert([{
+              user_id: uid,
+              store_name: formData.fullName.trim(),
+              email: effectiveEmail,
+              phone: formData.phone.trim(),
+              supplier_type: selectedSupplierType
+            }])
             .catch(() => {});
         }
       }
@@ -770,7 +824,7 @@ export default function AuthGateway() {
           sessionStorage.setItem('sasbtp_v2_role', 'contractor');
           navigate('/v2/contractor-dashboard');
         }
-      }, 1500);
+      }, 1400);
     } catch (err) {
       showAlert('error', err.message || t.errUnexpected);
     } finally {
@@ -778,67 +832,25 @@ export default function AuthGateway() {
     }
   };
 
-  // إعدادات ألوان ونصوص بطاقات الرتب
   const roleConfigs = {
     client: {
-      id: 'client',
-      icon: '🏗️',
-      title: t.roleClientTitle,
-      color: 'blue',
-      border: 'border-blue-200',
-      bg: 'bg-blue-50/50',
-      activeBorder: 'border-blue-500',
-      activeBg: 'bg-blue-50',
-      textColor: 'text-blue-900',
-      ring: 'ring-blue-500'
+      id: 'client', icon: '🏗️', title: t.roleClientTitle,
+      border: 'border-blue-200', bg: 'bg-blue-50/50', activeBorder: 'border-blue-500', activeBg: 'bg-blue-50', textColor: 'text-blue-900', ring: 'ring-blue-500'
     },
     provider: {
-      id: 'provider',
-      icon: '👷‍♂️',
-      title: t.roleProviderTitle,
-      color: 'orange',
-      border: 'border-orange-200',
-      bg: 'bg-orange-50/50',
-      activeBorder: 'border-orange-500',
-      activeBg: 'bg-orange-50',
-      textColor: 'text-orange-700',
-      ring: 'ring-orange-500',
-      msg: t.msgProvider,
-      btnText: t.btnProvider,
-      btnColor: 'bg-orange-600 hover:bg-orange-700 shadow-orange-500/30',
-      route: '/v2/provider-auth'
+      id: 'provider', icon: '👷‍♂️', title: t.roleProviderTitle,
+      border: 'border-orange-200', bg: 'bg-orange-50/50', activeBorder: 'border-orange-500', activeBg: 'bg-orange-50', textColor: 'text-orange-700', ring: 'ring-orange-500',
+      btnText: t.btnProvider, route: '/v2/provider-auth'
     },
     architect: {
-      id: 'architect',
-      icon: '📐',
-      title: t.roleArchitectTitle,
-      color: 'purple',
-      border: 'border-purple-200',
-      bg: 'bg-purple-50/50',
-      activeBorder: 'border-purple-500',
-      activeBg: 'bg-purple-50',
-      textColor: 'text-purple-700',
-      ring: 'ring-purple-500',
-      msg: t.msgArchitect,
-      btnText: t.btnArchitect,
-      btnColor: 'bg-purple-600 hover:bg-purple-700 shadow-purple-500/30',
-      route: '/v2/architect-register'
+      id: 'architect', icon: '📐', title: t.roleArchitectTitle,
+      border: 'border-purple-200', bg: 'bg-purple-50/50', activeBorder: 'border-purple-500', activeBg: 'bg-purple-50', textColor: 'text-purple-700', ring: 'ring-purple-500',
+      msg: t.msgArchitect, btnText: t.btnArchitect, btnColor: 'bg-purple-600 hover:bg-purple-700 shadow-purple-500/30', route: '/v2/architect-register'
     },
     supplier: {
-      id: 'supplier',
-      icon: '🧱',
-      title: t.roleSupplierTitle,
-      color: 'emerald',
-      border: 'border-emerald-200',
-      bg: 'bg-emerald-50/50',
-      activeBorder: 'border-emerald-500',
-      activeBg: 'bg-emerald-50',
-      textColor: 'text-emerald-700',
-      ring: 'ring-emerald-500',
-      msg: t.msgSupplier,
-      btnText: t.btnSupplier,
-      btnColor: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30',
-      route: '/v2/supplier-register'
+      id: 'supplier', icon: '🧱', title: t.roleSupplierTitle,
+      border: 'border-emerald-200', bg: 'bg-emerald-50/50', activeBorder: 'border-emerald-500', activeBg: 'bg-emerald-50', textColor: 'text-emerald-700', ring: 'ring-emerald-500',
+      btnText: t.btnSupplier, route: '/v2/supplier-register'
     }
   };
 
@@ -848,11 +860,48 @@ export default function AuthGateway() {
 
       <div className="w-full max-w-xl bg-white rounded-[24px] shadow-2xl overflow-hidden border border-white/20 relative z-10 my-8">
         
+        {/* 🌐 شريط اختيار اللغة البارز في أعلى واجهة الدخول (أول مصافحة مع الحرفي والمورد) */}
+        <div className="bg-slate-900 px-6 py-3 flex items-center justify-between border-b border-slate-800">
+          <span className="inline-flex items-center gap-1.5 text-xs font-black text-slate-300">
+            <Globe className="w-4 h-4 text-amber-400" />
+            {language === 'ar' ? 'اختر لغتك:' : language === 'fr' ? 'Langue :' : 'Language:'}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleSelectLanguage('ar')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                language === 'ar' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              🇲🇦 العربية
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectLanguage('fr')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                language === 'fr' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              🇫🇷 Français
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectLanguage('en')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                language === 'en' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              🇬🇧 EN
+            </button>
+          </div>
+        </div>
+
         {/* الترويسة + زر المرشد الصوتي الناطق */}
         <div className="p-7 pb-4 text-center">
           <div className="flex items-center justify-between mb-3">
             <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
-              <ShieldCheck className="w-3.5 h-3.5" /> Voice & PIN AI
+              <ShieldCheck className="w-3.5 h-3.5" /> Darija & Voice AI
             </span>
 
             <button
@@ -901,7 +950,6 @@ export default function AuthGateway() {
           </button>
         </div>
 
-        {/* رسائل التنبيه */}
         {alert.show && (
           <div className="px-7 pb-4">
             <div className={`p-4 rounded-xl font-bold flex items-start gap-3 border text-sm ${
@@ -914,7 +962,7 @@ export default function AuthGateway() {
         )}
 
         {/* ========================================================= */}
-        {/* 🔑 تبويب تسجيل الدخول (بالهاتف أو الإيميل + الميكروفون) */}
+        {/* 🔑 تبويب تسجيل الدخول */}
         {/* ========================================================= */}
         {activeTab === 'login' && (
           <div className="p-7 pt-0 animate-fade-in">
@@ -941,7 +989,6 @@ export default function AuthGateway() {
                   <button
                     type="button"
                     onClick={() => toggleVoiceInput('loginId')}
-                    title="انطق رقم الهاتف"
                     className={`absolute right-2.5 p-2 rounded-lg transition-all cursor-pointer ${
                       listeningTarget === 'loginId'
                         ? 'bg-red-500 text-white animate-pulse shadow-md'
@@ -978,7 +1025,6 @@ export default function AuthGateway() {
                     <button
                       type="button"
                       onClick={() => toggleVoiceInput('loginPin')}
-                      title="انطق الرمز السري"
                       className={`p-2 rounded-lg transition-all cursor-pointer ${
                         listeningTarget === 'loginPin'
                           ? 'bg-red-500 text-white animate-pulse shadow-md'
@@ -1000,22 +1046,15 @@ export default function AuthGateway() {
                 {t.loginBtn}
               </button>
             </form>
-
-            <div className="text-center mt-5">
-              <button type="button" className="text-amber-600 hover:text-amber-700 font-bold text-sm hover:underline cursor-pointer">
-                {t.forgotPassword}
-              </button>
-            </div>
           </div>
         )}
 
         {/* ========================================================= */}
-        {/* 🎙️ تبويب إنشاء الحساب (بالصوت، الكاميرا، الأيقونات، أو الكتابة) */}
+        {/* 🎙️ تبويب إنشاء الحساب */}
         {/* ========================================================= */}
         {activeTab === 'register' && (
           <div className="p-7 pt-0 animate-fade-in">
             
-            {/* 1. اختيار الصفة المهنية */}
             <div className="bg-slate-50 border border-blue-200 border-dashed rounded-xl p-4 mb-5">
               <label className="block text-blue-900 font-black text-center text-sm mb-3">{t.iAmHereAs}</label>
               <div className="grid grid-cols-2 gap-2.5">
@@ -1045,7 +1084,6 @@ export default function AuthGateway() {
               </div>
             </div>
 
-            {/* إذا اختار المهندس المعماري، يوجه لصفحة رقم الهيئة الهندسية الخاصة به */}
             {selectedRole === 'architect' ? (
               <div className="text-center animate-fade-in py-4">
                 <p className="text-slate-600 font-medium text-sm leading-relaxed mb-6 px-4">
@@ -1062,20 +1100,12 @@ export default function AuthGateway() {
             ) : (
               <div className="space-y-5 animate-fade-in">
                 
-                {/* 2. صندوق التسجيل الصوتي الذكي ومسح البطاقة المهنية */}
+                {/* صندوق التسجيل الصوتي الذكي بالدارجة ومسح البطاقة المهنية */}
                 <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border-2 border-orange-300 rounded-2xl p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div>
-                      <h3 className="font-black text-orange-900 text-sm flex items-center gap-1.5">
-                        {t.voiceSmartTitle}
-                      </h3>
-                      <p className="text-xs font-bold text-orange-800/80 mt-0.5 leading-relaxed">
-                        {t.voiceSmartDesc}
-                      </p>
-                    </div>
-                  </div>
+                  <h3 className="font-black text-orange-900 text-sm mb-1">{t.voiceSmartTitle}</h3>
+                  <p className="text-xs font-bold text-orange-800/80 leading-relaxed mb-3">{t.voiceSmartDesc}</p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <button
                       type="button"
                       onClick={() => toggleVoiceInput('smartAll')}
@@ -1115,11 +1145,11 @@ export default function AuthGateway() {
                   )}
                 </div>
 
-                {/* 3. اختيار الحرفة بالصور والأيقونات الكبيرة (للحرفيين) */}
+                {/* اختيار الحرفة بالصور + خيار حرفة أخرى */}
                 {selectedRole === 'provider' && (
                   <div>
                     <label className="block text-xs font-black text-slate-700 mb-2">{t.specialtyLabel}</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {ARTISAN_SPECIALTIES.map((sp) => {
                         const active = selectedSpecialty === sp.id;
                         return (
@@ -1130,21 +1160,43 @@ export default function AuthGateway() {
                             className={`p-2.5 rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                               active
                                 ? 'border-orange-500 bg-orange-50 text-orange-900 shadow-sm scale-[1.02]'
+                                : sp.id === 'other'
+                                ? 'border-dashed border-indigo-400 bg-indigo-50/60 text-indigo-900'
                                 : 'border-slate-200 bg-slate-50/70 hover:bg-white text-slate-700'
                             }`}
                           >
                             <span className="text-2xl mb-1">{sp.icon}</span>
-                            <span className="text-[11px] font-black leading-tight">
+                            <span className="text-[10px] font-black leading-tight">
                               {language === 'ar' ? sp.ar : language === 'fr' ? sp.fr : sp.en}
                             </span>
                           </button>
                         );
                       })}
                     </div>
+
+                    {selectedSpecialty === 'other' && (
+                      <div className="mt-2.5 relative flex items-center animate-fade-in">
+                        <input
+                          type="text"
+                          value={customSpecialtyText}
+                          onChange={(e) => setCustomSpecialtyText(e.target.value)}
+                          placeholder={t.customSpecialtyPlace}
+                          className="w-full p-3 bg-indigo-50/50 border-2 border-indigo-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-600"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleVoiceInput('customSpecialty')}
+                          className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-1.5 rounded-lg cursor-pointer ${
+                            listeningTarget === 'customSpecialty' ? 'bg-red-500 text-white animate-pulse' : 'bg-indigo-100 text-indigo-700'
+                          }`}
+                        >
+                          <Mic className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* 4. اختيار نوع النشاط بالصور (للموردين والتجار) */}
                 {selectedRole === 'supplier' && (
                   <div>
                     <label className="block text-xs font-black text-slate-700 mb-2">{t.supplierTypeLabel}</label>
@@ -1173,7 +1225,6 @@ export default function AuthGateway() {
                   </div>
                 )}
 
-                {/* 5. حقول الاستمارة (تُملأ صوتياً أو يدوياً) */}
                 <form onSubmit={handleSmartRegister} className="space-y-3.5">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">{t.fullNameLabel}</label>
@@ -1190,7 +1241,7 @@ export default function AuthGateway() {
                         type="button"
                         onClick={() => toggleVoiceInput('fullName')}
                         className={`absolute ${isRtl ? 'left-2.5' : 'right-2.5'} p-2 rounded-lg cursor-pointer ${
-                          listeningTarget === 'fullName' ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-200/80 text-slate-700 hover:bg-orange-100'
+                          listeningTarget === 'fullName' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                         }`}
                       >
                         <Mic className="w-3.5 h-3.5" />
@@ -1216,7 +1267,7 @@ export default function AuthGateway() {
                           type="button"
                           onClick={() => toggleVoiceInput('phone')}
                           className={`absolute right-2 p-2 rounded-lg cursor-pointer ${
-                            listeningTarget === 'phone' ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-200/80 text-slate-700 hover:bg-orange-100'
+                            listeningTarget === 'phone' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                           }`}
                         >
                           <Mic className="w-3.5 h-3.5" />
@@ -1239,7 +1290,7 @@ export default function AuthGateway() {
                           type="button"
                           onClick={() => toggleVoiceInput('city')}
                           className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-2 rounded-lg cursor-pointer ${
-                            listeningTarget === 'city' ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-200/80 text-slate-700 hover:bg-orange-100'
+                            listeningTarget === 'city' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                           }`}
                         >
                           <Mic className="w-3.5 h-3.5" />
@@ -1248,7 +1299,6 @@ export default function AuthGateway() {
                     </div>
                   </div>
 
-                  {/* معاينة النبذة المهنية التي صاغها الذكاء الاصطناعي */}
                   {formData.aiBio && (
                     <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl">
                       <label className="block text-[11px] font-black text-indigo-900 mb-1">
@@ -1263,21 +1313,6 @@ export default function AuthGateway() {
                     </div>
                   )}
 
-                  {/* البريد الإلكتروني اختياري إذا أدخل رقم الهاتف */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">{t.emailLabel}</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="example@email.com (اختياري)"
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 text-xs font-medium"
-                      dir="ltr"
-                    />
-                  </div>
-
-                  {/* الرمز السري PIN أو كلمة المرور */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">{t.passwordOrPinLabel}</label>
                     <div className="relative flex items-center">
@@ -1288,7 +1323,7 @@ export default function AuthGateway() {
                         minLength="4"
                         value={formData.password}
                         onChange={handleChange}
-                        placeholder="مثال: 2580"
+                        placeholder="2580"
                         className="w-full p-3.5 pr-20 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm font-black tracking-widest text-slate-800"
                         dir="ltr"
                       />
@@ -1304,7 +1339,7 @@ export default function AuthGateway() {
                           type="button"
                           onClick={() => toggleVoiceInput('password')}
                           className={`p-1.5 rounded-lg cursor-pointer ${
-                            listeningTarget === 'password' ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-200/80 text-slate-700 hover:bg-orange-100'
+                            listeningTarget === 'password' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                           }`}
                         >
                           <Mic className="w-3.5 h-3.5" />
@@ -1312,6 +1347,19 @@ export default function AuthGateway() {
                       </div>
                     </div>
                     <p className="text-[11px] font-semibold text-slate-500 mt-1">{t.pinSecurityHint}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">{t.emailLabel}</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="example@email.com"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 text-xs font-medium"
+                      dir="ltr"
+                    />
                   </div>
 
                   <button
@@ -1324,7 +1372,6 @@ export default function AuthGateway() {
                   </button>
                 </form>
 
-                {/* الاحتفاظ بأزرار الانتقال لصفحات التسجيل التفصيلية للحرفيين والموردين لمن يرغب بها */}
                 {(selectedRole === 'provider' || selectedRole === 'supplier') && (
                   <div className="pt-3 border-t border-slate-200 text-center">
                     <button

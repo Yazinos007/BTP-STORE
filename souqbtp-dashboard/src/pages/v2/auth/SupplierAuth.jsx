@@ -1,51 +1,53 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import useSettingsStore from '../../../store/useSettingsStore';
 import { 
-  Store, Factory, Mail, Lock, Phone, Building2, Loader2, 
+  Store, Factory, Mail, Phone, Building2, Loader2, 
   CheckCircle2, AlertCircle, Mic, MicOff, Volume2, Camera, 
-  MapPin, KeyRound, Eye, EyeOff, Sparkles, ShieldCheck 
+  MapPin, KeyRound, Eye, EyeOff, Sparkles, ShieldCheck, Globe 
 } from 'lucide-react';
 import { bindReferralOnSignup } from '../../../lib/referralHandler';
 
-// 🏙️ خريطة المدن المغربية للالتقاط الصوتي الذكي
-const MOROCCAN_CITIES_MAP = [
-  { keywords: ['الدار البيضاء', 'كازا', 'casablanca', 'casa'], label: 'الدار البيضاء - Casablanca' },
-  { keywords: ['الرباط', 'رباط', 'rabat'], label: 'الرباط - Rabat' },
-  { keywords: ['مراكش', 'marrakech', 'marrakesh'], label: 'مراكش - Marrakech' },
-  { keywords: ['طنجة', 'طنجه', 'tanger', 'tangier'], label: 'طنجة - Tanger' },
-  { keywords: ['فاس', 'fes', 'fès'], label: 'فاس - Fès' },
-  { keywords: ['أكادير', 'اكادير', 'agadir'], label: 'أكادير - Agadir' },
-  { keywords: ['مكناس', 'meknes', 'meknès'], label: 'مكناس - Meknès' },
-  { keywords: ['وجدة', 'وجده', 'oujda'], label: 'وجدة - Oujda' },
-  { keywords: ['بني ملال', 'بنيملال', 'beni mellal', 'béni mellal'], label: 'بني ملال - Béni Mellal' },
-  { keywords: ['قصبة تادلة', 'تادلة', 'تادلا', 'kasbah tadla', 'tadla'], label: 'قصبة تادلة - Kasbah Tadla' },
-  { keywords: ['خنيفرة', 'خنيفره', 'khenifra', 'khénifra'], label: 'خنيفرة - Khénifra' },
-  { keywords: ['خريبكة', 'خريبكه', 'khouribga'], label: 'خريبكة - Khouribga' },
-  { keywords: ['القنيطرة', 'قنيطرة', 'kenitra', 'kénitra'], label: 'القنيطرة - Kénitra' },
-  { keywords: ['تطوان', 'tetouan', 'tétouan'], label: 'تطوان - Tétouan' },
-  { keywords: ['الجديدة', 'جديدة', 'el jadida', 'jadida'], label: 'الجديدة - El Jadida' },
-  { keywords: ['آسفي', 'اسفي', 'safi'], label: 'آسفي - Safi' },
-  { keywords: ['الناظور', 'ناظور', 'nador'], label: 'الناظور - Nador' },
-  { keywords: ['المحمدية', 'محمدية', 'mohammedia'], label: 'المحمدية - Mohammedia' },
-  { keywords: ['ورزازات', 'ouarzazate'], label: 'ورزازات - Ouarzazate' },
-  { keywords: ['العيون', 'laayoune', 'laâyoune'], label: 'العيون - Laâyoune' }
+// 🏙️ خريطة المدن المغربية للالتقاط بالدارجة والترجمة التلقائية
+const MOROCCAN_CITIES_DATA = [
+  { id: 'casablanca', ar: 'الدار البيضاء', fr: 'Casablanca', en: 'Casablanca', keywords: ['الدار البيضاء', 'كازا', 'دار البيضاء', 'casablanca', 'casa'] },
+  { id: 'rabat', ar: 'الرباط', fr: 'Rabat', en: 'Rabat', keywords: ['الرباط', 'رباط', 'rabat'] },
+  { id: 'marrakech', ar: 'مراكش', fr: 'Marrakech', en: 'Marrakech', keywords: ['مراكش', 'marrakech', 'marrakesh'] },
+  { id: 'tanger', ar: 'طنجة', fr: 'Tanger', en: 'Tangier', keywords: ['طنجة', 'طنجه', 'tanger', 'tangier'] },
+  { id: 'fes', ar: 'فاس', fr: 'Fès', en: 'Fes', keywords: ['فاس', 'fes', 'fès'] },
+  { id: 'agadir', ar: 'أكادير', fr: 'Agadir', en: 'Agadir', keywords: ['أكادير', 'اكادير', 'agadir'] },
+  { id: 'meknes', ar: 'مكناس', fr: 'Meknès', en: 'Meknes', keywords: ['مكناس', 'meknes', 'meknès'] },
+  { id: 'oujda', ar: 'وجدة', fr: 'Oujda', en: 'Oujda', keywords: ['وجدة', 'وجده', 'oujda'] },
+  { id: 'beni_mellal', ar: 'بني ملال', fr: 'Béni Mellal', en: 'Beni Mellal', keywords: ['بني ملال', 'بنيملال', 'beni mellal', 'béni mellal'] },
+  { id: 'kasbah_tadla', ar: 'قصبة تادلة', fr: 'Kasbah Tadla', en: 'Kasbah Tadla', keywords: ['قصبة تادلة', 'تادلة', 'تادلا', 'kasbah tadla', 'tadla'] },
+  { id: 'khenifra', ar: 'خنيفرة', fr: 'Khénifra', en: 'Khenifra', keywords: ['خنيفرة', 'خنيفره', 'khenifra', 'khénifra'] },
+  { id: 'khouribga', ar: 'خريبكة', fr: 'Khouribga', en: 'Khouribga', keywords: ['خريبكة', 'خريبكه', 'khouribga'] },
+  { id: 'kenitra', ar: 'القنيطرة', fr: 'Kénitra', en: 'Kenitra', keywords: ['القنيطرة', 'قنيطرة', 'kenitra', 'kénitra'] },
+  { id: 'tetouan', ar: 'تطوان', fr: 'Tétouan', en: 'Tetouan', keywords: ['تطوان', 'tetouan', 'tétouan'] },
+  { id: 'el_jadida', ar: 'الجديدة', fr: 'El Jadida', en: 'El Jadida', keywords: ['الجديدة', 'جديدة', 'el jadida', 'jadida'] },
+  { id: 'safi', ar: 'آسفي', fr: 'Safi', en: 'Safi', keywords: ['آسفي', 'اسفي', 'safi'] },
+  { id: 'nador', ar: 'الناظور', fr: 'Nador', en: 'Nador', keywords: ['الناظور', 'ناظور', 'nador'] },
+  { id: 'mohammedia', ar: 'المحمدية', fr: 'Mohammedia', en: 'Mohammedia', keywords: ['المحمدية', 'محمدية', 'mohammedia'] },
+  { id: 'ouarzazate', ar: 'ورزازات', fr: 'Ouarzazate', en: 'Ouarzazate', keywords: ['ورزازات', 'ouarzazate'] },
+  { id: 'laayoune', ar: 'العيون', fr: 'Laâyoune', en: 'Laayoune', keywords: ['العيون', 'laayoune', 'laâyoune'] }
 ];
 
-// 📦 تصنيفات المواد والسلع بالصور والأيقونات الكبيرة (للتجار والموردين)
+// 📦 تصنيفات المتاجر والموردين بالصور + خيار "قطاع آخر / سلعة أخرى"
 const STORE_CATEGORIES = [
-  { id: 'gros_materiaux', icon: '🧱', ar: 'إسمنت، حديد وياجور', fr: 'Ciment, Fer & Briques', en: 'Cement, Iron & Bricks', keywords: ['إسمنت', 'اسمنت', 'سيما', 'حديد', 'ياجور', 'رمل', 'بريك', 'خرسانة', 'ciment', 'fer', 'brique', 'béton'] },
-  { id: 'quincaillerie', icon: '🛠️', ar: 'دروكري وعقاقير عامة', fr: 'Droguerie & Outillage', en: 'Hardware & Tools', keywords: ['دروكري', 'عقاقير', 'معدات', 'دوزان', 'droguerie', 'quincaillerie', 'outillage'] },
-  { id: 'sanitaire', icon: '🚰', ar: 'سباكة وتجهيز حمامات', fr: 'Plomberie & Sanitaire', en: 'Plumbing & Sanitary', keywords: ['سباكة', 'بلومبي', 'قوادس', 'سانيتير', 'حمامات', 'plomberie', 'sanitaire'] },
-  { id: 'elec_eclairage', icon: '⚡', ar: 'كهرباء وإنارة', fr: 'Électricité & Éclairage', en: 'Electrical & Lighting', keywords: ['كهرباء', 'ضو', 'ضوء', 'كابلات', 'إنارة', 'انارة', 'électricité', 'éclairage'] },
-  { id: 'peinture_deco', icon: '🎨', ar: 'صباغة، عزل وديكور', fr: 'Peinture & Étanchéité', en: 'Paint & Waterproofing', keywords: ['صباغة', 'صباغه', 'دهان', 'عزل', 'peinture', 'étanchéité'] },
-  { id: 'carrelage_bois', icon: '⬜', ar: 'زليج، رخام وخشب', fr: 'Carrelage, Marbre & Bois', en: 'Tiles, Marble & Wood', keywords: ['زليج', 'رخام', 'سيراميك', 'خشب', 'ألمنيوم', 'carrelage', 'marbre', 'bois'] }
+  { id: 'gros_materiaux', icon: '🧱', ar: 'إسمنت، حديد وياجور', fr: 'Ciment, Fer & Briques', en: 'Cement, Iron & Bricks', keywords: ['إسمنت', 'اسمنت', 'سيما', 'حديد', 'ياجور', 'رمل', 'بريك', 'خرسانة', 'بيطون', 'ciment', 'fer', 'brique', 'béton'] },
+  { id: 'quincaillerie', icon: '🛠️', ar: 'دروكري وعقاقير عامة', fr: 'Droguerie & Outillage', en: 'Hardware & Tools', keywords: ['دروكري', 'عقاقير', 'معدات', 'دوزان', 'براغي', 'droguerie', 'quincaillerie', 'outillage'] },
+  { id: 'sanitaire', icon: '🚰', ar: 'سباكة وتجهيز حمامات', fr: 'Plomberie & Sanitaire', en: 'Plumbing & Sanitary', keywords: ['سباكة', 'بلومبي', 'قوادس', 'سانيتير', 'حمامات', 'روبيني', 'plomberie', 'sanitaire'] },
+  { id: 'elec_eclairage', icon: '⚡', ar: 'كهرباء وإنارة وكابلات', fr: 'Électricité & Éclairage', en: 'Electrical & Lighting', keywords: ['كهرباء', 'ضو', 'ضوء', 'كابلات', 'إنارة', 'انارة', 'بولات', 'électricité', 'éclairage'] },
+  { id: 'peinture_deco', icon: '🎨', ar: 'صباغة، عزل وديكور', fr: 'Peinture & Étanchéité', en: 'Paint & Waterproofing', keywords: ['صباغة', 'صباغه', 'دهان', 'عزل', 'زفت', 'peinture', 'étanchéité'] },
+  { id: 'carrelage_bois', icon: '⬜', ar: 'زليج، رخام وخشب', fr: 'Carrelage, Marbre & Bois', en: 'Tiles, Marble & Wood', keywords: ['زليج', 'رخام', 'سيراميك', 'خشب', 'ألمنيوم', 'فايونص', 'carrelage', 'marbre', 'bois'] },
+  { id: 'engins_loc', icon: '🚜', ar: 'كراء معدات وآليات البناء', fr: 'Location Engins & Matériel', en: 'Equipment & Machinery Rental', keywords: ['كراء', 'آليات', 'تراكس', 'سقالة', 'معدات', 'location', 'engins'] },
+  { id: 'other', icon: '➕', ar: 'قطاع آخر (حدده)', fr: 'Autre Secteur (Préciser)', en: 'Other Sector (Specify)', keywords: [] }
 ];
 
 const translations = {
   ar: {
-    portalSubtitle: "بوابة التجار وموردي مواد البناء (تسجيل صوتي وبصري ذكي)",
+    portalSubtitle: "بوابة التجار وموردي مواد البناء (تسجيل صوتي بالدارجة المغربية أو العربية)",
     tabRegister: "إنشاء حساب متجر / شركة",
     emailOptionalLabel: "البريد الإلكتروني (اختياري - يكفي رقم الهاتف)",
     passwordOrPinLabel: "الرمز السري (4 أرقام PIN) أو كلمة المرور *",
@@ -56,8 +58,9 @@ const translations = {
     phonePlaceholder: "06XXXXXXXX / 05XXXXXXXX",
     cityLabel: "المدينة",
     cityPlaceholder: "مثال: قصبة تادلة، الدار البيضاء...",
-    categoryLabel: "اختر تخصص متجرك / شركتك بالصورة:",
-    storeBioLabel: "✨ بطاقة تعريف المتجر (صاغها الذكاء الاصطناعي لزبنائك):",
+    categoryLabel: "اختر تخصص متجرك بالصورة (أو اضغط + لقطاع آخر):",
+    customCategoryPlace: "اكتب أو انطق تخصص متجرك أو شركتك هنا...",
+    storeBioLabel: "✨ بطاقة تعريف المتجر (تُصاغ وتُترجم تلقائياً بالذكاء الاصطناعي):",
     registerBtn: "إنشاء الحساب وفتح لوحة القيادة الآن",
     retailBtn: "🏪 تاجر تجزئة (دروكري / محل)",
     wholesaleBtn: "🏭 مورد جملة (شركة / مصنع)",
@@ -68,19 +71,18 @@ const translations = {
     errPinShort: "يرجى اختيار رمز سري مكون من 4 أرقام على الأقل.",
     errUnexpected: "حدث خطأ أثناء إنشاء الحساب.",
     successRegister: "✅ تم إنشاء حساب متجرك بنجاح! جاري فتح لوحة القيادة...",
-    // مزايا الصوت والمسح الذكي
     audioGuideBtn: "🔊 استمع للشرح الصوتي",
     audioGuideStop: "⏹️ إيقاف الصوت",
-    voiceBoxTitle: "🎙️ افتح متجرك بالصوت فقط (بدون كتابة)",
-    voiceBoxDesc: "اضغط الميكروفون وقل: اسم المحل أو الشركة، المدينة، نوع السلعة، ورقم الهاتف!",
-    voiceStartBtn: "اضغط وتحدث الآن",
-    voiceStopBtn: "جاري الاستماع... تحدث الآن",
+    voiceBoxTitle: "🎙️ افتح متجرك بالصوت (يفهم الدارجة المغربية والعربية)",
+    voiceBoxDesc: "اضغط الميكروفون وتكلم بالدارجة: قل اسم المحل أو الشركة، المدينة، نوع السلعة، ورقم الهاتف!",
+    voiceStartBtn: "اضغط وتكلم بالدارجة أو العربية",
+    voiceStopBtn: "جاري الاستماع... تكلم الآن",
     scanCardBtn: "📷 تصوير الكارط فيزيت",
     scanningMsg: "جاري القراءة...",
     pinSecurityHint: "🛡️ احفظ هذا الرمز السري (4 أرقام مثل 2580) لتدخل به دائماً مع رقم هاتفك."
   },
   fr: {
-    portalSubtitle: "Portail Détaillants & Grossistes BTP (Inscription Vocale & IA)",
+    portalSubtitle: "Portail Détaillants & Grossistes BTP (Inscription Vocale Darija & FR)",
     tabRegister: "Créer un compte Magasin / Société",
     emailOptionalLabel: "Email (Optionnel - Le téléphone suffit)",
     passwordOrPinLabel: "Code PIN (4 chiffres) ou Mot de passe *",
@@ -91,8 +93,9 @@ const translations = {
     phonePlaceholder: "06XXXXXXXX / 05XXXXXXXX",
     cityLabel: "Ville",
     cityPlaceholder: "Ex : Kasbah Tadla, Casablanca...",
-    categoryLabel: "Spécialité de votre magasin en image :",
-    storeBioLabel: "✨ Présentation du magasin rédigée par l'IA :",
+    categoryLabel: "Spécialité de votre magasin (ou + pour un autre secteur) :",
+    customCategoryPlace: "Écrivez ou dictez votre secteur d'activité...",
+    storeBioLabel: "✨ Présentation du magasin (Rédigée et traduite par l'IA) :",
     registerBtn: "Créer le compte et ouvrir le tableau de bord",
     retailBtn: "🏪 Détaillant (Boutique / POS)",
     wholesaleBtn: "🏭 Grossiste (Société / Usine)",
@@ -105,16 +108,16 @@ const translations = {
     successRegister: "✅ Compte créé avec succès ! Ouverture du tableau de bord...",
     audioGuideBtn: "🔊 Écouter le guide vocal",
     audioGuideStop: "⏹️ Arrêter l'audio",
-    voiceBoxTitle: "🎙️ Créez votre boutique par la voix (Sans clavier)",
+    voiceBoxTitle: "🎙️ Créez votre boutique par la voix (Comprend Darija & Français)",
     voiceBoxDesc: "Appuyez sur le micro et dites le nom du magasin, la ville, vos produits et votre téléphone !",
-    voiceStartBtn: "Appuyez et parlez",
-    voiceStopBtn: "Écoute en cours...",
+    voiceStartBtn: "Appuyez et parlez (Darija / FR)",
+    voiceStopBtn: "Écoute en direct...",
     scanCardBtn: "📷 Scanner Carte de Visite",
     scanningMsg: "Lecture...",
     pinSecurityHint: "🛡️ Gardez ce code PIN (4 chiffres ex: 2580) pour vous connecter avec votre téléphone."
   },
   en: {
-    portalSubtitle: "Retailers & Wholesalers Smart Portal (Voice & AI Onboarding)",
+    portalSubtitle: "Retailers & Wholesalers Smart Portal (Darija, AR & EN Voice Onboarding)",
     tabRegister: "Create Store / Company Account",
     emailOptionalLabel: "Email (Optional - Phone is enough)",
     passwordOrPinLabel: "Secret PIN (4 digits) or Password *",
@@ -125,8 +128,9 @@ const translations = {
     phonePlaceholder: "06XXXXXXXX / 05XXXXXXXX",
     cityLabel: "City",
     cityPlaceholder: "E.g., Kasbah Tadla, Casablanca...",
-    categoryLabel: "Select your store specialty visually:",
-    storeBioLabel: "✨ AI-Generated Store Description:",
+    categoryLabel: "Select your store specialty (or tap + for another sector):",
+    customCategoryPlace: "Type or speak your specific business sector...",
+    storeBioLabel: "✨ AI-Generated Store Description (Auto-Translated):",
     registerBtn: "Create Account & Open Dashboard",
     retailBtn: "🏪 Retailer (Store / POS)",
     wholesaleBtn: "🏭 Wholesaler (Company / Factory)",
@@ -139,17 +143,16 @@ const translations = {
     successRegister: "✅ Account created successfully! Opening dashboard...",
     audioGuideBtn: "🔊 Listen to Audio Guide",
     audioGuideStop: "⏹️ Stop Audio",
-    voiceBoxTitle: "🎙️ Voice Store Registration (No typing)",
+    voiceBoxTitle: "🎙️ Voice Store Registration (Understands Darija, AR & EN)",
     voiceBoxDesc: "Tap the mic and say your store name, city, products, and phone number!",
     voiceStartBtn: "Tap & Speak Now",
-    voiceStopBtn: "Listening...",
+    voiceStopBtn: "Listening live...",
     scanCardBtn: "📷 Scan Business Card",
     scanningMsg: "Scanning...",
     pinSecurityHint: "🛡️ Keep this 4-digit PIN (e.g., 2580) to log in anytime with your phone."
   }
 };
 
-// 🔢 تحويل الأرقام المنطوقة بالعربية/الدارجة/الفرنسية إلى أرقام
 const convertSpokenWordsToDigits = (text) => {
   if (!text) return '';
   let str = text.toLowerCase();
@@ -174,50 +177,57 @@ const convertSpokenWordsToDigits = (text) => {
   return str;
 };
 
-// 🔐 توحيد رقم الهاتف إلى بريد مقنع (@sasbtp.ma) عند عدم إدخال بريد إلكتروني
 const resolveSupplierEmail = (emailInput, phoneInput) => {
   const rawEmail = (emailInput || '').trim();
   if (rawEmail.includes('@')) return rawEmail.toLowerCase();
 
   const rawSource = rawEmail || (phoneInput || '').trim();
   let digits = convertSpokenWordsToDigits(rawSource).replace(/\D/g, '');
-  if (digits.startsWith('212') && digits.length >= 11) {
-    digits = '0' + digits.slice(3);
-  }
-  if (digits.startsWith('00212') && digits.length >= 13) {
-    digits = '0' + digits.slice(5);
-  }
+  if (digits.startsWith('212') && digits.length >= 11) digits = '0' + digits.slice(3);
+  if (digits.startsWith('00212') && digits.length >= 13) digits = '0' + digits.slice(5);
   return digits ? `${digits}@sasbtp.ma` : '';
 };
 
-// 🛡️ تغليف رمز PIN القصير (4 أو 5 أرقام) ليحقق شرط 6 أحرف في Supabase Auth
 const wrapSecretPin = (secret) => {
   const clean = (secret || '').trim();
-  if (clean.length > 0 && clean.length < 6) {
-    return `SAS#PIN#${clean}#BTP`;
-  }
+  if (clean.length > 0 && clean.length < 6) return `SAS#PIN#${clean}#BTP`;
   return clean;
 };
 
-export default function SupplierAuth() {
-  const navigate = useNavigate();
-  const { language = 'ar' } = useSettingsStore();
-  const isRtl = language === 'ar';
-  const t = translations[language] || translations.fr;
+const matchCityInLang = (rawInput, lang) => {
+  if (!rawInput) return null;
+  const lower = rawInput.toLowerCase().trim();
+  for (const c of MOROCCAN_CITIES_DATA) {
+    if (
+      c.keywords.some((k) => lower.includes(k)) ||
+      lower.includes(c.ar.toLowerCase()) ||
+      lower.includes(c.fr.toLowerCase())
+    ) {
+      return lang === 'ar' ? c.ar : lang === 'fr' ? c.fr : c.en;
+    }
+  }
+  return null;
+};
 
-  const [supplierType, setSupplierType] = useState('retail'); // 'retail' | 'wholesale'
+export default function SupplierAuth() {
+  const { language, setLanguage } = useSettingsStore();
+  const isRtl = language === 'ar';
+  const t = translations[language] || translations.ar;
+
+  const [supplierType, setSupplierType] = useState('retail');
   const [selectedCategory, setSelectedCategory] = useState('quincaillerie');
+  const [customCategoryText, setCustomCategoryText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [alert, setAlert] = useState({ show: false, type: '', text: '' });
 
-  // حالات الصوت والمسح الذكي
   const [isSpeakingGuide, setIsSpeakingGuide] = useState(false);
   const [listeningField, setListeningField] = useState(null);
   const [spokenPreview, setSpokenPreview] = useState('');
   const [isScanningCard, setIsScanningCard] = useState(false);
 
   const recognitionRef = useRef(null);
+  const cloudAudioRef = useRef(null);
   const cardInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -229,14 +239,76 @@ export default function SupplierAuth() {
     storeBio: ''
   });
 
+  // 🇲🇦 جعل العربية هي اللغة الافتراضية في أول مصافحة للتاجر والمورد
   useEffect(() => {
+    const hasPickedLang = sessionStorage.getItem('sasbtp_auth_lang_picked');
+    if (!hasPickedLang && language !== 'ar') {
+      setLanguage('ar');
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+    }
     return () => {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (cloudAudioRef.current) {
+        cloudAudioRef.current.pause();
+        cloudAudioRef.current = null;
+      }
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch (e) {}
+        try { recognitionRef.current.abort(); } catch (e) {}
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const buildLocalizedStoreBio = (targetLang, supType, catId, customCat, companyVal, cityVal) => {
+    const catObj = STORE_CATEGORIES.find((c) => c.id === catId) || STORE_CATEGORIES[1];
+    const catName =
+      catId === 'other' && customCat
+        ? customCat
+        : targetLang === 'ar'
+        ? catObj.ar
+        : targetLang === 'fr'
+        ? catObj.fr
+        : catObj.en;
+
+    const localizedCity = matchCityInLang(cityVal, targetLang) || cityVal;
+
+    if (targetLang === 'ar') {
+      const typeAr = supType === 'wholesale' ? 'مورد جملة وشركة معتمدة' : 'متجر وموزع معتمد';
+      return `${companyVal || typeAr} في منصة SasBTP، متخصص في توفير (${catName})${localizedCity ? ` بمدينة ${localizedCity} والنواحي` : ''}. نوفر سلعاً عالية الجودة، أسعاراً تنافسية للمقاولين والحرفيين، وخدمة سريعة.`;
+    }
+    if (targetLang === 'fr') {
+      const typeFr = supType === 'wholesale' ? 'Fournisseur Grossiste B2B' : 'Magasin & Détaillant BTP';
+      return `${companyVal || typeFr} vérifié sur SasBTP, spécialisé en (${catName})${localizedCity ? ` à ${localizedCity}` : ''}. Produits certifiés, tarifs compétitifs et disponibilité immédiate.`;
+    }
+    const typeEn = supType === 'wholesale' ? 'Verified B2B Wholesaler' : 'Verified BTP Retailer';
+    return `${companyVal || typeEn} on SasBTP, specializing in (${catName})${localizedCity ? ` in ${localizedCity}` : ''}. Certified materials, competitive pricing, and fast delivery.`;
+  };
+
+  // 🔄 ترجمة تلقائية للمدينة ووصف المتجر عند تبديل اللغة في الشريط العلوي
+  const handleSelectLanguage = (newLang) => {
+    sessionStorage.setItem('sasbtp_auth_lang_picked', 'true');
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (cloudAudioRef.current) {
+      cloudAudioRef.current.pause();
+      cloudAudioRef.current = null;
+    }
+    setIsSpeakingGuide(false);
+    setLanguage(newLang);
+
+    setFormData((prev) => {
+      const newCity = matchCityInLang(prev.city, newLang) || prev.city;
+      const newBio = prev.storeBio
+        ? buildLocalizedStoreBio(newLang, supplierType, selectedCategory, customCategoryText, prev.company, newCity)
+        : '';
+      return {
+        ...prev,
+        city: newCity,
+        storeBio: newBio
+      };
+    });
+  };
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -246,42 +318,83 @@ export default function SupplierAuth() {
   };
 
   // ==========================================
-  // 🔊 1. المرشد الصوتي الناطق للتاجر والمورد
+  // 🔊 1. المرشد الصوتي الطبيعي السليم في اللغات الثلاث
   // ==========================================
   const toggleAudioGuide = () => {
-    if (!('speechSynthesis' in window)) return;
     if (isSpeakingGuide) {
-      window.speechSynthesis.cancel();
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (cloudAudioRef.current) {
+        cloudAudioRef.current.pause();
+        cloudAudioRef.current = null;
+      }
       setIsSpeakingGuide(false);
       return;
     }
 
-    window.speechSynthesis.cancel();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (cloudAudioRef.current) {
+      cloudAudioRef.current.pause();
+      cloudAudioRef.current = null;
+    }
+
     const guideText =
       language === 'ar'
-        ? 'مرحباً بك في بوابة التجار والموردين بمنصة ساس بي تي بي. لإنشاء حساب متجرك أو شركتك بدون كتابة، اضغط على زر الميكروفون البرتقالي، وقل اسم المحل أو الشركة، المدينة، نوع السلعة، ورقم هاتفك، ثم اختر رمزاً سرياً بسيطاً من أربعة أرقام.'
+        ? 'مرحباً بك في بوابة التجار والموردين بمنصة ساس بي تي بي. لإنشاء حساب متجرك أو شركتك بدون كتابة، اضغط على الزر البرتقالي، وتكلم بالدارجة المغربية أو العربية: قل اسم المحل أو الشركة، المدينة، نوع السلعة، ورقم هاتفك.'
         : language === 'fr'
-        ? 'Bienvenue sur le portail Fournisseurs et Détaillants SasBTP. Appuyez sur le microphone orange et dites le nom de votre boutique ou société, votre ville et votre numéro de téléphone.'
+        ? 'Bienvenue sur le portail Fournisseurs et Détaillants SasBTP. Appuyez sur le bouton orange et dites le nom de votre boutique ou société, votre ville et votre numéro de téléphone.'
         : 'Welcome to the SasBTP Suppliers Portal. Tap the orange microphone and speak your store or company name, city, and phone number.';
 
-    const utterance = new SpeechSynthesisUtterance(guideText);
-    utterance.lang = language === 'ar' ? 'ar-SA' : language === 'fr' ? 'fr-FR' : 'en-US';
-    utterance.rate = 0.94;
-    utterance.onend = () => setIsSpeakingGuide(false);
-    utterance.onerror = () => setIsSpeakingGuide(false);
+    const voices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
+    const blockedRobotic = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox'];
 
-    setIsSpeakingGuide(true);
-    window.speechSynthesis.speak(utterance);
+    let chosenVoice = null;
+    if (language === 'ar') {
+      chosenVoice = voices.find((v) => v.lang.toLowerCase().startsWith('ar') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+    } else if (language === 'fr') {
+      chosenVoice = voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+    } else {
+      chosenVoice =
+        voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Google US') || v.name.includes('Daniel') || v.name.includes('Karen') || v.name.includes('Alex'))) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+    }
+
+    if (!chosenVoice && language === 'ar') {
+      try {
+        const encoded = encodeURIComponent(guideText);
+        const audio = new Audio(`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=${encoded}`);
+        cloudAudioRef.current = audio;
+        setIsSpeakingGuide(true);
+        audio.onended = () => setIsSpeakingGuide(false);
+        audio.onerror = () => setIsSpeakingGuide(false);
+        audio.play().catch(() => setIsSpeakingGuide(false));
+        return;
+      } catch (e) {}
+    }
+
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(guideText);
+      if (chosenVoice) {
+        utterance.voice = chosenVoice;
+        utterance.lang = chosenVoice.lang;
+      } else {
+        utterance.lang = language === 'ar' ? 'ar-SA' : language === 'fr' ? 'fr-FR' : 'en-US';
+      }
+      utterance.rate = 0.94;
+      utterance.onend = () => setIsSpeakingGuide(false);
+      utterance.onerror = () => setIsSpeakingGuide(false);
+
+      setIsSpeakingGuide(true);
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   // ==========================================
-  // 🧠 2. التحليل الذكي لكلام التاجر/المورد وصياغة بطاقة المتجر
+  // 🧠 2. فهم الدارجة المغربية للتاجر/المورد وصياغة بطاقة المتجر
   // ==========================================
   const parseSupplierSpeech = (rawSpeech) => {
     const normalized = convertSpokenWordsToDigits(rawSpeech);
     const lower = normalized.toLowerCase();
 
-    // أ) تحديد ما إذا كان المتحدث تاجر تجزئة (Retail) أم مورد جملة (Wholesale)
     let detectedType = supplierType;
     if (/(جملة|شركة|شركه|مصنع|معمل|ديبو|توريد|grossiste|usine|société|societe|b2b)/i.test(lower)) {
       detectedType = 'wholesale';
@@ -291,31 +404,22 @@ export default function SupplierAuth() {
       setSupplierType('retail');
     }
 
-    // ب) استخراج رقم الهاتف المغربي
     const compactDigits = normalized.replace(/[\s\-./]/g, '');
     const phoneMatch = compactDigits.match(/(?:00212|\+212|212|0)([567]\d{8})/);
     const detectedPhone = phoneMatch ? `0${phoneMatch[1]}` : '';
 
-    // ج) استخراج المدينة
-    let detectedCity = '';
-    for (const c of MOROCCAN_CITIES_MAP) {
-      if (c.keywords.some((k) => lower.includes(k))) {
-        detectedCity = c.label;
-        break;
-      }
-    }
+    const detectedCity = matchCityInLang(normalized, language) || '';
 
-    // د) استخراج تصنيف السلع
-    let matchedCat = STORE_CATEGORIES.find((c) => c.id === selectedCategory) || STORE_CATEGORIES[1];
+    let matchedCatId = selectedCategory;
     for (const cat of STORE_CATEGORIES) {
+      if (cat.id === 'other') continue;
       if (cat.keywords.some((k) => lower.includes(k))) {
-        matchedCat = cat;
+        matchedCatId = cat.id;
         setSelectedCategory(cat.id);
         break;
       }
     }
 
-    // هـ) استخراج اسم المحل أو الشركة
     let detectedCompany = '';
     const companyPatterns = [
       /(?:دروكري|محل|متجر|شركة|شركه|مؤسسة|مصنع|ديبو|معكم|أنا|انا|اسمي|سميتي)\s+([أ-يa-zA-Z0-9]+(?:\s+[أ-يa-zA-Z0-9]+){0,2})/i,
@@ -326,34 +430,27 @@ export default function SupplierAuth() {
       if (m && m[0]) {
         detectedCompany = m[0]
           .replace(/^(معكم|أنا|انا|اسمي|سميتي)\s+/i, '')
-          .replace(/\b(في|من|بمدينة|مدينة|لبيع|متخصص|رقم|هاتف|تليفون|de|à|sur)\b.*/i, '')
+          .replace(/\b(في|من|ف|بمدينة|مدينة|لبيع|متخصص|رقم|هاتف|تليفون|de|à|sur)\b.*/i, '')
           .trim();
         break;
       }
     }
 
-    // و) الصياغة التلقائية لبطاقة تعريف المتجر/الشركة بلغة سليمة
-    const catName = language === 'ar' ? matchedCat.ar : language === 'fr' ? matchedCat.fr : matchedCat.en;
-    const cityClean = detectedCity ? detectedCity.split(' - ')[language === 'ar' ? 0 : 1] || detectedCity : '';
-    const typeLabelAr = detectedType === 'wholesale' ? 'مورد جملة وشركة معتمدة' : 'متجر وموزع معتمد';
-    const typeLabelFr = detectedType === 'wholesale' ? 'Fournisseur Grossiste B2B' : 'Magasin & Détaillant BTP';
-
-    const composedStoreBio =
-      language === 'ar'
-        ? `${detectedCompany || typeLabelAr} في منصة SasBTP، متخصص في توفير (${catName})${cityClean ? ` بمدينة ${cityClean} والنواحي` : ''}. نوفر سلعاً عالية الجودة، أسعاراً تنافسية للمقاولين والحرفيين، وخدمة سريعة.`
-        : `${detectedCompany || typeLabelFr} vérifié sur SasBTP, spécialisé en ${catName}${cityClean ? ` à ${cityClean}` : ''}. Produits certifiés, tarifs compétitifs et disponibilité immédiate.`;
+    const finalCompany = detectedCompany || formData.company;
+    const finalCity = detectedCity || formData.city;
+    const composedStoreBio = buildLocalizedStoreBio(language, detectedType, matchedCatId, customCategoryText, finalCompany, finalCity);
 
     setFormData((prev) => ({
       ...prev,
-      company: detectedCompany || prev.company,
+      company: finalCompany,
       phone: detectedPhone || prev.phone,
-      city: detectedCity || prev.city,
+      city: finalCity,
       storeBio: composedStoreBio
     }));
   };
 
   // ==========================================
-  // 🎙️ 3. تشغيل الميكروفون (الشامل أو لكل حقل)
+  // 🎙️ 3. الميكروفون الفوري الموثوق (يدعم الدارجة المغربية ويكتب لحظياً)
   // ==========================================
   const toggleVoiceInput = (target = 'smartAll') => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -369,42 +466,73 @@ export default function SupplierAuth() {
     }
 
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) {}
+      try { recognitionRef.current.abort(); } catch (e) {}
+      recognitionRef.current = null;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    setTimeout(() => {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ar-MA';
+        recognition.interimResults = true;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
 
-    recognition.onstart = () => setListeningField(target);
+        recognition.onstart = () => setListeningField(target);
 
-    recognition.onresult = (event) => {
-      const transcript = event.results?.[0]?.[0]?.transcript || '';
-      setSpokenPreview(transcript);
+        recognition.onresult = (event) => {
+          let transcript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          const clean = transcript.trim();
+          if (!clean) return;
 
-      if (target === 'smartAll') {
-        parseSupplierSpeech(transcript);
-      } else if (target === 'phone') {
-        const digits = convertSpokenWordsToDigits(transcript).replace(/\D/g, '');
-        setFormData((prev) => ({ ...prev, phone: digits || transcript.trim() }));
-      } else if (target === 'password') {
-        const digits = convertSpokenWordsToDigits(transcript).replace(/\s+/g, '');
-        setFormData((prev) => ({ ...prev, password: digits }));
-      } else if (target === 'company' || target === 'city') {
-        setFormData((prev) => ({ ...prev, [target]: transcript.trim() }));
+          setSpokenPreview(clean);
+
+          if (target === 'smartAll') {
+            parseSupplierSpeech(clean);
+          } else if (target === 'customCategory') {
+            setCustomCategoryText(clean);
+            setFormData((prev) => ({
+              ...prev,
+              storeBio: buildLocalizedStoreBio(language, supplierType, 'other', clean, prev.company, prev.city)
+            }));
+          } else if (target === 'phone') {
+            const digits = convertSpokenWordsToDigits(clean).replace(/\D/g, '');
+            setFormData((prev) => ({ ...prev, phone: digits || clean }));
+          } else if (target === 'password') {
+            const digits = convertSpokenWordsToDigits(clean).replace(/\s+/g, '');
+            setFormData((prev) => ({ ...prev, password: digits }));
+          } else if (target === 'company') {
+            setFormData((prev) => ({
+              ...prev,
+              company: clean,
+              storeBio: buildLocalizedStoreBio(language, supplierType, selectedCategory, customCategoryText, clean, prev.city)
+            }));
+          } else if (target === 'city') {
+            const matched = matchCityInLang(clean, language) || clean;
+            setFormData((prev) => ({
+              ...prev,
+              city: matched,
+              storeBio: buildLocalizedStoreBio(language, supplierType, selectedCategory, customCategoryText, prev.company, matched)
+            }));
+          }
+        };
+
+        recognition.onerror = () => setListeningField(null);
+        recognition.onend = () => setListeningField(null);
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (e) {
+        setListeningField(null);
       }
-    };
-
-    recognition.onerror = () => setListeningField(null);
-    recognition.onend = () => setListeningField(null);
-
-    recognitionRef.current = recognition;
-    recognition.start();
+    }, 120);
   };
 
   // ==========================================
-  // 📷 4. مسح الكارط فيزيت بالكاميرا (OCR Assist)
+  // 📷 4. مسح الكارط فيزيت بالكاميرا
   // ==========================================
   const handleCardScan = async (e) => {
     const file = e.target.files?.[0];
@@ -429,18 +557,11 @@ export default function SupplierAuth() {
         parseSupplierSpeech(detectedText);
         showAlert('success', language === 'ar' ? '✅ تم مسح بطاقة المتجر وتعبئة البيانات بنجاح!' : '✅ Carte commerciale scannée avec succès !');
       } else {
-        const catObj = STORE_CATEGORIES.find((c) => c.id === selectedCategory) || STORE_CATEGORIES[1];
-        const catTitle = language === 'ar' ? catObj.ar : catObj.fr;
-        const autoBio =
-          language === 'ar'
-            ? `مؤسسة معتمدة في منصة SasBTP لتوريد وبيع (${catTitle}). تم توثيق البطاقة المهنية للمتجر.`
-            : `Entreprise vérifiée SasBTP spécialisée en ${catTitle}. Carte commerciale jointe.`;
-
+        const autoBio = buildLocalizedStoreBio(language, supplierType, selectedCategory, customCategoryText, formData.company, formData.city);
         setFormData((prev) => ({
           ...prev,
           storeBio: prev.storeBio || autoBio
         }));
-
         showAlert(
           'success',
           language === 'ar'
@@ -477,7 +598,12 @@ export default function SupplierAuth() {
       }
 
       const catObj = STORE_CATEGORIES.find((c) => c.id === selectedCategory) || STORE_CATEGORIES[1];
-      const catLabel = language === 'ar' ? catObj.ar : catObj.fr;
+      const catLabel =
+        selectedCategory === 'other' && customCategoryText.trim()
+          ? customCategoryText.trim()
+          : language === 'ar'
+          ? catObj.ar
+          : catObj.fr;
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: effectiveEmail,
@@ -502,7 +628,6 @@ export default function SupplierAuth() {
         throw new Error(t.errEmailExists);
       }
 
-      // حفظ بيانات المورد/التاجر في جدول suppliers
       await supabase
         .from('suppliers')
         .insert([
@@ -516,14 +641,12 @@ export default function SupplierAuth() {
         ])
         .catch(() => {});
 
-      // ربط كود الإحالة إن وجد
       if (authData?.user?.id) {
         await bindReferralOnSignup(authData.user.id);
       }
 
       showAlert('success', t.successRegister);
 
-      // 🚀 توجيه مباشر إلى واجهة التاجر أو المورد داخل React
       sessionStorage.setItem('souqbtp_preview_mode', supplierType);
       setTimeout(() => {
         window.location.href = supplierType === 'wholesale' ? '/?preview=wholesale' : '/?preview=retail';
@@ -547,11 +670,48 @@ export default function SupplierAuth() {
     >
       <div className="w-full max-w-xl z-10 py-6 animate-fade-in">
         
+        {/* 🌐 شريط اختيار اللغة البارز في أعلى واجهة التاجر والمورد */}
+        <div className="bg-slate-950/80 backdrop-blur-md px-5 py-2.5 rounded-2xl border border-white/15 flex items-center justify-between mb-5 shadow-lg">
+          <span className="inline-flex items-center gap-1.5 text-xs font-black text-slate-200">
+            <Globe className="w-4 h-4 text-amber-400" />
+            {language === 'ar' ? 'اختر اللغة:' : language === 'fr' ? 'Langue :' : 'Language:'}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleSelectLanguage('ar')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                language === 'ar' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              🇲🇦 العربية
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectLanguage('fr')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                language === 'fr' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              🇫🇷 Français
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectLanguage('en')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                language === 'en' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              🇬🇧 EN
+            </button>
+          </div>
+        </div>
+
         {/* الترويسة + المرشد الصوتي */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-between max-w-md mx-auto mb-4">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-emerald-300 bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full">
-              <ShieldCheck className="w-3.5 h-3.5" /> Voice & PIN AI
+              <ShieldCheck className="w-3.5 h-3.5" /> Darija & Voice AI
             </span>
 
             <button
@@ -621,7 +781,7 @@ export default function SupplierAuth() {
               </div>
             )}
 
-            {/* 2. صندوق التسجيل الصوتي الذكي ومسح الكارط فيزيت */}
+            {/* 2. صندوق التسجيل الصوتي الذكي بالدارجة ومسح الكارط فيزيت */}
             <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-indigo-50 border-2 border-indigo-200 rounded-2xl p-4 shadow-sm">
               <h3 className="font-black text-indigo-950 text-sm mb-1">{t.voiceBoxTitle}</h3>
               <p className="text-xs font-bold text-indigo-900/80 leading-relaxed mb-3">{t.voiceBoxDesc}</p>
@@ -670,22 +830,32 @@ export default function SupplierAuth() {
               )}
             </div>
 
-            {/* 3. اختيار تخصص السلع بالصور والأيقونات الكبيرة */}
+            {/* 3. اختيار تخصص السلع بالصور + خيار قطاع آخر */}
             <div>
               <label className="block text-xs font-black text-gray-700 mb-2">{t.categoryLabel}</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {STORE_CATEGORIES.map((cat) => {
                   const active = selectedCategory === cat.id;
                   return (
                     <button
                       key={cat.id}
                       type="button"
-                      onClick={() => setSelectedCategory(cat.id)}
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        if (cat.id !== 'other') {
+                          setFormData((prev) => ({
+                            ...prev,
+                            storeBio: buildLocalizedStoreBio(language, supplierType, cat.id, customCategoryText, prev.company, prev.city)
+                          }));
+                        }
+                      }}
                       className={`p-2.5 rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                         active
                           ? isWholesaler
                             ? 'border-slate-800 bg-slate-100 text-slate-950 shadow-sm scale-[1.02]'
                             : 'border-blue-600 bg-blue-50 text-blue-950 shadow-sm scale-[1.02]'
+                          : cat.id === 'other'
+                          ? 'border-dashed border-indigo-400 bg-indigo-50/60 text-indigo-900'
                           : 'border-gray-200 bg-gray-50/70 hover:bg-white text-gray-700'
                       }`}
                     >
@@ -697,9 +867,37 @@ export default function SupplierAuth() {
                   );
                 })}
               </div>
+
+              {selectedCategory === 'other' && (
+                <div className="mt-2.5 relative flex items-center animate-fade-in">
+                  <input
+                    type="text"
+                    value={customCategoryText}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomCategoryText(val);
+                      setFormData((prev) => ({
+                        ...prev,
+                        storeBio: buildLocalizedStoreBio(language, supplierType, 'other', val, prev.company, prev.city)
+                      }));
+                    }}
+                    placeholder={t.customCategoryPlace}
+                    className="w-full p-3 bg-indigo-50/50 border-2 border-indigo-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleVoiceInput('customCategory')}
+                    className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-1.5 rounded-lg cursor-pointer ${
+                      listeningField === 'customCategory' ? 'bg-red-500 text-white animate-pulse' : 'bg-indigo-100 text-indigo-700'
+                    }`}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* 4. استمارة البيانات (تُملأ صوتياً أو بالكتابة) */}
+            {/* 4. استمارة البيانات */}
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">{t.companyLabel}</label>
@@ -720,7 +918,7 @@ export default function SupplierAuth() {
                     type="button"
                     onClick={() => toggleVoiceInput('company')}
                     className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-1.5 rounded-lg cursor-pointer ${
-                      listeningField === 'company' ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-200 text-gray-700 hover:bg-orange-100'
+                      listeningField === 'company' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                     }`}
                   >
                     <Mic className="w-3.5 h-3.5" />
@@ -747,7 +945,7 @@ export default function SupplierAuth() {
                       type="button"
                       onClick={() => toggleVoiceInput('phone')}
                       className={`absolute right-2 p-1.5 rounded-lg cursor-pointer ${
-                        listeningField === 'phone' ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-200 text-gray-700 hover:bg-orange-100'
+                        listeningField === 'phone' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                       }`}
                     >
                       <Mic className="w-3.5 h-3.5" />
@@ -773,7 +971,7 @@ export default function SupplierAuth() {
                       type="button"
                       onClick={() => toggleVoiceInput('city')}
                       className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-1.5 rounded-lg cursor-pointer ${
-                        listeningField === 'city' ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-200 text-gray-700 hover:bg-orange-100'
+                        listeningField === 'city' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                       }`}
                     >
                       <Mic className="w-3.5 h-3.5" />
@@ -782,7 +980,6 @@ export default function SupplierAuth() {
                 </div>
               </div>
 
-              {/* معاينة بطاقة المتجر المصاغة بالذكاء الاصطناعي */}
               {formData.storeBio && (
                 <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl">
                   <label className="block text-[11px] font-black text-emerald-900 mb-1 flex items-center gap-1">
@@ -797,7 +994,6 @@ export default function SupplierAuth() {
                 </div>
               )}
 
-              {/* الرمز السري PIN (4 أرقام) أو كلمة المرور */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">{t.passwordOrPinLabel}</label>
                 <div className="relative flex items-center">
@@ -825,7 +1021,7 @@ export default function SupplierAuth() {
                       type="button"
                       onClick={() => toggleVoiceInput('password')}
                       className={`p-1.5 rounded-lg cursor-pointer ${
-                        listeningField === 'password' ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-200 text-gray-700 hover:bg-orange-100'
+                        listeningField === 'password' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                       }`}
                     >
                       <Mic className="w-3.5 h-3.5" />
@@ -835,7 +1031,6 @@ export default function SupplierAuth() {
                 <p className="text-[11px] font-semibold text-gray-500 mt-1">{t.pinSecurityHint}</p>
               </div>
 
-              {/* البريد الإلكتروني (اختياري) */}
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.emailOptionalLabel}</label>
                 <div className="relative flex items-center">
@@ -847,7 +1042,7 @@ export default function SupplierAuth() {
                     onChange={handleChange}
                     className="w-full py-2.5 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-gray-900 font-medium text-xs"
                     dir="ltr"
-                    placeholder="name@company.com (اختياري)"
+                    placeholder="name@company.com"
                   />
                 </div>
               </div>
@@ -865,7 +1060,6 @@ export default function SupplierAuth() {
               </button>
             </form>
 
-            {/* 🔗 توجيه لبوابة الدخول الموحدة في React */}
             <div className="mt-5 text-center text-sm font-bold text-gray-600">
               <p>
                 {t.haveAccount}{' '}

@@ -3,50 +3,54 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import useSettingsStore from '../../../store/useSettingsStore';
 import { 
-  HardHat, Mail, Lock, User, Phone, MapPin, Briefcase, FileText, 
+  HardHat, Mail, User, Phone, MapPin, 
   ArrowRight, Loader2, CheckCircle2, AlertCircle, Mic, MicOff, 
-  Volume2, Camera, KeyRound, Eye, EyeOff, ShieldCheck, Sparkles 
+  Volume2, Camera, KeyRound, Eye, EyeOff, ShieldCheck, Sparkles, Globe 
 } from 'lucide-react';
 import { bindReferralOnSignup } from '../../../lib/referralHandler';
 
-// 🏙️ خريطة المدن المغربية للالتقاط الصوتي الذكي
-const MOROCCAN_CITIES_MAP = [
-  { keywords: ['الدار البيضاء', 'كازا', 'casablanca', 'casa'], label: 'الدار البيضاء - Casablanca' },
-  { keywords: ['الرباط', 'رباط', 'rabat'], label: 'الرباط - Rabat' },
-  { keywords: ['مراكش', 'marrakech', 'marrakesh'], label: 'مراكش - Marrakech' },
-  { keywords: ['طنجة', 'طنجه', 'tanger', 'tangier'], label: 'طنجة - Tanger' },
-  { keywords: ['فاس', 'fes', 'fès'], label: 'فاس - Fès' },
-  { keywords: ['أكادير', 'اكادير', 'agadir'], label: 'أكادير - Agadir' },
-  { keywords: ['مكناس', 'meknes', 'meknès'], label: 'مكناس - Meknès' },
-  { keywords: ['وجدة', 'وجده', 'oujda'], label: 'وجدة - Oujda' },
-  { keywords: ['بني ملال', 'بنيملال', 'beni mellal', 'béni mellal'], label: 'بني ملال - Béni Mellal' },
-  { keywords: ['قصبة تادلة', 'تادلة', 'تادلا', 'kasbah tadla', 'tadla'], label: 'قصبة تادلة - Kasbah Tadla' },
-  { keywords: ['خنيفرة', 'خنيفره', 'khenifra', 'khénifra'], label: 'خنيفرة - Khénifra' },
-  { keywords: ['خريبكة', 'خريبكه', 'khouribga'], label: 'خريبكة - Khouribga' },
-  { keywords: ['القنيطرة', 'قنيطرة', 'kenitra', 'kénitra'], label: 'القنيطرة - Kénitra' },
-  { keywords: ['تطوان', 'tetouan', 'tétouan'], label: 'تطوان - Tétouan' },
-  { keywords: ['الجديدة', 'جديدة', 'el jadida', 'jadida'], label: 'الجديدة - El Jadida' },
-  { keywords: ['آسفي', 'اسفي', 'safi'], label: 'آسفي - Safi' },
-  { keywords: ['الناظور', 'ناظور', 'nador'], label: 'الناظور - Nador' },
-  { keywords: ['المحمدية', 'محمدية', 'mohammedia'], label: 'المحمدية - Mohammedia' },
-  { keywords: ['ورزازات', 'ouarzazate'], label: 'ورزازات - Ouarzazate' },
-  { keywords: ['العيون', 'laayoune', 'laâyoune'], label: 'العيون - Laâyoune' }
+// 🏙️ خريطة المدن المغربية للالتقاط الصوتي بالدارجة والترجمة التلقائية بين اللغات
+const MOROCCAN_CITIES_DATA = [
+  { id: 'casablanca', ar: 'الدار البيضاء', fr: 'Casablanca', en: 'Casablanca', keywords: ['الدار البيضاء', 'كازا', 'دار البيضاء', 'casablanca', 'casa'] },
+  { id: 'rabat', ar: 'الرباط', fr: 'Rabat', en: 'Rabat', keywords: ['الرباط', 'رباط', 'rabat'] },
+  { id: 'marrakech', ar: 'مراكش', fr: 'Marrakech', en: 'Marrakech', keywords: ['مراكش', 'marrakech', 'marrakesh'] },
+  { id: 'tanger', ar: 'طنجة', fr: 'Tanger', en: 'Tangier', keywords: ['طنجة', 'طنجه', 'tanger', 'tangier'] },
+  { id: 'fes', ar: 'فاس', fr: 'Fès', en: 'Fes', keywords: ['فاس', 'fes', 'fès'] },
+  { id: 'agadir', ar: 'أكادير', fr: 'Agadir', en: 'Agadir', keywords: ['أكادير', 'اكادير', 'agadir'] },
+  { id: 'meknes', ar: 'مكناس', fr: 'Meknès', en: 'Meknes', keywords: ['مكناس', 'meknes', 'meknès'] },
+  { id: 'oujda', ar: 'وجدة', fr: 'Oujda', en: 'Oujda', keywords: ['وجدة', 'وجده', 'oujda'] },
+  { id: 'beni_mellal', ar: 'بني ملال', fr: 'Béni Mellal', en: 'Beni Mellal', keywords: ['بني ملال', 'بنيملال', 'beni mellal', 'béni mellal'] },
+  { id: 'kasbah_tadla', ar: 'قصبة تادلة', fr: 'Kasbah Tadla', en: 'Kasbah Tadla', keywords: ['قصبة تادلة', 'تادلة', 'تادلا', 'kasbah tadla', 'tadla'] },
+  { id: 'khenifra', ar: 'خنيفرة', fr: 'Khénifra', en: 'Khenifra', keywords: ['خنيفرة', 'خنيفره', 'khenifra', 'khénifra'] },
+  { id: 'khouribga', ar: 'خريبكة', fr: 'Khouribga', en: 'Khouribga', keywords: ['خريبكة', 'خريبكه', 'khouribga'] },
+  { id: 'kenitra', ar: 'القنيطرة', fr: 'Kénitra', en: 'Kenitra', keywords: ['القنيطرة', 'قنيطرة', 'kenitra', 'kénitra'] },
+  { id: 'tetouan', ar: 'تطوان', fr: 'Tétouan', en: 'Tetouan', keywords: ['تطوان', 'tetouan', 'tétouan'] },
+  { id: 'el_jadida', ar: 'الجديدة', fr: 'El Jadida', en: 'El Jadida', keywords: ['الجديدة', 'جديدة', 'el jadida', 'jadida'] },
+  { id: 'safi', ar: 'آسفي', fr: 'Safi', en: 'Safi', keywords: ['آسفي', 'اسفي', 'safi'] },
+  { id: 'nador', ar: 'الناظور', fr: 'Nador', en: 'Nador', keywords: ['الناظور', 'ناظور', 'nador'] },
+  { id: 'mohammedia', ar: 'المحمدية', fr: 'Mohammedia', en: 'Mohammedia', keywords: ['المحمدية', 'محمدية', 'mohammedia'] },
+  { id: 'ouarzazate', ar: 'ورزازات', fr: 'Ouarzazate', en: 'Ouarzazate', keywords: ['ورزازات', 'ouarzazate'] },
+  { id: 'laayoune', ar: 'العيون', fr: 'Laâyoune', en: 'Laayoune', keywords: ['العيون', 'laayoune', 'laâyoune'] }
 ];
 
-// 🛠️ التخصصات البصرية المرتبطة بأرقام الخدمات (service_id) في قاعدة البيانات
+// 🛠️ التخصصات البصرية المرتبطة بـ service_id في قاعدة البيانات + تخصصات إضافية + خيار "حرفة أخرى"
 const SERVICE_SPECIALTIES = [
-  { id: '37', icon: '🧱', key: 'grosOeuvres', keywords: ['بناي', 'بناء', 'ضالة', 'ياجور', 'أساسات', 'gros oeuvres', 'maçon', 'macon', 'construction'] },
-  { id: '38', icon: '⚡', key: 'electricity', keywords: ['تريسيان', 'كهربائي', 'كهرباء', 'ضو', 'ضوء', 'خيوط', 'électricité', 'electricite', 'électricien'] },
-  { id: '39', icon: '🚰', key: 'plumbing', keywords: ['بلومبي', 'سباك', 'سباكة', 'رصاص', 'ماء', 'قوادس', 'plomberie', 'plombier', 'sanitaire'] },
-  { id: '40', icon: '🛡️', key: 'waterproofing', keywords: ['عزل', 'إيتانشيتي', 'ايتانشيتي', 'قطرة', 'سطح', 'زفت', 'étanchéité', 'etancheite', 'isolation'] },
-  { id: '53', icon: '🏛️', key: 'tiling', keywords: ['زلايجي', 'زليج', 'جباس', 'جبس', 'قبص', 'سيراميك', 'رخام', 'بلافو', 'carrelage', 'plâtre', 'zellige'] },
-  { id: '54', icon: '🎨', key: 'painting', keywords: ['صباغ', 'صباغة', 'صباغه', 'دهان', 'خيال', 'ستيكو', 'peinture', 'peintre'] },
-  { id: '43', icon: '🪵', key: 'carpentry', keywords: ['نجار', 'نجارة', 'خشب', 'ألمنيوم', 'المنيوم', 'أبواب', 'نوافذ', 'menuiserie', 'aluminium', 'bois'] }
+  { id: '37', dbServiceId: 37, icon: '🧱', ar: 'بناي / أعمال البناء', fr: 'Maçon / Gros Œuvres', en: 'Mason / Construction', keywords: ['بناي', 'بناء', 'ضالة', 'ياجور', 'طوب', 'حفر', 'مرطوب', 'gros oeuvres', 'maçon', 'macon', 'construction'] },
+  { id: '38', dbServiceId: 38, icon: '⚡', ar: 'تريسيان / كهرباء', fr: 'Électricien Bâtiment', en: 'Electrician', keywords: ['تريسيان', 'كهربائي', 'كهرباء', 'ضو', 'الضو', 'ضوء', 'خيوط', 'كابلات', 'électricité', 'electricite', 'électricien'] },
+  { id: '39', dbServiceId: 39, icon: '🚰', ar: 'بلومبي / سباكة', fr: 'Plombier / Sanitaire', en: 'Plumber / Sanitary', keywords: ['بلومبي', 'سباك', 'سباكة', 'رصاص', 'ماء', 'قوادس', 'سانيتير', 'حمامات', 'plomberie', 'plombier', 'sanitaire'] },
+  { id: '40', dbServiceId: 40, icon: '🛡️', ar: 'عزل وإيتانشيتي', fr: 'Étanchéité & Isolation', en: 'Waterproofing', keywords: ['عزل', 'إيتانشيتي', 'ايتانشيتي', 'قطرة', 'سطح', 'زفت', 'étanchéité', 'etancheite', 'isolation'] },
+  { id: '53', dbServiceId: 53, icon: '🏛️', ar: 'زلايجي وجباس', fr: 'Carrelage, Marbre & Plâtre', en: 'Tiling, Marble & Plaster', keywords: ['زلايجي', 'زليج', 'جباس', 'جبس', 'قبص', 'سيراميك', 'رخام', 'فايونص', 'بلافو', 'carrelage', 'plâtre', 'zellige'] },
+  { id: '54', dbServiceId: 54, icon: '🎨', ar: 'صباغ وديكور', fr: 'Peinture & Décoration', en: 'Painting & Decor', keywords: ['صباغ', 'صباغة', 'صباغه', 'دهان', 'خيال', 'ستيكو', 'فاصاد', 'peinture', 'peintre'] },
+  { id: '43', dbServiceId: 43, icon: '🪵', ar: 'نجار خشب وألمنيوم', fr: 'Menuiserie Bois & Alu', en: 'Wood & Alu Carpentry', keywords: ['نجار', 'نجارة', 'خشب', 'ألمنيوم', 'المنيوم', 'أبواب', 'نوافذ', 'شراجم', 'menuiserie', 'aluminium', 'bois'] },
+  { id: 'ferronnier', dbServiceId: 37, icon: '🔩', ar: 'حداد وتلحيم (سودور)', fr: 'Ferronnerie & Soudure', en: 'Blacksmith & Welding', keywords: ['حداد', 'سودور', 'تلحيم', 'حديد', 'شباك', 'ferronnier', 'soudure'] },
+  { id: 'clim_solaire', dbServiceId: 38, icon: '☀️', ar: 'تكييف وطاقة شمسية', fr: 'Climatisation & Solaire', en: 'HVAC & Solar Energy', keywords: ['تكييف', 'كليما', 'تبريد', 'طاقة شمسية', 'شمسية', 'climatisation', 'solaire'] },
+  { id: 'verrier', dbServiceId: 43, icon: '🪟', ar: 'زجاج ومرايا وواجهات', fr: 'Vitrerie & Façades', en: 'Glass & Glazing', keywords: ['زجاج', 'جاج', 'مرايا', 'سيكوريت', 'vitrerie', 'verre'] },
+  { id: 'other', dbServiceId: 37, icon: '➕', ar: 'حرفة أخرى (حددها)', fr: 'Autre Métier (Préciser)', en: 'Other Trade (Specify)', keywords: [] }
 ];
 
 const translations = {
   ar: {
-    portalSubtitle: "بوابة الحرفيين والمقاولين (تسجيل صوتي وبصري ذكي)",
+    portalSubtitle: "بوابة الحرفيين والمقاولين (تسجيل صوتي بالدارجة المغربية أو العربية)",
     tabRegister: "إنشاء حساب جديد",
     tabLogin: "تسجيل الدخول",
     phoneOrEmailLabel: "رقم الهاتف أو البريد الإلكتروني *",
@@ -58,38 +62,27 @@ const translations = {
     fullNameLabel: "الاسم الكامل أو اسم الورشة *",
     phoneLabel: "رقم الهاتف *",
     cityLabel: "المدينة",
-    specialtyLabel: "اختر حرفتك / تخصصك بالصورة أو القائمة *",
-    selectSpecialty: "-- اختر تخصصك الدقيق --",
-    notesLabel: "نبذة عن خبرتك (تُصاغ تلقائياً بالصوت أو اكتبها هنا)",
+    specialtyLabel: "اختر حرفتك بالصورة (أو اضغط + لإضافة حرفة أخرى) *",
+    customSpecialtyPlace: "اكتب أو انطق اسم حرفتك الخاصة (مثال: حفر الآبار، مصاعد، حدائق...)",
+    notesLabel: "نبذة عن خبرتك (تُصاغ وتُترجم تلقائياً بالذكاء الاصطناعي)",
     notesPlace: "تعريف قصير بخبرتك ومجال عملك...",
     registerBtn: "إنشاء الحساب والانطلاق فوراً",
 
-    // التخصصات
-    grosOeuvres: "أعمال البناء (Gros Œuvres)",
-    electricity: "الكهرباء (تريسيان)",
-    plumbing: "السباكة (بلومبي)",
-    waterproofing: "العزل (Étanchéité)",
-    tiling: "الجبس والسيراميك (الزليج)",
-    painting: "الدهان والتجصيص (الصباغة)",
-    carpentry: "نجارة وألمونيوم",
-
-    // مزايا الصوت والذكاء الاصطناعي
     audioGuideBtn: "🔊 استمع للشرح الصوتي",
     audioGuideStop: "⏹️ إيقاف الصوت",
-    voiceBoxTitle: "🎙️ التسجيل الصوتي الذكي للمعلم (بدون كتابة)",
-    voiceBoxDesc: "اضغط الميكروفون وقل: اسمك، مدينتك، حرفتك، ورقم هاتفك، وسنملأ الاستمارة ونصيغ نبذتك تلقائياً!",
-    voiceStartBtn: "اضغط وتحدث الآن",
-    voiceStopBtn: "جاري الاستماع... تحدث الآن",
+    voiceBoxTitle: "🎙️ التسجيل الصوتي الذكي للمعلم (يفهم الدارجة المغربية والعربية)",
+    voiceBoxDesc: "اضغط الميكروفون وتكلم بالدارجة: قل اسمك، مدينتك، حرفتك، ورقم هاتفك، وسنملأ الخانات بلغة سليمة تلقائياً!",
+    voiceStartBtn: "اضغط وتكلم بالدارجة أو العربية",
+    voiceStopBtn: "جاري الاستماع... تكلم الآن",
     scanCardBtn: "📷 تصوير كارط فيزيت / بطاقة مهنية",
-    scanningMsg: "جاري قراءة البطاقة...",
+    scanningMsg: "جاري القراءة...",
     voiceLoginHint: "💡 يمكنك كتابة رقم هاتفك أو نطقه عبر الميكروفون، ثم إدخال رمزك السري",
     pinSecurityNote: "🛡️ احفظ هذا الرمز السري (4 أرقام مثل 2580) لتدخل به دائماً مع رقم هاتفك.",
     rateLimitLocked: "🔒 تم قفل الدخول مؤقتاً لحماية حسابك بعد عدة محاولات خاطئة. يرجى المحاولة بعد 15 دقيقة.",
 
-    // رسائل النظام
     errPhoneExists: "رقم الهاتف هذا مسجل مسبقاً. يمكنك تسجيل الدخول به مباشرة.",
     errEmailExists: "هذا الحساب مسجل مسبقاً. يرجى تسجيل الدخول.",
-    errSelectSpecialty: "يرجى اختيار تخصصك المهني (بالضغط على صورة الحرفة).",
+    errSelectSpecialty: "يرجى اختيار تخصصك المهني أو كتابة حرفتك.",
     errUnexpected: "حدث خطأ غير متوقع.",
     errInvalidLogin: "رقم الهاتف أو الرمز السري غير صحيح.",
     errNotProvider: "هذا الحساب ليس مسجلاً كحرفي.",
@@ -97,7 +90,7 @@ const translations = {
     successLogin: "✅ تم تسجيل الدخول بنجاح! جاري تحويلك..."
   },
   fr: {
-    portalSubtitle: "Portail des Artisans (Inscription Vocale & Visuelle IA)",
+    portalSubtitle: "Portail des Artisans (Inscription Vocale en Darija ou Français)",
     tabRegister: "Créer un compte",
     tabLogin: "Se connecter",
     phoneOrEmailLabel: "Numéro de Téléphone ou Email *",
@@ -109,35 +102,27 @@ const translations = {
     fullNameLabel: "Nom Complet ou Atelier *",
     phoneLabel: "Téléphone *",
     cityLabel: "Ville",
-    specialtyLabel: "Choisissez votre métier en image *",
-    selectSpecialty: "-- Choisissez votre spécialité --",
-    notesLabel: "Présentation & Expérience (Rédigée par l'IA ou manuelle)",
+    specialtyLabel: "Choisissez votre métier (ou + pour un autre métier) *",
+    customSpecialtyPlace: "Écrivez ou dictez votre métier spécifique (ex: Forage, Ascenseur...)",
+    notesLabel: "Présentation & Expérience (Rédigée et traduite par l'IA)",
     notesPlace: "Courte description de votre savoir-faire...",
     registerBtn: "Créer mon compte maintenant",
 
-    grosOeuvres: "Gros Œuvres",
-    electricity: "Électricité",
-    plumbing: "Plomberie",
-    waterproofing: "Étanchéité",
-    tiling: "Carrelage & Plâtre",
-    painting: "Peinture",
-    carpentry: "Menuiserie & Aluminium",
-
     audioGuideBtn: "🔊 Écouter le guide vocal",
     audioGuideStop: "⏹️ Arrêter l'audio",
-    voiceBoxTitle: "🎙️ Inscription Vocale IA (Sans clavier)",
-    voiceBoxDesc: "Appuyez sur le micro et dites votre nom, ville, métier et téléphone. L'IA remplit tout !",
-    voiceStartBtn: "Appuyez et parlez",
-    voiceStopBtn: "Écoute en cours... Parlez",
+    voiceBoxTitle: "🎙️ Inscription Vocale IA (Comprend le Darija Marocain & Français)",
+    voiceBoxDesc: "Appuyez sur le micro et dites votre nom, ville, métier et téléphone en Darija ou Français !",
+    voiceStartBtn: "Appuyez et parlez (Darija / FR)",
+    voiceStopBtn: "Écoute en direct... Parlez",
     scanCardBtn: "📷 Scanner Carte de Visite / Pro",
-    scanningMsg: "Lecture de la carte...",
+    scanningMsg: "Lecture...",
     voiceLoginHint: "💡 Dictez ou tapez votre numéro de téléphone puis votre code PIN",
     pinSecurityNote: "🛡️ Gardez ce code PIN (4 chiffres ex: 2580) pour vous connecter avec votre téléphone.",
-    rateLimitLocked: "🔒 Compte verrouillé temporairement par sécurité après plusieurs essais. Réessayez dans 15 min.",
+    rateLimitLocked: "🔒 Compte verrouillé temporairement par sécurité. Réessayez dans 15 min.",
 
     errPhoneExists: "Ce numéro de téléphone est déjà enregistré. Connectez-vous directement.",
     errEmailExists: "Ce compte est déjà utilisé.",
-    errSelectSpecialty: "Veuillez sélectionner votre spécialité.",
+    errSelectSpecialty: "Veuillez sélectionner ou préciser votre spécialité.",
     errUnexpected: "Une erreur est survenue.",
     errInvalidLogin: "Téléphone/Email ou code secret incorrect.",
     errNotProvider: "Ce compte n'est pas un compte artisan.",
@@ -145,7 +130,7 @@ const translations = {
     successLogin: "✅ Connexion réussie ! Redirection..."
   },
   en: {
-    portalSubtitle: "Artisans Portal (Smart Voice & Visual Onboarding)",
+    portalSubtitle: "Artisans Portal (Smart Darija, Arabic & English Voice Onboarding)",
     tabRegister: "Create New Account",
     tabLogin: "Login",
     phoneOrEmailLabel: "Phone Number or Email *",
@@ -157,35 +142,27 @@ const translations = {
     fullNameLabel: "Full Name or Workshop *",
     phoneLabel: "Phone Number *",
     cityLabel: "City",
-    specialtyLabel: "Select your trade visually *",
-    selectSpecialty: "-- Select your specialty --",
-    notesLabel: "Bio & Experience (AI-generated or manual)",
+    specialtyLabel: "Select your trade visually (or tap + for another trade) *",
+    customSpecialtyPlace: "Type or speak your specific trade (e.g., Well drilling, Elevators...)",
+    notesLabel: "Bio & Experience (Auto-generated & translated by AI)",
     notesPlace: "Brief description of your expertise...",
     registerBtn: "Create Account & Start",
 
-    grosOeuvres: "Construction (Gros Œuvres)",
-    electricity: "Electricity",
-    plumbing: "Plumbing",
-    waterproofing: "Waterproofing",
-    tiling: "Tiling & Plaster",
-    painting: "Painting",
-    carpentry: "Carpentry & Aluminum",
-
     audioGuideBtn: "🔊 Listen to Audio Guide",
     audioGuideStop: "⏹️ Stop Audio",
-    voiceBoxTitle: "🎙️ Smart Voice Registration (No typing)",
-    voiceBoxDesc: "Tap the mic and say your name, city, trade, and phone number. AI fills the rest!",
+    voiceBoxTitle: "🎙️ Smart Voice Registration (Understands Moroccan Darija, AR & EN)",
+    voiceBoxDesc: "Tap the mic and say your name, city, trade, and phone number. AI translates and fills the rest!",
     voiceStartBtn: "Tap & Speak Now",
-    voiceStopBtn: "Listening... Speak now",
+    voiceStopBtn: "Listening live... Speak now",
     scanCardBtn: "📷 Scan Business / Pro Card",
-    scanningMsg: "Scanning card...",
+    scanningMsg: "Scanning...",
     voiceLoginHint: "💡 Speak or type your phone number and secret PIN",
     pinSecurityNote: "🛡️ Remember this 4-digit PIN (e.g., 2580) to log in anytime with your phone.",
-    rateLimitLocked: "🔒 Temporarily locked for security after multiple failed attempts. Wait 15 minutes.",
+    rateLimitLocked: "🔒 Temporarily locked for security. Wait 15 minutes.",
 
     errPhoneExists: "This phone number is already registered. Please login.",
     errEmailExists: "This account is already in use.",
-    errSelectSpecialty: "Please select your main specialty.",
+    errSelectSpecialty: "Please select or specify your main specialty.",
     errUnexpected: "An unexpected error occurred.",
     errInvalidLogin: "Invalid phone/email or secret PIN.",
     errNotProvider: "This account is not registered as an artisan.",
@@ -194,7 +171,7 @@ const translations = {
   }
 };
 
-// 🔢 تحويل الأرقام المنطوقة بالعربية/الدارجة/الفرنسية إلى أرقام
+// 🔢 تحويل الأرقام المنطوقة بالدارجة المغربية أو العربية أو الفرنسية إلى أرقام
 const convertSpokenWordsToDigits = (text) => {
   if (!text) return '';
   let str = text.toLowerCase();
@@ -208,7 +185,8 @@ const convertSpokenWordsToDigits = (text) => {
     'ستة': '6', 'سته': '6', 'ست': '6', 'six': '6',
     'سبعة': '7', 'سبعه': '7', 'sept': '7', 'seven': '7',
     'ثمانية': '8', 'تمنية': '8', 'ثمانيه': '8', 'تمنيه': '8', 'huit': '8', 'eight': '8',
-    'تسعة': '9', 'تسعود': '9', 'تسعه': '9', 'neuf': '9', 'nine': '9'
+    'تسعة': '9', 'تسعود': '9', 'تسعه': '9', 'neuf': '9', 'nine': '9',
+    'عشرة': '10', 'عشره': '10', 'طنعش': '12', 'خمسطاش': '15', 'عشرين': '20'
   };
   Object.keys(wordMap).forEach((w) => {
     const regex = new RegExp(`(^|\\s)${w}(?=\\s|$)`, 'g');
@@ -219,49 +197,57 @@ const convertSpokenWordsToDigits = (text) => {
   return str;
 };
 
-// 🔐 تحويل رقم الهاتف إلى معرف بريد داخلي موحد (@sasbtp.ma) عند عدم وجود بريد
 const resolvePhoneOrEmail = (emailInput, phoneInput = '') => {
   const rawEmail = (emailInput || '').trim();
   if (rawEmail.includes('@')) return rawEmail.toLowerCase();
 
   const rawSource = rawEmail || (phoneInput || '').trim();
   let digits = convertSpokenWordsToDigits(rawSource).replace(/\D/g, '');
-  if (digits.startsWith('212') && digits.length >= 11) {
-    digits = '0' + digits.slice(3);
-  }
-  if (digits.startsWith('00212') && digits.length >= 13) {
-    digits = '0' + digits.slice(5);
-  }
+  if (digits.startsWith('212') && digits.length >= 11) digits = '0' + digits.slice(3);
+  if (digits.startsWith('00212') && digits.length >= 13) digits = '0' + digits.slice(5);
   return digits ? `${digits}@sasbtp.ma` : '';
 };
 
-// 🛡️ تغليف رمز PIN المكون من 4 أرقام ليتوافق مع شرط 6 أحرف في Supabase Auth
 const wrapSecretPin = (secret) => {
   const clean = (secret || '').trim();
-  if (clean.length > 0 && clean.length < 6) {
-    return `SAS#PIN#${clean}#BTP`;
-  }
+  if (clean.length > 0 && clean.length < 6) return `SAS#PIN#${clean}#BTP`;
   return clean;
+};
+
+const matchCityInLang = (rawInput, lang) => {
+  if (!rawInput) return null;
+  const lower = rawInput.toLowerCase().trim();
+  for (const c of MOROCCAN_CITIES_DATA) {
+    if (
+      c.keywords.some((k) => lower.includes(k)) ||
+      lower.includes(c.ar.toLowerCase()) ||
+      lower.includes(c.fr.toLowerCase())
+    ) {
+      return lang === 'ar' ? c.ar : lang === 'fr' ? c.fr : c.en;
+    }
+  }
+  return null;
 };
 
 export default function ProviderAuth() {
   const navigate = useNavigate();
-  const { language = 'ar' } = useSettingsStore();
+  const { language, setLanguage } = useSettingsStore();
   const isRtl = language === 'ar';
   const t = translations[language] || translations.ar;
 
-  const [isLogin, setIsLogin] = useState(false); // false = Register, true = Login
+  const [isLogin, setIsLogin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [alert, setAlert] = useState({ show: false, type: '', text: '' });
 
-  // حالات الصوت والمسح البصري
   const [isSpeakingGuide, setIsSpeakingGuide] = useState(false);
   const [listeningField, setListeningField] = useState(null);
   const [spokenPreview, setSpokenPreview] = useState('');
   const [isScanningCard, setIsScanningCard] = useState(false);
+  const [customSpecialtyText, setCustomSpecialtyText] = useState('');
 
   const recognitionRef = useRef(null);
+  const cloudAudioRef = useRef(null);
   const cardInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -276,14 +262,73 @@ export default function ProviderAuth() {
     experienceYears: ''
   });
 
+  // 🇲🇦 جعل العربية هي اللغة الافتراضية في أول مصافحة للحرفي
   useEffect(() => {
+    const hasPickedLang = sessionStorage.getItem('sasbtp_auth_lang_picked');
+    if (!hasPickedLang && language !== 'ar') {
+      setLanguage('ar');
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+    }
     return () => {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (cloudAudioRef.current) {
+        cloudAudioRef.current.pause();
+        cloudAudioRef.current = null;
+      }
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch (e) {}
+        try { recognitionRef.current.abort(); } catch (e) {}
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const buildLocalizedNotes = (targetLang, specId, customSpec, cityVal, yearsVal) => {
+    const specObj = SERVICE_SPECIALTIES.find((s) => s.id === String(specId)) || SERVICE_SPECIALTIES[0];
+    const specLabel =
+      specId === 'other' && customSpec
+        ? customSpec
+        : targetLang === 'ar'
+        ? specObj.ar
+        : targetLang === 'fr'
+        ? specObj.fr
+        : specObj.en;
+
+    const localizedCity = matchCityInLang(cityVal, targetLang) || cityVal;
+
+    if (targetLang === 'ar') {
+      return `حرفي ومهني معتمد في منصة SasBTP متخصص في (${specLabel})${localizedCity ? ` بمدينة ${localizedCity} والنواحي` : ''}${yearsVal ? `، بخبرة ميدانية تزيد عن ${yearsVal} سنة` : ''}. أضمن للزبناء إتقان العمل، الدقة في المواعيد، وجودة التشطيب.`;
+    }
+    if (targetLang === 'fr') {
+      return `Artisan professionnel vérifié SasBTP spécialisé en (${specLabel})${localizedCity ? ` sur ${localizedCity} et régions` : ''}${yearsVal ? `, avec plus de ${yearsVal} ans d'expérience` : ''}. Travail soigné, respect des délais et garantie de qualité.`;
+    }
+    return `Verified professional craftsman on SasBTP specializing in (${specLabel})${localizedCity ? ` in ${localizedCity} and surrounding areas` : ''}${yearsVal ? `, with over ${yearsVal} years of experience` : ''}. High-quality workmanship and timely delivery guaranteed.`;
+  };
+
+  // 🔄 ترجمة تلقائية للمدينة والنبذة عند تبديل اللغة في الشريط العلوي
+  const handleSelectLanguage = (newLang) => {
+    sessionStorage.setItem('sasbtp_auth_lang_picked', 'true');
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (cloudAudioRef.current) {
+      cloudAudioRef.current.pause();
+      cloudAudioRef.current = null;
+    }
+    setIsSpeakingGuide(false);
+    setLanguage(newLang);
+
+    setFormData((prev) => {
+      const newCity = matchCityInLang(prev.city, newLang) || prev.city;
+      const newNotes = prev.notes
+        ? buildLocalizedNotes(newLang, prev.serviceId, customSpecialtyText, newCity, prev.experienceYears)
+        : '';
+      return {
+        ...prev,
+        city: newCity,
+        notes: newNotes
+      };
+    });
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -295,114 +340,138 @@ export default function ProviderAuth() {
   };
 
   // ==========================================
-  // 🔊 1. المرشد الصوتي الناطق للحرفي
+  // 🔊 1. المرشد الصوتي الطبيعي السليم في اللغات الثلاث
   // ==========================================
   const toggleAudioGuide = () => {
-    if (!('speechSynthesis' in window)) return;
     if (isSpeakingGuide) {
-      window.speechSynthesis.cancel();
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (cloudAudioRef.current) {
+        cloudAudioRef.current.pause();
+        cloudAudioRef.current = null;
+      }
       setIsSpeakingGuide(false);
       return;
     }
 
-    window.speechSynthesis.cancel();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (cloudAudioRef.current) {
+      cloudAudioRef.current.pause();
+      cloudAudioRef.current = null;
+    }
+
     const speechText =
       language === 'ar'
         ? isLogin
           ? 'مرحباً بك يا معلم في بوابة الحرفيين. للدخول إلى حسابك، اضغط على زر الميكروفون وقل رقم هاتفك، ثم أدخل رمزك السري المكون من أربعة أرقام.'
-          : 'مرحباً بك يا معلم في منصة ساس بي تي بي. لإنشاء حسابك بسهولة وبدون كتابة، اضغط على الزر البرتقالي، وتحدث بعفوية: قل اسمك، مدينتك، حرفتك، ورقم هاتفك، ثم اختر رمزاً سرياً بسيطاً من أربعة أرقام.'
+          : 'مرحباً بك يا معلم في منصة ساس بي تي بي. لإنشاء حسابك بسهولة وبدون كتابة، اضغط على الزر البرتقالي، وتكلم بالدارجة المغربية أو العربية: قل اسمك، مدينتك، حرفتك، ورقم هاتفك، ثم اختر رمزاً سرياً بسيطاً من أربعة أرقام.'
         : language === 'fr'
         ? isLogin
           ? 'Bienvenue sur le portail Artisan. Dictez ou tapez votre numéro de téléphone et votre code PIN pour vous connecter.'
-          : 'Bienvenue. Appuyez sur le bouton orange et dites votre nom, votre ville, votre métier et votre numéro de téléphone. Notre intelligence artificielle remplira votre fiche automatiquement.'
+          : 'Bienvenue. Appuyez sur le bouton orange et dites votre nom, votre ville, votre métier et votre numéro de téléphone.'
         : 'Welcome to the Artisan Portal. Tap the orange microphone and speak your name, city, trade, and phone number to create your profile automatically.';
 
-    const utterance = new SpeechSynthesisUtterance(speechText);
-    utterance.lang = language === 'ar' ? 'ar-SA' : language === 'fr' ? 'fr-FR' : 'en-US';
-    utterance.rate = 0.94;
-    utterance.onend = () => setIsSpeakingGuide(false);
-    utterance.onerror = () => setIsSpeakingGuide(false);
+    const voices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
+    const blockedRobotic = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox'];
 
-    setIsSpeakingGuide(true);
-    window.speechSynthesis.speak(utterance);
+    let chosenVoice = null;
+    if (language === 'ar') {
+      chosenVoice = voices.find((v) => v.lang.toLowerCase().startsWith('ar') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+    } else if (language === 'fr') {
+      chosenVoice = voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+    } else {
+      chosenVoice =
+        voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Google US') || v.name.includes('Daniel') || v.name.includes('Karen') || v.name.includes('Alex'))) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+    }
+
+    if (!chosenVoice && language === 'ar') {
+      try {
+        const encoded = encodeURIComponent(speechText);
+        const audio = new Audio(`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=${encoded}`);
+        cloudAudioRef.current = audio;
+        setIsSpeakingGuide(true);
+        audio.onended = () => setIsSpeakingGuide(false);
+        audio.onerror = () => setIsSpeakingGuide(false);
+        audio.play().catch(() => setIsSpeakingGuide(false));
+        return;
+      } catch (e) {}
+    }
+
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(speechText);
+      if (chosenVoice) {
+        utterance.voice = chosenVoice;
+        utterance.lang = chosenVoice.lang;
+      } else {
+        utterance.lang = language === 'ar' ? 'ar-SA' : language === 'fr' ? 'fr-FR' : 'en-US';
+      }
+      utterance.rate = 0.94;
+      utterance.onend = () => setIsSpeakingGuide(false);
+      utterance.onerror = () => setIsSpeakingGuide(false);
+
+      setIsSpeakingGuide(true);
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   // ==========================================
-  // 🧠 2. التحليل الذكي لكلام الحرفي وصياغة النبذة المهنية
+  // 🧠 2. فهم الدارجة المغربية وتحويلها لبيانات سليمة
   // ==========================================
   const parseArtisanSpeech = (rawSpeech) => {
     const normalized = convertSpokenWordsToDigits(rawSpeech);
     const lower = normalized.toLowerCase();
 
-    // أ) التقاط رقم الهاتف المغربي
     const compactDigits = normalized.replace(/[\s\-./]/g, '');
     const phoneMatch = compactDigits.match(/(?:00212|\+212|212|0)([567]\d{8})/);
     const detectedPhone = phoneMatch ? `0${phoneMatch[1]}` : '';
 
-    // ب) التقاط المدينة
-    let detectedCity = '';
-    for (const c of MOROCCAN_CITIES_MAP) {
-      if (c.keywords.some((k) => lower.includes(k))) {
-        detectedCity = c.label;
-        break;
-      }
-    }
+    const detectedCity = matchCityInLang(normalized, language) || '';
 
-    // ج) التقاط التخصص المهني (serviceId)
     let matchedServiceId = formData.serviceId || '37';
-    let matchedSpecObj = SERVICE_SPECIALTIES.find((s) => s.id === matchedServiceId);
     for (const sp of SERVICE_SPECIALTIES) {
+      if (sp.id === 'other') continue;
       if (sp.keywords.some((k) => lower.includes(k))) {
         matchedServiceId = sp.id;
-        matchedSpecObj = sp;
         break;
       }
     }
 
-    // د) التقاط سنوات الخبرة
     const expMatch = normalized.match(/(\d{1,2})\s*(?:سنة|سنه|سنين|سنوات|عام|أعوام|ans|an|years)/i);
     const detectedYears = expMatch ? expMatch[1] : '';
 
-    // هـ) التقاط اسم المعلم
     let detectedName = '';
     const namePatterns = [
       /(?:أنا|انا|اسمي|إسمي|سميتي|معكم)\s+(?:المعلم\s+|الشاف\s+|الحاج\s+)?([أ-يa-zA-Z]+(?:\s+[أ-يa-zA-Z]+){0,2})/i,
+      /(?:المعلم|الشاف)\s+([أ-يa-zA-Z]+(?:\s+[أ-يa-zA-Z]+){0,1})/i,
       /(?:je suis|je m'appelle|moi c'est)\s+([a-zA-ZÀ-ÿ]+(?:\s+[a-zA-ZÀ-ÿ]+){0,2})/i
     ];
     for (const pat of namePatterns) {
       const m = rawSpeech.match(pat);
       if (m && m[1]) {
         detectedName = m[1]
-          .replace(/\b(من|في|مدينة|مدينه|معلم|بلومبي|تريسيان|بناي|صباغ|نجار|زلايجي|جباس|عزل|de|à)\b.*/i, '')
+          .replace(/\b(من|في|ف|مدينة|مدينه|معلم|بلومبي|تريسيان|بناي|صباغ|نجار|زلايجي|جباس|عزل|حداد|de|à)\b.*/i, '')
           .trim();
         break;
       }
     }
 
-    // و) صياغة نبذة مهنية سليمة وجذابة للزبناء تلقائياً
-    const specLabel = matchedSpecObj ? t[matchedSpecObj.key] : t.grosOeuvres;
-    const cityShort = detectedCity ? detectedCity.split(' - ')[language === 'ar' ? 0 : 1] || detectedCity : '';
-    const expTextAr = detectedYears ? `بخبرة ميدانية تزيد عن ${detectedYears} سنة` : 'بخبرة ميدانية عالية';
-    const expTextFr = detectedYears ? `avec plus de ${detectedYears} ans d'expérience` : 'avec une grande expérience terrain';
-
-    const autoComposedNotes =
-      language === 'ar'
-        ? `حرفي ومهني معتمد في منصة SasBTP متخصص في ${specLabel}${cityShort ? ` بمدينة ${cityShort} والنواحي` : ''}، ${expTextAr}. أضمن للزبناء إتقان العمل، الدقة في المواعيد، وجودة التشطيب.`
-        : `Artisan professionnel vérifié SasBTP spécialisé en ${specLabel}${cityShort ? ` sur ${cityShort} et régions` : ''}, ${expTextFr}. Travail soigné, respect des délais et garantie de qualité.`;
+    const finalCity = detectedCity || formData.city;
+    const finalYears = detectedYears || formData.experienceYears;
+    const autoComposedNotes = buildLocalizedNotes(language, matchedServiceId, customSpecialtyText, finalCity, finalYears);
 
     setFormData((prev) => ({
       ...prev,
       fullName: detectedName || prev.fullName,
       phone: detectedPhone || prev.phone,
-      city: detectedCity || prev.city,
+      city: finalCity,
       serviceId: matchedServiceId,
-      experienceYears: detectedYears || prev.experienceYears,
+      experienceYears: finalYears,
       notes: autoComposedNotes
     }));
   };
 
   // ==========================================
-  // 🎙️ 3. تفعيل الميكروفون الصوتي
+  // 🎙️ 3. الميكروفون الفوري الموثوق (يدعم الدارجة المغربية ويكتب لحظياً)
   // ==========================================
   const toggleVoiceInput = (target = 'smartAll') => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -418,43 +487,70 @@ export default function ProviderAuth() {
     }
 
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) {}
+      try { recognitionRef.current.abort(); } catch (e) {}
+      recognitionRef.current = null;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    setTimeout(() => {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ar-MA';
+        recognition.interimResults = true;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
 
-    recognition.onstart = () => {
-      setListeningField(target);
-    };
+        recognition.onstart = () => setListeningField(target);
 
-    recognition.onresult = (event) => {
-      const transcript = event.results?.[0]?.[0]?.transcript || '';
-      setSpokenPreview(transcript);
+        recognition.onresult = (event) => {
+          let transcript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          const clean = transcript.trim();
+          if (!clean) return;
 
-      if (target === 'smartAll') {
-        parseArtisanSpeech(transcript);
-      } else if (target === 'loginIdentifier' || target === 'phone') {
-        const digits = convertSpokenWordsToDigits(transcript).replace(/\D/g, '');
-        setFormData((prev) => ({
-          ...prev,
-          [target]: digits || transcript.trim()
-        }));
-      } else if (target === 'password') {
-        const digits = convertSpokenWordsToDigits(transcript).replace(/\s+/g, '');
-        setFormData((prev) => ({ ...prev, password: digits }));
-      } else if (target === 'fullName' || target === 'city' || target === 'notes') {
-        setFormData((prev) => ({ ...prev, [target]: transcript.trim() }));
+          setSpokenPreview(clean);
+
+          if (target === 'smartAll') {
+            parseArtisanSpeech(clean);
+          } else if (target === 'customSpecialty') {
+            setCustomSpecialtyText(clean);
+            setFormData((prev) => ({
+              ...prev,
+              notes: buildLocalizedNotes(language, 'other', clean, prev.city, prev.experienceYears)
+            }));
+          } else if (target === 'loginIdentifier' || target === 'phone') {
+            const digits = convertSpokenWordsToDigits(clean).replace(/\D/g, '');
+            setFormData((prev) => ({
+              ...prev,
+              [target]: digits || clean
+            }));
+          } else if (target === 'password') {
+            const digits = convertSpokenWordsToDigits(clean).replace(/\s+/g, '');
+            setFormData((prev) => ({ ...prev, password: digits }));
+          } else if (target === 'fullName') {
+            setFormData((prev) => ({ ...prev, fullName: clean.replace(/^(أنا|انا|اسمي|سميتي)\s+/i, '') }));
+          } else if (target === 'city') {
+            const matched = matchCityInLang(clean, language) || clean;
+            setFormData((prev) => ({
+              ...prev,
+              city: matched,
+              notes: buildLocalizedNotes(language, prev.serviceId, customSpecialtyText, matched, prev.experienceYears)
+            }));
+          } else if (target === 'notes') {
+            setFormData((prev) => ({ ...prev, notes: clean }));
+          }
+        };
+
+        recognition.onerror = () => setListeningField(null);
+        recognition.onend = () => setListeningField(null);
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (e) {
+        setListeningField(null);
       }
-    };
-
-    recognition.onerror = () => setListeningField(null);
-    recognition.onend = () => setListeningField(null);
-
-    recognitionRef.current = recognition;
-    recognition.start();
+    }, 120);
   };
 
   // ==========================================
@@ -483,18 +579,11 @@ export default function ProviderAuth() {
         parseArtisanSpeech(detectedText);
         showAlert('success', language === 'ar' ? '✅ تم قراءة البطاقة المهنية وملء الخانات تلقائياً!' : '✅ Carte professionnelle lue avec succès !');
       } else {
-        const specObj = SERVICE_SPECIALTIES.find((s) => s.id === formData.serviceId) || SERVICE_SPECIALTIES[0];
-        const specLabel = t[specObj.key];
-        const fallbackBio =
-          language === 'ar'
-            ? `معلم وحرفي معتمد في منصة SasBTP متخصص في ${specLabel}. تم إرفاق البطاقة المهنية، التزام تام بالجودة وإتقان العمل.`
-            : `Artisan vérifié SasBTP spécialisé en ${specLabel}. Carte professionnelle jointe, qualité garantie.`;
-
+        const fallbackBio = buildLocalizedNotes(language, formData.serviceId, customSpecialtyText, formData.city, formData.experienceYears);
         setFormData((prev) => ({
           ...prev,
           notes: prev.notes || fallbackBio
         }));
-
         showAlert(
           'success',
           language === 'ar'
@@ -509,9 +598,6 @@ export default function ProviderAuth() {
     }
   };
 
-  // ==========================================
-  // 🔒 5. درع الحماية ضد تخمين رمز PIN
-  // ==========================================
   const isAccountLocked = (key) => {
     try {
       const raw = localStorage.getItem(`sasbtp_provider_lock_${key}`);
@@ -530,19 +616,17 @@ export default function ProviderAuth() {
       const raw = localStorage.getItem(`sasbtp_provider_lock_${key}`);
       const data = raw ? JSON.parse(raw) : { count: 0, until: null };
       data.count += 1;
-      if (data.count >= 5) {
-        data.until = Date.now() + 15 * 60 * 1000;
-      }
+      if (data.count >= 5) data.until = Date.now() + 15 * 60 * 1000;
       localStorage.setItem(`sasbtp_provider_lock_${key}`, JSON.stringify(data));
     } catch (e) {}
   };
 
   // ==========================================
-  // 🚀 6. معالجة إنشاء حساب الحرفي
+  // 🚀 5. معالجة إنشاء حساب الحرفي
   // ==========================================
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!formData.serviceId) {
+    if (!formData.serviceId || (formData.serviceId === 'other' && !customSpecialtyText.trim())) {
       return showAlert('error', t.errSelectSpecialty);
     }
 
@@ -563,14 +647,19 @@ export default function ProviderAuth() {
       const effectiveEmail = resolvePhoneOrEmail(formData.email, cleanPhone);
       const effectivePassword = wrapSecretPin(formData.password);
 
-      const specObj = SERVICE_SPECIALTIES.find((s) => s.id === String(formData.serviceId));
-      const specTitle = specObj ? t[specObj.key] : t.grosOeuvres;
+      const specObj = SERVICE_SPECIALTIES.find((s) => s.id === String(formData.serviceId)) || SERVICE_SPECIALTIES[0];
+      const specTitle =
+        formData.serviceId === 'other' && customSpecialtyText.trim()
+          ? customSpecialtyText.trim()
+          : language === 'ar'
+          ? specObj.ar
+          : language === 'fr'
+          ? specObj.fr
+          : specObj.en;
 
       const finalBio =
         formData.notes.trim() ||
-        (language === 'ar'
-          ? `حرفي معتمد في منصة SasBTP متخصص في ${specTitle}${formData.city ? ` بمدينة ${formData.city}` : ''}.`
-          : `Artisan vérifié SasBTP spécialisé en ${specTitle}.`);
+        buildLocalizedNotes(language, formData.serviceId, customSpecialtyText, formData.city, formData.experienceYears);
 
       const providerProfileMeta = {
         full_name: formData.fullName.trim(),
@@ -606,7 +695,6 @@ export default function ProviderAuth() {
       const uid = authData.user.id;
       localStorage.setItem(`sasbtp_provider_profile_${uid}`, JSON.stringify(providerProfileMeta));
 
-      // إدراج آمن في جدول providers مع fallback تلقائي إذا كان أحد الأعمدة غير موجود في قاعدة البيانات
       let newProvider = null;
       const fullInsertRes = await supabase
         .from('providers')
@@ -640,18 +728,16 @@ export default function ProviderAuth() {
         newProvider = fullInsertRes.data;
       }
 
-      // ربط التخصص بجدول provider_services
-      if (formData.serviceId && newProvider?.id) {
+      if (newProvider?.id && specObj?.dbServiceId) {
         await supabase
           .from('provider_services')
           .insert([{
             provider_id: newProvider.id,
-            service_id: parseInt(formData.serviceId, 10)
+            service_id: specObj.dbServiceId
           }])
           .catch(() => {});
       }
 
-      // 🔥 تفعيل نظام الإحالة 🔥
       if (uid) {
         await bindReferralOnSignup(uid);
       }
@@ -667,7 +753,7 @@ export default function ProviderAuth() {
   };
 
   // ==========================================
-  // 🔑 7. معالجة تسجيل الدخول (بالهاتف أو البريد + PIN أو كلمة المرور)
+  // 🔑 6. معالجة تسجيل الدخول
   // ==========================================
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -711,7 +797,6 @@ export default function ProviderAuth() {
       const user = authRes.data?.user;
       const role = user?.user_metadata?.role || user?.user_metadata?.account_type;
 
-      // التحقق من كونه حرفياً في user_metadata أو في جدول providers
       if (role !== 'provider') {
         const { data: provRow } = await supabase
           .from('providers')
@@ -747,6 +832,43 @@ export default function ProviderAuth() {
     >
       <div className="w-full max-w-xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(15,23,42,0.12)] overflow-hidden border border-slate-200 my-6">
         
+        {/* 🌐 شريط تبديل اللغة البارز في أعلى واجهة الحرفي */}
+        <div className="bg-slate-950 px-6 py-3 flex items-center justify-between border-b border-slate-800">
+          <span className="inline-flex items-center gap-1.5 text-xs font-black text-slate-300">
+            <Globe className="w-4 h-4 text-orange-400" />
+            {language === 'ar' ? 'اختر اللغة:' : language === 'fr' ? 'Langue :' : 'Language:'}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleSelectLanguage('ar')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                language === 'ar' ? 'bg-orange-500 text-white shadow-sm' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              🇲🇦 العربية
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectLanguage('fr')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                language === 'fr' ? 'bg-orange-500 text-white shadow-sm' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              🇫🇷 Français
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectLanguage('en')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                language === 'en' ? 'bg-orange-500 text-white shadow-sm' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              🇬🇧 EN
+            </button>
+          </div>
+        </div>
+
         {/* الترويسة + زر المرشد الصوتي الناطق */}
         <div className="bg-slate-900 p-7 text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-orange-500 rounded-full blur-3xl opacity-20"></div>
@@ -755,7 +877,7 @@ export default function ProviderAuth() {
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
               <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 rounded-full">
-                <ShieldCheck className="w-3.5 h-3.5" /> Voice & PIN AI
+                <ShieldCheck className="w-3.5 h-3.5" /> Darija & Voice AI
               </span>
 
               <button
@@ -813,7 +935,7 @@ export default function ProviderAuth() {
           )}
 
           {isLogin ? (
-            /* =================== 🔑 فورم تسجيل الدخول (بالهاتف أو الإيميل + الميكروفون) =================== */
+            /* =================== 🔑 فورم تسجيل الدخول =================== */
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-bold flex items-center justify-between gap-2">
                 <span>{t.voiceLoginHint}</span>
@@ -898,7 +1020,7 @@ export default function ProviderAuth() {
             /* =================== 🎙️ فورم إنشاء حساب حرفي جديد =================== */
             <div className="space-y-5">
               
-              {/* 1. صندوق الملء الصوتي الذكي ومسح البطاقة المهنية */}
+              {/* 1. صندوق الملء الصوتي الذكي بالدارجة ومسح البطاقة المهنية */}
               <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border-2 border-orange-300 rounded-2xl p-4 shadow-sm">
                 <h3 className="font-black text-orange-900 text-sm mb-1">{t.voiceBoxTitle}</h3>
                 <p className="text-xs font-bold text-orange-800/85 leading-relaxed mb-3">{t.voiceBoxDesc}</p>
@@ -945,29 +1067,67 @@ export default function ProviderAuth() {
 
               <form onSubmit={handleRegister} className="space-y-4">
                 
-                {/* 2. اختيار التخصص بالصور والأيقونات الكبيرة */}
+                {/* 2. اختيار التخصص بالصور والأيقونات الكبيرة + خيار حرفة أخرى */}
                 <div>
                   <label className="block text-xs font-black text-slate-700 mb-2">{t.specialtyLabel}</label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
                     {SERVICE_SPECIALTIES.map((sp) => {
                       const active = String(formData.serviceId) === sp.id;
+                      const labelText = language === 'ar' ? sp.ar : language === 'fr' ? sp.fr : sp.en;
                       return (
                         <button
                           key={sp.id}
                           type="button"
-                          onClick={() => setFormData({ ...formData, serviceId: sp.id })}
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              serviceId: sp.id,
+                              notes: sp.id !== 'other' ? buildLocalizedNotes(language, sp.id, customSpecialtyText, prev.city, prev.experienceYears) : prev.notes
+                            }));
+                          }}
                           className={`p-2.5 rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                             active
                               ? 'border-orange-500 bg-orange-50 text-orange-950 shadow-sm scale-[1.02]'
+                              : sp.id === 'other'
+                              ? 'border-dashed border-indigo-400 bg-indigo-50/60 text-indigo-900'
                               : 'border-slate-200 bg-slate-50/70 hover:bg-white text-slate-700'
                           }`}
                         >
                           <span className="text-2xl mb-1">{sp.icon}</span>
-                          <span className="text-[11px] font-black leading-tight">{t[sp.key]}</span>
+                          <span className="text-[11px] font-black leading-tight">{labelText}</span>
                         </button>
                       );
                     })}
                   </div>
+
+                  {/* حقل إدخال الحرفة المخصصة لمن لم يجد حرفته في الأيقونات */}
+                  {formData.serviceId === 'other' && (
+                    <div className="mt-2 relative flex items-center animate-fade-in">
+                      <input
+                        type="text"
+                        value={customSpecialtyText}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomSpecialtyText(val);
+                          setFormData((prev) => ({
+                            ...prev,
+                            notes: buildLocalizedNotes(language, 'other', val, prev.city, prev.experienceYears)
+                          }));
+                        }}
+                        placeholder={t.customSpecialtyPlace}
+                        className="w-full p-3 bg-indigo-50/50 border-2 border-indigo-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleVoiceInput('customSpecialty')}
+                        className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-1.5 rounded-lg cursor-pointer ${
+                          listeningField === 'customSpecialty' ? 'bg-red-500 text-white animate-pulse' : 'bg-indigo-100 text-indigo-700'
+                        }`}
+                      >
+                        <Mic className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* 3. الاسم، الهاتف، والمدينة */}
@@ -988,7 +1148,7 @@ export default function ProviderAuth() {
                         type="button"
                         onClick={() => toggleVoiceInput('fullName')}
                         className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-1.5 rounded-lg cursor-pointer ${
-                          listeningField === 'fullName' ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-200/80 text-slate-700 hover:bg-orange-100'
+                          listeningField === 'fullName' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                         }`}
                       >
                         <Mic className="w-3.5 h-3.5" />
@@ -1014,7 +1174,7 @@ export default function ProviderAuth() {
                         type="button"
                         onClick={() => toggleVoiceInput('phone')}
                         className={`absolute right-2 p-1.5 rounded-lg cursor-pointer ${
-                          listeningField === 'phone' ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-200/80 text-slate-700 hover:bg-orange-100'
+                          listeningField === 'phone' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                         }`}
                       >
                         <Mic className="w-3.5 h-3.5" />
@@ -1037,7 +1197,7 @@ export default function ProviderAuth() {
                         type="button"
                         onClick={() => toggleVoiceInput('city')}
                         className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-1.5 rounded-lg cursor-pointer ${
-                          listeningField === 'city' ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-200/80 text-slate-700 hover:bg-orange-100'
+                          listeningField === 'city' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                         }`}
                       >
                         <Mic className="w-3.5 h-3.5" />
@@ -1073,7 +1233,7 @@ export default function ProviderAuth() {
                           type="button"
                           onClick={() => toggleVoiceInput('password')}
                           className={`p-1.5 rounded-lg cursor-pointer ${
-                            listeningField === 'password' ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-200/80 text-slate-700 hover:bg-orange-100'
+                            listeningField === 'password' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                           }`}
                         >
                           <Mic className="w-3.5 h-3.5" />
@@ -1083,7 +1243,7 @@ export default function ProviderAuth() {
                     <p className="text-[11px] font-semibold text-slate-500 mt-1">{t.pinSecurityNote}</p>
                   </div>
 
-                  {/* 5. البريد الإلكتروني (أصبح اختيارياً) */}
+                  {/* 5. البريد الإلكتروني (اختياري) */}
                   <div className="col-span-2">
                     <label className="block text-xs font-bold text-slate-500 mb-1.5">{t.emailOptionalLabel}</label>
                     <div className="relative flex items-center">
@@ -1093,14 +1253,14 @@ export default function ProviderAuth() {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        placeholder="artisan@email.com (اختياري)"
+                        placeholder="artisan@email.com"
                         className="w-full p-2.5 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 text-xs font-medium"
                         dir="ltr"
                       />
                     </div>
                   </div>
 
-                  {/* 6. النبذة والملاحظات المهنية (تُصاغ بالذكاء الاصطناعي أو يدوياً) */}
+                  {/* 6. النبذة والملاحظات المهنية */}
                   <div className="col-span-2">
                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                       <span className="flex items-center gap-1">
@@ -1109,11 +1269,11 @@ export default function ProviderAuth() {
                       <button
                         type="button"
                         onClick={() => toggleVoiceInput('notes')}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-black cursor-pointer ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black cursor-pointer ${
                           listeningField === 'notes' ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 text-orange-700'
                         }`}
                       >
-                        <Mic className="w-3 h-3" /> صوت
+                        <Mic className="w-3 h-3" /> {language === 'ar' ? 'تحدث' : language === 'fr' ? 'Dicter' : 'Speak'}
                       </button>
                     </label>
                     <textarea
