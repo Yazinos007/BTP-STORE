@@ -8,7 +8,7 @@ import {
   MessageCircle, Award, Check, Sparkles, Mic, MicOff, Volume2, Camera, Wand2, PlusCircle
 } from 'lucide-react';
 
-// 🏙️ مصفوفة المدن لقائمة الاقتراحات (تمت إعادتها لمنع خطأ ReferenceError)
+// 🏙️ مصفوفة المدن لقائمة الاقتراحات
 const MOROCCAN_CITIES = [
   "الدار البيضاء - Casablanca",
   "الرباط - Rabat",
@@ -357,6 +357,83 @@ export default function ProviderProfile() {
       }
     };
   }, []);
+
+  // ==========================================
+  // 🔊 1. دالة المرشد الصوتي الناطق (تمت إعادتها وتثبيتها لمنع ReferenceError)
+  // ==========================================
+  const toggleAudioGuide = () => {
+    if (isSpeakingGuide) {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (cloudAudioRef.current) {
+        cloudAudioRef.current.pause();
+        cloudAudioRef.current = null;
+      }
+      setIsSpeakingGuide(false);
+      return;
+    }
+
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (cloudAudioRef.current) {
+      cloudAudioRef.current.pause();
+      cloudAudioRef.current = null;
+    }
+
+    const speechText =
+      language === 'ar'
+        ? 'مرحباً بك يا معلم في ملفك المهني بمنصة ساس بي تي بي. اضغط على الزر البرتقالي وتحدث بالدارجة المغربية أو العربية عن اسمك، مدينتك، وحرفتك، وسنقوم بملء جميع الخانات تلقائياً.'
+        : language === 'fr'
+        ? 'Bienvenue sur votre profil professionnel SasBTP. Appuyez sur le bouton orange et parlez en Darija ou en Français de votre métier, votre ville et votre expérience.'
+        : 'Welcome to your professional profile on SasBTP. Tap the orange button and speak your name, city, trade, and experience, and our AI will complete your profile automatically.';
+
+    const voices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
+    const blockedRoboticNames = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox', 'junior', 'kathy', 'ralph'];
+
+    let chosenVoice = null;
+    if (language === 'ar') {
+      chosenVoice = voices.find(
+        (v) => (v.lang.toLowerCase().startsWith('ar') || v.name.includes('Majed') || v.name.includes('Tarik') || v.name.includes('Maged') || v.name.includes('العربية')) &&
+               !blockedRoboticNames.some((b) => v.name.toLowerCase().includes(b))
+      );
+    } else if (language === 'fr') {
+      chosenVoice =
+        voices.find((v) => v.lang.toLowerCase().startsWith('fr') && (v.name.includes('Thomas') || v.name.includes('Amelie') || v.name.includes('Audrey') || v.name.includes('Google') || v.name.includes('Paul') || v.name.includes('Julie'))) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRoboticNames.some((b) => v.name.toLowerCase().includes(b)));
+    } else {
+      chosenVoice =
+        voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Google US') || v.name.includes('Daniel') || v.name.includes('Karen') || v.name.includes('Ava') || v.name.includes('Alex') || v.name.includes('Moira'))) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRoboticNames.some((b) => v.name.toLowerCase().includes(b)));
+    }
+
+    if (!chosenVoice && language === 'ar') {
+      try {
+        const encoded = encodeURIComponent(speechText);
+        const audio = new Audio(`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=${encoded}`);
+        cloudAudioRef.current = audio;
+        setIsSpeakingGuide(true);
+        audio.onended = () => setIsSpeakingGuide(false);
+        audio.onerror = () => setIsSpeakingGuide(false);
+        audio.play().catch(() => setIsSpeakingGuide(false));
+        return;
+      } catch (e) {}
+    }
+
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(speechText);
+      if (chosenVoice) {
+        utterance.voice = chosenVoice;
+        utterance.lang = chosenVoice.lang;
+      } else {
+        utterance.lang = language === 'ar' ? 'ar-SA' : language === 'fr' ? 'fr-FR' : 'en-US';
+      }
+      utterance.rate = language === 'en' ? 0.96 : 0.94;
+      utterance.pitch = 1.0;
+      utterance.onend = () => setIsSpeakingGuide(false);
+      utterance.onerror = () => setIsSpeakingGuide(false);
+
+      setIsSpeakingGuide(true);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   const buildLocalizedProfileTexts = (targetLang, metaState, currentBasicInfo) => {
     const tradeObj = VISUAL_TRADES.find((vt) => vt.id === metaState.tradeId) || VISUAL_TRADES[0];
@@ -1348,7 +1425,6 @@ export default function ProviderProfile() {
                 >
                   {listeningField === 'city' ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                 </button>
-                {/* تم التأكد من ربط MOROCCAN_CITIES لإنهاء خطأ ReferenceError */}
                 <datalist id="moroccan-cities-list">
                   {MOROCCAN_CITIES.map((c, idx) => (
                     <option key={idx} value={c} />
