@@ -364,6 +364,8 @@ export default function AuthGateway() {
     if (isSpeakingGuide) {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (cloudAudioRef.current) {
+        cloudAudioRef.current.onended = null;
+        cloudAudioRef.current.onerror = null;
         cloudAudioRef.current.pause();
         cloudAudioRef.current = null;
       }
@@ -373,57 +375,104 @@ export default function AuthGateway() {
 
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (cloudAudioRef.current) {
+      cloudAudioRef.current.onended = null;
+      cloudAudioRef.current.onerror = null;
       cloudAudioRef.current.pause();
       cloudAudioRef.current = null;
     }
 
+    // 🇲🇦 للعربية: تشغيل الصوت النسائي السحابي الشجي مباشرة دون المرور بمحرك المتصفح المحلي
+    if (language === 'ar') {
+      const arabicSegments = activeTab === 'login'
+        ? [
+            'مرحباً بك في منصة ساس بي تي بي',
+            'لتسجيل الدخول، اضغط على زر الميكروفون وانطق رقم هاتفك',
+            'ثم أدخل رمزك السري المكون من أربعة أرقام'
+          ]
+        : [
+            'مرحباً بك في منصة ساس بي تي بي',
+            'اضغط على الزر البرتقالي، وتحدث بالدارجة المغربية أو العربية',
+            'قل اسمك، ومدينتك، وحرفتك، ورقم هاتفك، وسنملأ حسابك تلقائياً'
+          ];
+
+      setIsSpeakingGuide(true);
+      let currentIdx = 0;
+
+      const playNextSegment = () => {
+        if (currentIdx >= arabicSegments.length) {
+          setIsSpeakingGuide(false);
+          cloudAudioRef.current = null;
+          return;
+        }
+
+        const segText = arabicSegments[currentIdx];
+        currentIdx += 1;
+
+        const encoded = encodeURIComponent(segText);
+        const primaryUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&ttsspeed=0.95&q=${encoded}`;
+        const backupUrl = `https://api.streamelements.com/kappa/v2/speech?voice=Zeina&text=${encoded}`;
+
+        const audio = document.createElement('audio');
+        audio.referrerPolicy = 'no-referrer';
+        audio.setAttribute('referrerpolicy', 'no-referrer');
+        audio.src = primaryUrl;
+        cloudAudioRef.current = audio;
+
+        audio.onended = () => playNextSegment();
+
+        audio.onerror = () => {
+          if (audio.src !== backupUrl) {
+            audio.src = backupUrl;
+            audio.play().catch(() => setIsSpeakingGuide(false));
+          } else {
+            playNextSegment();
+          }
+        };
+
+        audio.play().catch(() => {
+          audio.src = backupUrl;
+          audio.play().catch(() => setIsSpeakingGuide(false));
+        });
+      };
+
+      playNextSegment();
+      return;
+    }
+
+    // 🇫🇷 / 🇬🇧 للفرنسية والإنجليزية: اختيار صوت نسائي صافٍ
     const guideText =
-      language === 'ar'
-        ? activeTab === 'login'
-          ? 'مرحباً بك في منصة ساس بي تي بي. لتسجيل الدخول، اضغط على زر الميكروفون وانطق رقم هاتفك، ثم أدخل رمزك السري المكون من أربعة أرقام.'
-          : 'مرحباً بك في صفحة إنشاء الحساب. اضغط على الزر البرتقالي وتكلم بالدارجة المغربية أو العربية: قل اسمك، مدينتك، حرفتك، ورقم هاتفك، وسنملأ جميع الخانات تلقائياً.'
-        : language === 'fr'
+      language === 'fr'
         ? activeTab === 'login'
           ? 'Bienvenue sur SasBTP. Dictez ou tapez votre numéro de téléphone et votre code secret pour vous connecter.'
           : 'Bienvenue sur SasBTP. Appuyez sur le bouton orange et dites votre nom, votre ville, votre métier et votre numéro de téléphone.'
+        : activeTab === 'login'
+        ? 'Welcome to SasBTP. Speak or type your phone number and your secret PIN to log in.'
         : 'Welcome to SasBTP. Tap the orange microphone and speak your name, city, trade, and phone number to create your account automatically.';
 
-    const voices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
-    const blockedRobotic = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox'];
-
-    let chosenVoice = null;
-    if (language === 'ar') {
-      chosenVoice = voices.find((v) => v.lang.toLowerCase().startsWith('ar') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
-    } else if (language === 'fr') {
-      chosenVoice = voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
-    } else {
-      chosenVoice =
-        voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Google US') || v.name.includes('Daniel') || v.name.includes('Karen') || v.name.includes('Alex'))) ||
-        voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
-    }
-
-    if (!chosenVoice && language === 'ar') {
-      try {
-        const encoded = encodeURIComponent(guideText);
-        const audio = new Audio(`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=${encoded}`);
-        cloudAudioRef.current = audio;
-        setIsSpeakingGuide(true);
-        audio.onended = () => setIsSpeakingGuide(false);
-        audio.onerror = () => setIsSpeakingGuide(false);
-        audio.play().catch(() => setIsSpeakingGuide(false));
-        return;
-      } catch (e) {}
-    }
-
     if ('speechSynthesis' in window) {
+      const voices = window.speechSynthesis.getVoices() || [];
+      const blockedRobotic = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox'];
+
+      let chosenVoice = null;
+      if (language === 'fr') {
+        chosenVoice =
+          voices.find((v) => v.lang.toLowerCase().startsWith('fr') && (v.name.includes('Amelie') || v.name.includes('Amélie') || v.name.includes('Audrey') || v.name.includes('Julie') || v.name.includes('Marie') || v.name.includes('Google'))) ||
+          voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+      } else {
+        chosenVoice =
+          voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Karen') || v.name.includes('Ava') || v.name.includes('Moira') || v.name.includes('Google US'))) ||
+          voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+      }
+
       const utterance = new SpeechSynthesisUtterance(guideText);
       if (chosenVoice) {
         utterance.voice = chosenVoice;
         utterance.lang = chosenVoice.lang;
       } else {
-        utterance.lang = language === 'ar' ? 'ar-SA' : language === 'fr' ? 'fr-FR' : 'en-US';
+        utterance.lang = language === 'fr' ? 'fr-FR' : 'en-US';
       }
       utterance.rate = 0.95;
+      utterance.pitch = 1.05;
       utterance.onend = () => setIsSpeakingGuide(false);
       utterance.onerror = () => setIsSpeakingGuide(false);
 

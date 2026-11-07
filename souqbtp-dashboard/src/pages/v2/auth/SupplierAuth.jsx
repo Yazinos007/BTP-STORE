@@ -324,6 +324,8 @@ export default function SupplierAuth() {
     if (isSpeakingGuide) {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (cloudAudioRef.current) {
+        cloudAudioRef.current.onended = null;
+        cloudAudioRef.current.onerror = null;
         cloudAudioRef.current.pause();
         cloudAudioRef.current = null;
       }
@@ -333,53 +335,92 @@ export default function SupplierAuth() {
 
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (cloudAudioRef.current) {
+      cloudAudioRef.current.onended = null;
+      cloudAudioRef.current.onerror = null;
       cloudAudioRef.current.pause();
       cloudAudioRef.current = null;
     }
 
-    const guideText =
-      language === 'ar'
-        ? 'مرحباً بك في بوابة التجار والموردين بمنصة ساس بي تي بي. لإنشاء حساب متجرك أو شركتك بدون كتابة، اضغط على الزر البرتقالي، وتكلم بالدارجة المغربية أو العربية: قل اسم المحل أو الشركة، المدينة، نوع السلعة، ورقم هاتفك.'
-        : language === 'fr'
-        ? 'Bienvenue sur le portail Fournisseurs et Détaillants SasBTP. Appuyez sur le bouton orange et dites le nom de votre boutique ou société, votre ville et votre numéro de téléphone.'
-        : 'Welcome to the SasBTP Suppliers Portal. Tap the orange microphone and speak your store or company name, city, and phone number.';
-
-    const voices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
-    const blockedRobotic = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox'];
-
-    let chosenVoice = null;
     if (language === 'ar') {
-      chosenVoice = voices.find((v) => v.lang.toLowerCase().startsWith('ar') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
-    } else if (language === 'fr') {
-      chosenVoice = voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
-    } else {
-      chosenVoice =
-        voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Google US') || v.name.includes('Daniel') || v.name.includes('Karen') || v.name.includes('Alex'))) ||
-        voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+      const arabicSegments = [
+        'مرحباً بك في منصة ساس بي تي بي',
+        'اضغط على الزر البرتقالي، وتحدث بالدارجة المغربية أو العربية',
+        'قل اسمك، ومدينتك، وتخصصك، ورقم هاتفك، وسنملأ حسابك تلقائياً'
+      ];
+
+      setIsSpeakingGuide(true);
+      let currentIdx = 0;
+
+      const playNextSegment = () => {
+        if (currentIdx >= arabicSegments.length) {
+          setIsSpeakingGuide(false);
+          cloudAudioRef.current = null;
+          return;
+        }
+
+        const segText = arabicSegments[currentIdx];
+        currentIdx += 1;
+
+        const encoded = encodeURIComponent(segText);
+        const primaryUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&ttsspeed=0.95&q=${encoded}`;
+        const backupUrl = `https://api.streamelements.com/kappa/v2/speech?voice=Zeina&text=${encoded}`;
+
+        const audio = document.createElement('audio');
+        audio.referrerPolicy = 'no-referrer';
+        audio.setAttribute('referrerpolicy', 'no-referrer');
+        audio.src = primaryUrl;
+        cloudAudioRef.current = audio;
+
+        audio.onended = () => playNextSegment();
+
+        audio.onerror = () => {
+          if (audio.src !== backupUrl) {
+            audio.src = backupUrl;
+            audio.play().catch(() => setIsSpeakingGuide(false));
+          } else {
+            playNextSegment();
+          }
+        };
+
+        audio.play().catch(() => {
+          audio.src = backupUrl;
+          audio.play().catch(() => setIsSpeakingGuide(false));
+        });
+      };
+
+      playNextSegment();
+      return;
     }
 
-    if (!chosenVoice && language === 'ar') {
-      try {
-        const encoded = encodeURIComponent(guideText);
-        const audio = new Audio(`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=${encoded}`);
-        cloudAudioRef.current = audio;
-        setIsSpeakingGuide(true);
-        audio.onended = () => setIsSpeakingGuide(false);
-        audio.onerror = () => setIsSpeakingGuide(false);
-        audio.play().catch(() => setIsSpeakingGuide(false));
-        return;
-      } catch (e) {}
-    }
+    const speechText =
+      language === 'fr'
+        ? 'Bienvenue sur SasBTP. Appuyez sur le bouton orange et dites votre nom, votre ville, votre spécialité et votre numéro de téléphone.'
+        : 'Welcome to SasBTP. Tap the orange microphone and speak your name, city, specialty, and phone number.';
 
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(guideText);
+      const voices = window.speechSynthesis.getVoices() || [];
+      const blockedRobotic = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox'];
+
+      let chosenVoice = null;
+      if (language === 'fr') {
+        chosenVoice =
+          voices.find((v) => v.lang.toLowerCase().startsWith('fr') && (v.name.includes('Amelie') || v.name.includes('Amélie') || v.name.includes('Audrey') || v.name.includes('Julie') || v.name.includes('Marie') || v.name.includes('Google'))) ||
+          voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+      } else {
+        chosenVoice =
+          voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Karen') || v.name.includes('Ava') || v.name.includes('Moira') || v.name.includes('Google US'))) ||
+          voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+      }
+
+      const utterance = new SpeechSynthesisUtterance(speechText);
       if (chosenVoice) {
         utterance.voice = chosenVoice;
         utterance.lang = chosenVoice.lang;
       } else {
-        utterance.lang = language === 'ar' ? 'ar-SA' : language === 'fr' ? 'fr-FR' : 'en-US';
+        utterance.lang = language === 'fr' ? 'fr-FR' : 'en-US';
       }
-      utterance.rate = 0.94;
+      utterance.rate = 0.95;
+      utterance.pitch = 1.05;
       utterance.onend = () => setIsSpeakingGuide(false);
       utterance.onerror = () => setIsSpeakingGuide(false);
 
