@@ -8,35 +8,59 @@ import {
   MessageCircle, Award, Check, Sparkles, Mic, MicOff, Volume2, Camera, Wand2, PlusCircle
 } from 'lucide-react';
 
+// 🏙️ مصفوفة المدن لقائمة الاقتراحات (تمت إعادتها لمنع خطأ ReferenceError)
+const MOROCCAN_CITIES = [
+  "الدار البيضاء - Casablanca",
+  "الرباط - Rabat",
+  "مراكش - Marrakech",
+  "طنجة - Tanger",
+  "فاس - Fès",
+  "أكادير - Agadir",
+  "مكناس - Meknès",
+  "وجدة - Oujda",
+  "القنيطرة - Kénitra",
+  "تطوان - Tétouan",
+  "بني ملال - Béni Mellal",
+  "قصبة تادلة - Kasbah Tadla",
+  "خنيفرة - Khénifra",
+  "خريبكة - Khouribga",
+  "المحمدية - Mohammedia",
+  "الجديدة - El Jadida",
+  "آسفي - Safi",
+  "الناظور - Nador",
+  "العيون - Laâyoune",
+  "ورزازات - Ouarzazate"
+];
+
 // 🏙️ خريطة المدن المغربية متعددة اللغات للترجمة التلقائية والالتقاط بالدارجة
 const MOROCCAN_CITIES_DATA = [
   { id: 'casablanca', ar: 'الدار البيضاء', fr: 'Casablanca', en: 'Casablanca', keywords: ['الدار البيضاء', 'كازا', 'دار البيضاء', 'casablanca', 'casa'] },
   { id: 'rabat', ar: 'الرباط', fr: 'Rabat', en: 'Rabat', keywords: ['الرباط', 'رباط', 'rabat'] },
-  { id: 'marrakech', ar: 'مراكش', fr: 'Marrakech', en: 'Marrakech', keywords: ['مراكش', 'مراكش الحمراء', 'marrakech', 'marrakesh'] },
+  { id: 'marrakech', ar: 'مراكش', fr: 'Marrakech', en: 'Marrakech', keywords: ['مراكش', 'marrakech', 'marrakesh'] },
   { id: 'tanger', ar: 'طنجة', fr: 'Tanger', en: 'Tangier', keywords: ['طنجة', 'طنجه', 'tanger', 'tangier'] },
   { id: 'fes', ar: 'فاس', fr: 'Fès', en: 'Fes', keywords: ['فاس', 'fes', 'fès'] },
   { id: 'agadir', ar: 'أكادير', fr: 'Agadir', en: 'Agadir', keywords: ['أكادير', 'اكادير', 'agadir'] },
   { id: 'meknes', ar: 'مكناس', fr: 'Meknès', en: 'Meknes', keywords: ['مكناس', 'meknes', 'meknès'] },
   { id: 'oujda', ar: 'وجدة', fr: 'Oujda', en: 'Oujda', keywords: ['وجدة', 'وجده', 'oujda'] },
   { id: 'kenitra', ar: 'القنيطرة', fr: 'Kénitra', en: 'Kenitra', keywords: ['القنيطرة', 'قنيطرة', 'قنيطره', 'kenitra', 'kénitra'] },
-  { id: 'tetouan', ar: 'تطوان', fr: 'Tétouan', en: 'Tetouan', keywords: ['تطوان', 'تطوان', 'tetouan', 'tétouan'] },
+  { id: 'tetouan', ar: 'تطوان', fr: 'Tétouan', en: 'Tetouan', keywords: ['تطوان', 'tetouan', 'tétouan'] },
   { id: 'beni_mellal', ar: 'بني ملال', fr: 'Béni Mellal', en: 'Beni Mellal', keywords: ['بني ملال', 'بنيملال', 'beni mellal', 'béni mellal'] },
   { id: 'kasbah_tadla', ar: 'قصبة تادلة', fr: 'Kasbah Tadla', en: 'Kasbah Tadla', keywords: ['قصبة تادلة', 'تادلة', 'تادلا', 'قصبه تادله', 'kasbah tadla', 'tadla'] },
   { id: 'khenifra', ar: 'خنيفرة', fr: 'Khénifra', en: 'Khenifra', keywords: ['خنيفرة', 'خنيفره', 'khenifra', 'khénifra'] },
   { id: 'khouribga', ar: 'خريبكة', fr: 'Khouribga', en: 'Khouribga', keywords: ['خريبكة', 'خريبكه', 'khouribga'] },
   { id: 'mohammedia', ar: 'المحمدية', fr: 'Mohammedia', en: 'Mohammedia', keywords: ['المحمدية', 'محمدية', 'mohammedia'] },
-  { id: 'el_jadida', ar: 'الجديدة', fr: 'El Jadida', en: 'El Jadida', keywords: ['الجديدة', 'جديدة', 'مازاغان', 'el jadida', 'jadida'] },
+  { id: 'el_jadida', ar: 'الجديدة', fr: 'El Jadida', en: 'El Jadida', keywords: ['الجديدة', 'جديدة', 'el jadida', 'jadida'] },
   { id: 'safi', ar: 'آسفي', fr: 'Safi', en: 'Safi', keywords: ['آسفي', 'اسفي', 'safi'] },
   { id: 'nador', ar: 'الناظور', fr: 'Nador', en: 'Nador', keywords: ['الناظور', 'ناظور', 'nador'] },
-  { id: 'laayoune', ar: 'العيون', fr: 'Laâyoune', en: 'Laayoune', keywords: ['العيون', 'العيون', 'laayoune', 'laâyoune'] },
+  { id: 'laayoune', ar: 'العيون', fr: 'Laâyoune', en: 'Laayoune', keywords: ['العيون', 'laayoune', 'laâyoune'] },
   { id: 'ouarzazate', ar: 'ورزازات', fr: 'Ouarzazate', en: 'Ouarzazate', keywords: ['ورزازات', 'وارزازات', 'ouarzazate'] }
 ];
 
-// 🛠️ موسوعة الحرف والتخصصات (مع كلمات الدارجة المغربية) + خيار "حرفة أخرى"
+// 🛠️ موسوعة الحرف والتخصصات
 const VISUAL_TRADES = [
   { id: 'macon', icon: '🧱', ar: 'بناي / أعمال البناء الكبرى', fr: 'Maçon / Gros Œuvres', en: 'Mason / General Construction', keywords: ['بناي', 'بناء', 'ضالة', 'ياجور', 'طوب', 'حفر', 'اساسات', 'أساسات', 'مرطوب', 'بيطون', 'bennay', 'maçon', 'macon', 'construction', 'dalla'] },
   { id: 'plombier', icon: '🚰', ar: 'بلومبي / سباكة وترصيص', fr: 'Plombier / Sanitaire', en: 'Plumber / Sanitary Installations', keywords: ['بلومبي', 'بلومبيي', 'سباك', 'سباكة', 'رصاص', 'ماء', 'قوادس', 'سانيتير', 'حمامات', 'شوفو', 'plombier', 'plomberie', 'sanitaire', 'plumber'] },
-  { id: 'electricien', icon: '⚡', ar: 'تريسيان / كهرباء البناء', fr: 'Électricien Bâtiment', en: 'Building Electrician', keywords: ['تريسيان', 'تريسيان', 'كهربائي', 'كهرباء', 'ضو', 'الضو', 'ضوء', 'كابلات', 'إنارة', 'طابلو', 'tricien', 'électricien', 'electricien', 'electrician'] },
+  { id: 'electricien', icon: '⚡', ar: 'تريسيان / كهرباء البناء', fr: 'Électricien Bâtiment', en: 'Building Electrician', keywords: ['تريسيان', 'كهربائي', 'كهرباء', 'ضو', 'الضو', 'ضوء', 'كابلات', 'إنارة', 'طابلو', 'tricien', 'électricien', 'electricien', 'electrician'] },
   { id: 'peintre', icon: '🎨', ar: 'صباغ / ديكور وواجهات', fr: 'Peintre & Décoration', en: 'Painter & Interior Decor', keywords: ['صباغ', 'صباغة', 'صباغه', 'دهان', 'خيال', 'ستيكو', 'عنبره', 'فاصاد', 'sebbagh', 'peintre', 'peinture', 'painter'] },
   { id: 'carreleur', icon: '⬜', ar: 'زلايجي / رخام وسيراميك', fr: 'Carreleur & Marbre', en: 'Tiler & Marble Specialist', keywords: ['زلايجي', 'زليج', 'رخام', 'سيراميك', 'فايونص', 'بورسلين', 'درج', 'zlayji', 'carreleur', 'carrelage', 'zellige', 'marbre'] },
   { id: 'platrier', icon: '🏛️', ar: 'جباس / أسقف وديكور جبس', fr: 'Plâtrier & Faux Plafond', en: 'Plaster & False Ceiling', keywords: ['جباس', 'جبس', 'قبص', 'بلافو', 'فو بلافو', 'باكيت', 'نقش', 'gebbas', 'plâtrier', 'platrier', 'plâtre', 'plafond'] },
@@ -48,7 +72,7 @@ const VISUAL_TRADES = [
   { id: 'other', icon: '➕', ar: 'حرفة أخرى (حدد حرفتك)', fr: 'Autre Métier (Préciser)', en: 'Other Trade (Specify)', keywords: [] }
 ];
 
-// ⚡ جمل جاهزة متعددة اللغات للشروط والمعلومات السريعة (تترجم تلقائياً عند تغيير اللغة)
+// ⚡ جمل جاهزة للشروط والمعلومات السريعة
 const QUICK_CHIPS = {
   terms: [
     { id: 'term_1', icon: '📋', keywords: ['فابور', 'مجاني', 'مجانية', 'دوفي', 'معاينة', 'devis gratuit', 'visite'], ar: 'معاينة الورش وتقديم عرض السعر (Devis) مجاني داخل المدينة.', fr: 'Visite de chantier et devis gratuit en ville.', en: 'Free site visit and price quote within the city.' },
@@ -105,7 +129,7 @@ const translations = {
     audioGuideBtn: "🔊 استمع للشرح الصوتي",
     audioGuideStop: "⏹️ إيقاف الصوت",
     voiceBannerTitle: "🎙️ المساعد الصوتي الذكي (تحدث بالدارجة المغربية أو العربية)",
-    voiceBannerDesc: "اضغط على الميكروفون وتكلم بعفوية بالدارجة (مثلاً: أنا المعلم أحمد من قصبة تادلة، بلومبي عندي 10 سنين د الحرفة وكاندير الدوفي فابور) وسيقوم الذكاء الاصطناعي بتحويلها إلى لغة سليمة وملء الخانات!",
+    voiceBannerDesc: "اضغط على الميكروفون وتكلم بعفوية بالدارجة وسيقوم الذكاء الاصطناعي بتحويلها إلى لغة سليمة وملء الخانات!",
     voiceStartAllBtn: "اضغط وتحدث بالدارجة أو العربية",
     voiceListeningBtn: "جاري الاستماع الآن... تكلم بعفوية (اضغط للإيقاف)",
     scanCardBtn: "📷 تصوير كارط فيزيت",
@@ -234,7 +258,6 @@ const translations = {
   }
 };
 
-// 🔢 تحويل الأرقام المنطوقة بالدارجة المغربية أو العربية أو الفرنسية إلى أرقام
 const convertSpokenWordsToDigits = (text) => {
   if (!text) return '';
   let str = text.toLowerCase();
@@ -249,8 +272,7 @@ const convertSpokenWordsToDigits = (text) => {
     'سبعة': '7', 'سبعه': '7', 'sept': '7', 'seven': '7',
     'ثمانية': '8', 'تمنية': '8', 'ثمانيه': '8', 'تمنيه': '8', 'huit': '8', 'eight': '8',
     'تسعة': '9', 'تسعود': '9', 'تسعه': '9', 'neuf': '9', 'nine': '9',
-    'عشرة': '10', 'عشره': '10', 'عشر': '10', 'dix': '10', 'ten': '10',
-    'طنعش': '12', 'اثنا عشر': '12', 'خمسطاش': '15', 'خمسة عشر': '15', 'عشرين': '20', 'تلاتين': '30'
+    'عشرة': '10', 'عشره': '10', 'طنعش': '12', 'خمسطاش': '15', 'عشرين': '20', 'تلاتين': '30'
   };
   Object.keys(wordMap).forEach((w) => {
     const regex = new RegExp(`(^|\\s)${w}(?=\\s|$)`, 'g');
@@ -261,7 +283,6 @@ const convertSpokenWordsToDigits = (text) => {
   return str;
 };
 
-// 🏙️ دالة العثور على المدينة وترجمتها للغة المختارة
 const matchAndFormatCity = (rawInput, lang) => {
   if (!rawInput) return { cityObj: null, formatted: '' };
   const lower = rawInput.toLowerCase().trim();
@@ -291,7 +312,6 @@ export default function ProviderProfile() {
   const [basicInfo, setBasicInfo] = useState({ full_name: '', city: '', phone: '', rating: 0 });
   const [formData, setFormData] = useState({ bio_text: '', experience_text: '', terms_text: '', quick_info: '' });
 
-  // 🧠 ذاكرة مهيكلة لبيانات الحرفي تسمح بالترجمة التلقائية الفورية عند تبديل اللغة (ar <-> fr <-> en)
   const [structuredMeta, setStructuredMeta] = useState({
     tradeId: 'macon',
     customTradeName: '',
@@ -309,7 +329,6 @@ export default function ProviderProfile() {
   const [alertMsg, setAlertMsg] = useState({ show: false, type: '', text: '' });
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
-  // حالات الصوت والمسح البصري
   const [isSpeakingGuide, setIsSpeakingGuide] = useState(false);
   const [listeningField, setListeningField] = useState(null);
   const [spokenPreview, setSpokenPreview] = useState('');
@@ -320,7 +339,6 @@ export default function ProviderProfile() {
   const cardInputRef = useRef(null);
   const prevLangRef = useRef(language);
 
-  // تحميل أصوات المتصفح مسبقاً
   useEffect(() => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.getVoices();
@@ -340,9 +358,6 @@ export default function ProviderProfile() {
     };
   }, []);
 
-  // ==========================================
-  // 🌐 محرك صياغة وترجمة الحقول الأربعة تلقائياً بأي لغة (ar / fr / en)
-  // ==========================================
   const buildLocalizedProfileTexts = (targetLang, metaState, currentBasicInfo) => {
     const tradeObj = VISUAL_TRADES.find((vt) => vt.id === metaState.tradeId) || VISUAL_TRADES[0];
     const tradeLabel =
@@ -369,7 +384,6 @@ export default function ProviderProfile() {
 
     const years = metaState.yearsExp;
 
-    // 1. صياغة النبذة
     const bio_text =
       targetLang === 'ar'
         ? `${artisanName}، حرفي ومهني معتمد في منصة SasBTP متخصص في (${tradeLabel})${cityShort ? ` بمدينة ${cityShort} والنواحي` : ''}. أحرص على تقديم خدمات عالية الجودة، إتقان تام في الأشغال والتشطيب، ومواكبة الزبون من بداية الورش حتى التسليم النهائي.`
@@ -377,7 +391,6 @@ export default function ProviderProfile() {
         ? `${artisanName}, artisan professionnel vérifié sur SasBTP spécialisé en (${tradeLabel})${cityShort ? ` à ${cityShort} et régions` : ''}. Travail soigné, finitions irréprochables et accompagnement complet de votre chantier jusqu'à la livraison.`
         : `${artisanName}, verified professional craftsman on SasBTP specializing in (${tradeLabel})${cityShort ? ` in ${cityShort} and surrounding areas` : ''}. Committed to top-quality workmanship, precision finishing, and full project support from start to handover.`;
 
-    // 2. صياغة الخبرة
     const experience_text =
       targetLang === 'ar'
         ? `خبرة ميدانية واسعة${years ? ` تزيد عن ${years} سنة` : ''} في مجال (${tradeLabel}). تنفيذ أشغال السكن، الفيلات، الشقق، والمحلات التجارية وفق أعلى المعايير المهنية والفنية.`
@@ -385,14 +398,12 @@ export default function ProviderProfile() {
         ? `Solide expérience terrain${years ? ` de plus de ${years} ans` : ''} dans le domaine de (${tradeLabel}). Réalisation de projets résidentiels, villas, appartements et locaux commerciaux selon les normes professionnelles.`
         : `Extensive field experience${years ? ` of over ${years} years` : ''} in (${tradeLabel}). Executing residential projects, villas, apartments, and commercial spaces to the highest industry standards.`;
 
-    // 3. صياغة الشروط
     const activeTerms = (metaState.selectedTermIds || ['term_1', 'term_2', 'term_3'])
       .map((id) => QUICK_CHIPS.terms.find((c) => c.id === id))
       .filter(Boolean)
       .map((c) => `• ${targetLang === 'ar' ? c.ar : targetLang === 'fr' ? c.fr : c.en}`);
     const terms_text = activeTerms.join('\n');
 
-    // 4. صياغة المعلومات السريعة
     const activeQuick = (metaState.selectedQuickIds || ['quick_1', 'quick_2', 'quick_3'])
       .map((id) => QUICK_CHIPS.quick.find((c) => c.id === id))
       .filter(Boolean)
@@ -408,7 +419,6 @@ export default function ProviderProfile() {
     };
   };
 
-  // استنتاج التخصص وسنوات الخبرة من أي نص موجود مسبقاً (سواء كان بالعربية أو الفرنسية أو الإنجليزية)
   const inferStructuredMetaFromExistingText = (bio, exp, terms, quick, cityStr) => {
     const combined = convertSpokenWordsToDigits(`${bio} ${exp} ${terms} ${quick}`).toLowerCase();
     let detectedTradeId = 'macon';
@@ -448,7 +458,6 @@ export default function ProviderProfile() {
     };
   };
 
-  // جلب البيانات من قاعدة البيانات عند التحميل
   useEffect(() => {
     const fetchProviderData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -508,7 +517,6 @@ export default function ProviderProfile() {
         setSelectedVisualTrade(inferred.tradeId);
       }
 
-      // إذا كانت هناك نصوص مدخلة بلغة أخرى، نترجمها فوراً للغة الواجهة الحالية
       if (loadedForm.bio_text || loadedForm.experience_text) {
         const hasArabicChars = /[\u0600-\u06FF]/.test(loadedForm.bio_text);
         if ((language !== 'ar' && hasArabicChars) || (language === 'ar' && !hasArabicChars)) {
@@ -529,12 +537,10 @@ export default function ProviderProfile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 🔄 الترجمة الفورية التلقائية لجميع الحقول والمدينة عند تبديل المستخدم للغة (العربية <-> الفرنسية <-> الإنجليزية)
   useEffect(() => {
     if (prevLangRef.current === language) return;
     prevLangRef.current = language;
 
-    // إيقاف أي صوت جاري عند تبديل اللغة
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (cloudAudioRef.current) {
       cloudAudioRef.current.pause();
@@ -542,7 +548,6 @@ export default function ProviderProfile() {
     }
     setIsSpeakingGuide(false);
 
-    // ترجمة المدينة والحقول الأربعة فوراً إلى اللغة الجديدة
     setBasicInfo((prevBasic) => {
       const { formatted: newCity } = matchAndFormatCity(prevBasic.city, language);
       const updatedBasic = { ...prevBasic, city: newCity || prevBasic.city };
@@ -588,102 +593,17 @@ export default function ProviderProfile() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // ==========================================
-  // 🔊 1. المرشد الصوتي الطبيعي السليم في اللغات الثلاث (العربية، الفرنسية، الإنجليزية)
-  // ==========================================
-  const toggleAudioGuide = () => {
-    // إيقاف الصوت إذا كان يعمل
-    if (isSpeakingGuide) {
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      if (cloudAudioRef.current) {
-        cloudAudioRef.current.pause();
-        cloudAudioRef.current = null;
-      }
-      setIsSpeakingGuide(false);
-      return;
-    }
-
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-    if (cloudAudioRef.current) {
-      cloudAudioRef.current.pause();
-      cloudAudioRef.current = null;
-    }
-
-    const speechText =
-      language === 'ar'
-        ? 'مرحباً بك يا معلم في ملفك المهني بمنصة ساس بي تي بي. اضغط على الزر البرتقالي وتحدث بالدارجة المغربية أو العربية عن اسمك، مدينتك، وحرفتك، وسنقوم بملء جميع الخانات تلقائياً.'
-        : language === 'fr'
-        ? 'Bienvenue sur votre profil professionnel SasBTP. Appuyez sur le bouton orange et parlez en Darija ou en Français de votre métier, votre ville et votre expérience.'
-        : 'Welcome to your professional profile on SasBTP. Tap the orange button and speak your name, city, trade, and experience, and our AI will complete your profile automatically.';
-
-    const voices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
-    const blockedRoboticNames = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox', 'junior', 'kathy', 'ralph'];
-
-    let chosenVoice = null;
-    if (language === 'ar') {
-      chosenVoice = voices.find(
-        (v) => (v.lang.toLowerCase().startsWith('ar') || v.name.includes('Majed') || v.name.includes('Tarik') || v.name.includes('Maged') || v.name.includes('العربية')) &&
-               !blockedRoboticNames.some((b) => v.name.toLowerCase().includes(b))
-      );
-    } else if (language === 'fr') {
-      chosenVoice =
-        voices.find((v) => v.lang.toLowerCase().startsWith('fr') && (v.name.includes('Thomas') || v.name.includes('Amelie') || v.name.includes('Audrey') || v.name.includes('Google') || v.name.includes('Paul') || v.name.includes('Julie'))) ||
-        voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRoboticNames.some((b) => v.name.toLowerCase().includes(b)));
-    } else {
-      chosenVoice =
-        voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Google US') || v.name.includes('Daniel') || v.name.includes('Karen') || v.name.includes('Ava') || v.name.includes('Alex') || v.name.includes('Moira'))) ||
-        voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRoboticNames.some((b) => v.name.toLowerCase().includes(b)));
-    }
-
-    // إذا كان الصوت المحلي للعربية غير مثبت في الجهاز (وهو ما كان يسبب صوت "فوان فوان")، نشغل الصوت السحابي الطبيعي مباشرة
-    if (!chosenVoice && language === 'ar') {
-      try {
-        const encoded = encodeURIComponent(speechText);
-        const audio = new Audio(`https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=${encoded}`);
-        cloudAudioRef.current = audio;
-        setIsSpeakingGuide(true);
-        audio.onended = () => setIsSpeakingGuide(false);
-        audio.onerror = () => setIsSpeakingGuide(false);
-        audio.play().catch(() => setIsSpeakingGuide(false));
-        return;
-      } catch (e) {}
-    }
-
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(speechText);
-      if (chosenVoice) {
-        utterance.voice = chosenVoice;
-        utterance.lang = chosenVoice.lang;
-      } else {
-        utterance.lang = language === 'ar' ? 'ar-SA' : language === 'fr' ? 'fr-FR' : 'en-US';
-      }
-      utterance.rate = language === 'en' ? 0.96 : 0.94;
-      utterance.pitch = 1.0;
-      utterance.onend = () => setIsSpeakingGuide(false);
-      utterance.onerror = () => setIsSpeakingGuide(false);
-
-      setIsSpeakingGuide(true);
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
-  // ==========================================
-  // 🧠 2. محرك فهم الدارجة المغربية وتحويلها للغة فصحى سليمة (أو لغة الواجهة)
-  // ==========================================
   const parseDarijaAndFillProfile = (rawSpeech) => {
     if (!rawSpeech || !rawSpeech.trim()) return;
     const normalized = convertSpokenWordsToDigits(rawSpeech);
     const lower = normalized.toLowerCase();
 
-    // أ) استخراج الهاتف المغربي إن نطقه
     const compactDigits = normalized.replace(/[\s\-./]/g, '');
     const phoneMatch = compactDigits.match(/(?:00212|\+212|212|0)([567]\d{8})/);
     const detectedPhone = phoneMatch ? `0${phoneMatch[1]}` : '';
 
-    // ب) استخراج المدينة المغربية بالدارجة أو الفرنسية
     const { cityObj, formatted: detectedCityFormatted } = matchAndFormatCity(normalized, language);
 
-    // ج) استخراج الحرفة بالدارجة المغربية
     let detectedTradeId = selectedVisualTrade || structuredMeta.tradeId || 'macon';
     for (const vt of VISUAL_TRADES) {
       if (vt.id === 'other') continue;
@@ -693,11 +613,9 @@ export default function ProviderProfile() {
       }
     }
 
-    // د) استخراج سنوات الخبرة بالدارجة ("عندي عشرة سنين", "15 عام ديال الحرفة")
     const expMatch = normalized.match(/(\d{1,2})\s*(?:سنة|سنه|سنين|سنوات|عام|أعوام|ans|an|years)/i);
     const detectedYears = expMatch ? expMatch[1] : structuredMeta.yearsExp;
 
-    // هـ) استخراج اسم المعلم من الدارجة ("أنا المعلم محمد", "سميتي ادريس", "معكم الحاج علي")
     let detectedName = '';
     const namePatterns = [
       /(?:أنا|انا|اسمي|إسمي|سميتي|معكم|انا هو)\s+(?:المعلم\s+|الشاف\s+|الحاج\s+|سي\s+)?([أ-يa-zA-Z]+(?:\s+[أ-يa-zA-Z]+){0,2})/i,
@@ -714,7 +632,6 @@ export default function ProviderProfile() {
       }
     }
 
-    // و) التقاط الشروط والمعلومات السريعة من الدارجة
     const matchedTermIds = QUICK_CHIPS.terms
       .filter((c) => c.keywords.some((k) => lower.includes(k.toLowerCase())))
       .map((c) => c.id);
@@ -752,9 +669,6 @@ export default function ProviderProfile() {
     });
   };
 
-  // ==========================================
-  // ⚡ 3. اختيار الحرفة بالصورة (أو إضافة حرفة أخرى مخصصة)
-  // ==========================================
   const handleSelectVisualTrade = (tradeObj) => {
     setSelectedVisualTrade(tradeObj.id);
     if (tradeObj.id === 'other') {
@@ -828,9 +742,6 @@ export default function ProviderProfile() {
     });
   };
 
-  // ==========================================
-  // 🎙️ 4. الميكروفون الفوري الموثوق 100% (يدعم الدارجة المغربية ويكتب لحظياً)
-  // ==========================================
   const toggleVoiceInput = (target = 'smartAll') => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -842,14 +753,12 @@ export default function ProviderProfile() {
       return;
     }
 
-    // إذا كان نفس الميكروفون يعمل، نوقفه فوراً
     if (listeningField === target && recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch (e) {}
       setListeningField(null);
       return;
     }
 
-    // إغلاق أي جلسة ميكروفون سابقة بشكل نظيف لمنع التعليق
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch (e) {}
       recognitionRef.current = null;
@@ -858,7 +767,6 @@ export default function ProviderProfile() {
     setTimeout(() => {
       try {
         const recognition = new SpeechRecognition();
-        // الاستماع بالدارجة المغربية (ar-MA) دائماً للحرفي حتى لو نطق اسمه أو مدينته أو حرفته بالدارجة
         recognition.lang = 'ar-MA';
         recognition.interimResults = true;
         recognition.continuous = false;
@@ -892,7 +800,6 @@ export default function ProviderProfile() {
             const digits = convertSpokenWordsToDigits(cleanTranscript).replace(/\D/g, '');
             setBasicInfo((prev) => ({ ...prev, phone: digits || cleanTranscript }));
           } else if (['bio_text', 'experience_text', 'terms_text', 'quick_info'].includes(target)) {
-            // إذا كان يتحدث بالدارجة، نحول الدارجة إلى صياغة سليمة أو ندرج النص المباشر
             const isFinal = event.results[event.results.length - 1].isFinal;
             if (isFinal) {
               setFormData((prev) => ({
@@ -919,9 +826,6 @@ export default function ProviderProfile() {
     }, 120);
   };
 
-  // ==========================================
-  // 📷 5. مسح الكارط فيزيت / البطاقة المهنية بالكاميرا
-  // ==========================================
   const handleCardScan = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -953,9 +857,6 @@ export default function ProviderProfile() {
     }
   };
 
-  // ==========================================
-  // 💾 6. حفظ جميع التعديلات في Supabase
-  // ==========================================
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!userId) return;
@@ -974,13 +875,11 @@ export default function ProviderProfile() {
     };
 
     try {
-      // 1. حفظ النسخة المهيكلة محلياً لدعم الترجمة التلقائية الفورية
       localStorage.setItem(
         `sasbtp_provider_profile_${userId}`,
         JSON.stringify({ ...fullPayload, structuredMeta })
       );
 
-      // 2. حفظ سحابي مضمون في Supabase Auth Metadata
       await supabase.auth.updateUser({
         data: {
           full_name: fullPayload.full_name,
@@ -990,7 +889,6 @@ export default function ProviderProfile() {
         }
       });
 
-      // 3. تحديث جدول providers بالأعمدة الموجودة فعلياً
       if (providerId) {
         const safeTableUpdate = {};
         Object.keys(fullPayload).forEach((key) => {
@@ -1176,7 +1074,6 @@ export default function ProviderProfile() {
             })}
           </div>
 
-          {/* ➕ حقل إدخال حرفة مخصصة أخرى (بالصوت أو الكتابة) لمن لا يجد حرفته في الأيقونات */}
           {showCustomTradeInput && (
             <div className="mt-3 p-4 bg-white rounded-xl border-2 border-indigo-300 shadow-sm animate-fade-in">
               <label className="block text-xs font-black text-indigo-950 mb-2">
@@ -1215,7 +1112,6 @@ export default function ProviderProfile() {
         </div>
       </div>
 
-      {/* ⚠️ تنبيهات الحفظ */}
       {alertMsg.show && (
         <div className={`p-5 rounded-xl mb-6 flex items-start gap-3 border animate-fade-in ${alertMsg.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
           {alertMsg.type === 'success' ? <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" /> : <AlertCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />}
@@ -1230,14 +1126,13 @@ export default function ProviderProfile() {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* ========================================================= */}
-        {/* 📌 البطاقة الأولى: إعدادات الملف العام (مع ميكروفون فوري لكل قسم) */}
+        {/* 📌 البطاقة الأولى: إعدادات الملف العام */}
         {/* ========================================================= */}
         <div className="lg:col-span-7 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 order-2 lg:order-1 space-y-6">
           <h3 className="text-xl font-black text-blue-900 mb-2 border-b-2 border-indigo-100 pb-3 flex items-center gap-2">
             ✍️ {t.publicSettingsTitle}
           </h3>
 
-          {/* 1. نبذة عنك وعن خدماتك */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="font-bold text-slate-700 flex items-center gap-2 text-sm">
@@ -1266,7 +1161,6 @@ export default function ProviderProfile() {
             />
           </div>
 
-          {/* 2. الخبرة والمجالات الدقيقة */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="font-bold text-slate-700 flex items-center gap-2 text-sm">
@@ -1295,7 +1189,6 @@ export default function ProviderProfile() {
             />
           </div>
 
-          {/* 3. الشروط وطريقة العمل */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="font-bold text-slate-700 flex items-center gap-2 text-sm">
@@ -1342,7 +1235,6 @@ export default function ProviderProfile() {
             />
           </div>
 
-          {/* 4. أوقات العمل ومعلومات سريعة */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="font-bold text-slate-700 flex items-center gap-2 text-sm">
@@ -1400,7 +1292,7 @@ export default function ProviderProfile() {
         </div>
 
         {/* ========================================================= */}
-        {/* 🔓 البطاقة الثانية: معلومات الحساب الأساسية (مع ميكروفون فوري لكل حقل) */}
+        {/* 🔓 البطاقة الثانية: معلومات الحساب الأساسية */}
         {/* ========================================================= */}
         <div className="lg:col-span-5 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 order-1 lg:order-2">
           <h3 className="text-lg font-black text-blue-900 mb-6 border-b-2 border-slate-100 pb-3 flex items-center gap-2">
@@ -1408,7 +1300,6 @@ export default function ProviderProfile() {
           </h3>
           
           <div className="space-y-5">
-            {/* تعديل الاسم الكامل بالكتابة أو الصوت */}
             <div>
               <label className="block font-bold text-slate-700 text-sm mb-1.5">{t.fullName}</label>
               <div className="relative flex items-center">
@@ -1434,7 +1325,6 @@ export default function ProviderProfile() {
               </div>
             </div>
 
-            {/* تعديل أو اختيار المدينة بالكتابة أو الصوت */}
             <div>
               <label className="block font-bold text-slate-700 text-sm mb-1.5">{t.city}</label>
               <div className="relative flex items-center">
@@ -1458,6 +1348,7 @@ export default function ProviderProfile() {
                 >
                   {listeningField === 'city' ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                 </button>
+                {/* تم التأكد من ربط MOROCCAN_CITIES لإنهاء خطأ ReferenceError */}
                 <datalist id="moroccan-cities-list">
                   {MOROCCAN_CITIES.map((c, idx) => (
                     <option key={idx} value={c} />
@@ -1466,7 +1357,6 @@ export default function ProviderProfile() {
               </div>
             </div>
 
-            {/* تعديل رقم الهاتف بالكتابة أو الصوت */}
             <div>
               <label className="block font-bold text-slate-700 text-sm mb-1.5">{t.phone}</label>
               <div className="relative flex items-center" dir="ltr">
@@ -1483,7 +1373,7 @@ export default function ProviderProfile() {
                   type="button"
                   onClick={() => toggleVoiceInput('phone')}
                   title={t.micFieldLabel}
-                  className={`absolute right-2 p-2 rounded-lg cursor-pointer transition-all ${
+                  className={`absolute right-2.5 p-2 rounded-lg cursor-pointer transition-all ${
                     listeningField === 'phone' ? 'bg-red-500 text-white animate-pulse shadow-md' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                   }`}
                 >
@@ -1492,7 +1382,6 @@ export default function ProviderProfile() {
               </div>
             </div>
 
-            {/* التقييم العام */}
             <div>
               <label className="block font-bold text-slate-500 text-sm mb-1.5">{t.rating}</label>
               <div className="w-full p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3">
