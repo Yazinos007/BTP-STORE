@@ -359,9 +359,10 @@ export default function ProviderProfile() {
   }, []);
 
   // ==========================================
-  // 🔊 1. دالة المرشد الصوتي الناطق (تمت إعادتها وتثبيتها لمنع ReferenceError)
+  // 🔊 المرشد الصوتي النسائي الموحد (عربية + فرنسية + إنجليزية)
   // ==========================================
   const toggleAudioGuide = () => {
+    // إيقاف الصوت إذا كان يعمل حالياً
     if (isSpeakingGuide) {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (cloudAudioRef.current) {
@@ -382,85 +383,29 @@ export default function ProviderProfile() {
       cloudAudioRef.current = null;
     }
 
-    // 🇲🇦 للعربية: تشغيل الصوت النسائي السحابي الشجي مباشرة
-    if (language === 'ar') {
-      const arabicSegments = [
-        'مرحباً بك في ملفك المهني بمنصة ساس بي تي بي',
-        'اضغط على الزر البرتقالي، وتحدث بالدارجة المغربية أو العربية عن اسمك ومدينتك وحرفتك',
-        'وسنقوم بملء جميع الخانات وتنسيقها لك تلقائياً'
-      ];
-
-      setIsSpeakingGuide(true);
-      let currentIdx = 0;
-
-      const playNextSegment = () => {
-        if (currentIdx >= arabicSegments.length) {
-          setIsSpeakingGuide(false);
-          cloudAudioRef.current = null;
-          return;
-        }
-
-        const segText = arabicSegments[currentIdx];
-        currentIdx += 1;
-
-        const encoded = encodeURIComponent(segText);
-        const primaryUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&ttsspeed=0.95&q=${encoded}`;
-        const backupUrl = `https://api.streamelements.com/kappa/v2/speech?voice=Zeina&text=${encoded}`;
-
-        const audio = document.createElement('audio');
-        audio.referrerPolicy = 'no-referrer';
-        audio.setAttribute('referrerpolicy', 'no-referrer');
-        audio.src = primaryUrl;
-        cloudAudioRef.current = audio;
-
-        audio.onended = () => playNextSegment();
-
-        audio.onerror = () => {
-          if (audio.src !== backupUrl) {
-            audio.src = backupUrl;
-            audio.play().catch(() => setIsSpeakingGuide(false));
-          } else {
-            playNextSegment();
-          }
-        };
-
-        audio.play().catch(() => {
-          audio.src = backupUrl;
-          audio.play().catch(() => setIsSpeakingGuide(false));
-        });
-      };
-
-      playNextSegment();
-      return;
-    }
-
-    // 🇫🇷 / 🇬🇧 للفرنسية والإنجليزية: اختيار صوت نسائي صافٍ
-    const speechText =
-      language === 'fr'
-        ? 'Bienvenue sur votre profil professionnel SasBTP. Appuyez sur le bouton orange et parlez en Darija ou en Français de votre métier, votre ville et votre expérience.'
-        : 'Welcome to your professional profile on SasBTP. Tap the orange button and speak your name, city, trade, and experience, and our AI will complete your profile automatically.';
-
-    if ('speechSynthesis' in window) {
+    // 1. الإنجليزية (تعمل بصوت Samantha النسائي المدمج بنجاح)
+    if (language === 'en' && 'speechSynthesis' in window) {
+      const enText =
+        'Welcome to your professional profile on SasBTP. Tap the orange button and speak your name, city, trade, and experience, and our AI will complete your profile automatically.';
       const voices = window.speechSynthesis.getVoices() || [];
-      const blockedRoboticNames = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox', 'junior', 'kathy', 'ralph'];
+      const femaleEnVoice =
+        voices.find(
+          (v) =>
+            v.lang.toLowerCase().startsWith('en') &&
+            (v.name.includes('Samantha') ||
+              v.name.includes('Victoria') ||
+              v.name.includes('Karen') ||
+              v.name.includes('Ava') ||
+              v.name.includes('Moira') ||
+              v.name.includes('Google US'))
+        ) || voices.find((v) => v.lang.toLowerCase().startsWith('en'));
 
-      let chosenVoice = null;
-      if (language === 'fr') {
-        chosenVoice =
-          voices.find((v) => v.lang.toLowerCase().startsWith('fr') && (v.name.includes('Amelie') || v.name.includes('Amélie') || v.name.includes('Audrey') || v.name.includes('Julie') || v.name.includes('Marie') || v.name.includes('Google'))) ||
-          voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRoboticNames.some((b) => v.name.toLowerCase().includes(b)));
+      const utterance = new SpeechSynthesisUtterance(enText);
+      if (femaleEnVoice) {
+        utterance.voice = femaleEnVoice;
+        utterance.lang = femaleEnVoice.lang;
       } else {
-        chosenVoice =
-          voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Karen') || v.name.includes('Ava') || v.name.includes('Moira') || v.name.includes('Google US'))) ||
-          voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRoboticNames.some((b) => v.name.toLowerCase().includes(b)));
-      }
-
-      const utterance = new SpeechSynthesisUtterance(speechText);
-      if (chosenVoice) {
-        utterance.voice = chosenVoice;
-        utterance.lang = chosenVoice.lang;
-      } else {
-        utterance.lang = language === 'fr' ? 'fr-FR' : 'en-US';
+        utterance.lang = 'en-US';
       }
       utterance.rate = 0.95;
       utterance.pitch = 1.05;
@@ -469,7 +414,149 @@ export default function ProviderProfile() {
 
       setIsSpeakingGuide(true);
       window.speechSynthesis.speak(utterance);
+      return;
     }
+
+    // 2. للفرنسية: التحقق أولاً إن كان هناك صوت نسائي فرنسي صريح مثبت على Mac (مثل Amélie أو Audrey فقط، مع استبعاد Google و Thomas الذكوريين)
+    if (language === 'fr' && 'speechSynthesis' in window) {
+      const voices = window.speechSynthesis.getVoices() || [];
+      const strictFemaleFrVoice = voices.find(
+        (v) =>
+          v.lang.toLowerCase().startsWith('fr') &&
+          (v.name.includes('Amelie') ||
+            v.name.includes('Amélie') ||
+            v.name.includes('Audrey') ||
+            v.name.includes('Julie') ||
+            v.name.includes('Marie') ||
+            v.name.includes('Céline'))
+      );
+
+      if (strictFemaleFrVoice) {
+        const frText =
+          'Bienvenue sur votre profil professionnel SasBTP. Appuyez sur le bouton orange et parlez en Darija ou en Français de votre métier, votre ville et votre expérience.';
+        const utterance = new SpeechSynthesisUtterance(frText);
+        utterance.voice = strictFemaleFrVoice;
+        utterance.lang = strictFemaleFrVoice.lang;
+        utterance.rate = 0.95;
+        utterance.pitch = 1.08;
+        utterance.onend = () => setIsSpeakingGuide(false);
+        utterance.onerror = () => setIsSpeakingGuide(false);
+        setIsSpeakingGuide(true);
+        window.speechSynthesis.speak(utterance);
+        return;
+      }
+    }
+
+    // 3. للعربية (وللفرنسية عند عدم وجود صوت نسائي محلي): تشغيل الصوت النسائي السحابي الصافي (Google Neural Female GTX)
+    const segments =
+      language === 'ar'
+        ? [
+            'مرحباً بك في منصة ساس بي تي بي',
+            'اضغط على الزر البرتقالي، وتحدث بالدارجة المغربية أو العربية',
+            'قل اسمك ومدينتك وحرفتك، وسنقوم بملء جميع الخانات تلقائياً'
+          ]
+        : [
+            'Bienvenue sur votre profil professionnel SasBTP.',
+            'Appuyez sur le bouton orange, et parlez en Darija ou en Français de votre métier, votre ville et votre expérience.'
+          ];
+
+    const targetLang = language === 'ar' ? 'ar' : 'fr';
+    setIsSpeakingGuide(true);
+    let currentIdx = 0;
+    let isCancelled = false;
+
+    // دالة جلب الصوت كـ Blob لتخطي حظر ORB/CORS في متصفح Chrome
+    const fetchAudioBlobUrl = async (segText) => {
+      const encoded = encodeURIComponent(segText);
+      const gtxUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${targetLang}&ttsspeed=0.95&q=${encoded}`;
+
+      const proxyUrls = [
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(gtxUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(gtxUrl)}`,
+        `https://corsproxy.io/?${encodeURIComponent(gtxUrl)}`
+      ];
+
+      for (const pUrl of proxyUrls) {
+        try {
+          const res = await fetch(pUrl);
+          if (res.ok) {
+            const buf = await res.arrayBuffer();
+            if (buf && buf.byteLength > 500) {
+              const blob = new Blob([buf], { type: 'audio/mpeg' });
+              return URL.createObjectURL(blob);
+            }
+          }
+        } catch (e) {}
+      }
+      return gtxUrl;
+    };
+
+    const playNextCloudSegment = async () => {
+      if (isCancelled || currentIdx >= segments.length) {
+        setIsSpeakingGuide(false);
+        cloudAudioRef.current = null;
+        return;
+      }
+
+      const segText = segments[currentIdx];
+      currentIdx += 1;
+
+      const encoded = encodeURIComponent(segText);
+      const directGtxUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${targetLang}&ttsspeed=0.95&q=${encoded}`;
+
+      const audio = document.createElement('audio');
+      audio.referrerPolicy = 'no-referrer';
+      audio.setAttribute('referrerpolicy', 'no-referrer');
+      audio.src = directGtxUrl;
+
+      // حفظ دالة الإلغاء عند الضغط على زر إيقاف الصوت
+      const origPause = audio.pause.bind(audio);
+      audio.pause = () => {
+        isCancelled = true;
+        origPause();
+      };
+      cloudAudioRef.current = audio;
+
+      audio.onended = () => {
+        if (!isCancelled) playNextCloudSegment();
+      };
+
+      // إذا منع المتصفح الرابط المباشر، نجلب الملف الصوتي عبر الـ Blob Proxy فوراً
+      const fallbackToBlob = async () => {
+        if (isCancelled) return;
+        try {
+          const blobUrl = await fetchAudioBlobUrl(segText);
+          if (isCancelled) return;
+          const blobAudio = new Audio(blobUrl);
+          const origBlobPause = blobAudio.pause.bind(blobAudio);
+          blobAudio.pause = () => {
+            isCancelled = true;
+            origBlobPause();
+          };
+          cloudAudioRef.current = blobAudio;
+          blobAudio.onended = () => {
+            URL.revokeObjectURL(blobUrl);
+            if (!isCancelled) playNextCloudSegment();
+          };
+          blobAudio.onerror = () => {
+            setIsSpeakingGuide(false);
+          };
+          await blobAudio.play();
+        } catch (err) {
+          setIsSpeakingGuide(false);
+        }
+      };
+
+      audio.onerror = () => {
+        fallbackToBlob();
+      };
+
+      audio.play().catch(() => {
+        fallbackToBlob();
+      });
+    };
+
+    playNextCloudSegment();
   };
 
   const buildLocalizedProfileTexts = (targetLang, metaState, currentBasicInfo) => {
