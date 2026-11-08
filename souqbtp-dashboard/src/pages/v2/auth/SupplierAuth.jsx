@@ -318,7 +318,7 @@ export default function SupplierAuth() {
   };
 
   // ==========================================
-  // 🔊 1. المرشد الصوتي الطبيعي السليم في اللغات الثلاث
+  // 🔊 المرشد الصوتي النسائي الموحد لبوابة التجار والموردين (عربية + فرنسية سحابية + إنجليزية)
   // ==========================================
   const toggleAudioGuide = () => {
     if (isSpeakingGuide) {
@@ -327,6 +327,7 @@ export default function SupplierAuth() {
         cloudAudioRef.current.onended = null;
         cloudAudioRef.current.onerror = null;
         cloudAudioRef.current.pause();
+        cloudAudioRef.current.src = '';
         cloudAudioRef.current = null;
       }
       setIsSpeakingGuide(false);
@@ -338,86 +339,32 @@ export default function SupplierAuth() {
       cloudAudioRef.current.onended = null;
       cloudAudioRef.current.onerror = null;
       cloudAudioRef.current.pause();
+      cloudAudioRef.current.src = '';
       cloudAudioRef.current = null;
     }
 
-    if (language === 'ar') {
-      const arabicSegments = [
-        'مرحباً بك في منصة ساس بي تي بي',
-        'اضغط على الزر البرتقالي، وتحدث بالدارجة المغربية أو العربية',
-        'قل اسمك، ومدينتك، وتخصصك، ورقم هاتفك، وسنملأ حسابك تلقائياً'
-      ];
-
-      setIsSpeakingGuide(true);
-      let currentIdx = 0;
-
-      const playNextSegment = () => {
-        if (currentIdx >= arabicSegments.length) {
-          setIsSpeakingGuide(false);
-          cloudAudioRef.current = null;
-          return;
-        }
-
-        const segText = arabicSegments[currentIdx];
-        currentIdx += 1;
-
-        const encoded = encodeURIComponent(segText);
-        const primaryUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&ttsspeed=0.95&q=${encoded}`;
-        const backupUrl = `https://api.streamelements.com/kappa/v2/speech?voice=Zeina&text=${encoded}`;
-
-        const audio = document.createElement('audio');
-        audio.referrerPolicy = 'no-referrer';
-        audio.setAttribute('referrerpolicy', 'no-referrer');
-        audio.src = primaryUrl;
-        cloudAudioRef.current = audio;
-
-        audio.onended = () => playNextSegment();
-
-        audio.onerror = () => {
-          if (audio.src !== backupUrl) {
-            audio.src = backupUrl;
-            audio.play().catch(() => setIsSpeakingGuide(false));
-          } else {
-            playNextSegment();
-          }
-        };
-
-        audio.play().catch(() => {
-          audio.src = backupUrl;
-          audio.play().catch(() => setIsSpeakingGuide(false));
-        });
-      };
-
-      playNextSegment();
-      return;
-    }
-
-    const speechText =
-      language === 'fr'
-        ? 'Bienvenue sur SasBTP. Appuyez sur le bouton orange et dites votre nom, votre ville, votre spécialité et votre numéro de téléphone.'
-        : 'Welcome to SasBTP. Tap the orange microphone and speak your name, city, specialty, and phone number.';
-
-    if ('speechSynthesis' in window) {
+    // 1. الإنجليزية (صوت Samantha النسائي المدمج)
+    if (language === 'en' && 'speechSynthesis' in window) {
+      const enText =
+        'Welcome to the SasBTP Suppliers Portal. Tap the orange microphone and speak your store or company name, city, products, and phone number.';
       const voices = window.speechSynthesis.getVoices() || [];
-      const blockedRobotic = ['fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'deranged', 'good news', 'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox'];
+      const femaleEnVoice =
+        voices.find(
+          (v) =>
+            v.lang.toLowerCase().startsWith('en') &&
+            (v.name.includes('Samantha') ||
+              v.name.includes('Victoria') ||
+              v.name.includes('Karen') ||
+              v.name.includes('Ava') ||
+              v.name.includes('Moira'))
+        ) || voices.find((v) => v.lang.toLowerCase().startsWith('en'));
 
-      let chosenVoice = null;
-      if (language === 'fr') {
-        chosenVoice =
-          voices.find((v) => v.lang.toLowerCase().startsWith('fr') && (v.name.includes('Amelie') || v.name.includes('Amélie') || v.name.includes('Audrey') || v.name.includes('Julie') || v.name.includes('Marie') || v.name.includes('Google'))) ||
-          voices.find((v) => v.lang.toLowerCase().startsWith('fr') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
+      const utterance = new SpeechSynthesisUtterance(enText);
+      if (femaleEnVoice) {
+        utterance.voice = femaleEnVoice;
+        utterance.lang = femaleEnVoice.lang;
       } else {
-        chosenVoice =
-          voices.find((v) => v.lang.toLowerCase().startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Karen') || v.name.includes('Ava') || v.name.includes('Moira') || v.name.includes('Google US'))) ||
-          voices.find((v) => v.lang.toLowerCase().startsWith('en') && !blockedRobotic.some((b) => v.name.toLowerCase().includes(b)));
-      }
-
-      const utterance = new SpeechSynthesisUtterance(speechText);
-      if (chosenVoice) {
-        utterance.voice = chosenVoice;
-        utterance.lang = chosenVoice.lang;
-      } else {
-        utterance.lang = language === 'fr' ? 'fr-FR' : 'en-US';
+        utterance.lang = 'en-US';
       }
       utterance.rate = 0.95;
       utterance.pitch = 1.05;
@@ -426,7 +373,106 @@ export default function SupplierAuth() {
 
       setIsSpeakingGuide(true);
       window.speechSynthesis.speak(utterance);
+      return;
     }
+
+    // 2. تفعيل درع no-referrer في رأس الصفحة لمنع حظر 403/ORB
+    let metaReferrer = document.querySelector('meta[name="referrer"]');
+    if (!metaReferrer) {
+      metaReferrer = document.createElement('meta');
+      metaReferrer.name = 'referrer';
+      document.head.appendChild(metaReferrer);
+    }
+    metaReferrer.content = 'no-referrer';
+
+    // 3. للعربية والفرنسية معاً: تشغيل الصوت النسائي السحابي الشجي مباشرة
+    const segments =
+      language === 'ar'
+        ? [
+            'مرحباً بك في بوابة التجار والموردين بمنصة ساس بي تي بي',
+            'لإنشاء حساب متجرك أو شركتك بدون كتابة، اضغط على الزر البرتقالي',
+            'وقل اسم المحل أو الشركة، والمدينة، ونوع السلعة، ورقم هاتفك'
+          ]
+        : [
+            'Bienvenue sur le portail Fournisseurs et Détaillants SasBTP.',
+            'Appuyez sur le bouton orange, et dites le nom de votre boutique ou société, votre ville et votre numéro de téléphone.'
+          ];
+
+    const targetLang = language === 'ar' ? 'ar' : 'fr';
+
+    const player = new Audio();
+    player.preload = 'auto';
+    cloudAudioRef.current = player;
+    setIsSpeakingGuide(true);
+
+    let currentIdx = 0;
+    let isStopped = false;
+
+    const origPause = player.pause.bind(player);
+    player.pause = () => {
+      isStopped = true;
+      origPause();
+    };
+
+    const playSegment = () => {
+      if (isStopped || currentIdx >= segments.length) {
+        setIsSpeakingGuide(false);
+        cloudAudioRef.current = null;
+        return;
+      }
+
+      const textChunk = segments[currentIdx];
+      currentIdx += 1;
+      const encoded = encodeURIComponent(textChunk);
+
+      const endpoints = [
+        `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${targetLang}&q=${encoded}`,
+        `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${targetLang}&q=${encoded}`,
+        `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${targetLang}&q=${encoded}`
+      ];
+
+      let epIdx = 0;
+
+      const tryCurrentEndpoint = () => {
+        if (isStopped) return;
+        if (epIdx >= endpoints.length) {
+          playSegment();
+          return;
+        }
+
+        const url = endpoints[epIdx];
+        epIdx += 1;
+        let settled = false;
+
+        player.onended = () => {
+          if (settled || isStopped) return;
+          settled = true;
+          playSegment();
+        };
+
+        player.onerror = () => {
+          if (settled || isStopped) return;
+          settled = true;
+          tryCurrentEndpoint();
+        };
+
+        player.src = url;
+        player.playbackRate = language === 'fr' ? 1.05 : 1.0;
+
+        const playPromise = player.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            if (settled || isStopped) return;
+            settled = true;
+            tryCurrentEndpoint();
+          });
+        }
+      };
+
+      tryCurrentEndpoint();
+    };
+
+    playSegment();
   };
 
   // ==========================================
