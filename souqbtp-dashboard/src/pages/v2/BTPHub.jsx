@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useOutletContext, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import SupplierProfile from '../../components/v2/SupplierProfile';
 import ProjectCart from '../../components/v2/ProjectCart';
 import { 
-  Search, Mic, Camera, FileText, MapPin, CheckCircle, Clock, Star, 
+  Search, Mic, MicOff, Volume2, Camera, FileText, MapPin, CheckCircle, Clock, Star, 
   ShieldCheck, ShoppingCart, Filter, Package, Zap, Droplet, PaintRoller, 
-  Hammer, ArrowRight, Plus, CheckCircle2, TrendingUp, Briefcase,
-  Store, Coins, Globe, Bitcoin, Minus, MessageCircle, X, Trash2, Building2, Timer,
+  Hammer, ArrowRight, Plus, CheckCircle2, TrendingUp, TrendingDown, Briefcase,
+  Coins, Globe, Bitcoin, X, Building2, Timer, Loader2,
   HardHat, LayoutGrid, Flame, Component, AppWindow, Wind, ArrowUpDown, Cctv, Umbrella, 
   Sparkles, Trees, Siren, PenTool, Compass, Calculator, Sofa, Mountain, Layers, Factory, Waves,
   Tractor, Wrench, Truck, Trash, FileCheck, Shield, Award, MoreHorizontal
@@ -33,8 +33,98 @@ const getCurrencyIcon = (curr) => {
   return <span className="font-black text-xs">🇲🇦</span>;
 };
 
+// 🔢 تحويل الأرقام المنطوقة بالدارجة المغربية والعربية والفرنسية إلى أرقام
+const parseDarijaSpokenDigits = (rawText) => {
+  if (!rawText) return '';
+  let str = rawText.toLowerCase();
+  const eastern = '٠١٢٣٤٥٦٧٨٩';
+  str = str.replace(/[٠-٩]/g, (d) => eastern.indexOf(d));
+
+  const compounds = [
+    [/عشرة\s*آلاف|عشر\s*آلاف/g, '10000'],
+    [/خمسة\s*آلاف|خمس\s*آلاف/g, '5000'],
+    [/ألفين|الفين/g, '2000'],
+    [/ألف|الف/g, '1000'],
+    [/خمسمائة|خمسمية|خمسميه/g, '500'],
+    [/أربعمائة|ربعمية/g, '400'],
+    [/ثلاثمائة|تلاتمية|تلاتميه/g, '300'],
+    [/مائتين|ميتين|مياتين/g, '200'],
+    [/مائة\s*وخمسين|مية\s*وخمسين/g, '150'],
+    [/مائة|مية|ميه/g, '100'],
+    [/خمسين/g, '50']
+  ];
+  compounds.forEach(([pat, val]) => {
+    str = str.replace(pat, ` ${val} `);
+  });
+
+  const words = {
+    'صفر': '0', 'زيرو': '0', 'واحد': '1', 'جوج': '2', 'زوج': '2', 'اثنان': '2',
+    'ثلاثة': '3', 'تلاتة': '3', 'أربعة': '4', 'ربعة': '4', 'خمسة': '5',
+    'ستة': '6', 'سبعة': '7', 'ثمانية': '8', 'تمنية': '8', 'تسعة': '9', 'تسعود': '9', 'عشرة': '10'
+  };
+  Object.keys(words).forEach((w) => {
+    const regex = new RegExp(`(^|\\s)${w}(?=\\s|$)`, 'g');
+    str = str.replace(regex, ` ${words[w]} `);
+  });
+  return str;
+};
+
+// 🧠 قاموس الربط الذكي بين الدارجة المغربية / العربية / الفرنسية / الإنجليزية للسلع والفئات
+const SMART_BTP_SYNONYMS = {
+  Cement: ['إسمنت', 'اسمنت', 'سيما', 'خنشة', 'جبس', 'ياجور', 'بريك', 'رمل', 'كياس', 'حصى', 'خرسانة', 'بيطون', 'ciment', 'cpj', 'brique', 'sable', 'beton', 'béton', 'cement', 'concrete', 'mortar'],
+  Steel: ['حديد', 'قطبان', 'تورساد', 'سلك', 'شبكة', 'تسليح', 'فولاذ', 'fer', 'acier', 'armature', 'rond', 'steel', 'rebar', 'iron'],
+  Masonry: ['بناي', 'بناء', 'ضالة', 'مرطوب', 'حائط', 'حيط', 'maçon', 'macon', 'maçonnerie', 'masonry', 'bricklayer'],
+  Tiling: ['زليج', 'زلايجي', 'رخام', 'سيراميك', 'فايونص', 'بورسلين', 'أرضيات', 'carrelage', 'carreleur', 'marbre', 'zellige', 'faience', 'tiling', 'marble', 'tiles'],
+  Plumbing: ['بلومبي', 'سباك', 'سباكة', 'رصاص', 'قوادس', 'قادوس', 'ماء', 'روبيني', 'شوفو', 'حمام', 'سانيتير', 'plombier', 'plomberie', 'tuyau', 'sanitaire', 'plumbing', 'plumber', 'pipe'],
+  Electrical: ['تريسيان', 'كهرباء', 'كهربائي', 'ضو', 'الضو', 'ضوء', 'كابل', 'خيوط', 'بولات', 'إنارة', 'طابلو', 'électricien', 'electricien', 'électricité', 'cable', 'éclairage', 'electrical', 'electrician', 'lighting'],
+  Paint: ['صباغ', 'صباغة', 'صباغه', 'دهان', 'خيال', 'ستيكو', 'أندوي', 'عزل', 'peintre', 'peinture', 'enduit', 'paint', 'painter'],
+  Wood: ['نجار', 'نجارة', 'خشب', 'عود', 'بيبان', 'أبواب', 'بلاكار', 'كوزينة', 'menuisier', 'menuiserie', 'bois', 'porte', 'wood', 'carpenter'],
+  Welding: ['حداد', 'سودور', 'تلحيم', 'شباك', 'باب حديد', 'ريدو', 'سدة', 'soudeur', 'soudure', 'ferronnier', 'welder', 'welding'],
+  Plaster: ['جباس', 'جبس', 'قبص', 'بلافو', 'فو بلافو', 'ديكور جبس', 'plâtrier', 'platrier', 'plâtre', 'faux plafond', 'plaster'],
+  Aluminum: ['ألمنيوم', 'المنيوم', 'زجاج', 'جاج', 'شراجم', 'نوافذ', 'فيترين', 'aluminium', 'verre', 'vitre', 'fenêtre', 'aluminum', 'glass'],
+  HVAC: ['كليما', 'تكييف', 'تبريد', 'تهوية', 'شوفاج', 'climatisation', 'clim', 'hvac', 'ventilation'],
+  Elevators: ['مصعد', 'مصاعد', 'سانسور', 'ascenseur', 'elevator'],
+  Security: ['كاميرا', 'كاميرات', 'مراقبة', 'إنذار', 'أمان', 'caméra', 'sécurité', 'alarme', 'security', 'cctv'],
+  Waterproofing: ['إيتانشيتي', 'ايتانشيتي', 'عزل مائي', 'قطرة', 'تسرب', 'زفت', 'سطح', 'étanchéité', 'etancheite', 'fuite', 'waterproofing'],
+  Cleaning: ['نظافة', 'تنظيف', 'نهاية الورش', 'سيق', 'nettoyage', 'cleaning'],
+  Gardens: ['مسبح', 'مسابح', 'جردة', 'حديقة', 'حدائق', 'عشب', 'piscine', 'jardin', 'pool', 'garden'],
+  SOS: ['طوارئ', 'مستعجل', 'إصلاح سريع', 'ديباناج', 'sos', 'urgence', 'dépannage', 'emergency'],
+  Architect: ['مهندس معماري', 'أرشيتيكت', 'ارشيتيكت', 'بلان', 'تصميم', 'architecte', 'architecture', 'plan'],
+  Topographer: ['طوبوغراف', 'طوبوغرافيا', 'مسح', 'حدود الأرض', 'topographe', 'topographie', 'surveyor'],
+  Studies: ['مكتب دراسات', 'دراسة تقنية', 'بيطون أرمي', 'bureau d\'études', 'études', 'engineering'],
+  Control: ['مراقبة الجودة', 'مختبر', 'كونترول', 'bureau de contrôle', 'contrôle', 'quality control'],
+  Interior: ['تصميم داخلي', 'ديزاين', 'ديكور داخلي', 'design d\'intérieur', 'interior design'],
+  Earthworks: ['حفر', 'تراسمون', 'تهيئة الأرض', 'terrassement', 'excavation', 'earthworks'],
+  Concrete: ['أساسات', 'خرسانة مسلحة', 'توبنة', 'fondation', 'béton armé', 'foundations'],
+  Industrial: ['بناء صناعي', 'هنكار', 'مصنع', 'مستودع', 'industriel', 'hangar', 'industrial'],
+  Demolition: ['هدم', 'تخريب', 'إزالة البناء', 'démolition', 'demolition'],
+  Sanitation: ['واد حار', 'صرف صحي', 'قنوات', 'assainissement', 'sanitation'],
+  HeavyMachinery: ['تراكس', 'طراكس', 'بوكلان', 'حفارة', 'جرافة', 'رافعة', 'آليات ثقيلة', 'excavatrice', 'tractopelle', 'engin', 'grue', 'machinery'],
+  Tools: ['معدات خفيفة', 'دوزان', 'شنيول', 'مولينيكس', 'سقالة', 'بروطونة', 'outillage', 'outil', 'échafaudage', 'tools'],
+  GoodsTransport: ['نقل السلع', 'كميون', 'شاحنة', 'رموك', 'بيكوب', 'ترانسبور', 'camion', 'semi-remorque', 'transport', 'truck'],
+  DebrisRemoval: ['إزالة الردم', 'روبل', 'تراب', 'نفايات الورش', 'gravats', 'évacuation', 'debris']
+};
+
+// ترجمة أسماء السلع الشائعة والوحدات تلقائياً حسب لغة الواجهة
+const localizeCommonProductText = (text, lang) => {
+  if (!text) return '';
+  const map = [
+    { match: /ciment portland cpj 45/i, ar: 'إسمنت بورتلاند CPJ 45', fr: 'Ciment Portland CPJ 45', en: 'Portland Cement CPJ 45' },
+    { match: /fer à béton.*12mm/i, ar: 'حديد التسليح (قطر 12 ملم)', fr: 'Fer à béton (Ø 12mm)', en: 'Steel Rebar (Ø 12mm)' },
+    { match: /sac 50kg/i, ar: 'كيس 50 كغ', fr: 'Sac 50kg', en: '50kg Bag' },
+    { match: /^kg$/i, ar: 'كغ', fr: 'Kg', en: 'Kg' },
+    { match: /tonne/i, ar: 'طن', fr: 'Tonne', en: 'Ton' }
+  ];
+  for (const item of map) {
+    if (item.match.test(text)) {
+      return lang === 'ar' ? item.ar : lang === 'fr' ? item.fr : item.en;
+    }
+  }
+  return text;
+};
+
 // --- مكون العداد التنازلي لعروض الـ Flash Deals ---
-const FlashDealTimer = ({ expiresAt }) => {
+const FlashDealTimer = ({ expiresAt, language = 'ar' }) => {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
@@ -46,7 +136,7 @@ const FlashDealTimer = ({ expiresAt }) => {
         const s = Math.floor((difference / 1000) % 60);
         setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
       } else {
-        setTimeLeft('انتهى العرض');
+        setTimeLeft('EXPIRED');
       }
     };
     
@@ -55,19 +145,21 @@ const FlashDealTimer = ({ expiresAt }) => {
     return () => clearInterval(timer);
   }, [expiresAt]);
 
-  if (timeLeft === 'انتهى العرض') return null;
+  if (timeLeft === 'EXPIRED') return null;
 
   return (
     <div className="flex items-center gap-2 bg-red-100 text-red-600 px-3 py-1.5 rounded-full text-xs font-black animate-pulse border border-red-200 w-fit mt-2">
       <Timer size={14} /> 
-      <span>ينتهي خلال: <span dir="ltr">{timeLeft}</span></span>
+      <span>
+        {language === 'ar' ? 'ينتهي خلال:' : language === 'fr' ? 'Expire dans :' : 'Ends in:'}{' '}
+        <span dir="ltr">{timeLeft}</span>
+      </span>
     </div>
   );
 };
 
 export default function BTPHub() {
 
-  // --- دالة فك التشفير للغات ---
   const getLocalizedText = (field, currentLang) => {
     if (!field) return '';
     let parsedField = field;
@@ -84,14 +176,10 @@ export default function BTPHub() {
   const navigate = useNavigate();
   const context = useOutletContext() || {};
   const isDarkMode = context.isDarkMode || false;
-  const language = context.language || 'fr';
+  const language = context.language || 'ar';
   const isRtl = language === 'ar';
 
   const [activeMode, setActiveMode] = useState('materiaux');
-    // إعادة تعيين الفلتر الفرعي إلى "الكل" عند الانتقال بين الأقسام الرئيسية
-      useEffect(() => {
-       setActiveCategory('All');
-      }, [activeMode]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -102,6 +190,51 @@ export default function BTPHub() {
   const [requestedQty, setRequestedQty] = useState(300);
 
   const [artisans, setArtisans] = useState([]);
+
+  // حالات الصوت والكاميرا والذكاء الاصطناعي في الماركت بليس
+  const [isSpeakingGuide, setIsSpeakingGuide] = useState(false);
+  const [listeningTarget, setListeningTarget] = useState(null);
+  const [voiceFeedback, setVoiceFeedback] = useState('');
+  const [isScanningCamera, setIsScanningCamera] = useState(false);
+
+  const cloudAudioRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const cameraSearchInputRef = useRef(null);
+  const skipCatResetRef = useRef(false);
+
+  useEffect(() => {
+    if (skipCatResetRef.current) {
+      skipCatResetRef.current = false;
+      return;
+    }
+    setActiveCategory('All');
+  }, [activeMode]);
+
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+    }
+    return () => {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (cloudAudioRef.current) {
+        cloudAudioRef.current.pause();
+        cloudAudioRef.current = null;
+      }
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch (e) {}
+      }
+    };
+  }, []);
+
+  // إيقاف الصوت عند تغيير اللغة
+  useEffect(() => {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (cloudAudioRef.current) {
+      cloudAudioRef.current.pause();
+      cloudAudioRef.current = null;
+    }
+    setIsSpeakingGuide(false);
+  }, [language]);
 
   const [surplusDeals, setSurplusDeals] = useState([]);
   const [isSurplusModalOpen, setIsSurplusModalOpen] = useState(false);
@@ -133,6 +266,337 @@ export default function BTPHub() {
     service_id: '', target_qty: '', target_price: ''
   });
 
+  // --- حالات طلب عروض الأسعار المخصصة (RFQ) ---
+  const [isRfqModalOpen, setIsRfqModalOpen] = useState(false);
+  const [isSubmittingRfq, setIsSubmittingRfq] = useState(false);
+  const [rfqForm, setRfqForm] = useState({
+    title: '', category: '', details: '', deadline: ''
+  });
+
+  // =========================================================================
+  // 🔊 1. المرشد الصوتي النسائي الموحد للماركت بليس (عربية + فرنسية سحابية + إنجليزية)
+  // =========================================================================
+  const toggleAudioGuide = () => {
+    if (isSpeakingGuide) {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (cloudAudioRef.current) {
+        cloudAudioRef.current.onended = null;
+        cloudAudioRef.current.onerror = null;
+        cloudAudioRef.current.pause();
+        cloudAudioRef.current.src = '';
+        cloudAudioRef.current = null;
+      }
+      setIsSpeakingGuide(false);
+      return;
+    }
+
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (cloudAudioRef.current) {
+      cloudAudioRef.current.onended = null;
+      cloudAudioRef.current.onerror = null;
+      cloudAudioRef.current.pause();
+      cloudAudioRef.current.src = '';
+      cloudAudioRef.current = null;
+    }
+
+    if (language === 'en' && 'speechSynthesis' in window) {
+      const enText =
+        'Welcome to the SasBTP Smart Marketplace. Tap the microphone in the search bar and speak what you need in Darija, Arabic, or English, or tap the camera to scan any material list or business card.';
+      const voices = window.speechSynthesis.getVoices() || [];
+      const femaleEnVoice =
+        voices.find(
+          (v) =>
+            v.lang.toLowerCase().startsWith('en') &&
+            (v.name.includes('Samantha') ||
+              v.name.includes('Victoria') ||
+              v.name.includes('Karen') ||
+              v.name.includes('Ava') ||
+              v.name.includes('Moira'))
+        ) || voices.find((v) => v.lang.toLowerCase().startsWith('en'));
+
+      const utterance = new SpeechSynthesisUtterance(enText);
+      if (femaleEnVoice) {
+        utterance.voice = femaleEnVoice;
+        utterance.lang = femaleEnVoice.lang;
+      } else {
+        utterance.lang = 'en-US';
+      }
+      utterance.rate = 0.95;
+      utterance.pitch = 1.05;
+      utterance.onend = () => setIsSpeakingGuide(false);
+      utterance.onerror = () => setIsSpeakingGuide(false);
+
+      setIsSpeakingGuide(true);
+      window.speechSynthesis.speak(utterance);
+      return;
+    }
+
+    let metaReferrer = document.querySelector('meta[name="referrer"]');
+    if (!metaReferrer) {
+      metaReferrer = document.createElement('meta');
+      metaReferrer.name = 'referrer';
+      document.head.appendChild(metaReferrer);
+    }
+    metaReferrer.content = 'no-referrer';
+
+    const segments =
+      language === 'ar'
+        ? [
+            'مرحباً بك في سوق البناء الموحد بمنصة ساس بي تي بي',
+            'اضغط على زر الميكروفون في شريط البحث، وتكلم بالدارجة المغربية أو العربية',
+            'قل مثلاً: خاصني معلم بلومبي، أو إسمنت وحديد، أو كراء تراكس، وسنفتح لك القسم المطلوب تلقائياً'
+          ]
+        : [
+            'Bienvenue sur le Marché BTP intelligent SasBTP.',
+            'Appuyez sur le microphone dans la barre de recherche et dites ce dont vous avez besoin en Darija ou en Français, ou utilisez la caméra pour scanner votre liste de matériaux.'
+          ];
+
+    const targetLang = language === 'ar' ? 'ar' : 'fr';
+
+    const player = new Audio();
+    player.preload = 'auto';
+    cloudAudioRef.current = player;
+    setIsSpeakingGuide(true);
+
+    let currentIdx = 0;
+    let isStopped = false;
+
+    const origPause = player.pause.bind(player);
+    player.pause = () => {
+      isStopped = true;
+      origPause();
+    };
+
+    const playSegment = () => {
+      if (isStopped || currentIdx >= segments.length) {
+        setIsSpeakingGuide(false);
+        cloudAudioRef.current = null;
+        return;
+      }
+
+      const textChunk = segments[currentIdx];
+      currentIdx += 1;
+      const encoded = encodeURIComponent(textChunk);
+
+      const endpoints = [
+        `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${targetLang}&q=${encoded}`,
+        `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${targetLang}&q=${encoded}`,
+        `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${targetLang}&q=${encoded}`
+      ];
+
+      let epIdx = 0;
+
+      const tryCurrentEndpoint = () => {
+        if (isStopped) return;
+        if (epIdx >= endpoints.length) {
+          playSegment();
+          return;
+        }
+
+        const url = endpoints[epIdx];
+        epIdx += 1;
+        let settled = false;
+
+        player.onended = () => {
+          if (settled || isStopped) return;
+          settled = true;
+          playSegment();
+        };
+
+        player.onerror = () => {
+          if (settled || isStopped) return;
+          settled = true;
+          tryCurrentEndpoint();
+        };
+
+        player.src = url;
+        player.playbackRate = language === 'fr' ? 1.05 : 1.0;
+
+        const playPromise = player.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            if (settled || isStopped) return;
+            settled = true;
+            tryCurrentEndpoint();
+          });
+        }
+      };
+
+      tryCurrentEndpoint();
+    };
+
+    playSegment();
+  };
+
+  // =========================================================================
+  // 🧠 2. المحلل الذكي للأوامر الصوتية والكاميرا في الماركت بليس (Darija / AR / FR / EN)
+  // =========================================================================
+  const analyzeAndRouteMarketplaceQuery = (rawSpeech) => {
+    if (!rawSpeech || !rawSpeech.trim()) return;
+    const normalized = parseDarijaSpokenDigits(rawSpeech);
+    const lower = normalized.toLowerCase();
+
+    // أ) استخراج الكمية إن نطقها المستخدم (مثلاً: "بغيت 500 خنشة ديال السيما")
+    const qtyMatch = normalized.match(/\b(\d{2,5})\b/);
+    if (qtyMatch && Number(qtyMatch[1]) > 0) {
+      setRequestedQty(Number(qtyMatch[1]));
+    }
+
+    // ب) فحص ما إذا كان يطلب الشراء الجماعي أو فائض الأوراش
+    if (/(شراء جماعي|طلب جماعي|مجموعة|achat groupé|group buying)/i.test(lower)) {
+      setActiveMode('groupe');
+      setSearchTerm('');
+      return;
+    }
+    if (/(فائض|شياطة|باقي الورش|سعر محروق|همزة|surplus)/i.test(lower)) {
+      setActiveMode('surplus');
+      setSearchTerm('');
+      return;
+    }
+
+    // ج) تحديد الفئة الفرعية (activeCategory) والقسم الرئيسي (activeMode) من قاموس الدارجة
+    let matchedCat = null;
+    for (const [catKey, synonyms] of Object.entries(SMART_BTP_SYNONYMS)) {
+      if (synonyms.some((syn) => lower.includes(syn.toLowerCase()))) {
+        matchedCat = catKey;
+        break;
+      }
+    }
+
+    // د) تحديد القسم الرئيسي بناءً على سياق الكلام أو الفئة المكتشفة
+    let targetMode = activeMode;
+    const mentionsArtisan = /(معلم|حرفي|صنايعي|خدام|بلومبي|تريسيان|بناي|صباغ|زلايجي|جباس|نجار|حداد|سودور|artisan|maalem)/i.test(lower);
+    const mentionsMaterial = /(سلعة|مواد|سيما|إسمنت|اسمنت|حديد|ياجور|بريك|رمل|فورنيرسور|مورد|خنشة|طون|طن|fournisseur|ciment|fer|matériaux)/i.test(lower);
+
+    if (mentionsArtisan) {
+      targetMode = 'services';
+    } else if (mentionsMaterial) {
+      targetMode = 'materiaux';
+    } else if (matchedCat) {
+      if (['Cement', 'Steel'].includes(matchedCat)) targetMode = 'materiaux';
+      else if (['Masonry', 'Welding', 'Plaster', 'Aluminum'].includes(matchedCat)) targetMode = 'services';
+      else if (['HVAC', 'Elevators', 'Security', 'Waterproofing', 'Cleaning', 'Gardens', 'SOS'].includes(matchedCat)) targetMode = 'maintenance';
+      else if (['Architect', 'Topographer', 'Studies', 'Control', 'Interior'].includes(matchedCat)) targetMode = 'experts';
+      else if (['Earthworks', 'Concrete', 'Industrial', 'Demolition', 'Sanitation'].includes(matchedCat)) targetMode = 'grosOeuvre';
+      else if (['HeavyMachinery', 'Tools'].includes(matchedCat)) targetMode = 'machines';
+      else if (['GoodsTransport', 'DebrisRemoval'].includes(matchedCat)) targetMode = 'transport';
+      else if (['Permits', 'Insurance'].includes(matchedCat)) targetMode = 'documents';
+    }
+
+    if (matchedCat) {
+      skipCatResetRef.current = true;
+      setActiveMode(targetMode);
+      setActiveCategory(matchedCat);
+      // نفرغ نص البحث الحرفي إذا تم التعرف على الفئة بنجاح حتى تظهر جميع عروض الفئة دون إخفاء بسبب اختلاف اللغة
+      setSearchTerm('');
+    } else {
+      // إذا نطق اسم شركة أو مورد أو سلعة خاصة، نضعه في شريط البحث
+      const cleanQuery = rawSpeech
+        .replace(/^(بغيت|خاصني|كنقلب على|أريد|ابحث عن|شوف ليا|je cherche|je veux)\s+/i, '')
+        .trim();
+      setSearchTerm(cleanQuery);
+    }
+  };
+
+  // =========================================================================
+  // 🎙️ 3. تشغيل الميكروفون الفوري (للبحث الرئيسي أو داخل نوافذ البيع والطلبات)
+  // =========================================================================
+  const triggerVoiceInput = (targetKey, customCallback = null) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(language === 'ar' ? 'يرجى استخدام متصفح Chrome أو Safari لتشغيل البحث الصوتي.' : 'Veuillez utiliser Chrome ou Safari pour la recherche vocale.');
+      return;
+    }
+
+    if (listeningTarget === targetKey && recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+      setListeningTarget(null);
+      return;
+    }
+
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch (e) {}
+      recognitionRef.current = null;
+    }
+
+    setTimeout(() => {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ar-MA';
+        recognition.interimResults = true;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => setListeningTarget(targetKey);
+
+        recognition.onresult = (event) => {
+          let fullTranscript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            fullTranscript += event.results[i][0].transcript;
+          }
+          const clean = fullTranscript.trim();
+          if (!clean) return;
+
+          setVoiceFeedback(clean);
+
+          if (customCallback) {
+            customCallback(clean);
+          } else if (targetKey === 'mainSearch') {
+            analyzeAndRouteMarketplaceQuery(clean);
+          }
+        };
+
+        recognition.onerror = () => setListeningTarget(null);
+        recognition.onend = () => setListeningTarget(null);
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (e) {
+        setListeningTarget(null);
+      }
+    }, 120);
+  };
+
+  // =========================================================================
+  // 📷 4. البحث الذكي بالكاميرا (مسح لائحة سلعة / فاتورة / كارط فيزيت / صورة مادة)
+  // =========================================================================
+  const handleSmartCameraSearch = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanningCamera(true);
+    try {
+      let extractedText = '';
+      if ('TextDetector' in window) {
+        try {
+          const bitmap = await createImageBitmap(file);
+          // eslint-disable-next-line no-undef
+          const detector = new TextDetector();
+          const blocks = await detector.detect(bitmap);
+          extractedText = blocks.map((b) => b.rawValue).join(' ');
+        } catch (err) {}
+      }
+
+      const fileNameClean = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      const combinedQuery = (extractedText || fileNameClean).trim();
+
+      if (combinedQuery) {
+        setVoiceFeedback(`📷 ${combinedQuery}`);
+        analyzeAndRouteMarketplaceQuery(combinedQuery);
+      } else {
+        setVoiceFeedback(
+          language === 'ar'
+            ? '📷 تم مسح الصورة بنجاح! اختر الفئة المطابقة أو انطق اسم السلعة.'
+            : '📷 Image analysée avec succès !'
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsScanningCamera(false);
+    }
+  };
+
   // فتح نافذة الإنشاء وجلب الخدمات المتاحة
   const openCreateGroupModal = async () => {
     setIsCreateGroupModalOpen(true);
@@ -144,7 +608,6 @@ export default function BTPHub() {
     } catch (err) { console.error(err); }
   };
 
-  // إرسال الطلب الجماعي الجديد
   const handleCreateGroupOrder = async (e) => {
     e.preventDefault();
     if (!newGroupOrder.service_id || !newGroupOrder.target_qty || !newGroupOrder.target_price) {
@@ -153,7 +616,6 @@ export default function BTPHub() {
     
     setIsCreatingGroupOrder(true);
     try {
-      // العداد يمتد لـ 48 ساعة
       const expiresAt = new Date(Date.now() + 48 * 3600000).toISOString(); 
       
       const { data, error } = await supabase.from('grouped_orders').insert({
@@ -170,8 +632,6 @@ export default function BTPHub() {
         setIsCreateGroupModalOpen(false);
         setNewGroupOrder({ service_id: '', target_qty: '', target_price: '' });
         alert(t.groupe.createModal.alertSuccess);
-      } else {
-        console.error(error);
       }
     } catch (err) {
       console.error(err);
@@ -180,7 +640,6 @@ export default function BTPHub() {
     }
   };
 
-  // جلب الطلبات الجماعية (أضف هذا داخل useEffect الأساسي أو في واحد منفصل)
   useEffect(() => {
     let isMounted = true;
     const fetchGroupedOrders = async () => {
@@ -203,7 +662,6 @@ export default function BTPHub() {
     return () => { isMounted = false; };
   }, []);
 
-  // دالة الانضمام لطلب جماعي
   const handleJoinGroupOrder = async (e) => {
     e.preventDefault();
     if (!joinQty || isNaN(joinQty) || Number(joinQty) <= 0) return;
@@ -212,15 +670,13 @@ export default function BTPHub() {
     const qty = Number(joinQty);
     
     try {
-      // 1. تسجيل المساهمة
       const { error: participantError } = await supabase.from('grouped_order_participants').insert({
         grouped_order_id: selectedGroupOrder.id,
-        user_name: 'المقاول الحالي', // مؤقتاً
+        user_name: 'المقاول الحالي',
         requested_qty: qty
       });
 
       if (!participantError) {
-        // 2. تحديث الكمية المجمعة في الطلب الرئيسي
         const newTotal = selectedGroupOrder.current_qty + qty;
         const newStatus = newTotal >= selectedGroupOrder.target_qty ? 'completed' : 'active';
         
@@ -228,12 +684,11 @@ export default function BTPHub() {
           .update({ current_qty: newTotal, status: newStatus })
           .eq('id', selectedGroupOrder.id);
 
-        // 3. تحديث الواجهة محلياً
         setGroupedOrders(prev => prev.map(order => 
           order.id === selectedGroupOrder.id 
             ? { ...order, current_qty: newTotal, status: newStatus } 
             : order
-        ).filter(order => order.status === 'active')); // إخفاء المكتملة أو تركها حسب الرغبة
+        ).filter(order => order.status === 'active'));
 
         setIsGroupModalOpen(false);
         setJoinQty('');
@@ -247,38 +702,55 @@ export default function BTPHub() {
     }
   };
 
+  // 🔄 جلب الحرفيين والموردين المشتركين من جدولي suppliers و providers ليظهروا في جميع الحسابات الخمسة
   useEffect(() => {
-    const fetchArtisans = async () => {
+    const fetchArtisansAndProviders = async () => {
       try {
-        // المحاولة الأولى: جلب الموردين + الخدمات + شرائح التسعير
-        const { data, error } = await supabase
+        let combinedList = [];
+
+        const { data: supData, error: supErr } = await supabase
           .from('suppliers')
           .select('*, provider_services(*, service_pricing_tiers(*))');
           
-        if (error) {
-          console.warn("⚠️ تنبيه: لم يتمكن من جلب شرائح التسعير. يتم الآن جلب البيانات الأساسية...", error.message);
-          // خطة الطوارئ: جلب الموردين والخدمات فقط (في حال فشل الربط الجديد)
+        if (supErr) {
           const fallback = await supabase.from('suppliers').select('*, provider_services(*)');
-          if (fallback.data) {
-            setArtisans(fallback.data);
-          }
-        } else if (data) {
-          console.log("✅ تم جلب الحرفيين بنجاح:", data);
-          setArtisans(data);
+          if (fallback.data) combinedList = [...fallback.data];
+        } else if (supData) {
+          combinedList = [...supData];
         }
+
+        // دمج الحرفيين المسجلين في جدول providers أيضاً حتى يظهروا في تبويب لْمْعْلّْم لجميع الحسابات
+        const { data: provData } = await supabase.from('providers').select('*');
+        if (provData && provData.length > 0) {
+          constexistingIds = new Set(combinedList.map((s) => String(s.id)));
+          provData.forEach((p) => {
+            if (!constexistingIds.has(String(p.id))) {
+              combinedList.push({
+                id: p.id,
+                store_name: p.full_name || 'SasBTP Artisan',
+                city: p.city || 'المغرب',
+                phone: p.phone || '',
+                logo_url: null,
+                provider_services: [
+                  {
+                    service_name: p.experience_text || p.bio_text || 'خدمات وحرف البناء',
+                    starting_price: 150,
+                    category: p.experience_text || 'Masonry'
+                  }
+                ]
+              });
+            }
+          });
+        }
+
+        setArtisans(combinedList);
       } catch (err) {
-        console.error("❌ خطأ غير متوقع أثناء الجلب:", err);
+        console.error("Error fetching artisans:", err);
       }
     };
-    fetchArtisans();
+    fetchArtisansAndProviders();
   }, []);
 
-  // --- حالات طلب عروض الأسعار المخصصة (RFQ) ---
-  const [isRfqModalOpen, setIsRfqModalOpen] = useState(false);
-  const [isSubmittingRfq, setIsSubmittingRfq] = useState(false);
-  const [rfqForm, setRfqForm] = useState({
-    title: '', category: '', details: '', deadline: ''
-  });
   const handleSubmitRfq = async (e) => {
     e.preventDefault();
     setIsSubmittingRfq(true);
@@ -294,8 +766,6 @@ export default function BTPHub() {
         setIsRfqModalOpen(false);
         setRfqForm({ title: '', category: '', details: '', deadline: '' });
         alert(t.rfq?.modal?.success || "Succès !");
-      } else {
-        console.error("Error inserting RFQ:", error);
       }
     } catch (err) {
       console.error(err);
@@ -306,7 +776,10 @@ export default function BTPHub() {
 
   const translations = {
     ar: {
-      searchPlaceholder: "ماذا تحتاج لمشروعك؟ ابحث عن الأسمنت، الحديد، مقاول...",
+      searchPlaceholder: "تكلم بالدارجة أو اكتب: إسمنت، حديد، معلم بلومبي، تراكس...",
+      audioGuideBtn: "🔊 استمع للشرح الصوتي",
+      audioGuideStop: "⏹️ إيقاف الصوت",
+      voiceListening: "جاري الاستماع... تكلم بالدارجة أو العربية",
       categoriesTitle: "التصنيفات",
       all: "الكل", cement: "مواد البناء والأسمنت", steel: "الحديد والتسليح", wood: "الخشب والنجارة",
       plumbing: "السباكة والأنابيب", electrical: "الكهرباء والإنارة", paint: "الصباغة والعزل",
@@ -327,7 +800,7 @@ export default function BTPHub() {
         experts: "الخبراء",
         materiaux: "مورد المواد",
         grosOeuvre: "الأشغال الكبرى",
-        services: "لْمْعْلّْم (alamعLm)",
+        services: "لْمْعْلّْم (Lm3alam)",
         machines: "المعدات",
         maintenance: "صيانة",
         transport: "نقل",
@@ -354,11 +827,6 @@ export default function BTPHub() {
       maintenance: { type: "نوع الصيانة:", response: "الاستجابة:", book: "طلب فريق صيانة" },
       documents: { time: "مدة الإنجاز:", type: "الخدمة:", request: "طلب الوثيقة" },
       companies: { projects: "مشروع منجز", verify: "شركة معتمدة", contact: "التواصل مع الشركة" },
-      rfq: {
-        title: "لم أجد ما أبحث عنه",
-        desc: "صف احتياجك بدقة وتلقى عروضاً من موردينا المعتمدين.",
-        btn: "صف احتياجك"
-      },
       surplus: {
         title: "فرص الأوراش المجاورة (استلام فوري)",
         desc: "سلع متبقية من مشاريع مقاولين آخرين بأسعار محروقة. الشرط الوحيد:",
@@ -372,8 +840,8 @@ export default function BTPHub() {
         bookBtn: "حجز للاستلام الفوري",
         empty: "لا توجد فرص فائض أوراش متاحة حالياً.",
         modal: {
-          title: "بيع فائض الورش",
-          desc: "أدخل تفاصيل السلعة المتبقية ليأتي مقاول آخر لحملها.",
+          title: "بيع فائض الورش (بالصوت أو الكتابة)",
+          desc: "أدخل أو انطق تفاصيل السلعة المتبقية ليأتي مقاول آخر لحملها.",
           photo: "التقط صورة للسلعة في الورش",
           contractor: "اسم المقاول / الورش",
           contractorPlh: "مثال: ورش فيلا بنعلي",
@@ -431,17 +899,17 @@ export default function BTPHub() {
       },
       rfq: {
         title: "لم أجد ما أبحث عنه",
-        desc: "صف احتياجك بدقة وتلقى عروضاً من موردينا المعتمدين.",
+        desc: "صف احتياجك بدقة بالصوت أو الكتابة وتلقى عروضاً من موردينا المعتمدين.",
         btn: "صف احتياجك",
         modal: {
           title: "نشر طلب مخصص (Appel d'offres)",
-          desc: "حدد تفاصيل مشروعك وسيقوم الموردون المعتمدون بتقديم عروض أسعارهم.",
+          desc: "حدد أو انطق تفاصيل مشروعك وسيقوم الموردون المعتمدون بتقديم عروض أسعارهم.",
           reqTitle: "عنوان الطلب",
           reqTitlePlh: "مثال: مطلوب توريد وتركيب 50 نافذة ألمنيوم",
           category: "التصنيف",
           catSelect: "اختر التصنيف المناسب",
           details: "التفاصيل الفنية (المقاسات، الجودة، مكان الورش)",
-          detailsPlh: "اكتب جميع التفاصيل التي تهم المورد هنا...",
+          detailsPlh: "اكتب أو انطق جميع التفاصيل التي تهم المورد هنا...",
           deadline: "آخر أجل لتلقي العروض",
           submitBtn: "نشر الطلب للموردين",
           submitting: "جاري النشر...",
@@ -450,7 +918,10 @@ export default function BTPHub() {
       }
     },
     fr: {
-      searchPlaceholder: "Que recherchez-vous pour votre chantier ?", 
+      searchPlaceholder: "Parlez en Darija/FR ou écrivez : ciment, fer, plombier...", 
+      audioGuideBtn: "🔊 Guide vocal",
+      audioGuideStop: "⏹️ Arrêter l'audio",
+      voiceListening: "Écoute en direct... Parlez en Darija ou Français",
       categoriesTitle: "Catégories",
       all: "Tout", cement: "Gros œuvre & Ciment", steel: "Acier & Armature", wood: "Bois & Menuiserie",
       plumbing: "Plomberie & Tuyauterie", electrical: "Électricité & Éclairage", paint: "Peinture & Isolation",
@@ -498,11 +969,6 @@ export default function BTPHub() {
       maintenance: { type: "Type :", response: "Intervention :", book: "Demander Équipe" },
       documents: { time: "Délai :", type: "Service :", request: "Demander Document" },
       companies: { projects: "Projets livrés", verify: "Entreprise Vérifiée", contact: "Contacter l'Entreprise" },
-      rfq: {
-        title: "Je ne trouve pas ce que je cherche",
-        desc: "Décrivez votre besoin exact et recevez des offres de nos fournisseurs vérifiés.",
-        btn: "Décrivez votre besoin"
-      },
       surplus: {
         title: "Opportunités Chantiers Voisins (Retrait Immédiat)",
         desc: "Matériaux restants d'autres chantiers à prix cassés. Seule condition :",
@@ -517,7 +983,7 @@ export default function BTPHub() {
         empty: "Aucune opportunité de surplus de chantier disponible actuellement.",
         modal: {
           title: "Vendre un surplus",
-          desc: "Saisissez les détails pour qu'un autre entrepreneur vienne récupérer la marchandise.",
+          desc: "Saisissez ou dictez les détails pour qu'un autre entrepreneur vienne récupérer la marchandise.",
           photo: "Prendre une photo sur le chantier",
           contractor: "Nom de l'entreprise",
           contractorPlh: "Ex : Chantier Villa Benali",
@@ -579,7 +1045,7 @@ export default function BTPHub() {
         btn: "Décrivez votre besoin",
         modal: {
           title: "Publier un Appel d'offres",
-          desc: "Précisez les détails de votre projet pour recevoir les devis des fournisseurs.",
+          desc: "Précisez ou dictez les détails de votre projet pour recevoir les devis des fournisseurs.",
           reqTitle: "Titre de la demande",
           reqTitlePlh: "Ex: Fourniture et pose de 50 fenêtres en aluminium",
           category: "Catégorie",
@@ -594,7 +1060,10 @@ export default function BTPHub() {
       }
     },
     en: {
-      searchPlaceholder: "What do you need for your project? Search cement, steel...",
+      searchPlaceholder: "Speak in Darija/EN or type: cement, steel, plumber...",
+      audioGuideBtn: "🔊 Audio Guide",
+      audioGuideStop: "⏹️ Stop Audio",
+      voiceListening: "Listening live... Speak now",
       categoriesTitle: "Categories",
       all: "All", cement: "Masonry & Cement", steel: "Steel & Rebar", wood: "Wood & Carpentry",
       plumbing: "Plumbing & Piping", electrical: "Electrical & Lighting", paint: "Paint & Insulation",
@@ -603,7 +1072,7 @@ export default function BTPHub() {
       waterproofing: "Waterproofing & Leaks", cleaning: "Post-Construction Cleaning", gardens: "Pools & Gardens", sos: "SOS Emergency",
       architect: "Architecture", topographer: "Topography", studies: "Engineering Studies", control: "Quality Control", interior: "Interior Design",
       earthworks: "Earthworks", concrete: "Foundations & Concrete", industrial: "Industrial Building", demolition: "Demolition", sanitation: "Sanitation",
-      heavyMachinery: "Heavy Machinery", tools: "Tools", goodsTransport: "Goods Transport", debrisRemoval: "Debris Removal", permits: "Admin Permits", insurance: "Insurance", verifiedSuppliers: "Verified Suppliers", majorContractors: "Major Contractors", 
+      heavyMachinery: "Heavy Machinery", tools: "Tools", goodsTransport: "Goods Transport", debrisRemoval: "Debris Removal", permits: "Admin Permits", insurance: "Insurance", verifiedSuppliers: "Verified Suppliers", majorContractors: "Major Contractors", other: "Other (Search)",
       addToCart: "Add to Project", retail: "Retail:", wholesale: "Wholesale:",
       supplier: "Supplier:", cartEmpty: "Project is empty", itemsInCart: "items",
       checkout: "View Project", emptySearch: "No results found.",
@@ -642,11 +1111,6 @@ export default function BTPHub() {
       maintenance: { type: "Type:", response: "Response:", book: "Request Team" },
       documents: { time: "Timeframe:", type: "Service:", request: "Request Document" },
       companies: { projects: "Completed Projects", verify: "Verified Company", contact: "Contact Company" },
-      rfq: {
-        title: "I can't find what I'm looking for",
-        desc: "Describe your exact need and receive offers from our verified suppliers.",
-        btn: "Describe your need"
-      },
       surplus: {
         title: "Nearby Site Opportunities (Immediate Pickup)",
         desc: "Remaining materials from other sites at rock-bottom prices. Only condition:",
@@ -661,7 +1125,7 @@ export default function BTPHub() {
         empty: "No site surplus opportunities available at the moment.",
         modal: {
           title: "Sell Surplus",
-          desc: "Enter the details so another contractor can pick up the remaining items.",
+          desc: "Enter or speak the details so another contractor can pick up the remaining items.",
           photo: "Take a photo on site",
           contractor: "Contractor / Site Name",
           contractorPlh: "E.g., Villa Benali Site",
@@ -769,7 +1233,6 @@ export default function BTPHub() {
     { id: 'Welding', label: t.welding, icon: Flame },
     { id: 'Plaster', label: t.plaster, icon: Component },
     { id: 'Aluminum', label: t.aluminum, icon: AppWindow },
-      // --- أقسام الصيانة ---
     { id: 'HVAC', label: t.hvac, icon: Wind },
     { id: 'Elevators', label: t.elevators, icon: ArrowUpDown },
     { id: 'Security', label: t.security, icon: Cctv },
@@ -777,46 +1240,67 @@ export default function BTPHub() {
     { id: 'Cleaning', label: t.cleaning, icon: Sparkles },
     { id: 'Gardens', label: t.gardens, icon: Trees },
     { id: 'SOS', label: t.sos, icon: Siren },
-      // --- أقسام الخبراء ---
     { id: 'Architect', label: t.architect, icon: PenTool },
     { id: 'Topographer', label: t.topographer, icon: Compass },
     { id: 'Studies', label: t.studies, icon: Calculator },
     { id: 'Control', label: t.control, icon: ShieldCheck },
     { id: 'Interior', label: t.interior, icon: Sofa },
-      // --- أقسام الأشغال الكبرى ---
     { id: 'Earthworks', label: t.earthworks, icon: Mountain },
     { id: 'Concrete', label: t.concrete, icon: Layers },
     { id: 'Industrial', label: t.industrial, icon: Factory },
     { id: 'Demolition', label: t.demolition, icon: Hammer },
     { id: 'Sanitation', label: t.sanitation, icon: Waves },
-      // --- المعدات ---
     { id: 'HeavyMachinery', label: t.heavyMachinery, icon: Tractor },
     { id: 'Tools', label: t.tools, icon: Wrench },
-      // --- النقل ---
     { id: 'GoodsTransport', label: t.goodsTransport, icon: Truck },
     { id: 'DebrisRemoval', label: t.debrisRemoval, icon: Trash },
-      // --- الوثائق ---
     { id: 'Permits', label: t.permits, icon: FileCheck },
     { id: 'Insurance', label: t.insurance, icon: Shield },
-      // --- الشركات ---
     { id: 'VerifiedSuppliers', label: t.verifiedSuppliers, icon: Award },
     { id: 'MajorContractors', label: t.majorContractors, icon: Building2 },
-      // --- أخرى ---
-    { id: 'Other', label: t.other, icon: MoreHorizontal },
+    { id: 'Other', label: t.other || 'Other', icon: MoreHorizontal },
   ];
 
+  // 🔄 جلب منتجات السوق الموحد من جدولي marketplace_products و products ليظهر كل ما يضيفه التجار والموردون في جميع الحسابات الخمسة
   useEffect(() => {
     let isMounted = true;
     const loadMarketplace = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('marketplace_products')
-          .select('*')
-          .order('created_at', { ascending: false });
+        const [mpRes, prodRes] = await Promise.all([
+          supabase.from('marketplace_products').select('*').order('created_at', { ascending: false }),
+          supabase.from('products').select('*, suppliers(store_name)').order('created_at', { ascending: false }).limit(50)
+        ]);
 
-        if (!error && data && data.length > 0) {
-          if (isMounted) setProducts(data);
+        let mergedProducts = [];
+        if (mpRes.data && mpRes.data.length > 0) {
+          mergedProducts = [...mpRes.data];
+        }
+
+        if (prodRes.data && prodRes.data.length > 0) {
+          const existingIds = new Set(mergedProducts.map((p) => String(p.id)));
+          prodRes.data.forEach((p) => {
+            if (!existingIds.has(String(p.id))) {
+              mergedProducts.push({
+                id: p.id,
+                name: p.name,
+                category: p.category === 'gros-oeuvre' ? 'Cement' : p.category === 'electricite' ? 'Electrical' : p.category === 'plomberie' ? 'Plumbing' : 'Cement',
+                price_retail: Number(p.price) || 0,
+                price_wholesale: Math.round((Number(p.price) || 0) * 0.92),
+                min_wholesale_qty: 50,
+                unit: p.unit || 'Unité',
+                currency: 'MAD',
+                supplier: p.suppliers?.store_name || 'Fournisseur SasBTP',
+                rating: 4.8,
+                isPopular: true,
+                image_url: p.image_url || 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=500&auto=format&fit=crop'
+              });
+            }
+          });
+        }
+
+        if (mergedProducts.length > 0) {
+          if (isMounted) setProducts(mergedProducts);
         } else {
           if (isMounted) setProducts([
             { id: 1, name: "Ciment Portland CPJ 45", category: "Cement", price_retail: 75, price_wholesale: 70, min_wholesale_qty: 100, unit: "Sac 50kg", currency: "MAD", supplier: "LafargeHolcim", rating: 4.8, isPopular: true, image_url: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=500&auto=format&fit=crop" },
@@ -842,9 +1326,7 @@ export default function BTPHub() {
           .select('*')
           .gte('expires_at', new Date().toISOString()); 
         if (!error && data) {
-          if (isMounted) setSurplusDeals(data.reverse()); // ترتيب محلي بدلاً من قاعدة البيانات
-        } else if (error) {
-          console.error("Supabase Error 400:", error.message);
+          if (isMounted) setSurplusDeals(data.reverse());
         }
       } catch (err) {
         console.error("Error fetching surplus:", err);
@@ -855,9 +1337,24 @@ export default function BTPHub() {
     return () => { isMounted = false; };
   }, []);
 
+  // 🔍 فلترة ذكية عابرة للغات (حتى لو بحث المستخدم بالدارجة أو العربية والمنتج مسجل بالفرنسية)
+  const matchesCrossLanguageSearch = (itemText, categoryKey, query) => {
+    if (!query || !query.trim()) return true;
+    const q = query.toLowerCase().trim();
+    const target = (itemText || '').toLowerCase();
+    const localizedTarget = localizeCommonProductText(itemText, language).toLowerCase();
+    if (target.includes(q) || localizedTarget.includes(q)) return true;
+
+    const catSynonyms = SMART_BTP_SYNONYMS[categoryKey] || [];
+    if (catSynonyms.some((s) => s.toLowerCase().includes(q) || q.includes(s.toLowerCase()))) {
+      return true;
+    }
+    return false;
+  };
+
   const filteredProducts = products.filter(p => {
     const matchCat = activeCategory === 'All' || p.category === activeCategory;
-    const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.supplier && p.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchSearch = matchesCrossLanguageSearch(`${p.name} ${p.supplier || ''}`, p.category, searchTerm);
     return matchCat && matchSearch;
   });
 
@@ -881,27 +1378,24 @@ export default function BTPHub() {
     setCart(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  // 1. دالة حساب المسافة بالكيلومتر (Haversine)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
-  const R = 6371; // نصف قطر الأرض بالكيلومتر
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c); // إرجاع المسافة بدون فواصل
-};
-// إحداثيات الورش الخاص بالمقاول (قصبة تادلة كمثال)
-  const chantierLocation = { lat: 32.5977, lng: -6.2658 };
-// متغيرات افتراضية لحساب التكلفة الإجمالية (يمكن ربطها بمدخلات بحث المستخدم لاحقاً)
-  const requiredQuantity = 300; // 300 طن إسمنت
-  const truckCapacity = 30; // الشاحنة تهز 30 طن
-  const costPerKm = 30; // 30 درهم للكيلومتر للشاحنة
-  const numberOfTrips = Math.ceil(requiredQuantity / truckCapacity); // 10 رحلات
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c);
+  };
 
-  // 1. التقاط موقع الورش (GPS)
+  const chantierLocation = { lat: 32.5977, lng: -6.2658 };
+  const requiredQuantity = 300;
+  const truckCapacity = 30;
+  const costPerKm = 30;
+  const numberOfTrips = Math.ceil(requiredQuantity / truckCapacity);
+
   const handleGetSurplusLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -909,7 +1403,7 @@ export default function BTPHub() {
           setNewSurplus(prev => ({ ...prev, latitude: position.coords.latitude, longitude: position.coords.longitude }));
           alert(t.surplus.modal.alertGpsSuccess);
         },
-        (error) => {
+        () => {
           alert(t.surplus.modal.alertGpsError);
         },
         { enableHighAccuracy: true }
@@ -917,7 +1411,6 @@ export default function BTPHub() {
     }
   };
 
-  // 2. إرسال العرض إلى قاعدة البيانات
   const handleSubmitSurplus = async (e) => {
     e.preventDefault();
     if (!newSurplus.item_name || !newSurplus.burn_price || !newSurplus.latitude) {
@@ -967,41 +1460,111 @@ export default function BTPHub() {
   return (
     <div className="animate-fade-in pb-32 max-w-7xl mx-auto w-full" dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* Top Header & Smart Search */}
-      <div className={`${isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-100'} backdrop-blur-md p-6 rounded-3xl border shadow-sm mb-4 mt-4`}>
-        <div className="max-w-4xl mx-auto flex items-center bg-gray-100 dark:bg-slate-800 rounded-full p-2 border border-transparent focus-within:border-emerald-500 transition-colors shadow-inner">
+      {/* 🌟 Top Header & Smart Voice / Camera Search */}
+      <div className={`${isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-100'} backdrop-blur-md p-5 md:p-6 rounded-3xl border shadow-sm mb-4 mt-4 space-y-3`}>
+        
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-2 px-1">
+          <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-600 dark:text-emerald-400">
+            <Sparkles size={15} />
+            {language === 'ar'
+              ? 'سوق البناء الموحد (يفهم الدارجة المغربية بالصوت والكاميرا)'
+              : language === 'fr'
+              ? 'Marché BTP Unifié (Recherche Vocale Darija/FR & Caméra IA)'
+              : 'Unified BTP Marketplace (Smart Voice & Camera AI)'}
+          </span>
+
+          <button
+            type="button"
+            onClick={toggleAudioGuide}
+            className={`px-3.5 py-1.5 rounded-full font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${
+              isSpeakingGuide
+                ? 'bg-amber-500 text-slate-950 border-amber-400 animate-pulse shadow-md'
+                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-300 border-amber-500/30'
+            }`}
+          >
+            <Volume2 size={15} />
+            {isSpeakingGuide ? t.audioGuideStop : t.audioGuideBtn}
+          </button>
+        </div>
+
+        <div className="max-w-4xl mx-auto flex items-center bg-gray-100 dark:bg-slate-800 rounded-full p-2 border-2 border-transparent focus-within:border-emerald-500 transition-colors shadow-inner">
           <Search className={`w-6 h-6 text-gray-400 ${isRtl ? 'mr-3 ml-2' : 'ml-3 mr-2'}`} />
           <input 
             type="text" 
-            placeholder={t.searchPlaceholder}
+            placeholder={listeningTarget === 'mainSearch' ? t.voiceListening : t.searchPlaceholder}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 bg-transparent border-none focus:ring-0 text-gray-700 dark:text-gray-200 outline-none placeholder-gray-400 font-medium"
+            className="flex-1 bg-transparent border-none focus:ring-0 text-gray-700 dark:text-gray-200 outline-none placeholder-gray-400 font-bold text-sm md:text-base"
           />
-          <div className={`flex gap-2 ${isRtl ? 'ml-2' : 'mr-2'}`}>
-            <button 
-              onClick={() => alert("سيتم تفعيل ميزة البحث بالصوت قريباً! (جارٍ ربطها بالذكاء الاصطناعي)")} 
-              className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-full transition-colors relative group"
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="p-1.5 text-slate-400 hover:text-rose-500 rounded-full cursor-pointer"
             >
-              <Mic className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
+              <X size={16} />
             </button>
+          )}
+          <div className={`flex items-center gap-2 ${isRtl ? 'ml-2' : 'mr-2'}`}>
+            {/* 🎙️ زر البحث الصوتي الذكي بالدارجة المغربية والعربية والفرنسية */}
             <button 
-              onClick={() => alert("سيتم تفعيل ميزة البحث بالكاميرا قريباً!")}
-              className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-full transition-colors relative group"
+              type="button"
+              onClick={() => triggerVoiceInput('mainSearch')} 
+              title={language === 'ar' ? 'ابحث بالصوت (بالدارجة أو العربية)' : 'Recherche vocale IA'}
+              className={`p-2.5 rounded-full transition-all relative cursor-pointer ${
+                listeningTarget === 'mainSearch'
+                  ? 'bg-red-600 text-white animate-pulse shadow-lg shadow-red-500/40'
+                  : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white'
+              }`}
             >
-              <Camera className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping"></span>
+              {listeningTarget === 'mainSearch' ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              {listeningTarget !== 'mainSearch' && (
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
+              )}
+            </button>
+
+            {/* 📷 زر البحث الذكي بالكاميرا */}
+            <input
+              ref={cameraSearchInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleSmartCameraSearch}
+              className="hidden"
+            />
+            <button 
+              type="button"
+              disabled={isScanningCamera}
+              onClick={() => cameraSearchInputRef.current?.click()}
+              title={language === 'ar' ? 'ابحث بتصوير السلعة أو الفاتورة' : 'Recherche par caméra'}
+              className="p-2.5 bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white rounded-full transition-all relative cursor-pointer"
+            >
+              {isScanningCamera ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping"></span>
             </button>
           </div>
         </div>
+
+        {/* شريط تغذية راجعة لما فهمه الذكاء الاصطناعي من الصوت أو الكاميرا */}
+        {voiceFeedback && (
+          <div className="max-w-4xl mx-auto flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-2xl text-xs font-black text-emerald-600 dark:text-emerald-300">
+            <span>🗣️ &ldquo;{voiceFeedback}&rdquo;</span>
+            <button
+              type="button"
+              onClick={() => { setVoiceFeedback(''); setSearchTerm(''); setActiveCategory('All'); }}
+              className="text-slate-400 hover:text-rose-500 cursor-pointer"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 🚀 Floating Action Buttons (الشراء الجماعي و فائض الأوراش) */}
       <div className="flex justify-center gap-4 mb-8">
         <button 
           onClick={() => setActiveMode('groupe')}
-          className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg
+          className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg cursor-pointer
             ${activeMode === 'groupe' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-500/40 ring-4 ring-blue-500/20' : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800'}`}
         >
           <span className="text-xl">🤝</span> {language === 'ar' ? 'شراء جماعي' : (language === 'fr' ? 'Achat Groupé' : 'Group Buying')}
@@ -1009,10 +1572,10 @@ export default function BTPHub() {
 
         <button 
           onClick={() => setActiveMode('surplus')}
-          className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg
+          className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg cursor-pointer
             ${activeMode === 'surplus' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/40 ring-4 ring-emerald-500/20' : 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'}`}
         >
-          <span className="text-xl">♻️️</span> {language === 'ar' ? 'فائض الأوراش' : (language === 'fr' ? 'Surplus Chantier' : 'Site Surplus')}
+          <span className="text-xl">♻</span> {language === 'ar' ? 'فائض الأوراش' : (language === 'fr' ? 'Surplus Chantier' : 'Site Surplus')}
         </button>
       </div>
 
@@ -1022,7 +1585,7 @@ export default function BTPHub() {
           <button
             key={mode.id}
             onClick={() => setActiveMode(mode.id)}
-            className={`snap-start shrink-0 flex items-center px-6 py-4 rounded-2xl text-lg font-bold transition-all border-2 ${
+            className={`snap-start shrink-0 flex items-center px-6 py-4 rounded-2xl text-lg font-bold transition-all border-2 cursor-pointer ${
               activeMode === mode.id 
                 ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30 transform -translate-y-1' 
                 : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-white text-slate-600'} hover:border-emerald-400 hover:shadow-md`
@@ -1037,10 +1600,8 @@ export default function BTPHub() {
       {/* 1. MATÉRIAUX MODE */}
       {activeMode === 'materiaux' && (
         <div className="animate-fade-in">
-          {/* Categories */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
-              // 🔴 تحديد فئات الموردين (المواد) فقط وإخفاء الباقي
               const materiauxCats = ['All', 'Cement', 'Steel', 'Wood', 'Tiling', 'Plumbing', 'Electrical', 'Paint', 'Other'];
               if (!materiauxCats.includes(cat.id)) return null;
               
@@ -1050,7 +1611,7 @@ export default function BTPHub() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border cursor-pointer ${
                     isActive 
                       ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' 
                       : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
@@ -1062,7 +1623,6 @@ export default function BTPHub() {
             })}
           </div>
 
-          {/* Products Grid */}
           {loading ? (
             <div className="flex justify-center items-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div></div>
           ) : filteredProducts.length === 0 ? (
@@ -1078,11 +1638,11 @@ export default function BTPHub() {
                     <img src={product.image_url || product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                     {product.isPopular && <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg flex items-center gap-1`}><TrendingUp size={12}/> {t.popular}</span>}
-                    <span className={`absolute bottom-3 ${isRtl ? 'right-3' : 'left-3'} text-white font-bold text-sm drop-shadow-md bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm`}>{product.unit}</span>
+                    <span className={`absolute bottom-3 ${isRtl ? 'right-3' : 'left-3'} text-white font-bold text-sm drop-shadow-md bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm`}>{localizeCommonProductText(product.unit, language)}</span>
                   </div>
                   
                   <div className="p-5 flex-1 flex flex-col">
-                    <h3 className={`font-black text-lg leading-tight mb-2 ${textTitle}`}>{product.name}</h3>
+                    <h3 className={`font-black text-lg leading-tight mb-2 ${textTitle}`}>{localizeCommonProductText(product.name, language)}</h3>
                     <div className="flex items-center gap-1 mb-4">
                       <Star size={14} className="text-amber-400 fill-amber-400" />
                       <span className={`text-xs font-bold ${textMuted}`}>{product.rating || '4.5'}</span>
@@ -1101,7 +1661,7 @@ export default function BTPHub() {
                       <p className={`text-xs font-bold mb-3 flex items-center gap-1.5 ${textMuted}`}>
                         <Briefcase size={14} className="text-emerald-500"/> {t.supplier} <span className={textTitle}>{product.supplier || 'Vendeur Indépendant'}</span>
                       </p>
-                      <button onClick={() => handleAddToCart(product)} className={`w-full py-2.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${addedItem === product.id ? 'bg-emerald-500 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90'}`}>
+                      <button onClick={() => handleAddToCart(product)} className={`w-full py-2.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${addedItem === product.id ? 'bg-emerald-500 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90'}`}>
                         {addedItem === product.id ? <><CheckCircle2 size={16}/> {t.addedSuccess}</> : <><Plus size={16}/> {t.addToCart}</>}
                       </button>
                     </div>
@@ -1116,10 +1676,8 @@ export default function BTPHub() {
       {/* 2. SERVICES MODE (لْمْعْلّْم) */}
       {activeMode === 'services' && (
         <div className="animate-fade-in">
-          {/* شريط الفلترة الذكي للحرفيين (لمعلم) */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
-              // 🔴 تحديد فئات الحرفيين فقط (وإخفاء الأسمنت والحديد والخبراء وغيرها)
               const servicesCats = ['All', 'Masonry', 'Tiling', 'Plumbing', 'Electrical', 'Paint', 'Wood', 'Welding', 'Plaster', 'Aluminum', 'Other'];
               if (!servicesCats.includes(cat.id)) return null; 
               
@@ -1129,7 +1687,7 @@ export default function BTPHub() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border cursor-pointer ${
                     isActive 
                       ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' 
                       : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
@@ -1142,199 +1700,198 @@ export default function BTPHub() {
             })}
           </div>
 
-          {/* شبكة الحرفيين المفلترة */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {artisans
               .filter(artisan => {
-                if (activeCategory === 'All') return true;
-                // نجلب تصنيف الخدمة من قاعدة البيانات، ونطابقه مع الفلتر المختار
+                const srvName = getLocalizedText(artisan.provider_services?.[0]?.service_name, language);
                 const serviceCat = String(artisan.provider_services?.[0]?.category || '');
-                return serviceCat.includes(activeCategory);
+                const matchesCat =
+                  activeCategory === 'All' ||
+                  serviceCat.includes(activeCategory) ||
+                  matchesCrossLanguageSearch(`${srvName} ${serviceCat}`, activeCategory, activeCategory);
+                const matchesQuery = matchesCrossLanguageSearch(
+                  `${artisan.store_name || ''} ${srvName} ${artisan.city || ''}`,
+                  activeCategory,
+                  searchTerm
+                );
+                return matchesCat && matchesQuery;
               })
               .map((artisan) => {
-            // نأخذ الخدمة الأولى للمورد، أو نضع قيمة افتراضية لتجنب إخفاء البطاقة
-            const mainService = artisan.provider_services && artisan.provider_services.length > 0 
-              ? artisan.provider_services[0] 
-              : { 
-                  service_name: language === 'ar' ? 'لم يضف خدمات بعد' : (language === 'fr' ? 'Aucun service ajouté' : 'No services added'),
-                  starting_price: 0
+                const mainService = artisan.provider_services && artisan.provider_services.length > 0 
+                  ? artisan.provider_services[0] 
+                  : { 
+                      service_name: language === 'ar' ? 'خدمات وحرف البناء' : (language === 'fr' ? 'Services BTP' : 'BTP Services'),
+                      starting_price: 0
+                    };
+
+                let basePrice = Number(mainService.starting_price) || 0;
+                let finalPrice = basePrice;
+                let priceType = 'standard'; 
+
+                const isFlashDealActive = mainService.flash_discount_price && mainService.flash_expires_at && (new Date(mainService.flash_expires_at) > new Date());
+                
+                if (isFlashDealActive) {
+                  finalPrice = Number(mainService.flash_discount_price);
+                  priceType = 'flash';
+                } else if (mainService.service_pricing_tiers && mainService.service_pricing_tiers.length > 0) {
+                  const activeTier = mainService.service_pricing_tiers.find(
+                    tier => requestedQty >= tier.min_qty && requestedQty <= tier.max_qty
+                  );
+                  if (activeTier) {
+                    finalPrice = Number(activeTier.price);
+                    priceType = 'tier';
+                  }
+                }
+
+                const distanceKm = calculateDistance(chantierLocation.lat, chantierLocation.lng, artisan.latitude, artisan.longitude);
+                const transportCost = distanceKm !== null ? (distanceKm * costPerKm * numberOfTrips) : 0;
+                const goodsCost = finalPrice * requestedQty;
+                const totalCost = goodsCost > 0 ? (goodsCost + transportCost) : 0;
+                
+                const isSmartChoice = distanceKm !== null && distanceKm <= 25 && finalPrice > 0;
+
+                const tCard = {
+                  ar: {
+                    basePrice: "السعر الأساسي", startingFrom: "ابتداءً من", unavailable: "حسب الاتفاق",
+                    viewProfile: "عرض التفاصيل", requestQuote: "إضافة للسلة", unspecified: "فئة غير محددة",
+                    distanceToChantier: "المسافة والتوصيل:", deliveryTime: "مدة التوصيل:",
+                    totalCostLabel: "التكلفة النهائية للورش:", smartChoice: "💡 الأقرب للورش",
+                    goodsPriceLabel: "السعر للوحدة:", km: "كم", notSpecified: artisan.city || "متاح", later: "يحدد لاحقاً",
+                    goodsPlusTransport: "(شاملة السلعة + النقل)", artisanName: "اسم المعلم / المورد",
+                    qtyRequested: "الكمية المطلوبة", tierApplied: "تم تطبيق خصم الكمية الجملة!",
+                    priceTierLabel: "Prix Chantier", priceNormalLabel: "السعر", confirmOrder: "تأكيد طلب الشراء"
+                  },
+                  fr: {
+                    basePrice: "Tarif de base", startingFrom: "À partir de", unavailable: "Sur devis",
+                    viewProfile: "Voir Détails", requestQuote: "Ajouter", unspecified: "Catégorie non définie",
+                    distanceToChantier: "Distance & Livraison :", deliveryTime: "Délai de livraison :",
+                    totalCostLabel: "Coût Final Rendu Chantier :", smartChoice: "💡 Le plus proche",
+                    goodsPriceLabel: "Prix Unitaire :", km: "km", notSpecified: artisan.city || "Disponible", later: "À définir",
+                    goodsPlusTransport: "(Produit + Transport inclus)", artisanName: "Nom de l'artisan",
+                    qtyRequested: "Quantité Demandée", tierApplied: "Prix de gros appliqué !",
+                    priceTierLabel: "Prix Chantier", priceNormalLabel: "Prix", confirmOrder: "Confirmer la commande"
+                  },
+                  en: {
+                    basePrice: "Base Price", startingFrom: "Starting from", unavailable: "On quote",
+                    viewProfile: "View Details", requestQuote: "Add to Cart", unspecified: "Unspecified category",
+                    distanceToChantier: "Distance & Delivery:", deliveryTime: "Delivery time:",
+                    totalCostLabel: "Final Delivered Cost:", smartChoice: "💡 Closest to site",
+                    goodsPriceLabel: "Unit Price:", km: "km", notSpecified: artisan.city || "Available", later: "TBD",
+                    goodsPlusTransport: "(Goods + Transport incl.)", artisanName: "Artisan Name",
+                    qtyRequested: "Requested Qty", tierApplied: "Wholesale discount applied!",
+                    priceTierLabel: "Tier Price", priceNormalLabel: "Price", confirmOrder: "Confirm Order"
+                  }
+                }[language] || {
+                  unavailable: "Sur devis", viewProfile: "Voir Détails", requestQuote: "Ajouter",
+                  distanceToChantier: "Distance :", goodsPriceLabel: "Prix :", km: "km", notSpecified: "Disponible",
+                  qtyRequested: "Qté", priceTierLabel: "Prix Chantier", priceNormalLabel: "Prix"
                 };
 
-            // 1. تحديد السعر الأساسي
-            let basePrice = Number(mainService.starting_price) || 0;
-            let finalPrice = basePrice;
-            let priceType = 'standard'; 
-
-            // 2. التحقق من عروض الاستعجال (Flash Deals)
-            const isFlashDealActive = mainService.flash_discount_price && mainService.flash_expires_at && (new Date(mainService.flash_expires_at) > new Date());
-            
-            if (isFlashDealActive) {
-              finalPrice = Number(mainService.flash_discount_price);
-              priceType = 'flash';
-            } 
-            // 3. التحقق من التسعير بالكمية (Prix Chantier)
-            else if (mainService.service_pricing_tiers && mainService.service_pricing_tiers.length > 0) {
-              const activeTier = mainService.service_pricing_tiers.find(
-                tier => requestedQty >= tier.min_qty && requestedQty <= tier.max_qty
-              );
-              if (activeTier) {
-                finalPrice = Number(activeTier.price);
-                priceType = 'tier';
-              }
-            }
-
-            // 4. خوارزمية المسافة والتكلفة الواصلة (Coût Rendu Chantier)
-            const distanceKm = calculateDistance(chantierLocation.lat, chantierLocation.lng, artisan.latitude, artisan.longitude);
-            const transportCost = distanceKm !== null ? (distanceKm * costPerKm * numberOfTrips) : 0;
-            const goodsCost = finalPrice * requestedQty;
-            const totalCost = goodsCost > 0 ? (goodsCost + transportCost) : 0;
-            
-            const isSmartChoice = distanceKm !== null && distanceKm <= 25 && finalPrice > 0;
-
-            // قاموس الترجمة الشامل للبطاقة الذكية
-            const tCard = {
-              ar: {
-                basePrice: "السعر الأساسي", startingFrom: "ابتداءً من", unavailable: "غير متوفر",
-                viewProfile: "عرض التفاصيل", requestQuote: "إضافة للسلة", unspecified: "فئة غير محددة",
-                distanceToChantier: "المسافة والتوصيل:", deliveryTime: "مدة التوصيل:",
-                totalCostLabel: "التكلفة النهائية للورش:", smartChoice: "💡 الأقرب للورش",
-                goodsPriceLabel: "السعر للوحدة:", km: "كم", notSpecified: "غير محدد", later: "يحدد لاحقاً",
-                goodsPlusTransport: "(شاملة السلعة + النقل)", artisanName: "اسم المورد",
-                qtyRequested: "الكمية المطلوبة", tierApplied: "تم تطبيق خصم الكمية الجملة!",
-                priceTierLabel: "Prix Chantier", priceNormalLabel: "السعر", confirmOrder: "تأكيد طلب الشراء"
-              },
-              fr: {
-                basePrice: "Tarif de base", startingFrom: "À partir de", unavailable: "Non disponible",
-                viewProfile: "Voir Détails", requestQuote: "Ajouter", unspecified: "Catégorie non définie",
-                distanceToChantier: "Distance & Livraison :", deliveryTime: "Délai de livraison :",
-                totalCostLabel: "Coût Final Rendu Chantier :", smartChoice: "💡 Le plus proche",
-                goodsPriceLabel: "Prix Unitaire :", km: "km", notSpecified: "Non spécifié", later: "À définir",
-                goodsPlusTransport: "(Produit + Transport inclus)", artisanName: "Nom du fournisseur",
-                qtyRequested: "Quantité Demandée", tierApplied: "Prix de gros appliqué !",
-                priceTierLabel: "Prix Chantier", priceNormalLabel: "Prix", confirmOrder: "Confirmer la commande"
-              },
-              en: {
-                basePrice: "Base Price", startingFrom: "Starting from", unavailable: "Unavailable",
-                viewProfile: "View Details", requestQuote: "Add to Cart", unspecified: "Unspecified category",
-                distanceToChantier: "Distance & Delivery:", deliveryTime: "Delivery time:",
-                totalCostLabel: "Final Delivered Cost:", smartChoice: "💡 Closest to site",
-                goodsPriceLabel: "Unit Price:", km: "km", notSpecified: "Unspecified", later: "TBD",
-                goodsPlusTransport: "(Goods + Transport incl.)", artisanName: "Supplier Name",
-                qtyRequested: "Requested Qty", tierApplied: "Wholesale discount applied!",
-                priceTierLabel: "Tier Price", priceNormalLabel: "Price", confirmOrder: "Confirm Order"
-              }
-            }[language] || tCard.ar; // الافتراضي هو العربية
-
-            return (
-              <div key={artisan.id} className={`rounded-3xl border ${priceType === 'flash' ? 'border-red-500 shadow-red-500/10' : 'border-slate-200 dark:border-slate-800'} p-6 ${isDarkMode ? 'bg-slate-900' : 'bg-white'} shadow-sm hover:shadow-xl transition-all relative overflow-hidden`} dir={isRtl ? 'rtl' : 'ltr'}>
-                
-                {/* شارات العروض الذكية */}
-                {priceType === 'flash' && (
-                  <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-black px-4 py-1.5 rounded-bl-xl flex items-center gap-1 z-10">
-                    <Zap size={14} className="fill-current" /> BTP Flash Deal
-                  </div>
-                )}
-                {priceType !== 'flash' && isSmartChoice && (
-                  <div className={`absolute top-0 ${isRtl ? 'right-0' : 'left-0'} bg-emerald-500 text-white text-xs font-black px-4 py-1.5 ${isRtl ? 'rounded-bl-xl' : 'rounded-br-xl'} flex items-center gap-1 z-10`}>
-                     {tCard.smartChoice}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-4 mt-4 mb-5">
-                  <div className="w-14 h-14 bg-slate-100 rounded-2xl overflow-hidden shrink-0 border">
-                    <img src={artisan.logo_url || `https://ui-avatars.com/api/?name=${artisan.store_name}&background=10b981&color=fff`} alt="logo" className="w-full h-full object-cover"/>
-                  </div>
-                  <div>
-                    <h3 className={`font-black text-lg leading-tight ${textTitle}`}>{artisan.store_name || tCard.artisanName}</h3>
-                    <p className="text-sm text-emerald-600 font-bold">{getLocalizedText(mainService.service_name, language)}</p>
-                  </div>
-                </div>
-
-                <div className={`${isDarkMode ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-50 border-slate-100'} p-4 rounded-2xl border space-y-4`}>
-                  
-                  <div>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className={`text-xs font-bold block mb-1 ${textMuted}`}>{tCard.goodsPriceLabel} ({priceType === 'tier' ? tCard.priceTierLabel : tCard.priceNormalLabel})</span>
-                        <div className="flex items-center gap-2">
-                          <span className={`font-black text-2xl ${priceType === 'flash' ? 'text-red-500' : textTitle}`}>
-                            {finalPrice > 0 ? finalPrice : tCard.unavailable} <span className="text-sm">MAD</span>
-                          </span>
-                          {(priceType === 'flash' || priceType === 'tier') && basePrice > 0 && (
-                            <span className="text-slate-400 text-sm font-bold line-through">
-                              {basePrice} MAD
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className={isRtl ? 'text-left' : 'text-right'}>
-                        <span className={`text-xs font-bold block mb-1 ${textMuted}`}>{tCard.qtyRequested}</span>
-                        <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-lg text-sm font-black flex items-center justify-center gap-1">
-                          <Package size={14}/> {requestedQty}
-                        </span>
-                      </div>
-                    </div>
-
-                    {priceType === 'flash' && <FlashDealTimer expiresAt={mainService.flash_expires_at} />}
-
-                    {priceType === 'tier' && (
-                      <div className="mt-2 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg w-fit">
-                        <TrendingDown size={12}/> {tCard.tierApplied}
+                return (
+                  <div key={artisan.id} className={`rounded-3xl border ${priceType === 'flash' ? 'border-red-500 shadow-red-500/10' : 'border-slate-200 dark:border-slate-800'} p-6 ${isDarkMode ? 'bg-slate-900' : 'bg-white'} shadow-sm hover:shadow-xl transition-all relative overflow-hidden`} dir={isRtl ? 'rtl' : 'ltr'}>
+                    
+                    {priceType === 'flash' && (
+                      <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-black px-4 py-1.5 rounded-bl-xl flex items-center gap-1 z-10">
+                        <Zap size={14} className="fill-current" /> BTP Flash Deal
                       </div>
                     )}
-                  </div>
+                    {priceType !== 'flash' && isSmartChoice && (
+                      <div className={`absolute top-0 ${isRtl ? 'right-0' : 'left-0'} bg-emerald-500 text-white text-xs font-black px-4 py-1.5 ${isRtl ? 'rounded-bl-xl' : 'rounded-br-xl'} flex items-center gap-1 z-10`}>
+                         {tCard.smartChoice}
+                      </div>
+                    )}
 
-                  <div className={`border-t my-2 ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}></div>
-
-                  <div className="flex justify-between items-center text-sm">
-                    <span className={`font-bold ${textMuted}`}>{tCard.distanceToChantier}</span>
-                    <span className="font-bold text-blue-600 dark:text-blue-400">📍 {distanceKm !== null ? `${distanceKm} ${tCard.km}` : tCard.notSpecified}</span>
-                  </div>
-                  
-                  {totalCost > 0 && (
-                    <div className="flex justify-between items-center bg-emerald-500 text-white p-3 rounded-xl shadow-inner mt-2">
-                      <span className="font-bold text-sm">{tCard.totalCostLabel}</span>
-                      <div className={isRtl ? 'text-left' : 'text-right'}>
-                        <span className="font-black text-xl block">{totalCost.toLocaleString()} MAD</span>
-                        <span className="text-[10px] opacity-80 block">{tCard.goodsPlusTransport}</span>
+                    <div className="flex items-center gap-4 mt-4 mb-5">
+                      <div className="w-14 h-14 bg-slate-100 rounded-2xl overflow-hidden shrink-0 border">
+                        <img src={artisan.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(artisan.store_name || 'A')}&background=10b981&color=fff`} alt="logo" className="w-full h-full object-cover"/>
+                      </div>
+                      <div>
+                        <h3 className={`font-black text-lg leading-tight ${textTitle}`}>{artisan.store_name || tCard.artisanName}</h3>
+                        <p className="text-sm text-emerald-600 font-bold line-clamp-1">{getLocalizedText(mainService.service_name, language)}</p>
                       </div>
                     </div>
-                  )}
-                </div>
-                
-                <div className="flex gap-2 mt-4">
-                  <button onClick={() => setSelectedSupplier(artisan)} className={`flex-1 border py-3 rounded-xl text-sm font-bold transition-colors ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}>
-                    {tCard.viewProfile}
-                  </button>
-                  <button onClick={() => handleAddToCart({ id: artisan.id, name: getLocalizedText(mainService.service_name, language), supplier: artisan.store_name, price: finalPrice, type: 'service' })} className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm font-black shadow-lg">
-                    {tCard.requestQuote}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-         </div>
+
+                    <div className={`${isDarkMode ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-50 border-slate-100'} p-4 rounded-2xl border space-y-4`}>
+                      <div>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className={`text-xs font-bold block mb-1 ${textMuted}`}>{tCard.goodsPriceLabel} ({priceType === 'tier' ? tCard.priceTierLabel : tCard.priceNormalLabel})</span>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-black text-2xl ${priceType === 'flash' ? 'text-red-500' : textTitle}`}>
+                                {finalPrice > 0 ? finalPrice : tCard.unavailable} {finalPrice > 0 && <span className="text-sm">MAD</span>}
+                              </span>
+                              {(priceType === 'flash' || priceType === 'tier') && basePrice > 0 && (
+                                <span className="text-slate-400 text-sm font-bold line-through">
+                                  {basePrice} MAD
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className={isRtl ? 'text-left' : 'text-right'}>
+                            <span className={`text-xs font-bold block mb-1 ${textMuted}`}>{tCard.qtyRequested}</span>
+                            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-lg text-sm font-black flex items-center justify-center gap-1">
+                              <Package size={14}/> {requestedQty}
+                            </span>
+                          </div>
+                        </div>
+
+                        {priceType === 'flash' && <FlashDealTimer expiresAt={mainService.flash_expires_at} language={language} />}
+
+                        {priceType === 'tier' && (
+                          <div className="mt-2 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg w-fit">
+                            <TrendingDown size={12}/> {tCard.tierApplied}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className={`border-t my-2 ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}></div>
+
+                      <div className="flex justify-between items-center text-sm">
+                        <span className={`font-bold ${textMuted}`}>{tCard.distanceToChantier}</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400">📍 {distanceKm !== null ? `${distanceKm} ${tCard.km}` : tCard.notSpecified}</span>
+                      </div>
+                      
+                      {totalCost > 0 && (
+                        <div className="flex justify-between items-center bg-emerald-500 text-white p-3 rounded-xl shadow-inner mt-2">
+                          <span className="font-bold text-sm">{tCard.totalCostLabel}</span>
+                          <div className={isRtl ? 'text-left' : 'text-right'}>
+                            <span className="font-black text-xl block">{totalCost.toLocaleString()} MAD</span>
+                            <span className="text-[10px] opacity-80 block">{tCard.goodsPlusTransport}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2 mt-4">
+                      <button onClick={() => setSelectedSupplier(artisan)} className={`flex-1 border py-3 rounded-xl text-sm font-bold transition-colors cursor-pointer ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-white' : 'border-slate-300 hover:bg-slate-50 text-slate-700'}`}>
+                        {tCard.viewProfile}
+                      </button>
+                      <button onClick={() => handleAddToCart({ id: artisan.id, name: getLocalizedText(mainService.service_name, language), supplier: artisan.store_name, price: finalPrice, type: 'service' })} className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm font-black shadow-lg cursor-pointer">
+                        {tCard.requestQuote}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+           </div>
         </div>
       )}
 
-      {/* 3. EXPERTS MODE (الخبراء ومكاتب الدراسات) */}
+      {/* 3. EXPERTS MODE */}
       {activeMode === 'experts' && (
         <div className="animate-fade-in">
-          {/* شريط الفلترة الذكي للخبراء */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
-              // إظهار زر "الكل" وفلاتر الخبراء فقط
               const expertCats = ['All', 'Architect', 'Topographer', 'Studies', 'Control', 'Interior', 'Other'];
               if (!expertCats.includes(cat.id)) return null; 
-              
               const isActive = activeCategory === cat.id;
               const Icon = cat.icon;
               return (
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border cursor-pointer ${
                     isActive 
                       ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' 
                       : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
@@ -1347,7 +1904,6 @@ export default function BTPHub() {
             })}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* بطاقة مثال لخبير / مكتب دراسات */}
             <div className="bg-slate-900 text-white rounded-2xl shadow-lg border border-slate-800 p-6 relative overflow-hidden group hover:-translate-y-1 transition-all">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-bl-full group-hover:scale-110 transition-transform"></div>
               <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full mb-4">{t.experts.badge}</span>
@@ -1359,7 +1915,7 @@ export default function BTPHub() {
               </div>
               <button 
                 onClick={() => handleAddToCart({ id: 'e1', name: 'Consultation Architecte', supplier: 'Cabinet Yassine Archi', type: 'expert', image_url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=150' })}
-                className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-lg shadow-emerald-500/20"
+                className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-lg shadow-emerald-500/20 cursor-pointer"
               >
                 {t.experts.book}
               </button>
@@ -1368,23 +1924,20 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* 3.5 GROS OEUVRE MODE (الأشغال الكبرى) */}
+      {/* 3.5 GROS OEUVRE MODE */}
       {activeMode === 'grosOeuvre' && (
         <div className="animate-fade-in">
-          {/* شريط الفلترة الذكي للأشغال الكبرى */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
-              // إظهار زر "الكل" وفلاتر الأشغال الكبرى فقط
               const grosOeuvreCats = ['All', 'Earthworks', 'Concrete', 'Industrial', 'Demolition', 'Sanitation', 'Other'];
               if (!grosOeuvreCats.includes(cat.id)) return null; 
-              
               const isActive = activeCategory === cat.id;
               const Icon = cat.icon;
               return (
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border cursor-pointer ${
                     isActive 
                       ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' 
                       : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
@@ -1398,7 +1951,6 @@ export default function BTPHub() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* بطاقة مثال لشركة أشغال كبرى */}
             <div className={`rounded-2xl border overflow-hidden ${bgCard} shadow-sm hover:shadow-lg transition-all`}>
               <div className="h-48 relative bg-slate-200">
                 <img src="https://images.unsplash.com/photo-1541888087525-2bf7cd7e4df4?w=500" alt="Gros Oeuvre" className="w-full h-full object-cover"/>
@@ -1416,13 +1968,13 @@ export default function BTPHub() {
                     <p className={`font-bold ${textTitle}`}>Équipement complet</p>
                   </div>
                   <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}>
-                    <p className="text-xs text-emerald-600">التوفر</p>
-                    <p className="font-bold text-emerald-600">فوري</p>
+                    <p className="text-xs text-emerald-600">{language === 'ar' ? 'التوفر' : 'Dispo'}</p>
+                    <p className="font-bold text-emerald-600">{language === 'ar' ? 'فوري' : 'Immédiat'}</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => handleAddToCart({ id: 'go1', name: 'Travaux de Fondations', supplier: 'Bâtisseurs Atlas SARL', type: 'service', image_url: 'https://images.unsplash.com/photo-1541888087525-2bf7cd7e4df4?w=150' })}
-                  className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm font-black shadow-lg mt-auto"
+                  className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm font-black shadow-lg mt-auto cursor-pointer"
                 >
                   {t.services.requestQuote}
                 </button>
@@ -1432,7 +1984,7 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* 4. MACHINES MODE (المعدات) */}
+      {/* 4. MACHINES MODE */}
       {activeMode === 'machines' && (
         <div className="animate-fade-in">
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
@@ -1440,18 +1992,17 @@ export default function BTPHub() {
               if (!['All', 'HeavyMachinery', 'Tools', 'Other'].includes(cat.id)) return null; 
               const isActive = activeCategory === cat.id; const Icon = cat.icon;
               return (
-                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
+                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border cursor-pointer ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
                   <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> {cat.label}
                 </button>
               );
             })}
           </div>
-          {/* نفس بطاقة المعدات القديمة تضعها هنا */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className={`rounded-2xl border overflow-hidden ${bgCard} shadow-sm hover:shadow-lg transition-all`}>
               <div className="h-48 bg-slate-200 relative">
                 <img src="https://images.unsplash.com/photo-1579762699924-a74087cb8916?w=500" alt="Excavatrice" className="w-full h-full object-cover"/>
-                <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg`}><Clock className="w-3 h-3 mr-1" /> {t.machines.available} 25 Sept</span>
+                <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg`}><Clock className="w-3 h-3 mr-1" /> {t.machines.available} 24h</span>
               </div>
               <div className="p-5">
                 <h3 className={`font-black text-lg mb-1 ${textTitle}`}>CAT 320 Excavatrice</h3>
@@ -1460,30 +2011,27 @@ export default function BTPHub() {
                   <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}><p className={`text-xs ${textMuted}`}>{t.machines.day}</p><p className={`font-bold ${textTitle}`}>1,800 MAD</p></div>
                   <div className={`p-2 rounded-xl text-center border ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}><p className="text-xs text-emerald-600">{t.machines.week}</p><p className="font-bold text-emerald-600">9,500 MAD</p></div>
                 </div>
-                <button onClick={() => handleAddToCart({ id: 'm1', name: 'CAT 320 Excavatrice', supplier: 'Atlas Engins', type: 'rental', price: 1800 })} className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 font-bold">{t.machines.book}</button>
+                <button onClick={() => handleAddToCart({ id: 'm1', name: 'CAT 320 Excavatrice', supplier: 'Atlas Engins', type: 'rental', price: 1800 })} className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 font-bold cursor-pointer">{t.machines.book}</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 5. MAINTENANCE MODE (الصيانة) */}
+      {/* 5. MAINTENANCE MODE */}
       {activeMode === 'maintenance' && (
         <div className="animate-fade-in">
-          {/* شريط الفلترة الذكي للصيانة */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
-              // إظهار زر "الكل" وفلاتر الصيانة فقط
               const maintenanceCats = ['All', 'HVAC', 'Elevators', 'Security', 'Waterproofing', 'Cleaning', 'Gardens', 'SOS', 'Other'];
               if (!maintenanceCats.includes(cat.id)) return null; 
-              
               const isActive = activeCategory === cat.id;
               const Icon = cat.icon;
               return (
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                  className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border cursor-pointer ${
                     isActive 
                       ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' 
                       : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`
@@ -1497,7 +2045,6 @@ export default function BTPHub() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* بطاقة مثال لخدمة صيانة */}
             <div className={`rounded-2xl border p-5 ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 bg-slate-200 rounded-xl overflow-hidden shrink-0">
@@ -1514,7 +2061,7 @@ export default function BTPHub() {
               </div>
               <button 
                 onClick={() => handleAddToCart({ id: 'maint1', name: 'Intervention Rapide', supplier: 'Equipe Atlas', type: 'service', image_url: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=150' })}
-                className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-sm"
+                className="w-full bg-emerald-500 text-white py-2.5 rounded-xl hover:bg-emerald-600 transition-colors font-bold shadow-sm cursor-pointer"
               >
                 {t.maintenance.book}
               </button>
@@ -1523,7 +2070,7 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* 6. TRANSPORT MODE (النقل) */}
+      {/* 6. TRANSPORT MODE */}
       {activeMode === 'transport' && (
         <div className="animate-fade-in">
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
@@ -1531,13 +2078,12 @@ export default function BTPHub() {
               if (!['All', 'GoodsTransport', 'DebrisRemoval', 'Other'].includes(cat.id)) return null; 
               const isActive = activeCategory === cat.id; const Icon = cat.icon;
               return (
-                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
+                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border cursor-pointer ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
                   <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> {cat.label}
                 </button>
               );
             })}
           </div>
-          {/* محتوى النقل */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className={`rounded-2xl border overflow-hidden ${bgCard} shadow-sm hover:shadow-lg transition-shadow`}>
               <div className="h-40 bg-slate-200 relative"><img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500" alt="Camion" className="w-full h-full object-cover"/></div>
@@ -1548,23 +2094,22 @@ export default function BTPHub() {
                   <div className={`flex justify-between ${textMuted}`}><span>{t.transport.route}</span><span className={`font-semibold ${textTitle}`}>National</span></div>
                 </div>
                 <div className={`p-3 rounded-xl text-center border mb-4 ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'}`}><p className="font-black text-emerald-600">12 {t.transport.price}</p></div>
-                <button onClick={() => handleAddToCart({ id: 'trans1', name: 'Semi-remorque', supplier: 'Transporteurs Express', type: 'rental' })} className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 font-bold">{t.transport.book}</button>
+                <button onClick={() => handleAddToCart({ id: 'trans1', name: 'Semi-remorque', supplier: 'Transporteurs Express', type: 'rental' })} className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-xl hover:opacity-90 font-bold cursor-pointer">{t.transport.book}</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 7. DOCUMENTS MODE (الوثائق) */}
+      {/* 7. DOCUMENTS MODE */}
       {activeMode === 'documents' && (
         <div className="animate-fade-in">
-          {/* شريط فلاتر الوثائق */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
               if (!['All', 'Permits', 'Insurance', 'Other'].includes(cat.id)) return null; 
               const isActive = activeCategory === cat.id; const Icon = cat.icon;
               return (
-                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
+                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border cursor-pointer ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
                   <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> {cat.label}
                 </button>
               );
@@ -1583,8 +2128,8 @@ export default function BTPHub() {
                 <div className={`flex justify-between ${textMuted}`}><span>{t.documents.type}</span><span className="font-semibold text-blue-500">Administratif</span></div>
               </div>
               <button 
-                onClick={() => handleAddToCart({ id: 'doc1', name: 'Permis de Construire', supplier: 'Cabinet Administratif', type: 'service', image_url: 'https://via.placeholder.com/150/3b82f6/ffffff?text=Document' })}
-                className="w-full border-2 border-blue-500 text-blue-500 py-2 rounded-xl hover:bg-blue-50 transition-colors font-bold"
+                onClick={() => handleAddToCart({ id: 'doc1', name: 'Permis de Construire', supplier: 'Cabinet Administratif', type: 'service' })}
+                className="w-full border-2 border-blue-500 text-blue-500 py-2 rounded-xl hover:bg-blue-50 transition-colors font-bold cursor-pointer"
               >
                 {t.documents.request}
               </button>
@@ -1593,16 +2138,15 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* 8. COMPANIES MODE (الشركات) */}
+      {/* 8. COMPANIES MODE */}
       {activeMode === 'companies' && (
         <div className="animate-fade-in">
-          {/* شريط فلاتر الشركات */}
           <div className="mb-6 flex overflow-x-auto custom-scrollbar pb-4 gap-3 snap-x">
             {categories.map(cat => {
               if (!['All', 'VerifiedSuppliers', 'MajorContractors', 'Other'].includes(cat.id)) return null; 
               const isActive = activeCategory === cat.id; const Icon = cat.icon;
               return (
-                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
+                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border cursor-pointer ${isActive ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-500 dark:border-emerald-500 shadow-md' : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-gray-200 text-slate-600'} hover:border-slate-400`}`}>
                   <Icon size={16} className={isActive ? 'text-emerald-400 dark:text-white' : 'text-slate-400'} /> {cat.label}
                 </button>
               );
@@ -1633,8 +2177,8 @@ export default function BTPHub() {
                 </div>
               </div>
               <button 
-                onClick={() => handleAddToCart({ id: 'comp1', name: 'Partenariat Global', supplier: 'BTP Maroc SA', type: 'service', image_url: 'https://via.placeholder.com/150/1e293b/ffffff?text=Company' })}
-                className="w-full bg-white text-slate-900 py-3 rounded-xl hover:bg-gray-100 transition-colors font-black relative z-10 shadow-lg"
+                onClick={() => handleAddToCart({ id: 'comp1', name: 'Partenariat Global', supplier: 'BTP Maroc SA', type: 'service' })}
+                className="w-full bg-white text-slate-900 py-3 rounded-xl hover:bg-gray-100 transition-colors font-black relative z-10 shadow-lg cursor-pointer"
               >
                 {t.companies.contact}
               </button>
@@ -1644,10 +2188,9 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* 9. SURPLUS MODE (بورصة فائض الأوراش) */}
+      {/* 9. SURPLUS MODE */}
       {activeMode === 'surplus' && (
         <div className="animate-fade-in">
-          {/* ترويسة القسم */}
           <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 p-4 rounded-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-black text-amber-900 dark:text-amber-400 flex items-center gap-2">
@@ -1657,12 +2200,11 @@ export default function BTPHub() {
                 {t.surplus.desc} <span className="font-bold underline">{t.surplus.descBold}</span>
               </p>
             </div>
-            <button onClick={() => setIsSurplusModalOpen(true)} className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl font-bold shadow-md transition-colors flex items-center justify-center gap-2 shrink-0">
+            <button onClick={() => setIsSurplusModalOpen(true)} className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl font-bold shadow-md transition-colors flex items-center justify-center gap-2 shrink-0 cursor-pointer">
               <Plus size={18} /> {t.surplus.addBtn}
             </button>
           </div>
 
-          {/* شبكة عروض الفائض */}
           {surplusDeals.length === 0 ? (
             <div className={`text-center py-20 rounded-3xl border-2 border-dashed ${isDarkMode ? 'border-slate-700 bg-slate-900/50 text-slate-400' : 'border-slate-300 bg-slate-50 text-slate-500'}`}>
               <Zap size={48} className="mx-auto mb-4 opacity-20" />
@@ -1671,7 +2213,6 @@ export default function BTPHub() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {surplusDeals.map((deal) => {
-                // خوارزمية المسافة بين المقاول المشتري والمقاول البائع
                 const distanceKm = calculateDistance(chantierLocation.lat, chantierLocation.lng, deal.latitude, deal.longitude);
                 const original = Number(deal.original_price);
                 const burn = Number(deal.burn_price);
@@ -1679,8 +2220,6 @@ export default function BTPHub() {
                 
                 return (
                   <div key={deal.id} className="rounded-3xl border-2 border-amber-400 p-1 relative overflow-hidden bg-amber-400 shadow-xl hover:-translate-y-1 transition-transform" dir={isRtl ? 'rtl' : 'ltr'}>
-                    
-                    {/* شارة التخفيض الضخمة */}
                     <div className={`absolute top-4 ${isRtl ? 'right-0 rounded-l-xl' : 'left-0 rounded-r-xl'} bg-red-600 text-white font-black text-sm px-4 py-1.5 shadow-lg z-10 flex items-center gap-1`}>
                       {t.surplus.discount} -{discountPercentage}%
                     </div>
@@ -1716,12 +2255,11 @@ export default function BTPHub() {
 
                         <div className="mt-auto space-y-3">
                           <div className="flex justify-center w-full">
-                            <FlashDealTimer expiresAt={deal.expires_at} />
+                            <FlashDealTimer expiresAt={deal.expires_at} language={language} />
                           </div>
                           <button 
-                            // هنا يمكنك ربط الزر لإضافة العرض إلى السلة أو فتح محادثة
-                            onClick={() => console.log('Booked:', deal.item_name)} 
-                            className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg"
+                            onClick={() => handleAddToCart({ id: `surplus_${deal.id}`, name: deal.item_name, supplier: deal.contractor_name, price: Number(deal.burn_price), price_retail: Number(deal.burn_price), type: 'surplus', image_url: deal.image_url })} 
+                            className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg cursor-pointer"
                           >
                             <ShoppingCart size={18} /> {t.surplus.bookBtn}
                           </button>
@@ -1736,7 +2274,7 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* 10. GROUP BUYING MODE (الشراء الجماعي) */}
+      {/* 10. GROUP BUYING MODE */}
       {activeMode === 'groupe' && (
         <div className="animate-fade-in">
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-6 rounded-3xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
@@ -1748,7 +2286,7 @@ export default function BTPHub() {
                 {t.groupe.desc}
               </p>
             </div>
-            <button onClick={openCreateGroupModal} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 shrink-0">
+            <button onClick={openCreateGroupModal} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer">
               <Plus size={18} /> {t.groupe.createBtn}
             </button>
           </div>
@@ -1772,14 +2310,14 @@ export default function BTPHub() {
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-4">
                         <div className="w-16 h-16 bg-slate-100 rounded-2xl overflow-hidden border">
-                          <img src={supplierInfo.logo_url || `https://ui-avatars.com/api/?name=${supplierInfo.store_name || 'S'}&background=3b82f6&color=fff`} alt="logo" className="w-full h-full object-cover"/>
+                          <img src={supplierInfo.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(supplierInfo.store_name || 'S')}&background=3b82f6&color=fff`} alt="logo" className="w-full h-full object-cover"/>
                         </div>
                         <div>
                           <p className="text-xs text-slate-500 font-bold mb-1">{supplierInfo.store_name}</p>
                           <h3 className={`font-black text-xl leading-tight ${textTitle}`}>{serviceInfo.service_name || 'سلعة غير محددة'}</h3>
                         </div>
                       </div>
-                      <FlashDealTimer expiresAt={order.expires_at} />
+                      <FlashDealTimer expiresAt={order.expires_at} language={language} />
                     </div>
 
                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 mb-6">
@@ -1794,7 +2332,6 @@ export default function BTPHub() {
                         </div>
                       </div>
 
-                      {/* شريط التقدم (Progress Bar) */}
                       <div className="mt-4">
                         <div className="flex justify-between text-xs font-bold mb-2">
                           <span className="text-emerald-600">{t.groupe.collected} {order.current_qty}</span>
@@ -1815,7 +2352,7 @@ export default function BTPHub() {
                     <button 
                       disabled={isCompleted}
                       onClick={() => { setSelectedGroupOrder(order); setIsGroupModalOpen(true); }} 
-                      className={`w-full py-4 rounded-xl font-black text-lg flex items-center justify-center gap-2 transition-all shadow-lg ${
+                      className={`w-full py-4 rounded-xl font-black text-lg flex items-center justify-center gap-2 transition-all shadow-lg cursor-pointer ${
                         isCompleted 
                           ? 'bg-emerald-500 text-white cursor-not-allowed' 
                           : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90'
@@ -1840,7 +2377,7 @@ export default function BTPHub() {
         
         <button 
           onClick={() => setIsRfqModalOpen(true)} 
-          className="bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2 whitespace-nowrap"
+          className="bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2 whitespace-nowrap cursor-pointer"
         >
         <FileText className="w-5 h-5" />
           {t.rfq.btn}
@@ -1870,7 +2407,7 @@ export default function BTPHub() {
         </div>
       )}
 
-      {/* 🚀 استدعاء سلة المشروع الذكية الجديدة */}
+      {/* 🚀 استدعاء سلة المشروع الذكية */}
       {isCartOpen && (
         <ProjectCart 
           isDarkMode={isDarkMode} 
@@ -1879,25 +2416,19 @@ export default function BTPHub() {
           cart={cart} 
           onRemove={removeFromCart} 
           onUpdateQuantity={updateQuantity}
-          
-          // 🚀 الكود الجديد لزر التفاوض
           onNegotiate={() => {
-            setIsCartOpen(false); // إغلاق السلة أولاً
-            
-            // 1. حساب المجموع الكلي للسلة بدقة (بما فيها سعر الجملة)
+            setIsCartOpen(false);
             const totalAmount = cart.reduce((sum, item) => {
               const p = item.product;
               const activePrice = item.qty >= (p.min_wholesale_qty || 999999) ? (p.price_wholesale || p.price) : (p.price_retail || p.price);
               return sum + (activePrice * item.qty);
             }, 0);
 
-            // 2. تجهيز هيكل الطلبية لإرساله للشات
             const orderPayload = {
               items: cart,
               total: totalAmount
             };
 
-            // 3. جلب اسم المورد (نأخذ مورد أول منتج كمثال)
             const supplier = cart[0]?.product?.supplier || "المورد";
 
             navigate('/v2/messages', {
@@ -1907,22 +2438,21 @@ export default function BTPHub() {
               }
             });
           }}
-          
           onCheckout={() => {
-            alert("Validation des commandes déclenchée !");
+            alert(language === 'ar' ? "✅ تم تأكيد وإرسال طلبيتك بنجاح!" : "✅ Validation des commandes déclenchée !");
             setIsCartOpen(false);
           }}
         />
       )}
 
-    {selectedSupplier && (
-      <SupplierProfile 
-        artisanId={selectedSupplier.id} 
-        language={language}      
-        isDarkMode={isDarkMode}   
-        onClose={() => setSelectedSupplier(null)} 
-      />
-    )}
+      {selectedSupplier && (
+        <SupplierProfile 
+          artisanId={selectedSupplier.id} 
+          language={language}      
+          isDarkMode={isDarkMode}   
+          onClose={() => setSelectedSupplier(null)} 
+        />
+      )}
 
       <style>{`
         @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -1938,20 +2468,45 @@ export default function BTPHub() {
       `}</style>
 
       {/* ============================================================== */}
-      {/* 1. 🤝 نافذة المساهمة في الطلب الجماعي (Join Group Order) */}
+      {/* 1. 🤝 نافذة المساهمة في الطلب الجماعي (مع ميكروفون صوتي) */}
       {/* ============================================================== */}
       {isGroupModalOpen && selectedGroupOrder && (
         <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-sm flex justify-center items-center p-4" onClick={() => setIsGroupModalOpen(false)}>
           <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'} w-full max-w-sm rounded-3xl p-6 shadow-2xl relative border animate-slide-up`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
-            <button onClick={() => setIsGroupModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors`}>
+            <button onClick={() => setIsGroupModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors cursor-pointer`}>
               <X size={20} />
             </button>
             <h2 className={`text-xl font-black mb-2 ${textTitle}`}>{t.groupe?.modal?.title || 'Participer à la commande'}</h2>
             <p className={`text-sm mb-6 ${textMuted}`}>{t.groupe?.modal?.desc || 'Indiquez la quantité que vous souhaitez réserver.'}</p>
             <form onSubmit={handleJoinGroupOrder}>
               <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.groupe?.modal?.qty || 'Quantité souhaitée'}</label>
-              <input type="number" required min="1" max={selectedGroupOrder.target_qty - selectedGroupOrder.current_qty} value={joinQty} onChange={e => setJoinQty(e.target.value)} className={`w-full p-4 rounded-xl border outline-none focus:border-blue-500 text-lg font-black text-center ${bgCard} ${textTitle} mb-4`} placeholder={t.groupe?.modal?.qtyPlh || 'Ex: 50'} />
-              <button type="submit" disabled={isJoining} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2">
+              <div className="relative flex items-center mb-4">
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  max={selectedGroupOrder.target_qty - selectedGroupOrder.current_qty}
+                  value={joinQty}
+                  onChange={e => setJoinQty(e.target.value)}
+                  className={`w-full p-4 rounded-xl border outline-none focus:border-blue-500 text-lg font-black text-center ${bgCard} ${textTitle}`}
+                  placeholder={t.groupe?.modal?.qtyPlh || 'Ex: 50'}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    triggerVoiceInput('joinQtyMic', (txt) => {
+                      const num = parseDarijaSpokenDigits(txt).replace(/\D/g, '');
+                      if (num) setJoinQty(num);
+                    })
+                  }
+                  className={`absolute ${isRtl ? 'left-3' : 'right-3'} p-2 rounded-lg cursor-pointer ${
+                    listeningTarget === 'joinQtyMic' ? 'bg-red-500 text-white animate-pulse' : 'bg-blue-500/15 text-blue-500'
+                  }`}
+                >
+                  <Mic size={16} />
+                </button>
+              </div>
+              <button type="submit" disabled={isJoining} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 cursor-pointer">
                 {isJoining ? (t.groupe?.modal?.submitting || 'Confirmation...') : (t.groupe?.modal?.submitBtn || 'Confirmer la participation')}
               </button>
             </form>
@@ -1960,12 +2515,12 @@ export default function BTPHub() {
       )}
 
       {/* ============================================================== */}
-      {/* 2. 🌍 نافذة إنشاء طلب جماعي جديد (Create Group Order) */}
+      {/* 2. 🌍 نافذة إنشاء طلب جماعي جديد (مع ميكروفون صوتي) */}
       {/* ============================================================== */}
       {isCreateGroupModalOpen && (
         <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-sm flex justify-center items-center p-4" onClick={() => setIsCreateGroupModalOpen(false)}>
           <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'} w-full max-w-md rounded-3xl p-6 shadow-2xl relative border animate-slide-up`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
-            <button onClick={() => setIsCreateGroupModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors`}>
+            <button onClick={() => setIsCreateGroupModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors cursor-pointer`}>
               <X size={20} />
             </button>
             <h2 className={`text-xl font-black mb-1 flex items-center gap-2 ${textTitle}`}>
@@ -1994,15 +2549,43 @@ export default function BTPHub() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.groupe?.createModal?.targetQty || 'Quantité Cible'}</label>
-                  <input type="number" required min="1" value={newGroupOrder.target_qty} onChange={e => setNewGroupOrder({...newGroupOrder, target_qty: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.groupe?.createModal?.targetQtyPlh || 'Ex: 500'} dir="ltr" />
+                  <div className="relative flex items-center" dir="ltr">
+                    <input type="number" required min="1" value={newGroupOrder.target_qty} onChange={e => setNewGroupOrder({...newGroupOrder, target_qty: e.target.value})} className={`w-full p-3 pr-9 rounded-xl border outline-none focus:border-blue-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.groupe?.createModal?.targetQtyPlh || 'Ex: 500'} />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        triggerVoiceInput('grpTargetQty', (txt) => {
+                          const num = parseDarijaSpokenDigits(txt).replace(/\D/g, '');
+                          if (num) setNewGroupOrder((p) => ({ ...p, target_qty: num }));
+                        })
+                      }
+                      className="absolute right-2 p-1 text-blue-500 cursor-pointer"
+                    >
+                      <Mic size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className={`block text-xs font-bold mb-2 text-blue-600`}>{t.groupe?.createModal?.targetPrice || 'Prix Cible'}</label>
-                  <input type="number" required min="0" value={newGroupOrder.target_price} onChange={e => setNewGroupOrder({...newGroupOrder, target_price: e.target.value})} className={`w-full p-3 rounded-xl border-2 border-blue-200 outline-none focus:border-blue-500 text-sm font-black bg-blue-50 dark:bg-blue-900/20 text-blue-600`} placeholder={t.groupe?.createModal?.targetPricePlh || 'Ex: 67'} dir="ltr" />
+                  <div className="relative flex items-center" dir="ltr">
+                    <input type="number" required min="0" value={newGroupOrder.target_price} onChange={e => setNewGroupOrder({...newGroupOrder, target_price: e.target.value})} className={`w-full p-3 pr-9 rounded-xl border-2 border-blue-200 outline-none focus:border-blue-500 text-sm font-black bg-blue-50 dark:bg-blue-900/20 text-blue-600`} placeholder={t.groupe?.createModal?.targetPricePlh || 'Ex: 67'} />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        triggerVoiceInput('grpTargetPrice', (txt) => {
+                          const num = parseDarijaSpokenDigits(txt).replace(/\D/g, '');
+                          if (num) setNewGroupOrder((p) => ({ ...p, target_price: num }));
+                        })
+                      }
+                      className="absolute right-2 p-1 text-blue-600 cursor-pointer"
+                    >
+                      <Mic size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <button type="submit" disabled={isCreatingGroupOrder} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors">
+              <button type="submit" disabled={isCreatingGroupOrder} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors cursor-pointer">
                 {isCreatingGroupOrder ? (t.groupe?.createModal?.submitting || 'Lancement...') : (t.groupe?.createModal?.submitBtn || 'Lancer la commande (48h)')}
               </button>
             </form>
@@ -2011,13 +2594,13 @@ export default function BTPHub() {
       )}
 
       {/* ============================================================== */}
-      {/* 3. 🚀 نافذة إضافة فائض الأوراش (Create Surplus) */}
+      {/* 3. 🚀 نافذة إضافة فائض الأوراش (مزودة بالميكروفون الصوتي لكل حقل) */}
       {/* ============================================================== */}
       {isSurplusModalOpen && (
         <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-sm flex justify-center items-center p-4 overflow-y-auto" onClick={() => setIsSurplusModalOpen(false)}>
           <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'} w-full max-w-lg rounded-3xl p-6 shadow-2xl relative border animate-slide-up my-8`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
             
-            <button onClick={() => setIsSurplusModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-red-100 hover:bg-red-500 text-red-500 hover:text-white rounded-full transition-colors`}>
+            <button onClick={() => setIsSurplusModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-red-100 hover:bg-red-500 text-red-500 hover:text-white rounded-full transition-colors cursor-pointer`}>
               <X size={20} />
             </button>
 
@@ -2047,29 +2630,89 @@ export default function BTPHub() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus?.modal?.contractor || 'Nom de l\'entreprise'}</label>
-                  <input type="text" required value={newSurplus.contractor_name} onChange={e => setNewSurplus({...newSurplus, contractor_name: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus?.modal?.contractorPlh || 'Ex: Chantier Alpha'} />
+                  <div className="relative flex items-center">
+                    <input type="text" required value={newSurplus.contractor_name} onChange={e => setNewSurplus({...newSurplus, contractor_name: e.target.value})} className={`w-full p-3 ${isRtl ? 'pl-9' : 'pr-9'} rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus?.modal?.contractorPlh || 'Ex: Chantier Alpha'} />
+                    <button
+                      type="button"
+                      onClick={() => triggerVoiceInput('surpContractor', (txt) => setNewSurplus((p) => ({ ...p, contractor_name: txt })))}
+                      className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-1.5 rounded-lg text-amber-500 cursor-pointer`}
+                    >
+                      <Mic size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus?.modal?.item || 'Marchandise'}</label>
-                  <input type="text" required value={newSurplus.item_name} onChange={e => setNewSurplus({...newSurplus, item_name: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus?.modal?.itemPlh || 'Ex: Ciment'} />
+                  <div className="relative flex items-center">
+                    <input type="text" required value={newSurplus.item_name} onChange={e => setNewSurplus({...newSurplus, item_name: e.target.value})} className={`w-full p-3 ${isRtl ? 'pl-9' : 'pr-9'} rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus?.modal?.itemPlh || 'Ex: Ciment'} />
+                    <button
+                      type="button"
+                      onClick={() => triggerVoiceInput('surpItem', (txt) => setNewSurplus((p) => ({ ...p, item_name: txt })))}
+                      className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-1.5 rounded-lg text-amber-500 cursor-pointer`}
+                    >
+                      <Mic size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus?.modal?.priceNormal || 'Prix Normal'}</label>
-                  <input type="number" required value={newSurplus.original_price} onChange={e => setNewSurplus({...newSurplus, original_price: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder="MAD" dir="ltr" />
+                  <div className="relative flex items-center" dir="ltr">
+                    <input type="number" required value={newSurplus.original_price} onChange={e => setNewSurplus({...newSurplus, original_price: e.target.value})} className={`w-full p-3 pr-9 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder="MAD" />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        triggerVoiceInput('surpOrigPrice', (txt) => {
+                          const num = parseDarijaSpokenDigits(txt).replace(/\D/g, '');
+                          if (num) setNewSurplus((p) => ({ ...p, original_price: num }));
+                        })
+                      }
+                      className="absolute right-2 p-1.5 text-amber-500 cursor-pointer"
+                    >
+                      <Mic size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className={`block text-xs font-bold mb-1 text-red-500`}>{t.surplus?.modal?.priceBurn || 'Prix Cassé'}</label>
-                  <input type="number" required value={newSurplus.burn_price} onChange={e => setNewSurplus({...newSurplus, burn_price: e.target.value})} className={`w-full p-3 rounded-xl border-2 border-red-200 outline-none focus:border-red-500 text-sm font-black bg-red-50 dark:bg-red-900/20 text-red-600`} placeholder="MAD" dir="ltr" />
+                  <div className="relative flex items-center" dir="ltr">
+                    <input type="number" required value={newSurplus.burn_price} onChange={e => setNewSurplus({...newSurplus, burn_price: e.target.value})} className={`w-full p-3 pr-9 rounded-xl border-2 border-red-200 outline-none focus:border-red-500 text-sm font-black bg-red-50 dark:bg-red-900/20 text-red-600`} placeholder="MAD" />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        triggerVoiceInput('surpBurnPrice', (txt) => {
+                          const num = parseDarijaSpokenDigits(txt).replace(/\D/g, '');
+                          if (num) setNewSurplus((p) => ({ ...p, burn_price: num }));
+                        })
+                      }
+                      className="absolute right-2 p-1.5 text-red-500 cursor-pointer"
+                    >
+                      <Mic size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div className="md:col-span-1">
                   <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus?.modal?.qty || 'Quantité'}</label>
-                  <input type="text" required value={newSurplus.qty_left} onChange={e => setNewSurplus({...newSurplus, qty_left: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus?.modal?.qtyPlh || '50'} />
+                  <div className="relative flex items-center">
+                    <input type="text" required value={newSurplus.qty_left} onChange={e => setNewSurplus({...newSurplus, qty_left: e.target.value})} className={`w-full p-3 ${isRtl ? 'pl-8' : 'pr-8'} rounded-xl border outline-none focus:border-amber-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.surplus?.modal?.qtyPlh || '50'} />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        triggerVoiceInput('surpQty', (txt) => {
+                          const clean = parseDarijaSpokenDigits(txt);
+                          setNewSurplus((p) => ({ ...p, qty_left: clean }));
+                        })
+                      }
+                      className={`absolute ${isRtl ? 'left-1.5' : 'right-1.5'} p-1 text-amber-500 cursor-pointer`}
+                    >
+                      <Mic size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div className="md:col-span-1">
                   <label className={`block text-xs font-bold mb-1 ${textMuted}`}>{t.surplus?.modal?.duration || 'Durée'}</label>
@@ -2080,14 +2723,14 @@ export default function BTPHub() {
                   </select>
                 </div>
                 <div className="md:col-span-1">
-                  <button type="button" onClick={handleGetSurplusLocation} className={`w-full p-3 rounded-xl border-2 text-sm font-black flex items-center justify-center gap-2 transition-all ${newSurplus.latitude ? 'bg-emerald-100 border-emerald-500 text-emerald-700' : 'bg-slate-100 border-blue-500 text-blue-600 hover:bg-blue-50'}`}>
+                  <button type="button" onClick={handleGetSurplusLocation} className={`w-full p-3 rounded-xl border-2 text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${newSurplus.latitude ? 'bg-emerald-100 border-emerald-500 text-emerald-700' : 'bg-slate-100 border-blue-500 text-blue-600 hover:bg-blue-50'}`}>
                     {newSurplus.latitude ? <CheckCircle2 size={16}/> : <MapPin size={16}/>}
                     {newSurplus.latitude ? (t.surplus?.modal?.gpsLocated || 'Localisé') : (t.surplus?.modal?.gpsBtn || 'GPS')}
                   </button>
                 </div>
               </div>
 
-              <button type="submit" disabled={isSubmittingSurplus} className="w-full mt-4 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors">
+              <button type="submit" disabled={isSubmittingSurplus} className="w-full mt-4 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors cursor-pointer">
                 {isSubmittingSurplus ? (t.surplus?.modal?.publishing || 'Publication...') : (t.surplus?.modal?.publishBtn || 'Publier l\'offre')}
               </button>
             </form>
@@ -2096,12 +2739,12 @@ export default function BTPHub() {
       )}
 
       {/* ============================================================== */}
-      {/* 4. 📣 نافذة نشر طلب مخصص (Appel d'offres / RFQ) */}
+      {/* 4. 📣 نافذة نشر طلب مخصص (Appel d'offres / RFQ) مع ميكروفون صوتي */}
       {/* ============================================================== */}
       {isRfqModalOpen && (
         <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-sm flex justify-center items-center p-4 overflow-y-auto" onClick={() => setIsRfqModalOpen(false)}>
           <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white'} w-full max-w-lg rounded-3xl p-6 shadow-2xl relative border animate-slide-up my-8`} onClick={e => e.stopPropagation()} dir={isRtl ? 'rtl' : 'ltr'}>
-            <button onClick={() => setIsRfqModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors`}>
+            <button onClick={() => setIsRfqModalOpen(false)} className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors cursor-pointer`}>
               <X size={20} />
             </button>
             <h2 className={`text-xl font-black mb-1 flex items-center gap-2 ${textTitle}`}>
@@ -2112,7 +2755,16 @@ export default function BTPHub() {
             <form onSubmit={handleSubmitRfq} className="space-y-4">
               <div>
                 <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.rfq?.modal?.reqTitle || "Titre de la demande"}</label>
-                <input type="text" required value={rfqForm.title} onChange={e => setRfqForm({...rfqForm, title: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-emerald-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.rfq?.modal?.reqTitlePlh || "Ex: Fourniture et pose..."} />
+                <div className="relative flex items-center">
+                  <input type="text" required value={rfqForm.title} onChange={e => setRfqForm({...rfqForm, title: e.target.value})} className={`w-full p-3 ${isRtl ? 'pl-10' : 'pr-10'} rounded-xl border outline-none focus:border-emerald-500 text-sm font-bold ${bgCard} ${textTitle}`} placeholder={t.rfq?.modal?.reqTitlePlh || "Ex: Fourniture et pose..."} />
+                  <button
+                    type="button"
+                    onClick={() => triggerVoiceInput('rfqTitleMic', (txt) => setRfqForm((p) => ({ ...p, title: txt })))}
+                    className={`absolute ${isRtl ? 'left-2' : 'right-2'} p-1.5 rounded-lg text-emerald-500 cursor-pointer`}
+                  >
+                    <Mic size={16} />
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -2133,11 +2785,22 @@ export default function BTPHub() {
               </div>
 
               <div>
-                <label className={`block text-xs font-bold mb-2 ${textMuted}`}>{t.rfq?.modal?.details || "Détails Techniques"}</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className={`text-xs font-bold ${textMuted}`}>{t.rfq?.modal?.details || "Détails Techniques"}</label>
+                  <button
+                    type="button"
+                    onClick={() => triggerVoiceInput('rfqDetailsMic', (txt) => setRfqForm((p) => ({ ...p, details: p.details ? `${p.details} ${txt}` : txt })))}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black cursor-pointer ${
+                      listeningTarget === 'rfqDetailsMic' ? 'bg-red-500 text-white animate-pulse' : 'bg-emerald-500/15 text-emerald-500'
+                    }`}
+                  >
+                    <Mic size={13} /> {language === 'ar' ? 'انطق التفاصيل بالدارجة' : 'Dicter'}
+                  </button>
+                </div>
                 <textarea required rows="4" value={rfqForm.details} onChange={e => setRfqForm({...rfqForm, details: e.target.value})} className={`w-full p-3 rounded-xl border outline-none focus:border-emerald-500 text-sm font-medium ${bgCard} ${textTitle}`} placeholder={t.rfq?.modal?.detailsPlh || "Décrivez toutes les spécifications..."}></textarea>
               </div>
 
-              <button type="submit" disabled={isSubmittingRfq} className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors">
+              <button type="submit" disabled={isSubmittingRfq} className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white p-4 rounded-xl font-black text-lg shadow-lg flex justify-center items-center gap-2 transition-colors cursor-pointer">
                 {isSubmittingRfq ? (t.rfq?.modal?.submitting || "Publication...") : (t.rfq?.modal?.submitBtn || "Publier la demande")}
               </button>
             </form>
