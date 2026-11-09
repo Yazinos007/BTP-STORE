@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, LogOut, Sun, Moon, Globe, Layers, ChevronDown, Trophy, PlusCircle, Sparkles, Loader2, Clock, Zap, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import SmartSidebar from './SmartSidebar';
 import { supabase } from '../../lib/supabase';
 import useSettingsStore from '../../store/useSettingsStore';
 import SystemNotificationBanner from './SystemNotificationBanner';
+import GlobalVoiceCopilot from './GlobalVoiceCopilot';
+import { 
+  Menu, X, LogOut, Sun, Moon, Globe, Layers, ChevronDown, Trophy, PlusCircle, Sparkles, Loader2, Clock, Zap, ArrowRight, ArrowLeft 
+} from 'lucide-react';
 
 export default function V2Layout({ accountType, storeName, storeInitial }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
@@ -559,6 +562,8 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
           <div className="flex-1 overflow-x-hidden overflow-y-auto w-full p-4 md:p-8 custom-scrollbar">
             <Outlet context={{ isDarkMode, language }} />
           </div>
+          {/* 🎙️ المساعد الصوتي الذكي الموحد لملء الحقول والتنقل في جميع الحسابات */}
+          <GlobalVoiceCopilot />
         </main>
       </div>
     </div>
