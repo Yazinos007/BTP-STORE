@@ -64,6 +64,7 @@ import UnifiedMessages from './shared/UnifiedMessages';
 import LiveRoom from './shared/LiveRoom';
 import AuthGateway from './auth/AuthGateway';
 import AffiliateDashboard from './AffiliateDashboard';
+import GlobalVoiceCopilot from './components/v2/GlobalVoiceCopilot';
 
 export default function V2Router({ session, supplier }) {
   const location = useLocation();
@@ -268,6 +269,7 @@ export default function V2Router({ session, supplier }) {
       </Route>
 
       <Route path="foreman-dashboard" element={<ForemanDashboard />} />
+      <GlobalVoiceCopilot />
     </Routes>
   );
 }
