@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
+import useSettingsStore from '../../store/useSettingsStore';
 import { supabase } from '../../lib/supabase';
 import SupplierProfile from '../../components/v2/SupplierProfile';
 import ProjectCart from '../../components/v2/ProjectCart';
@@ -159,6 +160,11 @@ const FlashDealTimer = ({ expiresAt, language = 'ar' }) => {
 };
 
 export default function BTPHub() {
+  const { language: settingsLanguage = 'fr' } = useSettingsStore();
+  const context = useOutletContext() || {};
+  const isDarkMode = context.isDarkMode || false;
+  const language = context.language || settingsLanguage || 'fr';
+  const isRtl = language === 'ar';
 
   const getLocalizedText = (field, currentLang) => {
     if (!field) return '';
@@ -174,10 +180,6 @@ export default function BTPHub() {
 
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const navigate = useNavigate();
-  const context = useOutletContext() || {};
-  const isDarkMode = context.isDarkMode || false;
-  const language = context.language || 'ar';
-  const isRtl = language === 'ar';
 
   const [activeMode, setActiveMode] = useState('materiaux');
   const [loading, setLoading] = useState(true);

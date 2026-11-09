@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  LayoutDashboard, FolderKanban, MessageCircle, FileSignature, AlertTriangle, 
-  Settings, UserCircle, Briefcase, Camera, LogOut, Search, PieChart, Users, Zap, 
-  Globe, Moon, Sun, Receipt, ShieldCheck, ChevronDown, Trophy, 
+  LayoutDashboard, FolderKanban, MessageCircle, FileSignature, 
+  Settings, Briefcase, Camera, PieChart, Users, Zap, 
+  Receipt, ShieldCheck, Trophy, 
   Store, Calculator, Star, HardHat, Radar, Image, Truck,
   Package, Wallet, CreditCard, Landmark, ShoppingCart
 } from 'lucide-react';
@@ -146,7 +146,6 @@ const SIDEBAR_THEMES = {
       hoverBtn: 'hover:bg-purple-500/10 hover:text-purple-300 hover:border-purple-500/30'
     }
   },
-  // 🛒 منظومة ألوان فضاء التاجر (Retailer)
   retailer: {
     dashboard: { 
       headerText: 'text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]',
@@ -182,10 +181,12 @@ const SIDEBAR_THEMES = {
 export default function SmartSidebar({ storeName, accountType }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { language } = useSettingsStore();
+  const { language = 'fr' } = useSettingsStore();
   const isRtl = language === 'ar';
+
+  // 🌐 دالة ترجمة ثلاثية فورية (العربية / الفرنسية / الإنجليزية)
+  const tr = (ar, fr, en) => (language === 'ar' ? ar : language === 'fr' ? fr : en);
   
-  // تحديد الفضاء بدقة مع حفظه في sessionStorage لمنع الانقلاب القسري
   const resolveRole = () => {
     const p = location.pathname;
     if (p.includes('/architect')) {
@@ -267,201 +268,201 @@ export default function SmartSidebar({ storeName, accountType }) {
     );
   };
 
-  // 1. هيكلة أقسام المقاول (Contractor) - مسارات مطابقة 100% لـ V2Router
+  // 1. هيكلة أقسام المقاول (Contractor) - مترجمة بالكامل (AR / FR / EN)
   const contractorMenuSections = [
     {
       key: 'dashboard',
-      title: language === 'ar' ? 'القيادة والتوثيق' : 'DIRECTION & TERRAIN',
+      title: tr('القيادة والتوثيق', 'DIRECTION & TERRAIN', 'MANAGEMENT & FIELD'),
       items: [
-        { path: '/v2/contractor-dashboard', icon: LayoutDashboard, label: language === 'ar' ? 'لوحة القيادة' : 'Tableau de bord' },
-        { path: '/v2/contractor-projects', icon: FolderKanban, label: language === 'ar' ? 'أوراشي المفتوحة' : 'Parcours Projet', tag: 'AR' },
-        { path: '/v2/contractor-calculator', icon: Calculator, label: language === 'ar' ? 'حاسبة التكلفة الذكية' : 'Calculateur Intelligent' },
-        { path: '/v2/contractor-camera', icon: Camera, label: language === 'ar' ? 'توثيق الورش (GPS)' : 'Caméra de Chantier' }
+        { path: '/v2/contractor-dashboard', icon: LayoutDashboard, label: tr('لوحة القيادة', 'Tableau de bord', 'Dashboard') },
+        { path: '/v2/contractor-projects', icon: FolderKanban, label: tr('أوراشي المفتوحة', 'Parcours Projet', 'Project Path'), tag: 'AR' },
+        { path: '/v2/contractor-calculator', icon: Calculator, label: tr('حاسبة التكلفة الذكية', 'Calculateur Intelligent', 'Smart Calculator') },
+        { path: '/v2/contractor-camera', icon: Camera, label: tr('توثيق الورش (GPS)', 'Caméra de Chantier', 'Site Camera (GPS)') }
       ]
     },
     {
       key: 'projects',
-      title: language === 'ar' ? 'السوق والمناقصات' : 'MARCHÉ & APPELS',
+      title: tr('السوق والمناقصات', 'MARCHÉ & APPELS', 'MARKET & TENDERS'),
       items: [
-        { path: '/v2/contractor-marketplace', icon: Store, label: language === 'ar' ? 'سوق BTP العام' : 'Marché BTP' },
-        { path: '/v2/contractor-radar', icon: Radar, label: language === 'ar' ? 'رادار المناقصات (Live)' : "Radar Appels d'offres", tag: 'PRO' }
+        { path: '/v2/contractor-marketplace', icon: Store, label: tr('سوق BTP العام', 'Marché BTP', 'BTP Marketplace') },
+        { path: '/v2/contractor-radar', icon: Radar, label: tr('رادار المناقصات (Live)', "Radar Appels d'offres", 'Tender Radar (Live)'), tag: 'PRO' }
       ]
     },
     {
       key: 'communication',
-      title: language === 'ar' ? 'التواصل واللوجستيك' : 'COMMUNICATION & LOGISTIQUE',
+      title: tr('التواصل واللوجستيك', 'COMMUNICATION & LOGISTIQUE', 'COMMUNICATION & LOGISTICS'),
       items: [
-        { path: '/v2/contractor-messages', icon: MessageCircle, label: language === 'ar' ? 'صندوق الرسائل' : 'Boîte de Réception' },
-        { path: '/v2/contractor-freight', icon: Truck, label: language === 'ar' ? 'بورصة اللوجستيك' : 'Bourse de Fret' },
-        { path: '/v2/contractor-live-orders', icon: Package, label: language === 'ar' ? 'تتبع طلبيات السلعة' : 'Commandes Live' }
+        { path: '/v2/contractor-messages', icon: MessageCircle, label: tr('صندوق الرسائل', 'Boîte de Réception', 'Inbox') },
+        { path: '/v2/contractor-freight', icon: Truck, label: tr('بورصة اللوجستيك', 'Bourse de Fret', 'Freight Exchange') },
+        { path: '/v2/contractor-live-orders', icon: Package, label: tr('تتبع طلبيات السلعة', 'Commandes Live', 'Live Orders') }
       ]
     },
     {
       key: 'finance',
-      title: language === 'ar' ? 'المالية والمحاسبة' : 'FINANCE & COMPTABILITÉ',
+      title: tr('المالية والمحاسبة', 'FINANCE & COMPTABILITÉ', 'FINANCE & ACCOUNTING'),
       items: [
-        { path: '/v2/contractor-hr', icon: Users, label: language === 'ar' ? 'الموارد البشرية' : 'Ressources Humaines' },
-        { path: '/v2/contractor-b2b-invoices', icon: Receipt, label: language === 'ar' ? 'فواتير B2B' : 'Factures B2B' },
-        { path: '/v2/contractor-caisses', icon: Wallet, label: language === 'ar' ? 'الصناديق والحسابات' : 'Caisses & Comptes' },
-        { path: '/v2/contractor-expenses', icon: CreditCard, label: language === 'ar' ? 'المصاريف والأعباء' : 'Dépenses & Frais' },
-        { path: '/v2/contractor-fiscal', icon: Landmark, label: language === 'ar' ? 'النظام الجبائي' : 'Système Fiscal' },
-        { path: '/v2/contractor-accounting', icon: PieChart, label: language === 'ar' ? 'المحاسبة العامة' : 'Comptabilité Générale' },
-        { path: '/v2/contractor-audit', icon: ShieldCheck, label: language === 'ar' ? 'التدقيق الذكي' : 'Audit IA', tag: 'VIP' }
+        { path: '/v2/contractor-hr', icon: Users, label: tr('الموارد البشرية', 'Ressources Humaines', 'Human Resources') },
+        { path: '/v2/contractor-b2b-invoices', icon: Receipt, label: tr('فواتير B2B', 'Factures B2B', 'B2B Invoices') },
+        { path: '/v2/contractor-caisses', icon: Wallet, label: tr('الصناديق والحسابات', 'Caisses & Comptes', 'Accounts & Cash') },
+        { path: '/v2/contractor-expenses', icon: CreditCard, label: tr('المصاريف والأعباء', 'Dépenses & Frais', 'Expenses & Costs') },
+        { path: '/v2/contractor-fiscal', icon: Landmark, label: tr('النظام الجبائي', 'Système Fiscal', 'Tax System') },
+        { path: '/v2/contractor-accounting', icon: PieChart, label: tr('المحاسبة العامة', 'Comptabilité Générale', 'General Accounting') },
+        { path: '/v2/contractor-audit', icon: ShieldCheck, label: tr('التدقيق الذكي', 'Audit IA', 'Smart AI Audit'), tag: 'VIP' }
       ]
     },
     {
       key: 'settings',
-      title: language === 'ar' ? 'الإعدادات' : 'PARAMÈTRES',
+      title: tr('الإعدادات', 'PARAMÈTRES', 'SETTINGS'),
       items: [
-        { path: '/v2/contractor-settings', icon: Settings, label: language === 'ar' ? 'إعدادات المتجر' : 'Profil' }
+        { path: '/v2/contractor-settings', icon: Settings, label: tr('إعدادات المتجر', 'Profil', 'Profile & Settings') }
       ]
     }
   ];
 
-  // 2. هيكلة أقسام المهندس (Architect) - تم تصحيح رابط /v2/architect-audit لمنع الانقلاب
+  // 2. هيكلة أقسام المهندس (Architect) - مترجمة بالكامل (AR / FR / EN)
   const architectMenuSections = [
     {
       key: 'dashboard',
-      title: language === 'ar' ? 'القيادة الهندسية' : 'BUREAU D\'ÉTUDES',
+      title: tr('القيادة الهندسية', "BUREAU D'ÉTUDES", 'DESIGN OFFICE'),
       items: [
-        { path: '/v2/architect-dashboard', icon: LayoutDashboard, label: language === 'ar' ? 'مكتبي (نظرة عامة)' : 'Bureau (Aperçu)' },
-        { path: '/v2/architect-projects', icon: FolderKanban, label: language === 'ar' ? 'إدارة المشاريع والرقابة' : 'Contrôle & Approbations' },
-        { path: '/v2/architect-archive', icon: FileSignature, label: language === 'ar' ? 'الأرشيف والوثائق' : 'Archives & Plans' }
+        { path: '/v2/architect-dashboard', icon: LayoutDashboard, label: tr('مكتبي (نظرة عامة)', 'Bureau (Aperçu)', 'Office (Overview)') },
+        { path: '/v2/architect-projects', icon: FolderKanban, label: tr('إدارة المشاريع والرقابة', 'Contrôle & Approbations', 'Control & Approvals') },
+        { path: '/v2/architect-archive', icon: FileSignature, label: tr('الأرشيف والوثائق', 'Archives & Plans', 'Archives & Plans') }
       ]
     },
     {
       key: 'tools',
-      title: language === 'ar' ? 'الأدوات الميدانية (AR)' : 'OUTILS TERRAIN (AR)',
+      title: tr('الأدوات الميدانية (AR)', 'OUTILS TERRAIN (AR)', 'FIELD TOOLS (AR)'),
       items: [
-        { path: '/v2/architect-ruler', icon: Calculator, label: language === 'ar' ? 'مسطرة القياس الذكية' : 'Règle & Mesures' },
-        { path: '/v2/architect-reports', icon: Camera, label: language === 'ar' ? 'محاضر بختم GPS' : 'Rapports scellés GPS' }
+        { path: '/v2/architect-ruler', icon: Calculator, label: tr('مسطرة القياس الذكية', 'Règle & Mesures', 'Smart Ruler & Measures') },
+        { path: '/v2/architect-reports', icon: Camera, label: tr('محاضر بختم GPS', 'Rapports scellés GPS', 'GPS Sealed Reports') }
       ]
     },
     {
       key: 'market',
-      title: language === 'ar' ? 'التواصل والسوق' : 'COMMUNICATION & MARCHÉ',
+      title: tr('التواصل والسوق', 'COMMUNICATION & MARCHÉ', 'COMMUNICATION & MARKET'),
       items: [
-        { path: '/v2/architect-messages', icon: MessageCircle, label: language === 'ar' ? 'صندوق الرسائل' : 'Boîte de Réception' },
-        { path: '/v2/architect-marketplace', icon: Store, label: language === 'ar' ? 'سوق BTP' : 'Marché BTP' },
-        { path: '/v2/architect-radar', icon: Radar, label: language === 'ar' ? 'رادار المناقصات' : 'Radar d\'Appels d\'offres', tag: 'PRO' }
+        { path: '/v2/architect-messages', icon: MessageCircle, label: tr('صندوق الرسائل', 'Boîte de Réception', 'Inbox') },
+        { path: '/v2/architect-marketplace', icon: Store, label: tr('سوق BTP', 'Marché BTP', 'BTP Marketplace') },
+        { path: '/v2/architect-radar', icon: Radar, label: tr('رادار المناقصات', "Radar d'Appels d'offres", 'Tender Radar'), tag: 'PRO' }
       ]
     },
     {
       key: 'finance',
-      title: language === 'ar' ? 'المالية، الجبايات والموارد' : 'FINANCE, FISCALITÉ & RH',
+      title: tr('المالية، الجبايات والموارد', 'FINANCE, FISCALITÉ & RH', 'FINANCE, TAX & HR'),
       items: [
-        { path: '/v2/architect-invoices', icon: Receipt, label: language === 'ar' ? 'فواتير المكتب B2B' : 'Factures B2B' },
-        { path: '/v2/architect-caisses', icon: Wallet, label: language === 'ar' ? 'الصناديق والحسابات' : 'Caisses & Comptes' },
-        { path: '/v2/architect-expenses', icon: CreditCard, label: language === 'ar' ? 'إدارة المصاريف' : 'Dépenses & Frais' },
-        { path: '/v2/architect-hr', icon: Users, label: language === 'ar' ? 'الموارد البشرية' : 'Ressources Humaines' },
-        { path: '/v2/architect-fiscal', icon: Landmark, label: language === 'ar' ? 'النظام الجبائي' : 'Système Fiscal' },
-        { path: '/v2/architect-accounting', icon: PieChart, label: language === 'ar' ? 'المحاسبة العامة' : 'Comptabilité Générale' },
-        { path: '/v2/architect-audit', icon: ShieldCheck, label: language === 'ar' ? 'التدقيق الذكي' : 'Audit IA', tag: 'VIP' }
+        { path: '/v2/architect-invoices', icon: Receipt, label: tr('فواتير المكتب B2B', 'Factures B2B', 'B2B Invoices') },
+        { path: '/v2/architect-caisses', icon: Wallet, label: tr('الصناديق والحسابات', 'Caisses & Comptes', 'Accounts & Cash') },
+        { path: '/v2/architect-expenses', icon: CreditCard, label: tr('إدارة المصاريف', 'Dépenses & Frais', 'Expenses & Costs') },
+        { path: '/v2/architect-hr', icon: Users, label: tr('الموارد البشرية', 'Ressources Humaines', 'Human Resources') },
+        { path: '/v2/architect-fiscal', icon: Landmark, label: tr('النظام الجبائي', 'Système Fiscal', 'Tax System') },
+        { path: '/v2/architect-accounting', icon: PieChart, label: tr('المحاسبة العامة', 'Comptabilité Générale', 'General Accounting') },
+        { path: '/v2/architect-audit', icon: ShieldCheck, label: tr('التدقيق الذكي', 'Audit IA', 'Smart AI Audit'), tag: 'VIP' }
       ]
     },
     {
       key: 'settings',
-      title: language === 'ar' ? 'الإعدادات والملف' : 'PARAMÈTRES',
+      title: tr('الإعدادات والملف', 'PARAMÈTRES', 'SETTINGS'),
       items: [
-        { path: '/v2/architect-settings', icon: Settings, label: language === 'ar' ? 'إعدادات المكتب' : 'Profil' }
+        { path: '/v2/architect-settings', icon: Settings, label: tr('إعدادات المكتب', 'Profil', 'Office Profile') }
       ]
     }
   ];
 
-  // 3. هيكلة أقسام الحرفي (Provider)
+  // 3. هيكلة أقسام الحرفي (Provider) - مترجمة بالكامل (AR / FR / EN)
   const providerMenuSections = [
     {
       key: 'dashboard',
-      title: language === 'ar' ? 'الأوراش والتشغيل' : language === 'fr' ? 'CHANTIERS & RADAR' : 'WORKSHOPS & RADAR',
+      title: tr('الأوراش والتشغيل', 'CHANTIERS & RADAR', 'WORKSHOPS & RADAR'),
       items: [
-        { path: '/v2/provider-dashboard', icon: LayoutDashboard, label: language === 'ar' ? 'لوحة القيادة' : 'Tableau de bord' },
-        { path: '/v2/provider-radar', icon: Radar, label: language === 'ar' ? 'رادار الأوراش الحية' : 'Radar Chantiers Live', tag: 'LIVE' },
-        { path: '/v2/provider-projects', icon: HardHat, label: language === 'ar' ? 'أوراشي الجارية' : 'Chantiers en Cours' },
-        { path: '/v2/provider-portfolio', icon: Image, label: language === 'ar' ? 'معرض أعمالي (Portfolio)' : 'Mon Portfolio' }
+        { path: '/v2/provider-dashboard', icon: LayoutDashboard, label: tr('لوحة القيادة', 'Tableau de bord', 'Dashboard') },
+        { path: '/v2/provider-radar', icon: Radar, label: tr('رادار الأوراش الحية', 'Radar Chantiers Live', 'Live Jobs Radar'), tag: 'LIVE' },
+        { path: '/v2/provider-projects', icon: HardHat, label: tr('أوراشي الجارية', 'Chantiers en Cours', 'Active Workshops') },
+        { path: '/v2/provider-portfolio', icon: Image, label: tr('معرض أعمالي (Portfolio)', 'Mon Portfolio', 'My Portfolio') }
       ]
     },
     {
       key: 'tools',
-      title: language === 'ar' ? 'أدوات المعلم الذكي' : language === 'fr' ? 'OUTILS DU MAÂLEM PRO' : 'SMART PRO TOOLS',
+      title: tr('أدوات المعلم الذكي', 'OUTILS DU MAÂLEM PRO', 'SMART PRO TOOLS'),
       items: [
-        { path: '/v2/provider-calculator', icon: Calculator, label: language === 'ar' ? 'حاسبة السلعة & Devis' : 'Calculateur & Devis', tag: 'PRO' },
-        { path: '/v2/provider-clients', icon: Users, label: language === 'ar' ? 'الزبناء والتسبيقات' : 'Clients & Avances' },
-        { path: '/v2/provider-expenses', icon: Receipt, label: language === 'ar' ? 'أجور الخدامة والمصاريف' : 'Journaliers & Frais' }
+        { path: '/v2/provider-calculator', icon: Calculator, label: tr('حاسبة السلعة & Devis', 'Calculateur & Devis', 'Material & Quote Calculator'), tag: 'PRO' },
+        { path: '/v2/provider-clients', icon: Users, label: tr('الزبناء والتسبيقات', 'Clients & Avances', 'Clients & Advances') },
+        { path: '/v2/provider-expenses', icon: Receipt, label: tr('أجور الخدامة والمصاريف', 'Journaliers & Frais', 'Daily Wages & Expenses') }
       ]
     },
     {
       key: 'market',
-      title: language === 'ar' ? 'التواصل والسلعة' : language === 'fr' ? 'RÉSEAU & MATÉRIAUX' : 'NETWORK & SUPPLIES',
+      title: tr('التواصل والسلعة', 'RÉSEAU & MATÉRIAUX', 'NETWORK & SUPPLIES'),
       items: [
-        { path: '/v2/provider-messages', icon: MessageCircle, label: language === 'ar' ? 'صندوق الرسائل' : 'Boîte de Réception' },
-        { path: '/v2/provider-materials', icon: Store, label: language === 'ar' ? 'شراء السلعة (BTP)' : 'Achat Matériaux' },
-        { path: '/v2/provider-affiliates', icon: Trophy, label: language === 'ar' ? 'أرباح الشركاء والعمولات' : 'Mes Gains Partenaire' }
+        { path: '/v2/provider-messages', icon: MessageCircle, label: tr('صندوق الرسائل', 'Boîte de Réception', 'Inbox') },
+        { path: '/v2/provider-materials', icon: Store, label: tr('شراء السلعة (BTP)', 'Achat Matériaux', 'Buy Materials (BTP)') },
+        { path: '/v2/provider-affiliates', icon: Trophy, label: tr('أرباح الشركاء والعمولات', 'Mes Gains Partenaire', 'Affiliate Earnings') }
       ]
     },
     {
       key: 'account',
-      title: language === 'ar' ? 'التوثيق والإعدادات' : language === 'fr' ? 'CONFIANCE & PROFIL' : 'TRUST & PROFILE',
+      title: tr('التوثيق والإعدادات', 'CONFIANCE & PROFIL', 'TRUST & PROFILE'),
       items: [
-        { path: '/v2/provider-reviews', icon: Star, label: language === 'ar' ? 'آراء الزبناء' : 'Avis & Recommandations' },
-        { path: '/v2/provider-settings', icon: Settings, label: language === 'ar' ? 'إعدادات الحساب' : 'Profil & Métier' }
+        { path: '/v2/provider-reviews', icon: Star, label: tr('آراء الزبناء', 'Avis & Recommandations', 'Client Reviews') },
+        { path: '/v2/provider-settings', icon: Settings, label: tr('إعدادات الحساب', 'Profil & Métier', 'Profile & Trade') }
       ]
     }
   ];
 
-  // 4. هيكلة لوحة التحكم المركزية للأدمن (Admin Dashboard)
+  // 4. هيكلة لوحة التحكم المركزية للأدمن (Admin Dashboard) - مترجمة بالكامل (AR / FR / EN)
   const adminMenuSections = [
     {
       key: 'dashboard',
-      title: language === 'ar' ? 'غرفة القيادة المركزية' : 'SALLE DE CONTRÔLE',
+      title: tr('غرفة القيادة المركزية', 'SALLE DE CONTRÔLE', 'CONTROL ROOM'),
       items: [
-        { path: '/v2/admin-dashboard', icon: LayoutDashboard, label: language === 'ar' ? 'نظرة عامة (Overview)' : 'Aperçu Général' },
-        { path: '/v2/admin-analytics', icon: PieChart, label: language === 'ar' ? 'التحليلات والإحصائيات' : 'Analytiques' }
+        { path: '/v2/admin-dashboard', icon: LayoutDashboard, label: tr('نظرة عامة (Overview)', 'Aperçu Général', 'General Overview') },
+        { path: '/v2/admin-analytics', icon: PieChart, label: tr('التحليلات والإحصائيات', 'Analytiques', 'Analytics') }
       ]
     },
     {
       key: 'finance',
-      title: language === 'ar' ? 'المالية والاشتراكات' : 'FINANCE & ABONNEMENTS',
+      title: tr('المالية والاشتراكات', 'FINANCE & ABONNEMENTS', 'FINANCE & BILLING'),
       items: [
-        { path: '/v2/admin-billing', icon: CreditCard, label: language === 'ar' ? 'الاشتراكات والفوترة' : 'Abonnements & Facturation', tag: 'GOD MODE' },
-        { path: '/v2/admin-cost-items', icon: Calculator, label: language === 'ar' ? 'أسعار المواد التقديرية' : 'Prix Estimés des Matériaux' }
+        { path: '/v2/admin-billing', icon: CreditCard, label: tr('الاشتراكات والفوترة', 'Abonnements & Facturation', 'Subscriptions & Billing'), tag: 'GOD MODE' },
+        { path: '/v2/admin-cost-items', icon: Calculator, label: tr('أسعار المواد التقديرية', 'Prix Estimés des Matériaux', 'Estimated Material Prices') }
       ]
     },
     {
       key: 'users',
-      title: language === 'ar' ? 'المستخدمون والأوراش' : 'UTILISATEURS & CHANTIERS',
+      title: tr('المستخدمون والأوراش', 'UTILISATEURS & CHANTIERS', 'USERS & WORKSHOPS'),
       items: [
-        { path: '/v2/admin-crm', icon: Users, label: language === 'ar' ? 'إدارة المستخدمين' : 'Gestion des Utilisateurs' },
-        { path: '/v2/admin-workshops', icon: HardHat, label: language === 'ar' ? 'الورش المفتوحة (Live)' : 'Chantiers Actifs' },
-        { path: '/v2/admin-services', icon: Briefcase, label: language === 'ar' ? 'طلبات الخدمات' : 'Demandes de Services' }
+        { path: '/v2/admin-crm', icon: Users, label: tr('إدارة المستخدمين', 'Gestion des Utilisateurs', 'User Management (CRM)') },
+        { path: '/v2/admin-workshops', icon: HardHat, label: tr('الورش المفتوحة (Live)', 'Chantiers Actifs', 'Active Workshops') },
+        { path: '/v2/admin-services', icon: Briefcase, label: tr('طلبات الخدمات', 'Demandes de Services', 'Service Requests') }
       ]
     },
     {
       key: 'system',
-      title: language === 'ar' ? 'النظام والصندوق الأسود' : 'SYSTÈME & BOÎTE NOIRE',
+      title: tr('النظام والصندوق الأسود', 'SYSTÈME & BOÎTE NOIRE', 'SYSTEM & BLACK BOX'),
       items: [
-        { path: '/v2/admin-audit', icon: ShieldCheck, label: language === 'ar' ? 'سجل العمليات (Audit)' : 'Journal d\'Audit' },
-        { path: '/v2/admin-global-settings', icon: Settings, label: language === 'ar' ? 'إعدادات المنصة' : 'Paramètres Globaux' }
+        { path: '/v2/admin-audit', icon: ShieldCheck, label: tr('سجل العمليات (Audit)', "Journal d'Audit", 'Audit Log') },
+        { path: '/v2/admin-global-settings', icon: Settings, label: tr('إعدادات المنصة', 'Paramètres Globaux', 'Global Settings') }
       ]
     }
   ];
 
-  // 5. هيكلة أقسام التاجر (Retailer) - مطابقة للصورة 1
+  // 5. هيكلة أقسام التاجر (Retailer) - مترجمة بالكامل (AR / FR / EN)
   const retailerMenuSections = [
     {
       key: 'dashboard',
-      title: language === 'ar' ? 'الإدارة والصندوق' : 'DIRECTION & CAISSE',
+      title: tr('الإدارة والصندوق', 'DIRECTION & CAISSE', 'MANAGEMENT & POS'),
       items: [
-        { path: '/v2/retailer-dashboard', icon: LayoutDashboard, label: language === 'ar' ? 'لوحة القيادة' : 'Tableau de bord' },
-        { path: '/v2/retailer-pos', icon: ShoppingCart, label: language === 'ar' ? 'نقطة البيع (POS)' : 'Point de Vente (POS)', tag: 'LIVE' },
-        { path: '/v2/retailer-inventory', icon: Package, label: language === 'ar' ? 'إدارة المخزون والمنتجات' : 'Gestion du Stock & Produits' }
+        { path: '/v2/retailer-dashboard', icon: LayoutDashboard, label: tr('لوحة القيادة', 'Tableau de bord', 'Dashboard') },
+        { path: '/v2/retailer-pos', icon: ShoppingCart, label: tr('نقطة البيع (POS)', 'Point de Vente (POS)', 'Point of Sale (POS)'), tag: 'LIVE' },
+        { path: '/v2/retailer-inventory', icon: Package, label: tr('إدارة المخزون والمنتجات', 'Gestion du Stock & Produits', 'Inventory & Products') }
       ]
     },
     {
       key: 'market',
-      title: language === 'ar' ? 'التواصل والسوق' : 'COMMUNICATION & MARCHÉ',
+      title: tr('التواصل والسوق', 'COMMUNICATION & MARCHÉ', 'COMMUNICATION & MARKET'),
       items: [
-        { path: '/v2/retailer-messages', icon: MessageCircle, label: language === 'ar' ? 'صندوق الرسائل' : 'Boîte de Réception' },
-        { path: '/v2/retailer-marketplace', icon: Store, label: language === 'ar' ? 'سوق BTP' : 'Marché BTP' }
+        { path: '/v2/retailer-messages', icon: MessageCircle, label: tr('صندوق الرسائل', 'Boîte de Réception', 'Inbox') },
+        { path: '/v2/retailer-marketplace', icon: Store, label: tr('سوق BTP', 'Marché BTP', 'BTP Marketplace') }
       ]
     }
   ];
@@ -473,11 +474,23 @@ export default function SmartSidebar({ storeName, accountType }) {
   if (safeAccountType === 'admin') currentMenuSections = adminMenuSections;
 
   const badgeText = 
-    safeAccountType === 'contractor' ? (['pro', 'enterprise', 'vip'].includes(contractorPlan) ? 'ENTREPRENEUR PRO 🛡️' : 'BUREAU D\'ENTREPRENEUR') :
-    safeAccountType === 'architect' ? (['pro', 'vip', 'elite'].includes(architectPlan) ? 'BUREAU VIP 👑' : 'BUREAU D\'ARCHITECTE') :
-    safeAccountType === 'admin' ? 'ADMINISTRATION CENTRALE' :
-    safeAccountType === 'retailer' ? (['pro', 'vip', 'enterprise'].includes(retailerPlan) ? 'PRO RETAILER ⚡' : 'ESPACE COMMERÇANT (POS)') :
-    (['pro', 'maalem pro'].includes(providerPlan) ? 'MAÂLEM PRO 🔥' : 'ESPACE ARTISAN PRO');
+    safeAccountType === 'contractor'
+      ? (['pro', 'enterprise', 'vip'].includes(contractorPlan)
+          ? tr('مقاول PRO 🛡️', 'ENTREPRENEUR PRO 🛡️', 'CONTRACTOR PRO 🛡️')
+          : tr('مكتب المقاول العام', "BUREAU D'ENTREPRENEUR", 'CONTRACTOR OFFICE'))
+      : safeAccountType === 'architect'
+      ? (['pro', 'vip', 'elite'].includes(architectPlan)
+          ? tr('مكتب هندسي VIP 👑', 'BUREAU VIP 👑', 'VIP ARCHITECT 👑')
+          : tr('مكتب المهندس المعماري', "BUREAU D'ARCHITECTE", 'ARCHITECT OFFICE'))
+      : safeAccountType === 'admin'
+      ? tr('الإدارة المركزية', 'ADMINISTRATION CENTRALE', 'CENTRAL ADMIN')
+      : safeAccountType === 'retailer'
+      ? (['pro', 'vip', 'enterprise'].includes(retailerPlan)
+          ? 'PRO RETAILER ⚡'
+          : tr('فضاء التاجر (POS)', 'ESPACE COMMERÇANT (POS)', 'RETAILER SPACE (POS)'))
+      : (['pro', 'maalem pro'].includes(providerPlan)
+          ? tr('المعلم PRO 🔥', 'MAÂLEM PRO 🔥', 'MASTER PRO 🔥')
+          : tr('فضاء الحرفي المعتمد', 'ESPACE ARTISAN PRO', 'ARTISAN PRO SPACE'));
   
   const headerGradient = 
     safeAccountType === 'contractor' ? 'from-blue-600 to-indigo-700' :
@@ -505,7 +518,7 @@ export default function SmartSidebar({ storeName, accountType }) {
         }
       `}</style>
       
-      {/* 1. Header & Identity - تم تثبيت اسم المنصة SasBTP وتحته نوع الحساب */}
+      {/* 1. Header & Identity - اسم المنصة SasBTP وتحته نوع الحساب */}
       <div className="p-5 border-b border-slate-800/80 bg-slate-950/40 shrink-0">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${headerGradient} flex items-center justify-center text-white font-black text-xl shadow-xl border-2 border-white/10 shrink-0`}>
@@ -534,10 +547,10 @@ export default function SmartSidebar({ storeName, accountType }) {
             <Zap size={16} className="fill-slate-950 animate-bounce" />
             <span>
               {safeAccountType === 'provider'
-                ? (language === 'ar' ? 'باقة المعلم PRO ⚡' : 'Pack Artisan PRO ⚡')
+                ? tr('باقة المعلم PRO ⚡', 'Pack Artisan PRO ⚡', 'Artisan PRO Pack ⚡')
                 : safeAccountType === 'retailer'
-                ? (language === 'ar' ? 'الترقية إلى تاجر PRO ⚡' : 'Passer à Pro Retailer ⚡')
-                : (language === 'ar' ? 'ترقية الحساب (PRO) ⚡' : 'Passer à PRO ⚡')}
+                ? tr('الترقية إلى تاجر PRO ⚡', 'Passer à Pro Retailer ⚡', 'Upgrade to Pro Retailer ⚡')
+                : tr('ترقية الحساب (PRO) ⚡', 'Passer à PRO ⚡', 'Upgrade to PRO ⚡')}
             </span>
           </button>
         )}
