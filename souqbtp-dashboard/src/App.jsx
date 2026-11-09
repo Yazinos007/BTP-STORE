@@ -61,6 +61,7 @@ import BTPHub from './pages/v2/BTPHub';
 import AIAudit from './pages/v2/AIAudit';
 import AffiliateDashboard from './pages/v2/AffiliateDashboard';
 import SystemNotificationBanner from './components/v2/SystemNotificationBanner';
+import GlobalVoiceCopilot from './components/v2/GlobalVoiceCopilot';
 
 import Sidebar from './components/Sidebar';
 import TrialBanner from './components/TrialBanner'; 
@@ -901,11 +902,12 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
 
   if (isMinimal) {
     return (
-      <div className="flex h-screen w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden">
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 w-full">
+      <>
+        <div className={`flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-10 w-full max-w-full ${isDarkMode ? 'wholesale-dark-scope' : 'wholesale-light-scope'}`}>
           {children}
-        </main>
-      </div>
+        </div>
+        <GlobalVoiceCopilot />
+      </>
     );
   }
 
@@ -1878,6 +1880,7 @@ const RetailerLayout = ({ storeName, storeInitial, language, children }) => {
               {children}
             </div>
           </div>
+          <GlobalVoiceCopilot />
         </main>
       </div>
     </div>

@@ -64,15 +64,20 @@ const injectValueIntoReactInput = (element, newValue) => {
   }
 };
 
+// 🧭 خريطة الأوامر الصوتية للتنقل الذكي بين أقسام الفضاءات الخمسة (بما فيها التاجر والمورد)
 const VOICE_NAVIGATION_MAP = [
-  { keywords: ['سوق', 'ماركت', 'سلعة', 'مواد', 'marché', 'marketplace', 'market'], paths: { contractor: '/v2/contractor-marketplace', architect: '/v2/architect-marketplace', provider: '/v2/provider-materials', retailer: '/v2/retailer-marketplace' } },
-  { keywords: ['لوحة القيادة', 'الرئيسية', 'داشبورد', 'tableau de bord', 'dashboard', 'accueil'], paths: { contractor: '/v2/contractor-dashboard', architect: '/v2/architect-dashboard', provider: '/v2/provider-dashboard', retailer: '/v2/retailer-dashboard' } },
-  { keywords: ['حاسبة', 'كالكول', 'تكلفة', 'دوفي', 'calculateur', 'calculator', 'devis'], paths: { contractor: '/v2/contractor-calculator', architect: '/v2/architect-ruler', provider: '/v2/provider-calculator', retailer: '/v2/retailer-pos' } },
-  { keywords: ['كاميرا', 'توثيق', 'صور الورش', 'محاضر', 'caméra', 'camera', 'rapports'], paths: { contractor: '/v2/contractor-camera', architect: '/v2/architect-reports', provider: '/v2/provider-portfolio', retailer: '/v2/retailer-inventory' } },
-  { keywords: ['رسائل', 'مراسلة', 'شات', 'علبة', 'messages', 'boîte', 'inbox'], paths: { contractor: '/v2/contractor-messages', architect: '/v2/architect-messages', provider: '/v2/provider-messages', retailer: '/v2/retailer-messages' } },
-  { keywords: ['فواتير', 'فاكتورة', 'فاتورة', 'factures', 'invoices'], paths: { contractor: '/v2/contractor-b2b-invoices', architect: '/v2/architect-invoices', provider: '/v2/provider-clients', retailer: '/v2/retailer-pos' } },
-  { keywords: ['مصاريف', 'خدامة', 'أعباء', 'صائر', 'dépenses', 'frais', 'expenses'], paths: { contractor: '/v2/contractor-expenses', architect: '/v2/architect-expenses', provider: '/v2/provider-expenses', retailer: '/v2/retailer-dashboard' } },
-  { keywords: ['مورد', 'متاجر', 'retailer', 'supplier'], paths: { retailer: '/v2/retailer-dashboard' } }
+  { keywords: ['سوق', 'ماركت', 'سلعة', 'مواد', 'marché', 'marketplace', 'market'], paths: { contractor: '/v2/contractor-marketplace', architect: '/v2/architect-marketplace', provider: '/v2/provider-materials', retailer: '/marketplace', wholesale: '/marketplace' } },
+  { keywords: ['لوحة القيادة', 'الرئيسية', 'داشبورد', 'tableau de bord', 'dashboard', 'accueil'], paths: { contractor: '/v2/contractor-dashboard', architect: '/v2/architect-dashboard', provider: '/v2/provider-dashboard', retailer: '/', wholesale: '/' } },
+  { keywords: ['حاسبة', 'كالكول', 'تكلفة', 'دوفي', 'نقطة البيع', 'كيس', 'calculateur', 'calculator', 'devis', 'pos'], paths: { contractor: '/v2/contractor-calculator', architect: '/v2/architect-ruler', provider: '/v2/provider-calculator', retailer: '/pos', wholesale: '/pos-b2b' } },
+  { keywords: ['مخزون', 'ستوك', 'سلع', 'منتجات', 'كاميرا', 'توثيق', 'stock', 'produits', 'caméra', 'camera'], paths: { contractor: '/v2/contractor-camera', architect: '/v2/architect-reports', provider: '/v2/provider-portfolio', retailer: '/products', wholesale: '/stock' } },
+  { keywords: ['رسائل', 'مراسلة', 'شات', 'علبة', 'messages', 'boîte', 'inbox'], paths: { contractor: '/v2/contractor-messages', architect: '/v2/architect-messages', provider: '/v2/provider-messages', retailer: '/messages', wholesale: '/messages' } },
+  { keywords: ['فواتير', 'فاكتورة', 'فاتورة', 'factures', 'invoices'], paths: { contractor: '/v2/contractor-b2b-invoices', architect: '/v2/architect-invoices', provider: '/v2/provider-clients', retailer: '/invoices', wholesale: '/invoices' } },
+  { keywords: ['مصاريف', 'خدامة', 'أعباء', 'صائر', 'dépenses', 'frais', 'expenses'], paths: { contractor: '/v2/contractor-expenses', architect: '/v2/architect-expenses', provider: '/v2/provider-expenses', retailer: '/expenses', wholesale: '/expenses' } },
+  { keywords: ['موارد بشرية', 'عمال', 'موظفين', 'ressources humaines', 'rh', 'hr'], paths: { contractor: '/v2/contractor-hr', architect: '/v2/architect-hr', provider: '/v2/provider-expenses', retailer: '/hr', wholesale: '/hr' } },
+  { keywords: ['صندوق', 'حسابات', 'بنك', 'caisses', 'comptes'], paths: { contractor: '/v2/contractor-caisses', architect: '/v2/architect-caisses', provider: '/v2/provider-clients', retailer: '/caisses', wholesale: '/caisses' } },
+  { keywords: ['زبناء', 'عملاء', 'كريدي', 'ديون', 'clients'], paths: { contractor: '/v2/contractor-projects', architect: '/v2/architect-projects', provider: '/v2/provider-clients', retailer: '/clients', wholesale: '/clients' } },
+  { keywords: ['مناقصات', 'رادار', 'صفقات', 'radar', 'appels d\'offres', 'tenders'], paths: { contractor: '/v2/contractor-radar', architect: '/v2/architect-radar', provider: '/v2/provider-radar', retailer: '/marketplace', wholesale: '/tender-radar' } },
+  { keywords: ['إعدادات', 'بروفايل', 'ملفي', 'حسابي', 'profil', 'paramètres', 'settings'], paths: { contractor: '/v2/contractor-settings', architect: '/v2/architect-settings', provider: '/v2/provider-settings', retailer: '/settings', wholesale: '/settings' } }
 ];
 
 const PAGES_WITH_DEDICATED_VOICE = [
@@ -81,6 +86,7 @@ const PAGES_WITH_DEDICATED_VOICE = [
   '/v2/provider-clients',
   '/v2/provider-expenses',
   '/v2/provider-reviews',
+  '/marketplace',
   '/v2/marketplace',
   '/v2/contractor-marketplace',
   '/v2/architect-marketplace',
@@ -111,7 +117,10 @@ export default function GlobalVoiceCopilot() {
     const p = location.pathname;
     if (p.includes('/architect')) return 'architect';
     if (p.includes('/provider-')) return 'provider';
-    if (p.includes('/retailer') || p.includes('/pos')) return 'retailer';
+    if (!p.startsWith('/v2')) {
+      const preview = sessionStorage.getItem('souqbtp_preview_mode');
+      return preview === 'wholesale' ? 'wholesale' : 'retailer';
+    }
     return 'contractor';
   })();
 

@@ -562,8 +562,6 @@ export default function V2Layout({ accountType, storeName, storeInitial }) {
           <div className="flex-1 overflow-x-hidden overflow-y-auto w-full p-4 md:p-8 custom-scrollbar">
             <Outlet context={{ isDarkMode, language }} />
           </div>
-          {/* 🎙️ المساعد الصوتي الذكي الموحد لملء الحقول والتنقل في جميع الحسابات */}
-          <GlobalVoiceCopilot />
         </main>
       </div>
     </div>

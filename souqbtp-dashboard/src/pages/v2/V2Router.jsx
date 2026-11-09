@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useOutletContext, useLocation } from 'react-router-dom';
 import V2Layout from '../../components/v2/V2Layout';
 import AdminLayout from '../../components/v2/AdminLayout';
+import GlobalVoiceCopilot from '../../components/v2/GlobalVoiceCopilot';
 import { supabase } from '../../lib/supabase';
 
 // === استيرادات المقاول العام (Contractor) ===
@@ -64,7 +65,6 @@ import UnifiedMessages from './shared/UnifiedMessages';
 import LiveRoom from './shared/LiveRoom';
 import AuthGateway from './auth/AuthGateway';
 import AffiliateDashboard from './AffiliateDashboard';
-import GlobalVoiceCopilot from './components/v2/GlobalVoiceCopilot';
 
 export default function V2Router({ session, supplier }) {
   const location = useLocation();
@@ -138,138 +138,147 @@ export default function V2Router({ session, supplier }) {
     return 'contractor-dashboard';
   };
 
+  // عدم إظهار الزر العائم في صفحات تسجيل الدخول لأنها تمتلك واجهتها الصوتية المستقلة
+  const isAuthPage = ['/auth', '/architect-register', '/provider-auth', '/supplier-register'].some(p =>
+    location.pathname.includes(p)
+  );
+
   return (
-    <Routes>
-      {/* 🚀 فخ التوجيه */}
-      <Route path="empire" element={<Navigate to="/empire" replace />} />
-      <Route path="pro" element={<Navigate to="/pro" replace />} />
-      <Route path="contractor" element={<Navigate to="/contractor" replace />} />
+    <>
+      <Routes>
+        {/* 🚀 فخ التوجيه */}
+        <Route path="empire" element={<Navigate to="/empire" replace />} />
+        <Route path="pro" element={<Navigate to="/pro" replace />} />
+        <Route path="contractor" element={<Navigate to="/contractor" replace />} />
 
-      {/* 🚀 الغرفة الحية */}
-      <Route path="live-room/:cid" element={<LiveRoom />} />
-      <Route path="architect/live-room/:cid" element={<LiveRoom />} />
+        {/* 🚀 الغرفة الحية */}
+        <Route path="live-room/:cid" element={<LiveRoom />} />
+        <Route path="architect/live-room/:cid" element={<LiveRoom />} />
 
-      {/* 🔐 صفحات التسجيل والدخول */}
-      <Route path="auth" element={<AuthGateway />} />
-      <Route path="architect-register" element={<ArchitectRegister />} />
-      <Route path="provider-auth" element={<ProviderAuth />} />
-      <Route path="supplier-register" element={<SupplierAuth />} />
+        {/* 🔐 صفحات التسجيل والدخول */}
+        <Route path="auth" element={<AuthGateway />} />
+        <Route path="architect-register" element={<ArchitectRegister />} />
+        <Route path="provider-auth" element={<ProviderAuth />} />
+        <Route path="supplier-register" element={<SupplierAuth />} />
 
-      {/* =======================================================
-          🔥 مسارات الإدارة العليا (Admin)
-      ======================================================= */}
-      <Route element={<AdminLayout />}>
-        <Route path="admin-dashboard" element={<AdminDashboard />} />
-        <Route path="admin-billing" element={<AdminBilling />} />
-        <Route path="admin-settings" element={<AdminDashboard />} /> 
-        <Route path="admin-services" element={<AdminServicesPanel />} />
-        <Route path="admin-cost-items" element={<AdminCostItems />} />
-        <Route path="admin-crm" element={<AdminCRM />} />
-        <Route path="admin-workshops" element={<AdminWorkshops />} />
-        <Route path="admin-analytics" element={<AdminAnalytics />} />
-        <Route path="admin-global-settings" element={<AdminGlobalSettings />} />
-        <Route path="admin-audit" element={<AdminAudit />} />
-      </Route>
+        {/* =======================================================
+            🔥 مسارات الإدارة العليا (Admin)
+        ======================================================= */}
+        <Route element={<AdminLayout />}>
+          <Route path="admin-dashboard" element={<AdminDashboard />} />
+          <Route path="admin-billing" element={<AdminBilling />} />
+          <Route path="admin-settings" element={<AdminDashboard />} /> 
+          <Route path="admin-services" element={<AdminServicesPanel />} />
+          <Route path="admin-cost-items" element={<AdminCostItems />} />
+          <Route path="admin-crm" element={<AdminCRM />} />
+          <Route path="admin-workshops" element={<AdminWorkshops />} />
+          <Route path="admin-analytics" element={<AdminAnalytics />} />
+          <Route path="admin-global-settings" element={<AdminGlobalSettings />} />
+          <Route path="admin-audit" element={<AdminAudit />} />
+        </Route>
 
-      {/* =======================================================
-          🛡️ مسارات النظام الداخلي للمستخدمين - داخل الـ V2Layout
-      ======================================================= */}
-      <Route element={<V2Layout accountType={resolvedRole} storeName={resolvedName} storeInitial={storeInitial} />}>
+        {/* =======================================================
+            🛡️ مسارات النظام الداخلي للمستخدمين - داخل الـ V2Layout
+        ======================================================= */}
+        <Route element={<V2Layout accountType={resolvedRole} storeName={resolvedName} storeInitial={storeInitial} />}>
 
-        {/* 🏆 المسارات الموحدة لبرنامج شركاء النجاح */}
-        <Route path="affiliates" element={<AffiliateDashboard />} />
-        <Route path="contractor-affiliates" element={<AffiliateDashboard />} />
-        <Route path="architect-affiliates" element={<AffiliateDashboard />} />
-        <Route path="provider-affiliates" element={<AffiliateDashboard />} />
-        <Route path="supplier-affiliates" element={<AffiliateDashboard />} />
+          {/* 🏆 المسارات الموحدة لبرنامج شركاء النجاح */}
+          <Route path="affiliates" element={<AffiliateDashboard />} />
+          <Route path="contractor-affiliates" element={<AffiliateDashboard />} />
+          <Route path="architect-affiliates" element={<AffiliateDashboard />} />
+          <Route path="provider-affiliates" element={<AffiliateDashboard />} />
+          <Route path="supplier-affiliates" element={<AffiliateDashboard />} />
 
-        {/* 💬 المسارات الموحدة للرسائل والماركت بليس لجميع الأدوار */}
-        <Route path="messages" element={<UnifiedMessages />} />
-        <Route path="contractor-messages" element={<UnifiedMessages />} />
-        <Route path="architect-messages" element={<UnifiedMessages />} />
-        <Route path="provider-messages" element={<UnifiedMessages />} />
-        
-        <Route path="marketplace" element={<BTPHub />} />
-        <Route path="contractor-marketplace" element={<BTPHub />} />
-        <Route path="architect-marketplace" element={<BTPHub />} />
-        <Route path="provider-marketplace" element={<BTPHub />} />
-        
-        {/* === 🏗️ سكاشن المقاول العام (Contractor) === */}
-        <Route path="contractor-dashboard" element={<ContractorDashboard />} />
-        <Route path="project-path" element={<ProjectPath />} />
-        <Route path="contractor-projects" element={<ProjectPath />} />
-        <Route path="cost-calculator" element={<CostCalculator />} />
-        <Route path="contractor-calculator" element={<CostCalculator />} />
-        <Route path="field-camera" element={<ContractorCamera />} />
-        <Route path="contractor-camera" element={<ContractorCamera />} />
-        <Route path="store-manager" element={<VendorStoreManager />} /> 
-        <Route path="tenders" element={<TenderRadar />} />
-        <Route path="contractor-radar" element={<TenderRadar />} />
-        <Route path="freight-exchange" element={<FreightExchange />} />
-        <Route path="contractor-freight" element={<FreightExchange />} />
-        <Route path="live-orders" element={<LiveOrders />} />
-        <Route path="contractor-live-orders" element={<LiveOrders />} />
-        <Route path="hr" element={<ContractorHR />} /> 
-        <Route path="contractor-hr" element={<ContractorHR />} /> 
-        <Route path="b2b-invoices" element={<B2bInvoices />} />
-        <Route path="contractor-b2b-invoices" element={<B2bInvoices />} />
-        <Route path="accounts" element={<AccountsManager />} /> 
-        <Route path="contractor-caisses" element={<AccountsManager />} /> 
-        <Route path="expenses" element={<ContractorExpenses />} />
-        <Route path="contractor-expenses" element={<ContractorExpenses />} />
-        <Route path="taxes" element={<Taxes />} />
-        <Route path="contractor-fiscal" element={<Taxes />} />
-        <Route path="accounting" element={<ContractorAccounting />} />
-        <Route path="contractor-accounting" element={<ContractorAccounting />} />
-        <Route path="audit" element={<AIAudit />} />
-        <Route path="contractor-audit" element={<AIAudit />} />
-        <Route path="profile" element={<ContractorProfile />} />
-        <Route path="contractor-settings" element={<ContractorProfile />} />
-        <Route path="subscription" element={<ContractorSubscription />} />
+          {/* 💬 المسارات الموحدة للرسائل والماركت بليس لجميع الأدوار */}
+          <Route path="messages" element={<UnifiedMessages />} />
+          <Route path="contractor-messages" element={<UnifiedMessages />} />
+          <Route path="architect-messages" element={<UnifiedMessages />} />
+          <Route path="provider-messages" element={<UnifiedMessages />} />
+          
+          <Route path="marketplace" element={<BTPHub />} />
+          <Route path="contractor-marketplace" element={<BTPHub />} />
+          <Route path="architect-marketplace" element={<BTPHub />} />
+          <Route path="provider-marketplace" element={<BTPHub />} />
+          
+          {/* === 🏗️ سكاشن المقاول العام (Contractor) === */}
+          <Route path="contractor-dashboard" element={<ContractorDashboard />} />
+          <Route path="project-path" element={<ProjectPath />} />
+          <Route path="contractor-projects" element={<ProjectPath />} />
+          <Route path="cost-calculator" element={<CostCalculator />} />
+          <Route path="contractor-calculator" element={<CostCalculator />} />
+          <Route path="field-camera" element={<ContractorCamera />} />
+          <Route path="contractor-camera" element={<ContractorCamera />} />
+          <Route path="store-manager" element={<VendorStoreManager />} /> 
+          <Route path="tenders" element={<TenderRadar />} />
+          <Route path="contractor-radar" element={<TenderRadar />} />
+          <Route path="freight-exchange" element={<FreightExchange />} />
+          <Route path="contractor-freight" element={<FreightExchange />} />
+          <Route path="live-orders" element={<LiveOrders />} />
+          <Route path="contractor-live-orders" element={<LiveOrders />} />
+          <Route path="hr" element={<ContractorHR />} /> 
+          <Route path="contractor-hr" element={<ContractorHR />} /> 
+          <Route path="b2b-invoices" element={<B2bInvoices />} />
+          <Route path="contractor-b2b-invoices" element={<B2bInvoices />} />
+          <Route path="accounts" element={<AccountsManager />} /> 
+          <Route path="contractor-caisses" element={<AccountsManager />} /> 
+          <Route path="expenses" element={<ContractorExpenses />} />
+          <Route path="contractor-expenses" element={<ContractorExpenses />} />
+          <Route path="taxes" element={<Taxes />} />
+          <Route path="contractor-fiscal" element={<Taxes />} />
+          <Route path="accounting" element={<ContractorAccounting />} />
+          <Route path="contractor-accounting" element={<ContractorAccounting />} />
+          <Route path="audit" element={<AIAudit />} />
+          <Route path="contractor-audit" element={<AIAudit />} />
+          <Route path="profile" element={<ContractorProfile />} />
+          <Route path="contractor-settings" element={<ContractorProfile />} />
+          <Route path="subscription" element={<ContractorSubscription />} />
 
-        {/* === 🏛️ سكاشن المهندس المعماري (Architect) === */}
-        <Route path="architect-subscription" element={<ArchitectSubscription />} />
-        <Route path="architect/subscription" element={<ArchitectSubscription />} />
-        <Route path="architect-dashboard" element={<ArchitectDashboard />} />
-        <Route path="architect-profile" element={<ArchitectProfile />} />
-        <Route path="architect-settings" element={<ArchitectProfile />} />
-        <Route path="architect-projects" element={<ArchitectProjects />} />
-        <Route path="architect-archive" element={<ArchitectArchive />} />
-        <Route path="architect-tenders" element={<TenderRadar />} />
-        <Route path="architect-radar" element={<TenderRadar />} />
-        <Route path="architect-hr" element={<ContractorHR />} />
-        <Route path="architect-invoices" element={<B2bInvoices />} />
-        <Route path="architect-accounts" element={<AccountsManager />} />
-        <Route path="architect-caisses" element={<AccountsManager />} />
-        <Route path="architect-expenses" element={<ContractorExpenses />} />
-        <Route path="architect-taxes" element={<Taxes />} />
-        <Route path="architect-fiscal" element={<Taxes />} />
-        <Route path="architect-accounting" element={<ContractorAccounting />} />
-        <Route path="architect-audit" element={<AIAudit />} />
-        <Route path="architect-ruler" element={<CostCalculator />} />
-        <Route path="architect-reports" element={<ContractorCamera />} />
+          {/* === 🏛️ سكاشن المهندس المعماري (Architect) === */}
+          <Route path="architect-subscription" element={<ArchitectSubscription />} />
+          <Route path="architect/subscription" element={<ArchitectSubscription />} />
+          <Route path="architect-dashboard" element={<ArchitectDashboard />} />
+          <Route path="architect-profile" element={<ArchitectProfile />} />
+          <Route path="architect-settings" element={<ArchitectProfile />} />
+          <Route path="architect-projects" element={<ArchitectProjects />} />
+          <Route path="architect-archive" element={<ArchitectArchive />} />
+          <Route path="architect-tenders" element={<TenderRadar />} />
+          <Route path="architect-radar" element={<TenderRadar />} />
+          <Route path="architect-hr" element={<ContractorHR />} />
+          <Route path="architect-invoices" element={<B2bInvoices />} />
+          <Route path="architect-accounts" element={<AccountsManager />} />
+          <Route path="architect-caisses" element={<AccountsManager />} />
+          <Route path="architect-expenses" element={<ContractorExpenses />} />
+          <Route path="architect-taxes" element={<Taxes />} />
+          <Route path="architect-fiscal" element={<Taxes />} />
+          <Route path="architect-accounting" element={<ContractorAccounting />} />
+          <Route path="architect-audit" element={<AIAudit />} />
+          <Route path="architect-ruler" element={<CostCalculator />} />
+          <Route path="architect-reports" element={<ContractorCamera />} />
 
-        {/* === 🛠️ سكاشن الحرفي / المعلم (Provider - مربوطة بـ Supabase) === */}
-        <Route path="provider-subscription" element={<ProviderSubscription />} />
-        <Route path="provider-dashboard" element={<ProviderDashboard />} />
-        <Route path="provider-profile" element={<ProviderProfile />} />
-        <Route path="provider-settings" element={<ProviderProfile />} />
-        <Route path="provider-portfolio" element={<ProviderPortfolio />} />
-        <Route path="provider-radar" element={<TenderRadar />} />
-        <Route path="provider-projects" element={<ProviderProjectsPage />} />
-        <Route path="provider-calculator" element={<CostCalculator />} />
-        <Route path="provider-clients" element={<ProviderClientsPage />} />
-        <Route path="provider-expenses" element={<ProviderExpensesPage />} />
-        <Route path="provider-materials" element={<BTPHub />} />
-        <Route path="provider-reviews" element={<ProviderReviewsPage />} />
+          {/* === 🛠️ سكاشن الحرفي / المعلم (Provider - مربوطة بـ Supabase) === */}
+          <Route path="provider-subscription" element={<ProviderSubscription />} />
+          <Route path="provider-dashboard" element={<ProviderDashboard />} />
+          <Route path="provider-profile" element={<ProviderProfile />} />
+          <Route path="provider-settings" element={<ProviderProfile />} />
+          <Route path="provider-portfolio" element={<ProviderPortfolio />} />
+          <Route path="provider-radar" element={<TenderRadar />} />
+          <Route path="provider-projects" element={<ProviderProjectsPage />} />
+          <Route path="provider-calculator" element={<CostCalculator />} />
+          <Route path="provider-clients" element={<ProviderClientsPage />} />
+          <Route path="provider-expenses" element={<ProviderExpensesPage />} />
+          <Route path="provider-materials" element={<BTPHub />} />
+          <Route path="provider-reviews" element={<ProviderReviewsPage />} />
 
-        {/* 🚦 الموزع الذكي */}
-        <Route index element={<Navigate to={getDefaultDashboard()} replace />} />
-        <Route path="*" element={<Navigate to={getDefaultDashboard()} replace />} />
-      </Route>
+          {/* 🚦 الموزع الذكي */}
+          <Route index element={<Navigate to={getDefaultDashboard()} replace />} />
+          <Route path="*" element={<Navigate to={getDefaultDashboard()} replace />} />
+        </Route>
 
-      <Route path="foreman-dashboard" element={<ForemanDashboard />} />
-      <GlobalVoiceCopilot />
-    </Routes>
+        <Route path="foreman-dashboard" element={<ForemanDashboard />} />
+      </Routes>
+
+      {/* 🎙️ المساعد الصوتي العائم خارج <Routes> لتفادي خطأ React Router */}
+      {!isAuthPage && <GlobalVoiceCopilot />}
+    </>
   );
 }
