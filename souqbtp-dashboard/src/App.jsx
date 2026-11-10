@@ -902,12 +902,11 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
 
   if (isMinimal) {
     return (
-      <>
-        <div className={`flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-10 w-full max-w-full ${isDarkMode ? 'wholesale-dark-scope' : 'wholesale-light-scope'}`}>
+      <div className="flex h-screen w-full bg-[#0f172a] text-slate-300 font-sans overflow-hidden">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 w-full">
           {children}
-        </div>
-        <GlobalVoiceCopilot />
-      </>
+        </main>
+      </div>
     );
   }
 
@@ -1271,6 +1270,7 @@ const WholesalerDashboard = ({ supplier, storeName, storeInitial, children }) =>
         <div className={`flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-10 w-full max-w-full ${isDarkMode ? 'wholesale-dark-scope' : 'wholesale-light-scope'}`}>
           {children}
         </div>
+        <GlobalVoiceCopilot />
       </main>
     </div>
   );
