@@ -217,10 +217,14 @@ export default function GlobalVoiceCopilot() {
   const recognitionRef = useRef(null);
   const cloudAudioRef = useRef(null);
 
-  // إخفاء الزر في صفحات تسجيل الدخول أو صفحات الهبوط الخارجية
-  const isHiddenRoute = ['/auth', '/login', '/register', '/empire', '/pro', '/contractor', '/devis-gratuit', '/client-portal'].some(
-    (p) => location.pathname === p || location.pathname.startsWith(`/v2${p}`)
-  );
+  // إخفاء الزر في صفحات تسجيل الدخول وصفحات الهبوط التسويقية فقط
+  const HIDDEN_EXACT_PATHS = [
+    '/empire', '/pro', '/contractor', '/devis-gratuit', '/client-portal',
+    '/v2/empire', '/v2/pro', '/v2/contractor',
+    '/v2/auth', '/v2/provider-auth', '/v2/architect-register', '/v2/supplier-register',
+    '/login', '/register', '/auth'
+  ];
+  const isHiddenRoute = HIDDEN_EXACT_PATHS.includes(location.pathname);
 
   const hasBuiltInVoiceUI = PAGES_WITH_DEDICATED_VOICE.some((p) => location.pathname.includes(p));
 
